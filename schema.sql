@@ -1,0 +1,21 @@
+CREATE TABLE tractos (
+    id SERIAL PRIMARY KEY,
+    no_eco VARCHAR(50) UNIQUE NOT NULL,
+    unidad VARCHAR(100) NOT NULL,
+    placas VARCHAR(20) UNIQUE NOT NULL,
+    tipo VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE remolques (
+    id SERIAL PRIMARY KEY,
+    color VARCHAR(50),
+    tipo VARCHAR(50) NOT NULL,
+    placas VARCHAR(20) UNIQUE NOT NULL
+);
+
+CREATE TABLE choferes (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(150) NOT NULL,
+    rfc VARCHAR(13) UNIQUE NOT NULL CHECK (char_length(rfc) >= 12),
+    licencia VARCHAR(50) UNIQUE NOT NULL
+);
