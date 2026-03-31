@@ -20,7 +20,7 @@ function BlankPage({ title }) {
   return (
     <div className="blank-page"></div>
   );
-}
+} 
 
 function App() {
   return (

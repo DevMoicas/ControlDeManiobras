@@ -9,7 +9,7 @@
   grid-template-columns: repeat(2, minmax(160px, 1fr));
   gap: 12px;
   max-width: 420px;
-  margin: 20px auto;
+  margin: 20px auto; 
 }
 
 button {
