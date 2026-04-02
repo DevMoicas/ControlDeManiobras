@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import './App.css';
+import NoEcoPage from './pages/NoEcoPage';
 
 function Home() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ function App() {
         <Route path="/maniobras" element={<BlankPage title="MANIOBRAS" />} />
         <Route path="/gastos-efectivo" element={<BlankPage title="GASTOS EFECTIVO" />} />
         <Route path="/vacios" element={<BlankPage title="VACIOS" />} />
-        <Route path="/no-eco" element={<BlankPage title="NO. ECO" />} />
+        <Route path="/no-eco" element={<NoEcoPage />} />
       </Routes>
     </Router>
   );
