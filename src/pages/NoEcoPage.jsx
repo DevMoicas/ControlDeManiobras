@@ -179,16 +179,14 @@ const nombresSingulares = {
       
       <form onSubmit={guardarNuevoRegistro} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         
-        {/* ============================================================== */}
-        {/* INPUTS DINÁMICOS: Se dibujan solos leyendo configFormularios   */}
-        {/* ============================================================== */}
+      {/* INPUTS */}
         {configFormularios[vista] && configFormularios[vista].map((campo) => (
           <div key={campo.name} style={{ display: 'flex', flexDirection: 'column' }}>
             <label>{campo.label}:</label>
             <input 
               type={campo.type} 
-              name={campo.name} // Aquí toma el nombre exacto para enviarlo a Django
-              value={formData[campo.name] || ""} // Mantiene el valor controlado en el estado
+              name={campo.name} 
+              value={formData[campo.name] || ""} 
               onChange={handleInputChange} 
               required 
               style={{ padding: '8px', marginTop: '5px', border: '1px solid #ccc', borderRadius: '4px' }}
