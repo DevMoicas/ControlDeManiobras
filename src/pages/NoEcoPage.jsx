@@ -6,7 +6,8 @@ export default function NoEcoPage() {
   const [data, setData] = useState([]);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [formData, setFormData] = useState({}); 
-
+  const [editando, setEditando] = useState(false);
+  const [registroEditando, setRegistroEditando] = useState(null);
   // Configuración de los campos para cada tabla
 const configFormularios = {
   tractos: [
@@ -26,7 +27,7 @@ const configFormularios = {
     { name: "licencia", label: "Número de Licencia", type: "text" }
   ]
 };
-  // 🔥 Fetch dinámico según vista
+  //  Fetch dinámico según vista
   useEffect(() => {
     fetch(`http://127.0.0.1:8000/api/${vista}`)
       .then(res => res.json())
@@ -53,6 +54,13 @@ const configFormularios = {
     }
   }
 };
+//Carga los datos en el formulario y abre el modal
+const iniciarEdicion = (item) => {
+  setEditando(true);
+  setRegistroEditando(item);
+  setFormData(item); // llena el formulario automáticamente
+  setModalAbierto(true);
+};
 
 // Detecta lo que escribes en los inputs y lo guarda en el estado
 const handleInputChange = (e) => {
@@ -64,28 +72,48 @@ const handleInputChange = (e) => {
 
 // Envía el formulario a Django
 const guardarNuevoRegistro = async (e) => {
-  e.preventDefault(); // Evita que la página se recargue
+  e.preventDefault();
 
   try {
-    const response = await fetch(`http://127.0.0.1:8000/api/${vista}/`, {
-      method: "POST",
+    const url = editando
+      ? `http://127.0.0.1:8000/api/${vista}/${registroEditando.id}/`
+      : `http://127.0.0.1:8000/api/${vista}/`;
+
+    const method = editando ? "PUT" : "POST";
+
+    const response = await fetch(url, {
+      method: method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData), // Enviamos lo que llenaste en el form
+      body: JSON.stringify(formData),
     });
 
     if (response.ok) {
-      const creado = await response.json();
-      setData([...data, creado]); // Actualiza la tabla
-      setModalAbierto(false); // Cierra la ventana
-      setFormData({}); // Limpia el formulario para la próxima vez
-      alert("Registro guardado con éxito");
+      const resultado = await response.json();
+
+      if (editando) {
+        // Actualizar en la tabla
+        setData(data.map(item =>
+          item.id === registroEditando.id ? resultado : item
+        ));
+      } else {
+        //  Crear nuevo
+        setData([...data, resultado]);
+      }
+
+      // Reset general
+      setModalAbierto(false);
+      setFormData({});
+      setEditando(false);
+      setRegistroEditando(null);
+
+      alert(editando ? "Registro actualizado" : "Registro creado");
     } else {
-      const errorData = await response.json(); 
-      console.error("Detalles del rechazo de Django:", errorData);
-      alert(`Django rechazó los datos: ${JSON.stringify(errorData)}`);
+      const errorData = await response.json();
+      console.error(errorData);
+      alert("Error en la operación");
     }
   } catch (error) {
-    console.error("Error al agregar:", error);
+    console.error(error);
   }
 };
 
@@ -158,6 +186,13 @@ const nombresSingulares = {
                     >
                       Eliminar
                     </button>
+
+                    <button 
+                     onClick={() => iniciarEdicion(item)}
+                     style={{ color: 'blue', cursor: 'pointer', marginLeft: '10px' }}
+                    >
+                      Editar
+                     </button>
                   </td>
                 </tr>
               ))}
@@ -175,7 +210,7 @@ const nombresSingulares = {
       backgroundColor: 'white', padding: '30px', borderRadius: '10px', 
       width: '400px', boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
     }}>
-      <h2 style={{ marginTop: 0 }}>Agregar {nombresSingulares[vista]}</h2>
+      <h2 style={{ marginTop: 0 }}> {editando ? "Editar" : "Agregar"} {nombresSingulares[vista]} </h2>
       
       <form onSubmit={guardarNuevoRegistro} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         
@@ -198,7 +233,12 @@ const nombresSingulares = {
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
           <button 
             type="button" 
-            onClick={() => { setModalAbierto(false); setFormData({}); }}
+            onClick={() => { 
+              setModalAbierto(false); 
+              setFormData({});
+              setEditando(false);
+              setRegistroEditando(null);
+            }}
             style={{ padding: '8px 15px', cursor: 'pointer', backgroundColor: '#ccc', border: 'none', borderRadius: '4px' }}
           >
             Cancelar
