@@ -19,3 +19,29 @@ CREATE TABLE choferes (
     rfc VARCHAR(13) UNIQUE NOT NULL CHECK (char_length(rfc) >= 12),
     licencia VARCHAR(50) UNIQUE NOT NULL
 );
+
+CREATE TABLE maniobras (
+    id SERIAL PRIMARY KEY,
+    ff INTEGER,
+    solicita TEXT,
+    agencia TEXT,
+    codigo_pis TEXT,
+    terminal TEXT,
+    placas_pis TEXT,
+    fecha_pis TEXT,
+    horario TEXT,
+    tipo_y_peso TEXT,
+    contenedor TEXT,
+    pedimento TEXT,
+    cliente TEXT,
+    origen TEXT,
+    destino TEXT,
+    asignacion_operador_status TEXT,
+    unidad TEXT,
+    folio TEXT,
+    vacio_patio TEXT,
+    status_vacio TEXT,
+    fecha_entrega_mercancia TEXT,
+    no_factura TEXT,
+    ccp TEXT
+);
