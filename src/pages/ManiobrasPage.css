@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --primary-blue: #007bff;
+  --primary-hover: #005ce6;
+  --bg-body: #f4f7f6;
+  --card-bg: #ffffff;
+  --text-main: #2b3440;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+}
+
+.maniobras-container {
+  padding: 40px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-body);
+  min-height: 100vh;
+  color: var(--text-main);
+}
+
+/* Título */
+.maniobras-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: 30px;
+  color: var(--text-main);
+  border-bottom: 3px solid var(--border-color);
+  padding-bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title-icon {
+  color: var(--primary-blue);
+}
+
+/* Contenedor de Tabla */
+.table-responsive {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+}
+
+/* Tabla de Maniobras */
+.maniobras-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  min-width: 800px;
+}
+
+.maniobras-table th {
+  background-color: #f9fafb;
+  text-align: left;
+  padding: 10px 16px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.maniobras-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
+  vertical-align: middle;
+  font-weight: 500;
+}
+
+.maniobras-table tr:last-child td {
+  border-bottom: none;
+}
+
+.maniobras-table tr {
+  transition: background-color 0.2s ease;
+}
+
+.maniobras-table tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Estados de carga y error */
+.loading-box,
+.error-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 250px;
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color);
+}
+
+.loading-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-blue);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.error-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--danger);
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+.error-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--danger-hover);
+  margin: 0;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: .5;
+  }
+}
