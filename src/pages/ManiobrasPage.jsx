@@ -185,7 +185,7 @@ const cancelarNuevaManiobra = () => {
       <h1 className="maniobras-title">
         <Truck size={36} className="title-icon" /> Control de Maniobras
       </h1>
-      // Boton "Agregar Registro"
+       {/* Botón agregar registro */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "15px" }}>
         <button
           onClick={() => setModoAgregar(true)}
@@ -216,7 +216,7 @@ const cancelarNuevaManiobra = () => {
             </tr>
           </thead>
           <tbody>
-            // Fila Editable
+            {/* Fila editable*/}
             {modoAgregar && (
               <tr>
                 <td><input value={nuevaManiobra.solicita} onChange={e => setNuevaManiobra({...nuevaManiobra, solicita: e.target.value})} /></td>
