@@ -129,7 +129,7 @@ export default function NoEcoPage() {
   return (
     <div className="noeco-container">
       <h1 className="noeco-title">
-        <Settings size={36} color="var(--primary-blue)" /> Parque Vehicular
+        <Settings size={36} color="var(--primary-blue)" /> NO. ECO
       </h1>
 
       {/* Tabs */}
