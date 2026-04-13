@@ -10,7 +10,17 @@ const ManiobrasPage = () => {
     // Estados necesarios para el Modal de Edición
 const [modalEditar, setModalEditar] = useState(false);
 const [maniobraAEditar, setManiobraAEditar] = useState(null);
-
+    //Estado para agregar nueva maniobra
+const [modoAgregar, setModoAgregar] = useState(false);
+const [nuevaManiobra, setNuevaManiobra] = useState({
+  solicita: "",
+  agencia: "",
+  codigo_pis: "",
+  terminal: "",
+  placas_pis: "",
+  fecha_pis: "",
+  horario: ""
+});
 // --- FUNCIÓN ELIMINAR ---
 const eliminarManiobra = async (id) => {
   if (window.confirm("¿Estás seguro de que deseas eliminar esta maniobra de la base de datos?")) {
@@ -94,6 +104,49 @@ const guardarCambiosManiobra = async (e) => {
     console.error("Error de red:", error);
   }
 };
+//Función Agregar Nueva Maniobra (Guardar Y Cancelar)
+const guardarNuevaManiobra = async () => {
+  try {
+    const response = await fetch('http://127.0.0.1:8000/api/maniobras/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(nuevaManiobra),
+    });
+
+    if (response.ok) {
+      await cargarDatos();
+      setModoAgregar(false);
+      setNuevaManiobra({
+        solicita: "",
+        agencia: "",
+        codigo_pis: "",
+        terminal: "",
+        placas_pis: "",
+        fecha_pis: "",
+        horario: ""
+      });
+      alert("Registro agregado correctamente");
+    } else {
+      const errorData = await response.json();
+      alert("Error: " + JSON.stringify(errorData));
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const cancelarNuevaManiobra = () => {
+  setModoAgregar(false);
+  setNuevaManiobra({
+    solicita: "",
+    agencia: "",
+    codigo_pis: "",
+    terminal: "",
+    placas_pis: "",
+    fecha_pis: "",
+    horario: ""
+  });
+};
   useEffect(() => {
     cargarDatos();
   }, []);
@@ -132,7 +185,23 @@ const guardarCambiosManiobra = async (e) => {
       <h1 className="maniobras-title">
         <Truck size={36} className="title-icon" /> Control de Maniobras
       </h1>
-
+      // Boton "Agregar Registro"
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "15px" }}>
+        <button
+          onClick={() => setModoAgregar(true)}
+          style={{
+            backgroundColor: "#2563eb",
+            color: "white",
+            padding: "10px 15px",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontWeight: "bold"
+          }}
+        >
+          + Agregar Registro
+        </button>
+      </div>
       <div className="table-responsive">
         <table className="maniobras-table">
           <thead>
@@ -147,6 +216,23 @@ const guardarCambiosManiobra = async (e) => {
             </tr>
           </thead>
           <tbody>
+            // Fila Editable
+            {modoAgregar && (
+              <tr>
+                <td><input value={nuevaManiobra.solicita} onChange={e => setNuevaManiobra({...nuevaManiobra, solicita: e.target.value})} /></td>
+                <td><input value={nuevaManiobra.agencia} onChange={e => setNuevaManiobra({...nuevaManiobra, agencia: e.target.value})} /></td>
+                <td><input value={nuevaManiobra.codigo_pis} onChange={e => setNuevaManiobra({...nuevaManiobra, codigo_pis: e.target.value})} /></td>
+                <td><input value={nuevaManiobra.terminal} onChange={e => setNuevaManiobra({...nuevaManiobra, terminal: e.target.value})} /></td>
+                <td><input value={nuevaManiobra.placas_pis} onChange={e => setNuevaManiobra({...nuevaManiobra, placas_pis: e.target.value})} /></td>
+                <td><input value={nuevaManiobra.fecha_pis} onChange={e => setNuevaManiobra({...nuevaManiobra, fecha_pis: e.target.value})} /></td>
+                <td><input value={nuevaManiobra.horario} onChange={e => setNuevaManiobra({...nuevaManiobra, horario: e.target.value})} /></td>
+
+                <td>
+                  <button onClick={guardarNuevaManiobra}>Guardar</button>
+                  <button onClick={cancelarNuevaManiobra}>Cancelar</button>
+                </td>
+              </tr>
+            )}
             {maniobras.length === 0 ? (
               <tr>
                 <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
