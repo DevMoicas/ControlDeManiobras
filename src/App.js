@@ -1,4 +1,5 @@
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Home as HomeIcon } from 'lucide-react';
 import './App.css';
 import NoEcoPage from './pages/NoEcoPage';
 
@@ -31,14 +32,44 @@ function BlankPage({ title }) {
 // COMPONENTE PRINCIPAL APP
 // IMPORTANTE: Quitamos la etiqueta <Router> de aquí porque ya está en index.js
 function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Validar si el path no es exactamente el home de App ('/home' o '/home/')
+  const showBackButton = location.pathname !== '/home' && location.pathname !== '/home/';
+
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="maniobras" element={<BlankPage title="MANIOBRAS" />} />
-      <Route path="gastos-efectivo" element={<BlankPage title="GASTOS EFECTIVO" />} />
-      <Route path="vacios" element={<BlankPage title="VACIOS" />} />
-      <Route path="no-eco" element={<NoEcoPage />} />
-    </Routes>
+    <>
+      {showBackButton && (
+        <button 
+          onClick={() => navigate('/home')} 
+          style={{
+            position: 'absolute',
+            top: '5px',
+            left: '20px',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'black',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '5px'
+          }}
+          title="Regresar al Home"
+        >
+          <HomeIcon size={32} />
+        </button>
+      )}
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="maniobras" element={<BlankPage title="MANIOBRAS" />} />
+        <Route path="gastos-efectivo" element={<BlankPage title="GASTOS EFECTIVO" />} />
+        <Route path="vacios" element={<BlankPage title="VACIOS" />} />
+        <Route path="no-eco" element={<NoEcoPage />} />
+      </Routes>
+    </>
   );
 }
 
