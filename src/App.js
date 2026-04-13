@@ -66,7 +66,7 @@ function App() {
       )}
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="maniobras" element={<BlankPage title="MANIOBRAS" />} />
+        <Route path="maniobras" element={<ManiobrasPage title="MANIOBRAS" />} />
         <Route path="gastos-efectivo" element={<BlankPage title="GASTOS EFECTIVO" />} />
         <Route path="vacios" element={<BlankPage title="VACIOS" />} />
         <Route path="no-eco" element={<NoEcoPage />} />
