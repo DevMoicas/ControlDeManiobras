@@ -58,7 +58,7 @@ const ManiobrasPage = () => {
       <h1 className="maniobras-title">
         <Truck size={36} className="title-icon" /> Control de Maniobras
       </h1>
-      
+
       <div className="table-responsive">
         <table className="maniobras-table">
           <thead>
@@ -76,7 +76,7 @@ const ManiobrasPage = () => {
             {maniobras.length === 0 ? (
               <tr>
                 <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
-                   No hay maniobras registradas en el servidor
+                  No hay maniobras registradas en el servidor
                 </td>
               </tr>
             ) : (

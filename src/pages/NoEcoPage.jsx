@@ -7,6 +7,8 @@ export default function NoEcoPage() {
   const [data, setData] = useState([]);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [formData, setFormData] = useState({});
+  const [editando, setEditando] = useState(false);
+  const [registroEditando, setRegistroEditando] = useState(null);
 
   // Configuración de los campos para cada tabla
   const configFormularios = {
@@ -55,6 +57,14 @@ export default function NoEcoPage() {
     }
   };
 
+  // Carga los datos en el formulario y abre el modal
+  const iniciarEdicion = (item) => {
+    setEditando(true);
+    setRegistroEditando(item);
+    setFormData(item); // llena el formulario automáticamente
+    setModalAbierto(true);
+  };
+
   // Detecta lo que escribes en los inputs y lo guarda en el estado
   const handleInputChange = (e) => {
     setFormData({
@@ -68,25 +78,45 @@ export default function NoEcoPage() {
     e.preventDefault();
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/${vista}/`, {
-        method: "POST",
+      const url = editando
+        ? `http://127.0.0.1:8000/api/${vista}/${registroEditando.id}/`
+        : `http://127.0.0.1:8000/api/${vista}/`;
+
+      const method = editando ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       if (response.ok) {
-        const creado = await response.json();
-        setData([...data, creado]);
+        const resultado = await response.json();
+
+        if (editando) {
+          // Actualizar en la tabla
+          setData(data.map(item =>
+            item.id === registroEditando.id ? resultado : item
+          ));
+        } else {
+          // Crear nuevo
+          setData([...data, resultado]);
+        }
+
+        // Reset general
         setModalAbierto(false);
         setFormData({});
-        alert("Registro guardado con éxito");
+        setEditando(false);
+        setRegistroEditando(null);
+
+        alert(editando ? "Registro actualizado" : "Registro creado");
       } else {
         const errorData = await response.json();
-        console.error("Detalles del rechazo de Django:", errorData);
-        alert(`Django rechazó los datos: ${JSON.stringify(errorData)}`);
+        console.error(errorData);
+        alert("Error en la operación");
       }
     } catch (error) {
-      console.error("Error al agregar:", error);
+      console.error(error);
     }
   };
 
@@ -129,7 +159,15 @@ export default function NoEcoPage() {
       {/* Tabla Container */}
       <div className="table-container">
         <div className="add-button-container">
-          <button onClick={() => setModalAbierto(true)} className="btn-add">
+          <button
+            onClick={() => {
+              setFormData({});
+              setEditando(false);
+              setRegistroEditando(null);
+              setModalAbierto(true);
+            }}
+            className="btn-add"
+          >
             <span>+</span> Agregar Nuevo {nombresSingulares[vista] || "Registro"}
           </button>
         </div>
@@ -141,7 +179,7 @@ export default function NoEcoPage() {
                 Object.keys(data[0]).map((key) => (
                   <th key={key}>{key.replace('_', ' ')}</th>
                 ))}
-              {data.length > 0 && <th style={{ width: "120px", textAlign: "center" }}>Acciones</th>}
+              {data.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
             </tr>
           </thead>
           <tbody>
@@ -157,13 +195,28 @@ export default function NoEcoPage() {
                   {Object.values(item).map((val, i) => (
                     <td key={i}>{val}</td>
                   ))}
-                  <td style={{ textAlign: "center" }}>
-                    <button
-                      className="btn-delete"
-                      onClick={() => eliminarRegistro(item.id)}
-                    >
-                      Eliminar
-                    </button>
+                  <td>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        className="btn-delete"
+                        onClick={() => eliminarRegistro(item.id)}
+                      >
+                        Eliminar
+                      </button>
+                      <button
+                        onClick={() => iniciarEdicion(item)}
+                        style={{
+                          color: 'var(--primary-blue)',
+                          background: 'transparent',
+                          border: 'none',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          padding: '4px 8px'
+                        }}
+                      >
+                        Editar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -176,7 +229,9 @@ export default function NoEcoPage() {
       {modalAbierto && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2 className="modal-title">Agregar {nombresSingulares[vista]}</h2>
+            <h2 className="modal-title">
+              {editando ? "Editar" : "Agregar"} {nombresSingulares[vista]}
+            </h2>
 
             <form onSubmit={guardarNuevoRegistro}>
               {configFormularios[vista] && configFormularios[vista].map((campo) => (
@@ -198,7 +253,12 @@ export default function NoEcoPage() {
                 <button
                   type="button"
                   className="btn-cancel"
-                  onClick={() => { setModalAbierto(false); setFormData({}); }}
+                  onClick={() => {
+                    setModalAbierto(false);
+                    setFormData({});
+                    setEditando(false);
+                    setRegistroEditando(null);
+                  }}
                 >
                   Cancelar
                 </button>
