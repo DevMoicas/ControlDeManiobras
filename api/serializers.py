@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer
+from .models import Tracto, Remolque, Chofer, Maniobra
 
 class TractoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,3 +15,9 @@ class ChoferSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chofer
         fields = '__all__'
+
+# --- NUEVO SERIALIZER ---
+class ManiobraSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Maniobra
+        fields = ['id', 'solicita', 'agencia', 'codigo_pis', 'terminal', 'placas_pis', 'fecha_pis', 'horario']

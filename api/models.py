@@ -35,3 +35,20 @@ class Chofer(models.Model):
     class Meta:
         managed = False  # Esto le dice a Django: "Yo cree la tabla, no la toques"
         db_table = 'choferes'
+
+# --- NUEVO MODELO ---
+class Maniobra(models.Model):
+    solicita = models.CharField(max_length=255, null=True, blank=True)
+    agencia = models.CharField(max_length=255, null=True, blank=True)
+    codigo_pis = models.CharField(max_length=100, null=True, blank=True)
+    terminal = models.CharField(max_length=100, null=True, blank=True)
+    placas_pis = models.CharField(max_length=100, null=True, blank=True)
+    fecha_pis = models.CharField(max_length=50, null=True, blank=True)
+    horario = models.CharField(max_length=50, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.solicita} - {self.codigo_pis}"
+
+    class Meta:
+        managed = False  # Para que use tu tabla de pgAdmin
+        db_table = 'maniobras'
