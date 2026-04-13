@@ -16,5 +16,5 @@ class ChoferViewSet(viewsets.ModelViewSet):
 
 # --- NUEVA VISTA ---
 class ManiobraViewSet(viewsets.ModelViewSet):
-    queryset = Maniobra.objects.all()
+    queryset = Maniobra.objects.all().order_by('-id')
     serializer_class = ManiobraSerializer
