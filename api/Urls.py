@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 # Agregamos ManiobraViewSet al final de esta línea:
-from .views import TractoViewSet, RemolqueViewSet, ChoferViewSet, ManiobraViewSet
+from .Views import TractoViewSet, RemolqueViewSet, ChoferViewSet, ManiobraViewSet
 
 router = DefaultRouter()
 router.register(r'tractos', TractoViewSet, basename='tractos')

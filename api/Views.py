@@ -1,6 +1,6 @@
 from rest_framework import viewsets
-from .models import Tracto, Remolque, Chofer, Maniobra
-from .serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer
+from .Models import Tracto, Remolque, Chofer, Maniobra
+from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer
 
 class TractoViewSet(viewsets.ModelViewSet):
     queryset = Tracto.objects.all()

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra
+from .Models import Tracto, Remolque, Chofer, Maniobra
 
 class TractoSerializer(serializers.ModelSerializer):
     class Meta:
