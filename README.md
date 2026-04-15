@@ -1,6 +1,6 @@
-# Control de Maniobras
+# Desarrollo del entorno tecnológico para FRABA CONTAINER
 
-Este repositorio reúne el trabajo del proyecto **Control de Maniobras** en tres ramas principales. La intención de este README es dar contexto general sobre qué parte del sistema se está construyendo en cada rama y qué tecnologías se están usando, sin entrar todavía en el funcionamiento detallado.
+Este repositorio reúne el trabajo del proyecto **Desarrollo del entorno tecnológico para FRABA CONTAINER** en tres ramas principales. La intención de este README es dar contexto general sobre qué parte del sistema se está construyendo en cada rama y qué tecnologías se están usando, sin entrar todavía en el funcionamiento detallado.
 
 ## Contexto general
 
