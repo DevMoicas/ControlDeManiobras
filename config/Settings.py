@@ -57,6 +57,31 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
+
+# Headers de seguridad
+SECURE_CONTENT_TYPE_NOSNIFF = True   # X-Content-Type-Options: nosniff
+X_FRAME_OPTIONS = "DENY"             # X-Frame-Options: DENY
+SECURE_BROWSER_XSS_FILTER = True     # X-XSS-Protection
+
+# CORS - permite peticiones desde tu frontend
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+REST_FRAMEWORK = {
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",   # usuarios sin login
+        "rest_framework.throttling.UserRateThrottle",   # usuarios autenticados
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "30/minute",   # máximo 30 peticiones por minuto sin login
+        "user": "100/minute",  # máximo 100 peticiones por minuto con login
+    }
+}
+
+
 ROOT_URLCONF = 'config.Urls'
 
 TEMPLATES = [
