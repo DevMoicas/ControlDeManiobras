@@ -135,3 +135,32 @@
     opacity: .5;
   }
 }
+
+/* Notificación */
+.notif           { padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; font-weight: 600; }
+.notif-ok        { background: #d1fae5; color: #065f46; }
+.notif-error     { background: #fee2e2; color: #991b1b; }
+
+/* Toolbar */
+.toolbar         { display: flex; justify-content: flex-end; margin-bottom: 15px; }
+.btn-agregar     { background: #2563eb; color: white; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+.btn-agregar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Botones icono */
+.btn-icon        { background: transparent; border: none; cursor: pointer; padding: 6px; border-radius: 50%; transition: background 0.2s; }
+.btn-editar      { color: #2563eb; }
+.btn-editar:hover  { background: #eff6ff; }
+.btn-eliminar    { color: #ef4444; }
+.btn-eliminar:hover { background: #fef2f2; }
+
+/* Modal */
+.modal-overlay   { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+.modal-content   { background: white; padding: 30px; border-radius: 12px; width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); color: #333; }
+.modal-titulo    { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+.modal-form      { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; }
+.modal-campo     { display: flex; flex-direction: column; gap: 4px; }
+.modal-campo label { font-size: 12px; font-weight: bold; color: #666; }
+.modal-campo input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+.modal-acciones  { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.btn-cancelar    { padding: 8px 15px; border-radius: 6px; border: none; background: #e5e7eb; cursor: pointer; }
+.btn-guardar     { padding: 8px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; }
