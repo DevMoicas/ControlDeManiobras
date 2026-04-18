@@ -33,7 +33,9 @@ class ManiobraSerializer(serializers.ModelSerializer):
         limites = {
             "solicita": 100, "agencia": 100,
             "terminal": 100, "placas_pis": 20,
-            "horario": 50,
+            "horario": 50, "cliente": 100, 
+            "origen": 100, "destino": 100, 
+            "asignacion_operador": 100,
         }
         for campo, limite in limites.items():
             if campo in data and len(str(data[campo])) > limite:
