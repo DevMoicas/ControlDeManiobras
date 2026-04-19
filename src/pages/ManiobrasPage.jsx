@@ -3,22 +3,29 @@ import { Trash2, ArrowDown, Truck } from "lucide-react";
 import { useManiobras } from "../hooks/useManiobras";
 import "./ManiobrasPage.css";
 
-// ── Configuración de columnas ────────────────────────────────────────────────
-// Para añadir un campo nuevo: agrégalo aquí y en el backend. Nada más.
 
 const COLUMNAS = [
-  { key: "solicita",   label: "Solicita"    },
-  { key: "agencia",    label: "Agencia"     },
+  { key: "solicita", label: "Solicita" },
+  { key: "agencia", label: "Agencia" },
   { key: "codigo_pis", label: "Código PIS", style: { color: "var(--primary-blue)", fontWeight: "bold", fontFamily: "monospace" } },
-  { key: "terminal",   label: "Terminal"    },
+  { key: "terminal", label: "Terminal" },
   { key: "placas_pis", label: "Placas PIS" },
-  { key: "fecha_pis",  label: "Fecha PIS"  },
-  { key: "horario",    label: "Horario"     },
+  { key: "fecha_pis", label: "Fecha PIS" },
+  { key: "horario", label: "Horario" },
+  { key: "tipo_peso", label: "Tipo y Peso" },
+  { key: "contenedor", label: "Contenedor" },
+  { key: "pedimento", label: "Pedimento" },
+  { key: "cliente", label: "Cliente" },
+  { key: "origen", label: "Origen" },
+  { key: "destino", label: "Destino" },
+  { key: "asignacion_operador", label: "Operador/Status" },
 ];
 
 const MANIOBRA_VACIA = {
   solicita: "", agencia: "", codigo_pis: "",
   terminal: "", placas_pis: "", fecha_pis: "", horario: "",
+  tipo_peso: "", contenedor: "", pedimento: "", cliente: "",
+  origen: "", destino: "", asignacion_operador: ""
 };
 
 const MODAL_CERRADO = { abierto: false, datos: null };
@@ -39,8 +46,10 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
         </td>
       ))}
       <td>
-        <button className="btn-accion btn-guardar-fila" onClick={onGuardar}>Guardar</button>
-        <button className="btn-accion btn-cancelar-fila" onClick={onCancelar}>Cancelar</button>
+        <div style={{ display: "flex", gap: "4px" }}>
+          <button className="btn-accion btn-guardar-fila" onClick={onGuardar}>Guardar</button>
+          <button className="btn-accion btn-cancelar-fila" onClick={onCancelar}>Cancelar</button>
+        </div>
       </td>
     </tr>
   );
@@ -49,7 +58,6 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
 // ── Sub-componente: modal de edición ─────────────────────────────────────────
 
 function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
-  // Cierra con Escape
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onCerrar(); };
     window.addEventListener("keydown", onKey);
@@ -68,16 +76,18 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
         <h2 id="modal-titulo" className="modal-titulo">Editar Maniobra</h2>
 
         <form onSubmit={onGuardar} className="modal-form">
-          {COLUMNAS.map((col) => (
-            <div key={col.key} className="modal-campo">
-              <label htmlFor={`edit-${col.key}`}>{col.label}</label>
-              <input
-                id={`edit-${col.key}`}
-                value={datos[col.key] ?? ""}
-                onChange={(e) => onChange(col.key, e.target.value)}
-              />
-            </div>
-          ))}
+          <div className="modal-grid"> {/* Sugerencia: añadir una clase grid en CSS para manejar tantos campos */}
+            {COLUMNAS.map((col) => (
+              <div key={col.key} className="modal-campo">
+                <label htmlFor={`edit-${col.key}`}>{col.label}</label>
+                <input
+                  id={`edit-${col.key}`}
+                  value={datos[col.key] ?? ""}
+                  onChange={(e) => onChange(col.key, e.target.value)}
+                />
+              </div>
+            ))}
+          </div>
 
           <div className="modal-acciones">
             <button type="button" className="btn-cancelar" onClick={onCerrar}>
@@ -101,16 +111,13 @@ export default function ManiobrasPage() {
   const [modoAgregar, setModoAgregar] = useState(false);
   const [nuevaManiobra, setNuevaManiobra] = useState(MANIOBRA_VACIA);
   const [modal, setModal] = useState(MODAL_CERRADO);
-  const [notif, setNotif] = useState(null); // { tipo: "ok"|"error", msg }
+  const [notif, setNotif] = useState(null);
 
-  // Auto-dismiss notificación
   useEffect(() => {
     if (!notif) return;
     const t = setTimeout(() => setNotif(null), 3000);
     return () => clearTimeout(t);
   }, [notif]);
-
-  // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleEliminar = useCallback(async (id) => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar esta maniobra?")) return;
@@ -161,8 +168,6 @@ export default function ManiobrasPage() {
     setNuevaManiobra(MANIOBRA_VACIA);
   }, []);
 
-  // ── Estados de carga / error ───────────────────────────────────────────────
-
   if (loading) return (
     <div className="maniobras-container">
       <h1 className="maniobras-title"><Truck size={36} className="title-icon" /> Control de Maniobras</h1>
@@ -180,22 +185,18 @@ export default function ManiobrasPage() {
     </div>
   );
 
-  // ── Render principal ───────────────────────────────────────────────────────
-
   return (
     <div className="maniobras-container">
       <h1 className="maniobras-title">
         <Truck size={36} className="title-icon" /> Control de Maniobras
       </h1>
 
-      {/* Notificación no bloqueante */}
       {notif && (
         <div className={`notif notif-${notif.tipo}`} role="alert">
           {notif.msg}
         </div>
       )}
 
-      {/* Botón agregar */}
       <div className="toolbar">
         <button className="btn-agregar" onClick={() => setModoAgregar(true)} disabled={modoAgregar}>
           + Agregar Registro
@@ -211,8 +212,6 @@ export default function ManiobrasPage() {
             </tr>
           </thead>
           <tbody>
-
-            {/* Fila editable inline */}
             {modoAgregar && (
               <FilaNueva
                 datos={nuevaManiobra}
@@ -222,11 +221,10 @@ export default function ManiobrasPage() {
               />
             )}
 
-            {/* Sin registros */}
             {maniobras.length === 0 ? (
               <tr>
                 <td colSpan={COLUMNAS.length + 1}
-                    style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}>
+                  style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}>
                   No hay maniobras registradas en el servidor
                 </td>
               </tr>
@@ -265,7 +263,6 @@ export default function ManiobrasPage() {
         </table>
       </div>
 
-      {/* Modal edición */}
       {modal.abierto && modal.datos && (
         <ModalEditar
           datos={modal.datos}
