@@ -3,6 +3,7 @@ import { Home as HomeIcon } from 'lucide-react';
 import './App.css';
 import NoEcoPage from './pages/NoEcoPage';
 import ManiobrasPage from './pages/ManiobrasPage';
+import AdministracionNoEco from './pages/AdministracionNoEco';
 
 // Componente Home (El panel de botones)
 function Home() {
@@ -70,6 +71,7 @@ function App() {
         <Route path="gastos-efectivo" element={<BlankPage title="GASTOS EFECTIVO" />} />
         <Route path="vacios" element={<BlankPage title="VACIOS" />} />
         <Route path="no-eco" element={<NoEcoPage />} />
+        <Route path="admin-no-eco" element={<AdministracionNoEco />} />
       </Routes>
     </>
   );
