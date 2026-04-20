@@ -71,6 +71,9 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",   # usuarios sin login
         "rest_framework.throttling.UserRateThrottle",   # usuarios autenticados
@@ -108,9 +111,9 @@ WSGI_APPLICATION = 'config.Wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'fraba_erp'),
+        'NAME': os.getenv('DB_NAME', 'fraba'),
         'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'elastaxd'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'nono3080'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
