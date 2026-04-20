@@ -12,20 +12,20 @@ const COLUMNAS = [
   { key: "placas_pis", label: "Placas PIS" },
   { key: "fecha_pis", label: "Fecha PIS" },
   { key: "horario", label: "Horario" },
-  { key: "tipo_peso", label: "Tipo y Peso" },
+  { key: "tipo_y_peso", label: "Tipo y Peso" },
   { key: "contenedor", label: "Contenedor" },
   { key: "pedimento", label: "Pedimento" },
   { key: "cliente", label: "Cliente" },
   { key: "origen", label: "Origen" },
   { key: "destino", label: "Destino" },
-  { key: "asignacion_operador", label: "Operador/Status" },
+  { key: "asignacion_operador_status", label: "Operador/Status" },
 ];
 
 const MANIOBRA_VACIA = {
   solicita: "", agencia: "", codigo_pis: "",
   terminal: "", placas_pis: "", fecha_pis: "", horario: "",
-  tipo_peso: "", contenedor: "", pedimento: "", cliente: "",
-  origen: "", destino: "", asignacion_operador: ""
+  tipo_y_peso: "", contenedor: "", pedimento: "", cliente: "",
+  origen: "", destino: "", asignacion_operador_status: ""
 };
 
 const MODAL_CERRADO = { abierto: false, datos: null };

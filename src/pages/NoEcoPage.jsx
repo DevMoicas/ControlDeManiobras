@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
 import { Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuthContext } from "../context/AuthContext";
 import "./NoEcoPage.css";
 
 export default function NoEcoPage() {
+  const navigate = useNavigate();
+  const { isAdmin } = useAuthContext();
+
   const [vista, setVista] = useState("tractos");
   const [data, setData] = useState([]);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -10,7 +15,6 @@ export default function NoEcoPage() {
   const [editando, setEditando] = useState(false);
   const [registroEditando, setRegistroEditando] = useState(null);
 
-  // Configuración de los campos para cada tabla
   const configFormularios = {
     tractos: [
       { name: "no_eco", label: "No. Eco", type: "text" },
@@ -30,7 +34,6 @@ export default function NoEcoPage() {
     ]
   };
 
-  // 🔥 Fetch dinámico según vista
   useEffect(() => {
     fetch(`http://127.0.0.1:8000/api/${vista}`)
       .then(res => res.json())
@@ -44,7 +47,6 @@ export default function NoEcoPage() {
         const response = await fetch(`http://127.0.0.1:8000/api/${vista}/${id}/`, {
           method: 'DELETE',
         });
-
         if (response.ok) {
           setData(data.filter(item => item.id !== id));
           alert("Eliminado con éxito");
@@ -57,62 +59,42 @@ export default function NoEcoPage() {
     }
   };
 
-  // Carga los datos en el formulario y abre el modal
   const iniciarEdicion = (item) => {
     setEditando(true);
     setRegistroEditando(item);
-    setFormData(item); // llena el formulario automáticamente
+    setFormData(item);
     setModalAbierto(true);
   };
 
-  // Detecta lo que escribes en los inputs y lo guarda en el estado
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Envía el formulario a Django
   const guardarNuevoRegistro = async (e) => {
     e.preventDefault();
-
     try {
       const url = editando
         ? `http://127.0.0.1:8000/api/${vista}/${registroEditando.id}/`
         : `http://127.0.0.1:8000/api/${vista}/`;
 
-      const method = editando ? "PUT" : "POST";
-
       const response = await fetch(url, {
-        method: method,
+        method: editando ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       if (response.ok) {
         const resultado = await response.json();
-
-        if (editando) {
-          // Actualizar en la tabla
-          setData(data.map(item =>
-            item.id === registroEditando.id ? resultado : item
-          ));
-        } else {
-          // Crear nuevo
-          setData([...data, resultado]);
-        }
-
-        // Reset general
+        setData(editando
+          ? data.map(item => item.id === registroEditando.id ? resultado : item)
+          : [...data, resultado]
+        );
         setModalAbierto(false);
         setFormData({});
         setEditando(false);
         setRegistroEditando(null);
-
         alert(editando ? "Registro actualizado" : "Registro creado");
       } else {
-        const errorData = await response.json();
-        console.error(errorData);
         alert("Error en la operación");
       }
     } catch (error) {
@@ -128,9 +110,24 @@ export default function NoEcoPage() {
 
   return (
     <div className="noeco-container">
-      <h1 className="noeco-title">
-        <Settings size={36} color="var(--primary-blue)" /> NO. ECO
-      </h1>
+
+      {/* ── Header con título y botón admin ── */}
+      <div className="noeco-header">
+        <h1 className="noeco-title">
+          <Settings size={36} color="var(--primary-blue)" /> NO. ECO
+        </h1>
+
+        {/* Solo visible para administradores */}
+        {isAdmin && (
+          <button
+            className="noeco-admin-btn"
+            onClick={() => navigate("../admin-no-eco")}
+            type="button"
+          >
+            ⚙ Admin NoEco
+          </button>
+        )}
+      </div>
 
       {/* Tabs */}
       <div className="tabs">
@@ -140,14 +137,12 @@ export default function NoEcoPage() {
         >
           Tractos
         </button>
-
         <button
           className={`tab-button ${vista === "remolques" ? "active" : ""}`}
           onClick={() => setVista("remolques")}
         >
           Remolques
         </button>
-
         <button
           className={`tab-button ${vista === "choferes" ? "active" : ""}`}
           onClick={() => setVista("choferes")}
@@ -156,7 +151,7 @@ export default function NoEcoPage() {
         </button>
       </div>
 
-      {/* Tabla Container */}
+      {/* Tabla */}
       <div className="table-container">
         <div className="add-button-container">
           <button
@@ -190,17 +185,14 @@ export default function NoEcoPage() {
                 </td>
               </tr>
             ) : (
-              data.map((item, index) => (
-                <tr key={index}>
+              data.map((item) => (
+                <tr key={item.id}>
                   {Object.values(item).map((val, i) => (
                     <td key={i}>{val}</td>
                   ))}
                   <td>
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
-                      <button
-                        className="btn-delete"
-                        onClick={() => eliminarRegistro(item.id)}
-                      >
+                      <button className="btn-delete" onClick={() => eliminarRegistro(item.id)}>
                         Eliminar
                       </button>
                       <button
@@ -215,7 +207,7 @@ export default function NoEcoPage() {
                         }}
                       >
                         Editar
-                      </button>
+      </button>
                     </div>
                   </td>
                 </tr>
@@ -225,16 +217,15 @@ export default function NoEcoPage() {
         </table>
       </div>
 
-      {/* Modal Premium */}
+      {/* Modal */}
       {modalAbierto && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h2 className="modal-title">
               {editando ? "Editar" : "Agregar"} {nombresSingulares[vista]}
             </h2>
-
             <form onSubmit={guardarNuevoRegistro}>
-              {configFormularios[vista] && configFormularios[vista].map((campo) => (
+              {configFormularios[vista]?.map((campo) => (
                 <div key={campo.name} className="form-group">
                   <label>{campo.label}</label>
                   <input
@@ -248,7 +239,6 @@ export default function NoEcoPage() {
                   />
                 </div>
               ))}
-
               <div className="modal-actions">
                 <button
                   type="button"
@@ -262,10 +252,7 @@ export default function NoEcoPage() {
                 >
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  className="btn-save"
-                >
+                <button type="submit" className="btn-save">
                   Guardar
                 </button>
               </div>
