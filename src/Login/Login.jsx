@@ -3,13 +3,28 @@ import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [usuario, setUsuario] = useState('');
+  const [username, setUsuario] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Aquí puedes poner una validación simple si quieres
-    navigate('/home'); 
+    const res = await fetch("http://localhost:8000/api/login/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username, password }),
+  });
+
+  const data = await res.json();
+
+  if (res.ok) {
+    localStorage.setItem("token", data.access);
+    // redirección
+    navigate('/home');
+    } else {
+    console.log("Error en login");
+    }
   };
 
   return (
@@ -22,6 +37,7 @@ const LoginPage = () => {
             <input 
               type="text"
               required
+              value={username}
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               placeholder="Introduce tu usuario"
               onChange={(e) => setUsuario(e.target.value)}
@@ -32,6 +48,7 @@ const LoginPage = () => {
             <input 
               type="password"
               required
+              value={password}
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               placeholder="••••••••"
               onChange={(e) => setPassword(e.target.value)}
