@@ -47,13 +47,13 @@ class Maniobra(models.Model):
     horario = models.CharField(max_length=50, null=True, blank=True)
     
     # Nuevos campos agregados
-    tipo_peso = models.CharField(max_length=255, null=True, blank=True)
+    tipo_y_peso = models.CharField(max_length=255, null=True, blank=True)
     contenedor = models.CharField(max_length=255, null=True, blank=True)
     pedimento = models.CharField(max_length=255, null=True, blank=True)
     cliente = models.CharField(max_length=100, null=True, blank=True)
     origen = models.CharField(max_length=100, null=True, blank=True)
     destino = models.CharField(max_length=100, null=True, blank=True)
-    asignacion_operador = models.CharField(max_length=100, null=True, blank=True)
+    asignacion_operador_status = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
         return f"{self.solicita} - {self.codigo_pis}"

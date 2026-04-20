@@ -1,5 +1,8 @@
 from rest_framework import serializers
 from .Models import Tracto, Remolque, Chofer, Maniobra
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import Token
+
 
 class TractoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -43,3 +46,19 @@ class ManiobraSerializer(serializers.ModelSerializer):
                     {campo: f"Máximo {limite} caracteres permitidos."}
                 )
         return data
+    
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Inyecta el rol del usuario dentro del payload del JWT.
+    """
+ 
+    @classmethod
+    def get_token(cls, user) -> Token:
+        token = super().get_token(user)
+ 
+        # Solo claims no sensibles
+        token["username"] = user.username
+        token["role"] = "admin" if user.is_staff else "standard"
+ 
+        return token
+ 
