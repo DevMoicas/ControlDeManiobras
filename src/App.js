@@ -1,17 +1,16 @@
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Home as HomeIcon } from 'lucide-react';
 import './App.css';
+import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import NoEcoPage from './pages/NoEcoPage';
 import ManiobrasPage from './pages/ManiobrasPage';
+import AdministracionNoEco from './pages/AdministracionNoEco';
 
-// Componente Home (El panel de botones)
 function Home() {
   const navigate = useNavigate();
-
   return (
     <div className="home-container">
       <div className="buttons-grid">
-        {/* Usamos las rutas relativas para que coincidan con el index.js */}
         <button onClick={() => navigate('maniobras')}>MANIOBRAS</button>
         <button onClick={() => navigate('gastos-efectivo')}>GASTOS EFECTIVO</button>
         <button onClick={() => navigate('vacios')}>VACIOS</button>
@@ -21,7 +20,6 @@ function Home() {
   );
 }
 
-// Componente para páginas vacías
 function BlankPage({ title }) {
   return (
     <div className="blank-page">
@@ -30,21 +28,17 @@ function BlankPage({ title }) {
   );
 }
 
-// COMPONENTE PRINCIPAL APP
-// IMPORTANTE: Quitamos la etiqueta <Router> de aquí porque ya está en index.js
-// COMPONENTE PRINCIPAL APP
-function App() {
+function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Validar si el path no es exactamente el home de App ('/home' o '/home/')
   const showBackButton = location.pathname !== '/home' && location.pathname !== '/home/';
 
   return (
     <>
       {showBackButton && (
-        <button 
-          onClick={() => navigate('/home')} 
+        <button
+          onClick={() => navigate('/home')}
           style={{
             position: 'absolute',
             top: '5px',
@@ -70,9 +64,19 @@ function App() {
         <Route path="gastos-efectivo" element={<BlankPage title="GASTOS EFECTIVO" />} />
         <Route path="vacios" element={<BlankPage title="VACIOS" />} />
         <Route path="no-eco" element={<NoEcoPage />} />
+
+        {/* Ruta protegida — solo administradores */}
+        <Route
+          path="admin-no-eco"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdministracionNoEco />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </>
   );
 }
 
-export default App; 
+export default AppRoutes;

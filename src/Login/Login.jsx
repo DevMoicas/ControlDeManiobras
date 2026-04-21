@@ -1,16 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthContext } from '../context/AuthContext';
+
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [usuario, setUsuario] = useState('');
+  const { login } = useAuthContext();
+  const [username, setUsuario] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e) => {
+   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Aquí puedes poner una validación simple si quieres
-    navigate('/home'); 
+    try {
+      await login(username, password); // <- reemplaza el fetch + localStorage
+      console.log("User después del login:", await login(username, password));
+      navigate('/home');
+    } catch (err) {
+      console.log("Error en login:", err.message);
+    }
   };
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-900">
@@ -22,6 +31,7 @@ const LoginPage = () => {
             <input 
               type="text"
               required
+              value={username}
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               placeholder="Introduce tu usuario"
               onChange={(e) => setUsuario(e.target.value)}
@@ -32,6 +42,7 @@ const LoginPage = () => {
             <input 
               type="password"
               required
+              value={password}
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               placeholder="••••••••"
               onChange={(e) => setPassword(e.target.value)}
