@@ -30,7 +30,7 @@ export const STATUS_MAP = Object.freeze({
     label:      "Activo / En viaje",
     rowClass:   "row-status--activo",
     badgeClass: "badge-status--activo",
-    color:      "#64f198",
+    color:      "#c6e5b1",
     emoji:      "🟢",
   }),
   pendiente: Object.freeze({
@@ -38,7 +38,7 @@ export const STATUS_MAP = Object.freeze({
     label:      "Pendiente",
     rowClass:   "row-status--pendiente",
     badgeClass: "badge-status--pendiente",
-    color:      "#6c98f7",
+    color:      "#96c6e0",
     emoji:      "🔵",
   }),
   quemada: Object.freeze({
@@ -46,7 +46,7 @@ export const STATUS_MAP = Object.freeze({
     label:      "Quemada",
     rowClass:   "row-status--quemada",
     badgeClass: "badge-status--quemada",
-    color:      "#f35c5c",
+    color:      "#ff6961",
     emoji:      "🔴",
   }),
   por_salir: Object.freeze({
@@ -54,7 +54,7 @@ export const STATUS_MAP = Object.freeze({
     label:      "Por salir",
     rowClass:   "row-status--por-salir",
     badgeClass: "badge-status--por-salir",
-    color:      "#a782e7",
+    color:      "#c7b0d4",
     emoji:      "🟣",
   }),
 });

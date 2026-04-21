@@ -121,7 +121,7 @@
 }
 
 /* ── Dots con color del background de la fila correspondiente ── */
-.badge-status--activo    .status-selector__dot { background-color: #16a34a; }
-.badge-status--pendiente .status-selector__dot { background-color: #2563eb; }
-.badge-status--quemada   .status-selector__dot { background-color: #dc2626; }
-.badge-status--por-salir .status-selector__dot { background-color: #7c3aed; }
+.badge-status--activo    .status-selector__dot { background-color: #c6e5b1; }
+.badge-status--pendiente .status-selector__dot { background-color: #96c6e0; }
+.badge-status--quemada   .status-selector__dot { background-color: #ff6961; }
+.badge-status--por-salir .status-selector__dot { background-color: #c7b0d4; }

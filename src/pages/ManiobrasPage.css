@@ -234,7 +234,7 @@
 
 /* Activo / En viaje → verde suave */
 .maniobras-table tbody tr.row-status--activo {
-  background-color: #81e7a0;
+  background-color: #c6e5b1;
 }
 .maniobras-table tbody tr.row-status--activo:hover {
   background-color: #8cecae;
@@ -242,7 +242,7 @@
 
 /* Pendiente → azul suave */
 .maniobras-table tbody tr.row-status--pendiente {
-  background-color: #6d9ddb;
+  background-color: #96c6e0;
 }
 .maniobras-table tbody tr.row-status--pendiente:hover {
   background-color: #72a5e7;
@@ -250,7 +250,7 @@
 
 /* Quemada → rojo suave */
 .maniobras-table tbody tr.row-status--quemada {
-  background-color: #e97f7f;
+  background-color: #ff6961;
 }
 .maniobras-table tbody tr.row-status--quemada:hover {
   background-color: #e28e8e;
@@ -258,7 +258,7 @@
 
 /* Por salir → morado suave */
 .maniobras-table tbody tr.row-status--por-salir {
-  background-color: #ae80db;
+  background-color: #c7b0d4;
 }
 .maniobras-table tbody tr.row-status--por-salir:hover {
   background-color: #9281df;

@@ -13,7 +13,6 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       await login(username, password); // <- reemplaza el fetch + localStorage
-      console.log("User después del login:", await login(username, password));
       navigate('/home');
     } catch (err) {
       console.log("Error en login:", err.message);
