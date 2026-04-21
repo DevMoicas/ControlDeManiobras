@@ -55,6 +55,22 @@ class Maniobra(models.Model):
     destino = models.CharField(max_length=100, null=True, blank=True)
     asignacion_operador_status = models.CharField(max_length=100, null=True, blank=True)
 
+    STATUS_CHOICES = [
+        ("activo",    "Activo / En viaje"),
+        ("pendiente", "Pendiente"),
+        ("quemada",   "Quemada"),
+        ("por_salir", "Por salir"),
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        null=True,
+        blank=True,
+        db_index=True,   # permite filtrar por status eficientemente en el futuro dashboard
+    )
+
+    
+
     def __str__(self):
         return f"{self.solicita} - {self.codigo_pis}"
 

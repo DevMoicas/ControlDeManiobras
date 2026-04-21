@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from .Models import Tracto, Remolque, Chofer, Maniobra
+from .models import Tracto, Remolque, Chofer, Maniobra
 from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView

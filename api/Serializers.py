@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .Models import Tracto, Remolque, Chofer, Maniobra
+from .models import Tracto, Remolque, Chofer, Maniobra
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
 
