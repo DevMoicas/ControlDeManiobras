@@ -1,36 +1,40 @@
 import { useState, useEffect, useCallback } from "react";
 import { Trash2, ArrowDown, Truck } from "lucide-react";
 import { useManiobras } from "../hooks/useManiobras";
+import { useStatusUpdate } from "../hooks/useStatusUpdate";
+import { getStatusConfig } from "../config/statusConfig";
+import StatusSelector from "../components/StatusSelector/StatusSelector";
 import "./ManiobrasPage.css";
 
+// ── Constantes ────────────────────────────────────────────────────────────────
 
 const COLUMNAS = [
-  { key: "solicita", label: "Solicita" },
-  { key: "agencia", label: "Agencia" },
-  { key: "codigo_pis", label: "Código PIS", style: { color: "var(--primary-blue)", fontWeight: "bold", fontFamily: "monospace" } },
-  { key: "terminal", label: "Terminal" },
-  { key: "placas_pis", label: "Placas PIS" },
-  { key: "fecha_pis", label: "Fecha PIS" },
-  { key: "horario", label: "Horario" },
-  { key: "tipo_y_peso", label: "Tipo y Peso" },
-  { key: "contenedor", label: "Contenedor" },
-  { key: "pedimento", label: "Pedimento" },
-  { key: "cliente", label: "Cliente" },
-  { key: "origen", label: "Origen" },
-  { key: "destino", label: "Destino" },
-  { key: "asignacion_operador_status", label: "Operador/Status" },
+  { key: "solicita",                    label: "Solicita" },
+  { key: "agencia",                     label: "Agencia" },
+  { key: "codigo_pis",                  label: "Código PIS",
+    style: { color: "var(--primary-blue)", fontWeight: "bold", fontFamily: "monospace" } },
+  { key: "terminal",                    label: "Terminal" },
+  { key: "placas_pis",                  label: "Placas PIS" },
+  { key: "fecha_pis",                   label: "Fecha PIS" },
+  { key: "horario",                     label: "Horario" },
+  { key: "tipo_y_peso",                 label: "Tipo y Peso" },
+  { key: "contenedor",                  label: "Contenedor" },
+  { key: "pedimento",                   label: "Pedimento" },
+  { key: "cliente",                     label: "Cliente" },
+  { key: "origen",                      label: "Origen" },
+  { key: "destino",                     label: "Destino" },
+  { key: "asignacion_operador_status",  label: "Operador" },
 ];
 
 const MANIOBRA_VACIA = {
-  solicita: "", agencia: "", codigo_pis: "",
-  terminal: "", placas_pis: "", fecha_pis: "", horario: "",
-  tipo_y_peso: "", contenedor: "", pedimento: "", cliente: "",
-  origen: "", destino: "", asignacion_operador_status: ""
+  solicita: "", agencia: "", codigo_pis: "", terminal: "", placas_pis: "",
+  fecha_pis: "", horario: "", tipo_y_peso: "", contenedor: "", pedimento: "",
+  cliente: "", origen: "", destino: "", asignacion_operador_status: "",
 };
 
 const MODAL_CERRADO = { abierto: false, datos: null };
 
-// ── Sub-componente: fila de inputs para nueva maniobra ───────────────────────
+// ── Sub-componente: fila de inputs para nueva maniobra ────────────────────────
 
 function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
   return (
@@ -45,6 +49,8 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
           />
         </td>
       ))}
+      {/* Columna status vacía en fila nueva */}
+      <td />
       <td>
         <div style={{ display: "flex", gap: "4px" }}>
           <button className="btn-accion btn-guardar-fila" onClick={onGuardar}>Guardar</button>
@@ -55,7 +61,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
   );
 }
 
-// ── Sub-componente: modal de edición ─────────────────────────────────────────
+// ── Sub-componente: modal de edición ──────────────────────────────────────────
 
 function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
   useEffect(() => {
@@ -74,9 +80,8 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
     >
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <h2 id="modal-titulo" className="modal-titulo">Editar Maniobra</h2>
-
         <form onSubmit={onGuardar} className="modal-form">
-          <div className="modal-grid"> {/* Sugerencia: añadir una clase grid en CSS para manejar tantos campos */}
+          <div className="modal-grid">
             {COLUMNAS.map((col) => (
               <div key={col.key} className="modal-campo">
                 <label htmlFor={`edit-${col.key}`}>{col.label}</label>
@@ -88,7 +93,6 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
               </div>
             ))}
           </div>
-
           <div className="modal-acciones">
             <button type="button" className="btn-cancelar" onClick={onCerrar}>
               Cancelar
@@ -103,21 +107,25 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
   );
 }
 
-// ── Componente principal ─────────────────────────────────────────────────────
+// ── Componente principal ──────────────────────────────────────────────────────
 
 export default function ManiobrasPage() {
-  const { maniobras, loading, error, eliminar, actualizar, agregar } = useManiobras();
+  const { maniobras, setManiobras, loading, error, eliminar, actualizar, agregar } = useManiobras();
+  const { updatingId, updateStatus } = useStatusUpdate(setManiobras);
 
-  const [modoAgregar, setModoAgregar] = useState(false);
+  const [modoAgregar, setModoAgregar]     = useState(false);
   const [nuevaManiobra, setNuevaManiobra] = useState(MANIOBRA_VACIA);
-  const [modal, setModal] = useState(MODAL_CERRADO);
-  const [notif, setNotif] = useState(null);
+  const [modal, setModal]                 = useState(MODAL_CERRADO);
+  const [notif, setNotif]                 = useState(null);
 
+  // ── Auto-dismiss de notificaciones ──────────────────────────────────────────
   useEffect(() => {
     if (!notif) return;
     const t = setTimeout(() => setNotif(null), 3000);
     return () => clearTimeout(t);
   }, [notif]);
+
+  // ── Handlers CRUD ────────────────────────────────────────────────────────────
 
   const handleEliminar = useCallback(async (id) => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar esta maniobra?")) return;
@@ -168,6 +176,19 @@ export default function ManiobrasPage() {
     setNuevaManiobra(MANIOBRA_VACIA);
   }, []);
 
+  // ── Handler de cambio de status ──────────────────────────────────────────────
+
+  const handleStatusChange = useCallback(async (maniobra, newStatus) => {
+    try {
+      await updateStatus(maniobra, newStatus);
+      setNotif({ tipo: "ok", msg: "Status actualizado." });
+    } catch (err) {
+      setNotif({ tipo: "error", msg: `Error al cambiar status: ${err.message}` });
+    }
+  }, [updateStatus]);
+
+  // ── Estados de carga / error ─────────────────────────────────────────────────
+
   if (loading) return (
     <div className="maniobras-container">
       <h1 className="maniobras-title"><Truck size={36} className="title-icon" /> Control de Maniobras</h1>
@@ -185,6 +206,8 @@ export default function ManiobrasPage() {
     </div>
   );
 
+  // ── Render principal ─────────────────────────────────────────────────────────
+
   return (
     <div className="maniobras-container">
       <h1 className="maniobras-title">
@@ -192,13 +215,17 @@ export default function ManiobrasPage() {
       </h1>
 
       {notif && (
-        <div className={`notif notif-${notif.tipo}`} role="alert">
+        <div className={`notif notif-${notif.tipo}`} role="alert" aria-live="polite">
           {notif.msg}
         </div>
       )}
 
       <div className="toolbar">
-        <button className="btn-agregar" onClick={() => setModoAgregar(true)} disabled={modoAgregar}>
+        <button
+          className="btn-agregar"
+          onClick={() => setModoAgregar(true)}
+          disabled={modoAgregar}
+        >
           + Agregar Registro
         </button>
       </div>
@@ -208,6 +235,7 @@ export default function ManiobrasPage() {
           <thead>
             <tr>
               {COLUMNAS.map((col) => <th key={col.key}>{col.label}</th>)}
+              <th style={{ textAlign: "center" }}>Status</th>
               <th style={{ textAlign: "center" }}>Acciones</th>
             </tr>
           </thead>
@@ -223,41 +251,61 @@ export default function ManiobrasPage() {
 
             {maniobras.length === 0 ? (
               <tr>
-                <td colSpan={COLUMNAS.length + 1}
-                  style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}>
+                <td
+                  colSpan={COLUMNAS.length + 2}
+                  style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}
+                >
                   No hay maniobras registradas en el servidor
                 </td>
               </tr>
             ) : (
-              maniobras.map((maniobra) => (
-                <tr key={maniobra.id}>
-                  {COLUMNAS.map((col) => (
-                    <td key={col.key} style={col.style ?? {}}>
-                      {maniobra[col.key]}
+              maniobras.map((maniobra) => {
+                const statusConfig = getStatusConfig(maniobra.status);
+                return (
+                  <tr
+                    key={maniobra.id}
+                    // Clase de color de fila según status; sin clase si status desconocido
+                    className={statusConfig?.rowClass ?? ""}
+                  >
+                    {COLUMNAS.map((col) => (
+                      <td key={col.key} style={col.style ?? {}}>
+                        {maniobra[col.key]}
+                      </td>
+                    ))}
+
+                    {/* ── Columna Status con selector inline ───────────── */}
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      <StatusSelector
+                        currentStatus={maniobra.status}
+                        onSelect={(newStatus) => handleStatusChange(maniobra, newStatus)}
+                        loading={updatingId === maniobra.id}
+                      />
                     </td>
-                  ))}
-                  <td>
-                    <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-                      <button
-                        className="btn-icon btn-editar"
-                        onClick={() => handleAbrirEdicion(maniobra)}
-                        aria-label="Editar maniobra"
-                        title="Editar"
-                      >
-                        <ArrowDown size={18} />
-                      </button>
-                      <button
-                        className="btn-icon btn-eliminar"
-                        onClick={() => handleEliminar(maniobra.id)}
-                        aria-label="Eliminar maniobra"
-                        title="Eliminar"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+
+                    {/* ── Columna Acciones ─────────────────────────────── */}
+                    <td>
+                      <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
+                        <button
+                          className="btn-icon btn-editar"
+                          onClick={() => handleAbrirEdicion(maniobra)}
+                          aria-label="Editar maniobra"
+                          title="Editar"
+                        >
+                          <ArrowDown size={18} />
+                        </button>
+                        <button
+                          className="btn-icon btn-eliminar"
+                          onClick={() => handleEliminar(maniobra.id)}
+                          aria-label="Eliminar maniobra"
+                          title="Eliminar"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

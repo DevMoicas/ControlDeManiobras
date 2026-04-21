@@ -52,5 +52,5 @@ export function useManiobras() {
     );
   }, []);
 
-  return { maniobras, loading, error, eliminar, actualizar, agregar, MANIOBRA_VACIA };
+  return { maniobras, setManiobras, loading, error, eliminar, actualizar, agregar, MANIOBRA_VACIA };
 }

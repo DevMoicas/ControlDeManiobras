@@ -1,0 +1,55 @@
+/* ─── StatusBadge.css ──────────────────────────────────────────────────────── */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 9999px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Tamaños */
+.status-badge--md {
+  padding: 3px 10px;
+  font-size: 0.75rem;
+}
+.status-badge--sm {
+  padding: 2px 7px;
+  font-size: 0.68rem;
+}
+
+.status-badge__emoji {
+  font-size: 0.7em;
+  line-height: 1;
+}
+
+/* Variantes de color */
+.badge-status--activo {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+.badge-status--pendiente {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #93c5fd;
+}
+.badge-status--quemada {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+.badge-status--por-salir {
+  background-color: #ede9fe;
+  color: #6d28d9;
+  border: 1px solid #c4b5fd;
+}
+.status-badge--unknown {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  font-style: italic;
+}
