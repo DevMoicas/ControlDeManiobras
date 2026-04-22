@@ -1,0 +1,127 @@
+/* ─── StatusSelector.css ───────────────────────────────────────────────────── */
+
+.status-selector {
+  position: relative;
+  display: inline-block;
+}
+
+/* ── Trigger (botón) ─────────────────────────────────────────────────────── */
+.status-selector__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s, filter 0.15s;
+  white-space: nowrap;
+  min-width: 110px;
+  justify-content: space-between;
+}
+.status-selector__trigger:hover:not(:disabled) {
+  filter: brightness(0.93);
+}
+.status-selector__trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.status-selector__trigger--loading {
+  justify-content: center;
+}
+
+/* Hereda colores de los badge-status--* definidos en StatusBadge.css */
+/* ya que compartimos las mismas clases badgeClass */
+
+/* ── Dot de color ─────────────────────────────────────────────────────────── */
+.status-selector__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.status-selector__label {
+  flex: 1;
+  text-align: left;
+}
+
+.status-selector__chevron {
+  font-size: 0.55rem;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* ── Spinner ──────────────────────────────────────────────────────────────── */
+.status-selector__spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: ss-spin 0.6s linear infinite;
+  opacity: 0.7;
+}
+@keyframes ss-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Lista desplegable ────────────────────────────────────────────────────── */
+.status-selector__list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 100;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  min-width: 160px;
+  animation: ss-fadeIn 0.12s ease;
+}
+@keyframes ss-fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Opción ───────────────────────────────────────────────────────────────── */
+.status-selector__option {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.12s;
+  outline: none;
+}
+.status-selector__option:hover,
+.status-selector__option:focus {
+  filter: brightness(0.92);
+}
+.status-selector__option--selected {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.status-selector__check {
+  margin-left: auto;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+/* ── Dots con color del background de la fila correspondiente ── */
+.badge-status--activo    .status-selector__dot { background-color: #c6e5b1; }
+.badge-status--pendiente .status-selector__dot { background-color: #96c6e0; }
+.badge-status--quemada   .status-selector__dot { background-color: #ff6961; }
+.badge-status--por-salir .status-selector__dot { background-color: #c7b0d4; }

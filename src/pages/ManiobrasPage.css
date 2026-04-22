@@ -226,3 +226,40 @@
   .maniobras-table th, .maniobras-table td { min-width: 100px; padding: 10px 8px; }
   .modal-content { padding: 20px; width: 95%; }
 }
+
+/* ─── Colores de fila por status ────────────────────────────────────────────
+   Añade estos bloques a tu ManiobrasPage.css existente.
+   (o crea un archivo separado e impórtalo en ManiobrasPage.jsx)
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/* Activo / En viaje → verde suave */
+.maniobras-table tbody tr.row-status--activo {
+  background-color: #c6e5b1;
+}
+.maniobras-table tbody tr.row-status--activo:hover {
+  background-color: #8cecae;
+}
+
+/* Pendiente → azul suave */
+.maniobras-table tbody tr.row-status--pendiente {
+  background-color: #96c6e0;
+}
+.maniobras-table tbody tr.row-status--pendiente:hover {
+  background-color: #72a5e7;
+}
+
+/* Quemada → rojo suave */
+.maniobras-table tbody tr.row-status--quemada {
+  background-color: #ff6961;
+}
+.maniobras-table tbody tr.row-status--quemada:hover {
+  background-color: #e28e8e;
+}
+
+/* Por salir → morado suave */
+.maniobras-table tbody tr.row-status--por-salir {
+  background-color: #c7b0d4;
+}
+.maniobras-table tbody tr.row-status--por-salir:hover {
+  background-color: #9281df;
+}
