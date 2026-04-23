@@ -1,11 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 # Agregamos ManiobraViewSet al final de esta línea:
-from .Views import TractoViewSet, RemolqueViewSet, ChoferViewSet, ManiobraViewSet
+from .views import TractoViewSet, RemolqueViewSet, ChoferViewSet, ManiobraViewSet
 from rest_framework_simplejwt.views import TokenRefreshView
 
 
-from .Views import (
+from .views import (
     TractoViewSet,
     RemolqueViewSet,
     ChoferViewSet,

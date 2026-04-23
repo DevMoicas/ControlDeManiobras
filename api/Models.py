@@ -4,6 +4,7 @@ from django.core.validators import MinLengthValidator
 class Tracto(models.Model):
     no_eco = models.CharField(max_length=255, unique=True)
     unidad = models.CharField(max_length=255)
+    anio = models.IntegerField()
     placas = models.CharField(max_length=255, unique=True, validators=[MinLengthValidator(6)])
     tipo = models.CharField(max_length=255)
 
@@ -54,6 +55,15 @@ class Maniobra(models.Model):
     origen = models.CharField(max_length=100, null=True, blank=True)
     destino = models.CharField(max_length=100, null=True, blank=True)
     asignacion_operador_status = models.CharField(max_length=100, null=True, blank=True)
+
+    #ultimos 7 campos agregados
+    unidad = models.CharField(max_length=100, null=True, blank=True)
+    folio = models.CharField(max_length=100, null=True, blank=True)
+    vacio_patio = models.CharField(max_length=255, null=True, blank=True)
+    status_vacio = models.CharField(max_length=100, null=True, blank=True)
+    fecha_entrega_mercancia = models.DateField(null=True, blank=True)
+    no_factura = models.CharField(max_length=100, null=True, blank=True)
+    ccp = models.CharField(max_length=100, null=True, blank=True)
 
     STATUS_CHOICES = [
         ("activo",    "Activo / En viaje"),

@@ -1,9 +1,9 @@
 from rest_framework import viewsets
 from .models import Tracto, Remolque, Chofer, Maniobra
-from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer
+from .serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .Serializers import CustomTokenObtainPairSerializer
+from .serializers import CustomTokenObtainPairSerializer
 
 class TractoViewSet(viewsets.ModelViewSet):
     queryset = Tracto.objects.all()

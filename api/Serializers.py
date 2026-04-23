@@ -19,7 +19,6 @@ class ChoferSerializer(serializers.ModelSerializer):
         model = Chofer
         fields = '__all__'
 
-# --- NUEVO SERIALIZER ---
 class ManiobraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Maniobra
