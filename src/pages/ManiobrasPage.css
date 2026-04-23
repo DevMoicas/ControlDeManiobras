@@ -109,13 +109,14 @@
   font-weight: 600;
   white-space: nowrap;
   font-size: 0.85rem;
+  transition: all 0.3s ease;
 }
 
 .btn-guardar-fila { background-color: #2563eb; color: white; }
-.btn-guardar-fila:hover { background-color: #1d4ed8; }
+.btn-guardar-fila:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
 
 .btn-cancelar-fila { background-color: #e5e7eb; color: #333; }
-.btn-cancelar-fila:hover { background-color: #d1d5db; }
+.btn-cancelar-fila:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
 
 /* Estados de carga y error */
 .loading-box,
@@ -172,15 +173,16 @@
 
 /* Toolbar */
 .toolbar         { display: flex; justify-content: flex-end; margin-bottom: 15px; }
-.btn-agregar     { background: #2563eb; color: white; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+.btn-agregar     { background: #2563eb; color: white; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s ease; }
 .btn-agregar:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-agregar:not(:disabled):hover { background-color: #2563EB; transform: scale(1.05); color: white; }
 
 /* Botones icono */
-.btn-icon        { background: transparent; border: none; cursor: pointer; padding: 6px; border-radius: 50%; transition: background 0.2s; }
+.btn-icon        { background: transparent; border: none; cursor: pointer; padding: 6px; border-radius: 50%; transition: all 0.3s ease; }
 .btn-editar      { color: #2563eb; }
-.btn-editar:hover  { background: #eff6ff; }
+.btn-editar:hover  { background-color: #2563EB; transform: scale(1.05); color: white; }
 .btn-eliminar    { color: #ef4444; }
-.btn-eliminar:hover { background: #fef2f2; }
+.btn-eliminar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
 
 /* Modal */
 .modal-overlay   { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 9999; }
@@ -211,8 +213,10 @@
   border-top: 1px solid #eee;
   flex-shrink: 0;
 }
-.btn-cancelar    { padding: 8px 15px; border-radius: 6px; border: none; background: #e5e7eb; cursor: pointer; font-weight: 600; }
-.btn-guardar     { padding: 8px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: 600; }
+.btn-cancelar    { padding: 8px 15px; border-radius: 6px; border: none; background: #e5e7eb; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
+.btn-cancelar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+.btn-guardar     { padding: 8px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
+.btn-guardar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
 
 /* Media Queries para Responsividad */
 @media (min-width: 768px) {

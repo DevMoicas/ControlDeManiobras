@@ -20,10 +20,13 @@ button {
   color: #fff;
   font-size: 14px;
   cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: #2563EB;
+  transform: scale(1.05);
+  color: white;
 }
 
 .blank-page {
