@@ -1,8 +1,9 @@
 from rest_framework import viewsets
-from .Models import Tracto, Remolque, Chofer, Maniobra
+from .models import Tracto, Remolque, Chofer, Maniobra
 from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
-
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .Serializers import CustomTokenObtainPairSerializer
 
 class TractoViewSet(viewsets.ModelViewSet):
     queryset = Tracto.objects.all()
@@ -24,3 +25,10 @@ class ManiobraViewSet(viewsets.ModelViewSet):
     queryset = Maniobra.objects.all().order_by('-id')
     serializer_class = ManiobraSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
+
+     
+class CustomTokenObtainPairView(TokenObtainPairView):
+    
+    # Devuelve access + refresh con 'role' y 'username' en el payload.
+    serializer_class = CustomTokenObtainPairSerializer
+ 
