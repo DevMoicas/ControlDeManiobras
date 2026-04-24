@@ -5,7 +5,7 @@ import { useStatusUpdate } from "../hooks/useStatusUpdate";
 import { getStatusConfig } from "../config/statusConfig";
 import StatusSelector from "../components/StatusSelector/StatusSelector";
 import "./ManiobrasPage.css";
-
+import SearchBar from "../components/SearchBar/SearchBar";
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const COLUMNAS = [
@@ -224,7 +224,9 @@ export default function ManiobrasPage() {
       <h1 className="maniobras-title">
         <Truck size={36} className="title-icon" /> Control de Maniobras
       </h1>
-
+    {/* BARRA DE BÚSQUEDA */}
+      <SearchBar />
+      
       {notif && (
         <div className={`notif notif-${notif.tipo}`} role="alert" aria-live="polite">
           {notif.msg}

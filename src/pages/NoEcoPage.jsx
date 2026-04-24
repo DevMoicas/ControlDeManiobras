@@ -3,7 +3,7 @@ import { Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import "./NoEcoPage.css";
-
+import SearchBar from "../components/SearchBar/SearchBar";
 export default function NoEcoPage() {
   const navigate = useNavigate();
   const { isAdmin } = useAuthContext();
@@ -138,7 +138,8 @@ export default function NoEcoPage() {
           </button>
         )}
       </div>
-
+    {/* BARRA DE BÚSQUEDA */}
+      <SearchBar />
       {/* Tabs */}
       <div className="tabs">
         <button
