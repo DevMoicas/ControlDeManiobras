@@ -171,9 +171,42 @@
 .notif-ok        { background: #d1fae5; color: #065f46; }
 .notif-error     { background: #fee2e2; color: #991b1b; }
 
-/* Toolbar */
-.toolbar         { display: flex; justify-content: flex-end; margin-bottom: 15px; }
-.btn-agregar     { background: #2563eb; color: white; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s ease; }
+/* Toolbar & Filtros */
+.toolbar { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  margin-bottom: 15px; 
+}
+
+.filtros-status {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-filtro {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-main);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.btn-filtro:hover {
+  background: #f8fafc;
+}
+
+.btn-filtro.active {
+  background: var(--primary-blue);
+  color: white;
+  border-color: var(--primary-blue);
+}
+
+.btn-agregar     { background: #2563eb; color: white; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
 .btn-agregar:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-agregar:not(:disabled):hover { background-color: #2563EB; transform: scale(1.05); color: white; }
 

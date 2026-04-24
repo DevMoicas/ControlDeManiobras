@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Trash2, ArrowDown, Truck } from "lucide-react";
 import { useManiobras } from "../hooks/useManiobras";
 import { useStatusUpdate } from "../hooks/useStatusUpdate";
-import { getStatusConfig } from "../config/statusConfig";
+import { getStatusConfig, isValidStatus } from "../config/statusConfig";
 import StatusSelector from "../components/StatusSelector/StatusSelector";
 import "./ManiobrasPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
@@ -126,8 +126,9 @@ export default function ManiobrasPage() {
 
   const [modoAgregar, setModoAgregar] = useState(false);
   const [nuevaManiobra, setNuevaManiobra] = useState(MANIOBRA_VACIA);
-  const [modal, setModal] = useState(MODAL_CERRADO);
-  const [notif, setNotif] = useState(null);
+  const [modal, setModal]                 = useState(MODAL_CERRADO);
+  const [notif, setNotif]                 = useState(null);
+  const [filtroStatus, setFiltroStatus]   = useState("todos");
 
   // ── Auto-dismiss de notificaciones ──────────────────────────────────────────
   useEffect(() => {
@@ -219,6 +220,17 @@ export default function ManiobrasPage() {
 
   // ── Render principal ─────────────────────────────────────────────────────────
 
+  const maniobrasFiltradas = maniobras.filter((m) => {
+    if (filtroStatus === "todos") return true;
+    if (filtroStatus === "activo") return m.status === "activo";
+    if (filtroStatus === "pendiente") return m.status === "pendiente";
+    if (filtroStatus === "quemada") return m.status === "quemada";
+    if (filtroStatus === "por_salir") return m.status === "por_salir";
+    // Si no tiene uno de los 4 status existentes, se considera "vacio"
+    if (filtroStatus === "vacio") return !isValidStatus(m.status);
+    return true;
+  });
+
   return (
     <div className="maniobras-container">
       <h1 className="maniobras-title">
@@ -234,6 +246,45 @@ export default function ManiobrasPage() {
       )}
 
       <div className="toolbar">
+        <div className="filtros-status">
+          <button
+            className={`btn-filtro ${filtroStatus === "todos" ? "active" : ""}`}
+            onClick={() => setFiltroStatus("todos")}
+          >
+            Todos
+          </button>
+          <button
+            className={`btn-filtro ${filtroStatus === "activo" ? "active" : ""}`}
+            onClick={() => setFiltroStatus("activo")}
+          >
+            Activos
+          </button>
+          <button
+            className={`btn-filtro ${filtroStatus === "pendiente" ? "active" : ""}`}
+            onClick={() => setFiltroStatus("pendiente")}
+          >
+            Pendientes
+          </button>
+          <button
+            className={`btn-filtro ${filtroStatus === "quemada" ? "active" : ""}`}
+            onClick={() => setFiltroStatus("quemada")}
+          >
+            Quemados
+          </button>
+          <button
+            className={`btn-filtro ${filtroStatus === "por_salir" ? "active" : ""}`}
+            onClick={() => setFiltroStatus("por_salir")}
+          >
+            Por salir
+          </button>
+          <button
+            className={`btn-filtro ${filtroStatus === "vacio" ? "active" : ""}`}
+            onClick={() => setFiltroStatus("vacio")}
+          >
+            Vacíos
+          </button>
+        </div>
+
         <button
           className="btn-agregar"
           onClick={() => setModoAgregar(true)}
@@ -262,17 +313,17 @@ export default function ManiobrasPage() {
               />
             )}
 
-            {maniobras.length === 0 ? (
+            {maniobrasFiltradas.length === 0 ? (
               <tr>
                 <td
                   colSpan={COLUMNAS.length + 2}
                   style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}
                 >
-                  No hay maniobras registradas en el servidor
+                  No hay maniobras que mostrar con el filtro actual
                 </td>
               </tr>
             ) : (
-              maniobras.map((maniobra) => {
+              maniobrasFiltradas.map((maniobra) => {
                 const statusConfig = getStatusConfig(maniobra.status);
                 return (
                   <tr
