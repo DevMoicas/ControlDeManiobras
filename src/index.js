@@ -13,7 +13,7 @@ root.render(
      <AuthProvider>
       <Routes>
         <Route path="/" element={<LoginPage />} />
-        <Route path="/home/*" element={<ProtectedRoute><App /></ProtectedRoute>} />
+        <Route path="/home/*" element={<App />} />
       </Routes>
      </AuthProvider>
     </BrowserRouter>
