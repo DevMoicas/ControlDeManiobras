@@ -1,3 +1,83 @@
+:root {
+  --primary: #2563eb;
+  --primary-light: #eaf1ff;
+  --text: #1f2937;
+  --text-light: #6b7280;
+  --bg: #f4f7fb;
+}
+
+/* SOLO AFECTA HOME */
+.home-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.home-page .container {
+  width: 90%;
+  max-width: 950px;
+  text-align: center;
+}
+
+.home-page h1 {
+  color: var(--primary);
+  font-size: 2.3rem;
+  margin-bottom: 10px;
+  font-weight: 800
+}
+
+.home-page .description {
+  font-size: 1rem;
+  color: var(--text-light);
+  margin-bottom: 30px;
+}
+
+.home-page .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.home-page .card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px 20px;
+  color: var(--text);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  transition: all 0.25s ease;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.home-page .card:hover {
+  transform: translateY(-6px);
+  border-color: var(--primary);
+  background: var(--primary-light);
+  box-shadow: 0 10px 25px rgba(37,99,235,0.15);
+}
+
+.home-page .card:active {
+  transform: scale(0.97);
+}
+
+.home-page .icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.home-page .title {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+
+/*  CSS YA EXISTENTE*/
+
+
 .home-container {
   padding: 40px;
   text-align: center;
@@ -29,6 +109,7 @@ button:hover {
   color: white;
 }
 
+/* PÁGINAS VACÍAS */
 .blank-page {
   min-height: 100vh;
   display: flex;
