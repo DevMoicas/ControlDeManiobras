@@ -8,13 +8,37 @@ import AdministracionNoEco from './pages/AdministracionNoEco';
 
 function Home() {
   const navigate = useNavigate();
+
   return (
-    <div className="home-container">
-      <div className="buttons-grid">
-        <button onClick={() => navigate('maniobras')}>MANIOBRAS</button>
-        <button onClick={() => navigate('gastos-efectivo')}>GASTOS EFECTIVO</button>
-        <button onClick={() => navigate('vacios')}>VACIOS</button>
-        <button onClick={() => navigate('no-eco')}>NO. ECO</button>
+    <div className="home-page"> {/* NUEVO CONTENEDOR */}
+      <div className="container">
+        <h1>Control de Maniobras</h1>
+
+        <div className="description">
+          Sistema para automatizar y gestionar registros en Excel de forma rápida y eficiente.
+        </div>
+
+        <div className="grid">
+          <div className="card" onClick={() => navigate('maniobras')}>
+            <div className="icon">🚚</div>
+            <div className="title">MANIOBRAS</div>
+          </div>
+
+          <div className="card" onClick={() => navigate('gastos-efectivo')}>
+            <div className="icon">💰</div>
+            <div className="title">GASTOS EFECTIVO</div>
+          </div>
+
+          <div className="card" onClick={() => navigate('vacios')}>
+            <div className="icon">📭</div>
+            <div className="title">VACÍOS</div>
+          </div>
+
+          <div className="card" onClick={() => navigate('no-eco')}>
+            <div className="icon">🔢</div>
+            <div className="title">NO. ECO</div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -58,6 +82,7 @@ function AppRoutes() {
           <HomeIcon size={32} />
         </button>
       )}
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="maniobras" element={<ManiobrasPage title="MANIOBRAS" />} />

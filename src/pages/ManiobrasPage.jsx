@@ -9,27 +9,38 @@ import "./ManiobrasPage.css";
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const COLUMNAS = [
-  { key: "solicita",                    label: "Solicita" },
-  { key: "agencia",                     label: "Agencia" },
-  { key: "codigo_pis",                  label: "Código PIS",
-    style: { color: "var(--primary-blue)", fontWeight: "bold", fontFamily: "monospace" } },
-  { key: "terminal",                    label: "Terminal" },
-  { key: "placas_pis",                  label: "Placas PIS" },
-  { key: "fecha_pis",                   label: "Fecha PIS" },
-  { key: "horario",                     label: "Horario" },
-  { key: "tipo_y_peso",                 label: "Tipo y Peso" },
-  { key: "contenedor",                  label: "Contenedor" },
-  { key: "pedimento",                   label: "Pedimento" },
-  { key: "cliente",                     label: "Cliente" },
-  { key: "origen",                      label: "Origen" },
-  { key: "destino",                     label: "Destino" },
-  { key: "asignacion_operador_status",  label: "Operador" },
+  { key: "solicita", label: "Solicita" },
+  { key: "agencia", label: "Agencia" },
+  {
+    key: "codigo_pis", label: "Código PIS",
+    style: { color: "var(--primary-blue)", fontWeight: "bold", fontFamily: "monospace" }
+  },
+  { key: "terminal", label: "Terminal" },
+  { key: "placas_pis", label: "Placas PIS" },
+  { key: "fecha_pis", label: "Fecha PIS" },
+  { key: "horario", label: "Horario" },
+  { key: "tipo_y_peso", label: "Tipo y Peso" },
+  { key: "contenedor", label: "Contenedor" },
+  { key: "pedimento", label: "Pedimento" },
+  { key: "cliente", label: "Cliente" },
+  { key: "origen", label: "Origen" },
+  { key: "destino", label: "Destino" },
+  { key: "asignacion_operador_status", label: "Operador" },
+  { key: "unidad", label: "Unidad" },
+  { key: "folio", label: "Folio" },
+  { key: "vacio_patio", label: "Vacio Patio" },
+  { key: "status_vacio", label: "Status Vacío" },
+  { key: "fecha_entrega_mercancia", label: "Entrega Mercancía" },
+  { key: "no_factura", label: "No. Factura" },
+  { key: "ccp", label: "CCP" },
 ];
 
 const MANIOBRA_VACIA = {
   solicita: "", agencia: "", codigo_pis: "", terminal: "", placas_pis: "",
   fecha_pis: "", horario: "", tipo_y_peso: "", contenedor: "", pedimento: "",
   cliente: "", origen: "", destino: "", asignacion_operador_status: "",
+  unidad: "", folio: "", vacio_patio: "", status_vacio: "",
+  fecha_entrega_mercancia: "", no_factura: "", ccp: "",
 };
 
 const MODAL_CERRADO = { abierto: false, datos: null };
@@ -113,7 +124,7 @@ export default function ManiobrasPage() {
   const { maniobras, setManiobras, loading, error, eliminar, actualizar, agregar } = useManiobras();
   const { updatingId, updateStatus } = useStatusUpdate(setManiobras);
 
-  const [modoAgregar, setModoAgregar]     = useState(false);
+  const [modoAgregar, setModoAgregar] = useState(false);
   const [nuevaManiobra, setNuevaManiobra] = useState(MANIOBRA_VACIA);
   const [modal, setModal]                 = useState(MODAL_CERRADO);
   const [notif, setNotif]                 = useState(null);

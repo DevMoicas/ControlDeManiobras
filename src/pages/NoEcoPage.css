@@ -58,8 +58,9 @@
 }
 
 .tab-button:hover {
-  background-color: #f0f7ff;
-  color: var(--primary-blue);
+  background-color: #2563EB;
+  color: white;
+  transform: scale(1.05);
 }
 
 .tab-button.active {
@@ -92,7 +93,7 @@
   cursor: pointer;
   font-weight: 600;
   font-size: 0.85rem;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
   box-shadow: 0 4px 10px rgba(0, 123, 255, 0.25);
   display: inline-flex;
   align-items: center;
@@ -100,8 +101,9 @@
 }
 
 .btn-add:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-2px);
+  background-color: #2563EB;
+  color: white;
+  transform: scale(1.05);
   box-shadow: 0 6px 15px rgba(0, 123, 255, 0.4);
 }
 
@@ -155,14 +157,15 @@
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 6px;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   border: 1px solid transparent;
 }
 
 .btn-delete:hover {
-  background-color: #fef2f2;
-  color: var(--danger-hover);
-  border: 1px solid #fecaca;
+  background-color: #2563EB;
+  color: white;
+  transform: scale(1.05);
+  border: 1px solid #2563EB;
 }
 
 /* Modal Premium */
@@ -248,11 +251,13 @@
   border-radius: 8px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.3s ease;
 }
 
 .btn-cancel:hover {
-  background-color: #e5e7eb;
+  background-color: #2563EB;
+  color: white;
+  transform: scale(1.05);
 }
 
 .btn-save {
@@ -263,13 +268,14 @@
   border-radius: 8px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
 }
 
 .btn-save:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-2px);
+  background-color: #2563EB;
+  color: white;
+  transform: scale(1.05);
   box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
 }
 
@@ -300,14 +306,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px; /* ajusta según tu spacing actual del .noeco-title */
+  margin-bottom: 8px;
+  /* ajusta según tu spacing actual del .noeco-title */
 }
- 
+
 /* Quitamos el margin-bottom del título original ya que ahora lo maneja el header */
 .noeco-header .noeco-title {
   margin-bottom: 0;
 }
- 
+
 .noeco-admin-btn {
   display: flex;
   align-items: center;
@@ -320,19 +327,19 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  transition: all 0.3s ease;
   white-space: nowrap;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
 }
- 
+
 .noeco-admin-btn:hover {
-  background: #1f2937;
-  transform: translateY(-1px);
+  background-color: #2563EB;
+  transform: scale(1.05);
+  color: white;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
 }
- 
+
 .noeco-admin-btn:active {
-  transform: translateY(0);
+  transform: scale(1);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
- 

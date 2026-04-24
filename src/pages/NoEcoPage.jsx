@@ -15,10 +15,20 @@ export default function NoEcoPage() {
   const [editando, setEditando] = useState(false);
   const [registroEditando, setRegistroEditando] = useState(null);
 
+  const TRADUCCIONES_COLUMNAS = {
+    no_eco: "No. Eco",
+    anio: "Año",
+    unidad: "Unidad",
+    placas: "Placas",
+    tipo: "Tipo",
+    id: "ID",
+  };
+
   const configFormularios = {
     tractos: [
       { name: "no_eco", label: "No. Eco", type: "text" },
       { name: "unidad", label: "Unidad", type: "text" },
+      { name: "anio", label: "Año", type: "number" },
       { name: "placas", label: "Placas", type: "text" },
       { name: "tipo", label: "Tipo", type: "text" }
     ],
@@ -172,7 +182,9 @@ export default function NoEcoPage() {
             <tr>
               {data.length > 0 &&
                 Object.keys(data[0]).map((key) => (
-                  <th key={key}>{key.replace('_', ' ')}</th>
+                  <th key={key}>
+                    {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
+                  </th>
                 ))}
               {data.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
             </tr>
@@ -207,7 +219,7 @@ export default function NoEcoPage() {
                         }}
                       >
                         Editar
-      </button>
+                      </button>
                     </div>
                   </td>
                 </tr>
