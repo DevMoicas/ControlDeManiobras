@@ -20,14 +20,16 @@
 
 /* Título */
 .maniobras-title {
-  font-size: 2.2rem;
-  font-weight: 800;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
   margin-bottom: 30px;
-  color: var(--text-main);
-  border-bottom: 3px solid var(--border-color);
-  padding-bottom: 12px;
-  display: inline-flex;
+  color: #2563EB;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-align: center;
   gap: 12px;
 }
 
