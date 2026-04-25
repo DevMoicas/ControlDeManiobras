@@ -129,6 +129,7 @@ export default function ManiobrasPage() {
   const [modal, setModal]                 = useState(MODAL_CERRADO);
   const [notif, setNotif]                 = useState(null);
   const [filtroStatus, setFiltroStatus]   = useState("todos");
+  const [busqueda, setBusqueda] = useState("");
 
   // ── Auto-dismiss de notificaciones ──────────────────────────────────────────
   useEffect(() => {
@@ -221,15 +222,24 @@ export default function ManiobrasPage() {
   // ── Render principal ─────────────────────────────────────────────────────────
 
   const maniobrasFiltradas = maniobras.filter((m) => {
-    if (filtroStatus === "todos") return true;
-    if (filtroStatus === "activo") return m.status === "activo";
-    if (filtroStatus === "pendiente") return m.status === "pendiente";
-    if (filtroStatus === "quemada") return m.status === "quemada";
-    if (filtroStatus === "por_salir") return m.status === "por_salir";
-    // Si no tiene uno de los 4 status existentes, se considera "vacio"
-    if (filtroStatus === "vacio") return !isValidStatus(m.status);
-    return true;
-  });
+  // 🔹 FILTRO POR STATUS
+  let cumpleStatus = false;
+
+  if (filtroStatus === "todos") cumpleStatus = true;
+  else if (filtroStatus === "activo") cumpleStatus = m.status === "activo";
+  else if (filtroStatus === "pendiente") cumpleStatus = m.status === "pendiente";
+  else if (filtroStatus === "quemada") cumpleStatus = m.status === "quemada";
+  else if (filtroStatus === "por_salir") cumpleStatus = m.status === "por_salir";
+  else if (filtroStatus === "vacio") cumpleStatus = !isValidStatus(m.status);
+
+  // 🔹 FILTRO POR BÚSQUEDA
+  const cumpleBusqueda = !busqueda || Object.values(m).some((valor) =>
+    String(valor).toLowerCase().includes(busqueda.toLowerCase())
+  );
+
+  // 🔥 AMBOS deben cumplirse
+  return cumpleStatus && cumpleBusqueda;
+});
 
   return (
     <div className="maniobras-container">
@@ -237,7 +247,7 @@ export default function ManiobrasPage() {
         <Truck size={36} className="title-icon" /> Control de Maniobras
       </h1>
     {/* BARRA DE BÚSQUEDA */}
-      <SearchBar />
+      <SearchBar value={busqueda} onChange={setBusqueda} />
       
       {notif && (
         <div className={`notif notif-${notif.tipo}`} role="alert" aria-live="polite">

@@ -14,7 +14,7 @@ export default function NoEcoPage() {
   const [formData, setFormData] = useState({});
   const [editando, setEditando] = useState(false);
   const [registroEditando, setRegistroEditando] = useState(null);
-
+  const [busqueda, setBusqueda] = useState("");
   const TRADUCCIONES_COLUMNAS = {
     no_eco: "No. Eco",
     anio: "Año",
@@ -117,7 +117,13 @@ export default function NoEcoPage() {
     remolques: "Remolque",
     choferes: "Chofer"
   };
+  const dataFiltrada = data.filter((item) => {
+  if (!busqueda) return true;
 
+  return Object.values(item).some((valor) =>
+    String(valor).toLowerCase().includes(busqueda.toLowerCase())
+  );
+});
   return (
     <div className="noeco-container">
 
@@ -139,7 +145,7 @@ export default function NoEcoPage() {
         )}
       </div>
     {/* BARRA DE BÚSQUEDA */}
-      <SearchBar />
+      <SearchBar value={busqueda} onChange={setBusqueda} />
       {/* Tabs */}
       <div className="tabs">
         <button
@@ -191,14 +197,14 @@ export default function NoEcoPage() {
             </tr>
           </thead>
           <tbody>
-            {data.length === 0 ? (
+            {dataFiltrada.length === 0 ? (
               <tr>
                 <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
                   No hay registros encontrados en la base de datos de {vista}
                 </td>
               </tr>
             ) : (
-              data.map((item) => (
+              dataFiltrada.map((item) => (
                 <tr key={item.id}>
                   {Object.values(item).map((val, i) => (
                     <td key={i}>{val}</td>
