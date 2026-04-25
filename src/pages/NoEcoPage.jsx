@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
@@ -44,12 +44,50 @@ export default function NoEcoPage() {
     ]
   };
 
-  useEffect(() => {
-    fetch(`http://127.0.0.1:8000/api/${vista}`)
-      .then(res => res.json())
-      .then(res => setData(res))
-      .catch(err => console.error(err));
-  }, [vista]);
+  const cacheRef = useRef({});
+
+useEffect(() => {
+  // usar cache
+  if (cacheRef.current[vista]) {
+    setData(cacheRef.current[vista]);
+    return;
+  }
+
+  const controller = new AbortController();
+
+  fetch(`http://127.0.0.1:8000/api/${vista}`, {
+    signal: controller.signal
+  })
+    .then(res => {
+      if (!res.ok) {
+        if (res.status === 429) {
+          console.warn("Demasiadas solicitudes (429)");
+          return null;
+        }
+        throw new Error("Error en la petición");
+      }
+      return res.json();
+    })
+    .then(res => {
+      if (!res) return;
+
+      const datos = Array.isArray(res)
+        ? res
+        : res.results || [];
+
+      cacheRef.current[vista] = datos; //guardar cache
+      setData(datos);
+    })
+    .catch(err => {
+      if (err.name !== "AbortError") {
+        console.error(err);
+      }
+    });
+
+  return () => {
+    controller.abort();
+  };
+}, [vista]);
 
   const eliminarRegistro = async (id) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este registro?")) {
@@ -58,6 +96,7 @@ export default function NoEcoPage() {
           method: 'DELETE',
         });
         if (response.ok) {
+          sessionStorage.removeItem("adminConteo");
           setData(data.filter(item => item.id !== id));
           alert("Eliminado con éxito");
         } else {
@@ -94,6 +133,7 @@ export default function NoEcoPage() {
       });
 
       if (response.ok) {
+        sessionStorage.removeItem("adminConteo");
         const resultado = await response.json();
         setData(editando
           ? data.map(item => item.id === registroEditando.id ? resultado : item)
@@ -117,13 +157,16 @@ export default function NoEcoPage() {
     remolques: "Remolque",
     choferes: "Chofer"
   };
-  const dataFiltrada = data.filter((item) => {
-  if (!busqueda) return true;
+  
+  const dataFiltrada = Array.isArray(data)
+  ? data.filter((item) => {
+      if (!busqueda) return true;
 
-  return Object.values(item).some((valor) =>
-    String(valor).toLowerCase().includes(busqueda.toLowerCase())
-  );
-});
+      return Object.values(item).some((valor) =>
+        String(valor).toLowerCase().includes(busqueda.toLowerCase())
+      );
+    })
+  : [];
   return (
     <div className="noeco-container">
 

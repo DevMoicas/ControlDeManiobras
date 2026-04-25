@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef} from "react";
 import { useNavigate } from "react-router-dom"; // 👈 AGREGADO
 
 import {
@@ -30,26 +30,42 @@ export default function AdministracionNoEco() {
   });
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [tractos, remolques, choferes] = await Promise.all([
-          fetch("http://127.0.0.1:8000/api/tractos/").then(r => r.json()),
-          fetch("http://127.0.0.1:8000/api/remolques/").then(r => r.json()),
-          fetch("http://127.0.0.1:8000/api/choferes/").then(r => r.json()),
-        ]);
 
-        setConteo({
-          tractos: tractos.length,
-          remolques: remolques.length,
-          choferes: choferes.length,
-        });
-      } catch (error) {
-        console.error(error);
-      }
+  const cache = sessionStorage.getItem("adminConteo");
+  if (cache) {
+    setConteo(JSON.parse(cache));
+    return;
+  }
+
+  const fetchSafe = async (url) => {
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      if (res.status === 429) return [];
+      throw new Error("Error");
+    }
+
+    const data = await res.json();
+    return Array.isArray(data) ? data : data.results || [];
+  };
+
+  const fetchData = async () => {
+    const tractos = await fetchSafe("http://127.0.0.1:8000/api/tractos/");
+    const remolques = await fetchSafe("http://127.0.0.1:8000/api/remolques/");
+    const choferes = await fetchSafe("http://127.0.0.1:8000/api/choferes/");
+
+    const nuevoConteo = {
+      tractos: tractos.length,
+      remolques: remolques.length,
+      choferes: choferes.length,
     };
 
-    fetchData();
-  }, []);
+    sessionStorage.setItem("adminConteo", JSON.stringify(nuevoConteo));
+    setConteo(nuevoConteo);
+  };
+
+  fetchData();
+}, []);
 
   const data = {
     labels: ["Tractos", "Remolques", "Choferes"],
