@@ -61,7 +61,7 @@ class Maniobra(models.Model):
     folio = models.CharField(max_length=100, null=True, blank=True)
     vacio_patio = models.CharField(max_length=255, null=True, blank=True)
     status_vacio = models.CharField(max_length=100, null=True, blank=True)
-    fecha_entrega_mercancia = models.DateField(null=True, blank=True)
+    fecha_entrega_mercancia = models.CharField(max_length=50, null=True, blank=True)
     no_factura = models.CharField(max_length=100, null=True, blank=True)
     ccp = models.CharField(max_length=100, null=True, blank=True)
 
