@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import NoEcoPage from './pages/NoEcoPage';
 import ManiobrasPage from './pages/ManiobrasPage';
 import AdministracionNoEco from './pages/AdministracionNoEco';
+import GastosPage from "./pages/GastosPage";
 
 function Home() {
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="maniobras" element={<ManiobrasPage title="MANIOBRAS" />} />
-        <Route path="gastos-efectivo" element={<BlankPage title="GASTOS EFECTIVO" />} />
+        <Route path="gastos-efectivo" element={<GastosPage title="GASTOS EFECTIVO" />} />
         <Route path="vacios" element={<BlankPage title="VACIOS" />} />
         <Route path="no-eco" element={<NoEcoPage />} />
 

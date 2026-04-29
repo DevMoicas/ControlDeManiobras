@@ -1,0 +1,65 @@
+/* GastosPage.css — Sigue el mismo patrón visual que NoEcoPage y ManiobrasPage */
+
+.gastos-page {
+  padding: 24px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ── Barra superior con botón Admin ─────────────────────── */
+.gastos-topbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+/* ── Título centrado ─────────────────────────────────────── */
+.gastos-title-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+  margin-bottom: 28px;
+}
+
+.gastos-title-icon {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.gastos-title {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #2563eb;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* ── Botón Admin ─────────────────────────────────────────── */
+.gastos-admin-btn {
+  padding: 6px 16px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background-color: #111827;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.gastos-admin-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.gastos-admin-btn:active {
+  background-color: #1e40af;
+}
+
+.gastos-admin-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
