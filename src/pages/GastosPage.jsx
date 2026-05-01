@@ -1,8 +1,10 @@
 import { useAuthContext } from "../context/AuthContext";
+import { useNavigate } from 'react-router-dom';
 import { Receipt } from "lucide-react";
 import "./GastosPage.css";
 
 export default function GastosPage() {
+  const navigate = useNavigate();
   const { isAdmin } = useAuthContext();
 
   return (
@@ -13,6 +15,7 @@ export default function GastosPage() {
             type="button"
             className="gastos-admin-btn"
             aria-label="Opciones de administrador"
+            onClick={() => navigate('../admin-gastos')}
           >
             ⚙ Admin Gastos
           </button>

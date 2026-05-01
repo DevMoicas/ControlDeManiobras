@@ -6,7 +6,7 @@ import NoEcoPage from './pages/NoEcoPage';
 import ManiobrasPage from './pages/ManiobrasPage';
 import AdministracionNoEco from './pages/AdministracionNoEco';
 import GastosPage from "./pages/GastosPage";
-
+import AdministracionGastos from './pages/AdministracionGastos';
 function Home() {
   const navigate = useNavigate();
 
@@ -100,6 +100,14 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="admin-gastos"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdministracionGastos />
+            </ProtectedRoute>
+  }
+/>
       </Routes>
     </>
   );
