@@ -46,3 +46,20 @@ CREATE TABLE maniobras (
     no_factura TEXT,
     ccp TEXT
 );
+
+CREATE TABLE gastos (
+    id SERIAL PRIMARY KEY,
+    carta_porte VARCHAR(100),
+    fecha_entrega_mercancia TEXT,
+    casetas_ida DECIMAL(10, 2),
+    casetas_regreso DECIMAL(10, 2),
+    gastos_adicionales DECIMAL(10, 2),
+    entregado DECIMAL(10, 2),
+    gasto_tag DECIMAL(10, 2),
+    gasto_diesel DECIMAL(10, 2),
+    comision_operador DECIMAL(10, 2),
+    reparaciones DECIMAL(10, 2),
+    gastos_totales DECIMAL(10, 2),
+    facturado TEXT,
+    descripcion_gastos TEXT
+);
