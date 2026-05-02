@@ -87,3 +87,33 @@ class Maniobra(models.Model):
     class Meta:
         managed = False  # Para que use tu tabla de pgAdmin
         db_table = 'maniobras'
+        
+class Gasto(models.Model):
+    carta_porte = models.CharField(max_length=100, null=True, blank=True)
+
+    fecha_entrega_mercancia = models.CharField(max_length=50, null=True, blank=True)
+
+    casetas_ida = models.FloatField(null=True, blank=True)
+    casetas_regreso = models.FloatField(null=True, blank=True)
+
+    gastos_adicionales = models.FloatField(null=True, blank=True)
+
+    entregado = models.FloatField(null=True, blank=True)
+
+    gasto_tag = models.FloatField(null=True, blank=True)
+    gasto_diesel = models.FloatField(null=True, blank=True)
+
+    comision_operador = models.FloatField(null=True, blank=True)
+    reparaciones = models.FloatField(null=True, blank=True)
+
+    gastos_totales = models.FloatField(null=True, blank=True)
+
+    facturado = models.CharField(max_length=50, null=True, blank=True)
+    descripcion_gastos = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Carta Porte: {self.carta_porte}"
+
+    class Meta:
+        managed = False
+        db_table = 'gastos'

@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
-
+import re
 
 class TractoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -59,5 +59,18 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["username"] = user.username
         token["role"] = "admin" if user.is_staff else "standard"
  
-        return token
- 
+        return token 
+    
+class GastoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Gasto
+        fields = '__all__'
+
+    def get_maniobra_info(self, obj):
+        return {
+            "id": obj.maniobra.id if obj.maniobra else None,
+            "cliente": obj.maniobra.cliente if obj.maniobra else None,
+            "origen": obj.maniobra.origen if obj.maniobra else None,
+            "destino": obj.maniobra.destino if obj.maniobra else None,
+        }

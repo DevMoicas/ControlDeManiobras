@@ -10,6 +10,7 @@ from .views import (
     RemolqueViewSet,
     ChoferViewSet,
     ManiobraViewSet,
+    GastoViewSet,
     CustomTokenObtainPairView,   # ← nueva, del mismo Views.py
 )
  
@@ -18,6 +19,7 @@ router.register(r'tractos',   TractoViewSet,   basename='tractos')
 router.register(r'remolques', RemolqueViewSet, basename='remolques')
 router.register(r'choferes',  ChoferViewSet,   basename='choferes')
 router.register(r'maniobras', ManiobraViewSet, basename='maniobras')
+router.register(r'gastos', GastoViewSet, basename='gastos')
  
 urlpatterns = [
     path('', include(router.urls)),

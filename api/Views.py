@@ -4,7 +4,8 @@ from .serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer,
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import CustomTokenObtainPairSerializer
-
+from .models import Gasto
+from .serializers import GastoSerializer
 class TractoViewSet(viewsets.ModelViewSet):
     queryset = Tracto.objects.all()
     serializer_class = TractoSerializer
@@ -31,4 +32,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     
     # Devuelve access + refresh con 'role' y 'username' en el payload.
     serializer_class = CustomTokenObtainPairSerializer
- 
+class GastoViewSet(viewsets.ModelViewSet):
+    queryset = Gasto.objects.all()
+    serializer_class = GastoSerializer
