@@ -90,24 +90,16 @@ class Maniobra(models.Model):
         
 class Gasto(models.Model):
     carta_porte = models.CharField(max_length=100, null=True, blank=True)
-
     fecha_entrega_mercancia = models.CharField(max_length=50, null=True, blank=True)
-
-    casetas_ida = models.FloatField(null=True, blank=True)
-    casetas_regreso = models.FloatField(null=True, blank=True)
-
-    gastos_adicionales = models.FloatField(null=True, blank=True)
-
-    entregado = models.FloatField(null=True, blank=True)
-
-    gasto_tag = models.FloatField(null=True, blank=True)
-    gasto_diesel = models.FloatField(null=True, blank=True)
-
-    comision_operador = models.FloatField(null=True, blank=True)
-    reparaciones = models.FloatField(null=True, blank=True)
-
-    gastos_totales = models.FloatField(null=True, blank=True)
-
+    casetas_ida = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    casetas_regreso = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    gastos_adicionales = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    entregado = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    gasto_tag = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    gasto_diesel = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    comision_operador = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    reparaciones = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    gastos_totales = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     facturado = models.CharField(max_length=50, null=True, blank=True)
     descripcion_gastos = models.TextField(null=True, blank=True)
 
