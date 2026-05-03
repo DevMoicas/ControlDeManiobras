@@ -1,65 +1,266 @@
-/* GastosPage.css — Sigue el mismo patrón visual que NoEcoPage y ManiobrasPage */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-.gastos-page {
-  padding: 24px;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+:root {
+  --primary-blue: #007bff;
+  --primary-hover: #005ce6;
+  --bg-body: #f4f7f6;
+  --card-bg: #ffffff;
+  --text-main: #2b3440;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
 }
 
-/* ── Barra superior con botón Admin ─────────────────────── */
-.gastos-topbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 8px;
+.gastos-container {
+  padding: 40px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-body);
+  min-height: 100vh;
+  color: var(--text-main);
+  position: relative; /* Para poder posicionar el botón de Admin Gastos */
 }
 
-/* ── Título centrado ─────────────────────────────────────── */
-.gastos-title-wrapper {
+/* Título */
+.gastos-title {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 15px;
+  color: #2563EB;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  margin-top: 12px;
-  margin-bottom: 28px;
+  width: 100%;
+  text-align: center;
+  gap: 12px;
 }
 
-.gastos-title-icon {
-  color: #2563eb;
-  flex-shrink: 0;
+.title-icon {
+  color: var(--primary-blue);
 }
 
-.gastos-title {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 28px;
+/* Contenedor de Tabla */
+.table-responsive {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tabla de Gastos */
+.gastos-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.gastos-table th {
+  background-color: #f9fafb;
+  text-align: left;
+  padding: 10px 16px;
   font-weight: 700;
-  color: #2563eb;
-  margin: 0;
-  line-height: 1.2;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--border-color);
+  min-width: 120px;
 }
 
-/* ── Botón Admin ─────────────────────────────────────────── */
-.gastos-admin-btn {
-  padding: 6px 16px;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  background-color: #111827;
+.gastos-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
+  vertical-align: middle;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.gastos-table tr:last-child td {
+  border-bottom: none;
+}
+
+.gastos-table tr {
+  transition: background-color 0.2s ease;
+}
+
+.gastos-table tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Inputs en Fila Nueva */
+.gastos-table input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.btn-accion {
+  padding: 8px 12px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.15s ease, opacity 0.15s ease;
+  font-weight: 600;
   white-space: nowrap;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
 }
 
+.btn-guardar-fila { background-color: #2563eb; color: white; }
+.btn-guardar-fila:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+
+.btn-cancelar-fila { background-color: #e5e7eb; color: #333; }
+.btn-cancelar-fila:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+
+/* Estados de carga y error */
+.loading-box,
+.error-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 250px;
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color);
+}
+
+.loading-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-blue);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.error-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--danger);
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+.error-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--danger-hover);
+  margin: 0;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+/* Notificación */
+.notif           { padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; font-weight: 600; }
+.notif-ok        { background: #d1fae5; color: #065f46; }
+.notif-error     { background: #fee2e2; color: #991b1b; }
+
+/* Toolbar & Filtros */
+.toolbar { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  margin-bottom: 15px; 
+}
+
+.filtros-status {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-agregar     { background: #2563eb; color: white; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+.btn-agregar:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-agregar:not(:disabled):hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+
+/* Botones icono */
+.btn-icon        { background: transparent; border: none; cursor: pointer; padding: 6px; border-radius: 50%; transition: all 0.3s ease; }
+.btn-editar      { color: #2563eb; }
+.btn-editar:hover  { background-color: #2563EB; transform: scale(1.05); color: white; }
+.btn-eliminar    { color: #ef4444; }
+.btn-eliminar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+
+/* Modal */
+.modal-overlay   { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+.modal-content   {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  color: #333;
+}
+.modal-titulo    { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; flex-shrink: 0; }
+.modal-form      { display: flex; flex-direction: column; gap: 15px; flex: 1; overflow: hidden; margin-top: 15px; }
+.modal-grid      { display: grid; grid-template-columns: 1fr; gap: 15px; overflow-y: auto; padding-right: 10px; }
+.modal-campo     { display: flex; flex-direction: column; gap: 4px; }
+.modal-campo label { font-size: 12px; font-weight: bold; color: #666; }
+.modal-campo input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 0.95rem; }
+.modal-acciones  { 
+  display: flex; 
+  justify-content: flex-end; 
+  gap: 10px; 
+  margin-top: 10px; 
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+  flex-shrink: 0;
+}
+.btn-cancelar    { padding: 8px 15px; border-radius: 6px; border: none; background: #e5e7eb; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
+.btn-cancelar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+.btn-guardar     { padding: 8px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
+.btn-guardar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+
+/* Botón de Admin Gastos */
+.gastos-admin-btn {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  padding: 8px 16px;
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
 .gastos-admin-btn:hover {
-  background-color: #1d4ed8;
+  background-color: #e2e8f0;
+  color: #0f172a;
 }
 
-.gastos-admin-btn:active {
-  background-color: #1e40af;
+/* Media Queries para Responsividad */
+@media (min-width: 768px) {
+  .modal-grid { grid-template-columns: 1fr 1fr; }
 }
 
-.gastos-admin-btn:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
+@media (max-width: 768px) {
+  .gastos-container { padding: 15px; }
+  .table-responsive { padding: 30px 15px; }
+  .gastos-title { font-size: 1.6rem; margin-bottom: 20px; }
+  .gastos-table th, .gastos-table td { min-width: 100px; padding: 10px 8px; }
+  .modal-content { padding: 20px; width: 95%; }
+  
+  .gastos-admin-btn {
+    position: static;
+    display: block;
+    width: 100%;
+    margin-bottom: 20px;
+  }
 }
