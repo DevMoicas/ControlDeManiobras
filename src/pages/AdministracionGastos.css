@@ -1,0 +1,86 @@
+/* Contenedor principal */
+.gastos-container {
+  padding: 24px;
+  padding-top: 60px; /* 🔥 evita que el título choque con el header */
+  background-color: #f9fafb;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Título */
+.gastos-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin-left: 10px;
+}
+
+/* 🔥 KPI GRID */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+/* KPI CARD */
+.kpi-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  border: 1px solid #f1f5f9;
+  transition: 0.2s;
+}
+
+.kpi-card:hover {
+  transform: translateY(-3px);
+}
+
+/* KPI texto */
+.kpi-card p {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.kpi-card h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Estados */
+.kpi-card.positivo h3 {
+  color: #10b981;
+}
+
+.kpi-card.negativo h3 {
+  color: #ef4444;
+}
+
+/* 🔷 Cards de gráficas */
+.card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f1f5f9;
+}
+
+/* Header de cada gráfica */
+.card-header {
+  margin-bottom: 16px;
+}
+
+.card-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2933;
+}
+
+.card-header p {
+  font-size: 13px;
+  color: #6b7280;
+}
