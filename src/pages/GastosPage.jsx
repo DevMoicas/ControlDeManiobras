@@ -9,7 +9,7 @@ import "./GastosPage.css";
 // ── Definición de Columnas según tu DB ────────────────────────────────────────
 
 const COLUMNAS = [
-  { key: "carta_porte", label: "Carta Porte" },
+  { key: "folio", label: "Carta Porte" },
   { key: "fecha_entrega_mercancia", label: "Fecha Entrega" },
   { key: "casetas_ida", label: "Casetas Ida" },
   { key: "casetas_regreso", label: "Casetas Regreso" },
