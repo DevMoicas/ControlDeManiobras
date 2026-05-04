@@ -89,7 +89,7 @@ class Maniobra(models.Model):
         db_table = 'maniobras'
         
 class Gasto(models.Model):
-    carta_porte = models.CharField(max_length=100, null=True, blank=True)
+    maniobra = models.OneToOneField(Maniobra, on_delete=models.CASCADE, related_name='gasto')
     fecha_entrega_mercancia = models.CharField(max_length=50, null=True, blank=True)
     casetas_ida = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     casetas_regreso = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

@@ -62,7 +62,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token 
     
 class GastoSerializer(serializers.ModelSerializer):
-
+    folio = serializers.CharField(source='maniobra.folio', read_only=True)
+    
     class Meta:
         model = Gasto
         fields = '__all__'
