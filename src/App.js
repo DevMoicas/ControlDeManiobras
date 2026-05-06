@@ -7,6 +7,7 @@ import ManiobrasPage from './pages/ManiobrasPage';
 import AdministracionNoEco from './pages/AdministracionNoEco';
 import GastosPage from "./pages/GastosPage";
 import AdministracionGastos from './pages/AdministracionGastos';
+import VaciosPage from './pages/VaciosPage';
 function Home() {
   const navigate = useNavigate();
 
@@ -88,7 +89,7 @@ function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="maniobras" element={<ManiobrasPage title="MANIOBRAS" />} />
         <Route path="gastos-efectivo" element={<GastosPage title="GASTOS EFECTIVO" />} />
-        <Route path="vacios" element={<BlankPage title="VACIOS" />} />
+        <Route path="vacios" element={<VaciosPage/>} />
         <Route path="no-eco" element={<NoEcoPage />} />
 
         {/* Ruta protegida — solo administradores */}
