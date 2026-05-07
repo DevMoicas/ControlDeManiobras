@@ -8,6 +8,7 @@ import AdministracionNoEco from './pages/AdministracionNoEco';
 import GastosPage from "./pages/GastosPage";
 import AdministracionGastos from './pages/AdministracionGastos';
 import VaciosPage from './pages/VaciosPage';
+import AdminVaciosPage from './pages/AdminVaciosPage';
 function Home() {
   const navigate = useNavigate();
 
@@ -107,8 +108,16 @@ function AppRoutes() {
             <ProtectedRoute requireAdmin>
               <AdministracionGastos />
             </ProtectedRoute>
-  }
-/>
+          }
+        />
+        <Route
+          path="admin-vacios"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminVaciosPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </>
   );
