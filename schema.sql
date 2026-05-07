@@ -47,6 +47,19 @@ CREATE TABLE maniobras (
     ccp TEXT
 );
 
+CREATE TABLE vacios (
+    id SERIAL PRIMARY KEY,
+    contenedor TEXT,
+    patio TEXT,
+    fecha_maniobra TEXT,
+    fecha_entrega TEXT,
+    fecha_notificacion_cliente TEXT,
+    status TEXT,
+    operador TEXT,
+    cita TEXT,
+    cd TEXT
+);
+
 CREATE TABLE gastos (
     id SERIAL PRIMARY KEY,
     carta_porte VARCHAR(100),
