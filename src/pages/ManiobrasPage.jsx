@@ -6,6 +6,7 @@ import { getStatusConfig, isValidStatus } from "../config/statusConfig";
 import StatusSelector from "../components/StatusSelector/StatusSelector";
 import "./ManiobrasPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
+import { useAuthContext } from "../context/AuthContext";
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const COLUMNAS = [
@@ -130,6 +131,7 @@ export default function ManiobrasPage() {
   const [notif, setNotif]                 = useState(null);
   const [filtroStatus, setFiltroStatus]   = useState("todos");
   const [busqueda, setBusqueda] = useState("");
+  const { isAdmin } = useAuthContext();
 
   // ── Auto-dismiss de notificaciones ──────────────────────────────────────────
   useEffect(() => {
@@ -141,14 +143,20 @@ export default function ManiobrasPage() {
   // ── Handlers CRUD ────────────────────────────────────────────────────────────
 
   const handleEliminar = useCallback(async (id) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar esta maniobra?")) return;
-    try {
-      await eliminar(id);
-      setNotif({ tipo: "ok", msg: "Maniobra eliminada correctamente." });
-    } catch {
-      setNotif({ tipo: "error", msg: "Error al eliminar la maniobra." });
-    }
-  }, [eliminar]);
+  if (!isAdmin) {
+    setNotif({ tipo: "error", msg: "No tienes permisos para eliminar." });
+    return;
+  }
+
+  if (!window.confirm("¿Estás seguro de que deseas eliminar esta maniobra?")) return;
+
+  try {
+    await eliminar(id);
+    setNotif({ tipo: "ok", msg: "Maniobra eliminada correctamente." });
+  } catch {
+    setNotif({ tipo: "error", msg: "Error al eliminar la maniobra." });
+  }
+}, [eliminar, isAdmin]);
 
   const handleAbrirEdicion = useCallback((maniobra) => {
     setModal({ abierto: true, datos: { ...maniobra } });
@@ -359,6 +367,8 @@ export default function ManiobrasPage() {
                     {/* ── Columna Acciones ─────────────────────────────── */}
                     <td>
                       <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
+                        
+                        {/* EDITAR → TODOS */}
                         <button
                           className="btn-icon btn-editar"
                           onClick={() => handleAbrirEdicion(maniobra)}
@@ -367,14 +377,19 @@ export default function ManiobrasPage() {
                         >
                           <ArrowDown size={18} />
                         </button>
-                        <button
-                          className="btn-icon btn-eliminar"
-                          onClick={() => handleEliminar(maniobra.id)}
-                          aria-label="Eliminar maniobra"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+
+                        {/* ELIMINAR → SOLO ADMIN */}
+                        {isAdmin && (
+                          <button
+                            className="btn-icon btn-eliminar"
+                            onClick={() => handleEliminar(maniobra.id)}
+                            aria-label="Eliminar maniobra"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+
                       </div>
                     </td>
                   </tr>

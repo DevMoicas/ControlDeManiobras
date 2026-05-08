@@ -90,23 +90,29 @@ useEffect(() => {
 }, [vista]);
 
   const eliminarRegistro = async (id) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar este registro?")) {
-      try {
-        const response = await fetch(`http://127.0.0.1:8000/api/${vista}/${id}/`, {
-          method: 'DELETE',
-        });
-        if (response.ok) {
-          sessionStorage.removeItem("adminConteo");
-          setData(data.filter(item => item.id !== id));
-          alert("Eliminado con éxito");
-        } else {
-          alert("Error al eliminar");
-        }
-      } catch (error) {
-        console.error("Error:", error);
+  if (!isAdmin) {
+    alert("No tienes permisos para eliminar.");
+    return;
+  }
+
+  if (window.confirm("¿Estás seguro de que deseas eliminar este registro?")) {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/${vista}/${id}/`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        sessionStorage.removeItem("adminConteo");
+        setData(data.filter(item => item.id !== id));
+        alert("Eliminado con éxito");
+      } else {
+        alert("Error al eliminar");
       }
+    } catch (error) {
+      console.error("Error:", error);
     }
-  };
+  }
+};
 
   const iniciarEdicion = (item) => {
     setEditando(true);
@@ -253,10 +259,9 @@ useEffect(() => {
                     <td key={i}>{val}</td>
                   ))}
                   <td>
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
-                      <button className="btn-delete" onClick={() => eliminarRegistro(item.id)}>
-                        Eliminar
-                      </button>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                      
+                      {/* EDITAR → TODOS */}
                       <button
                         onClick={() => iniciarEdicion(item)}
                         style={{
@@ -270,6 +275,17 @@ useEffect(() => {
                       >
                         Editar
                       </button>
+
+                      {/* ELIMINAR → SOLO ADMIN */}
+                      {isAdmin && (
+                        <button
+                          className="btn-delete"
+                          onClick={() => eliminarRegistro(item.id)}
+                        >
+                          Eliminar
+                        </button>
+                      )}
+
                     </div>
                   </td>
                 </tr>

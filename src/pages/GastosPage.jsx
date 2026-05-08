@@ -140,14 +140,20 @@ export default function GastosPage() {
   // ── Handlers CRUD ────────────────────────────────────────────────────────────
 
   const handleEliminar = useCallback(async (id) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este gasto?")) return;
-    try {
-      await eliminar(id);
-      setNotif({ tipo: "ok", msg: "Gasto eliminado correctamente." });
-    } catch {
-      setNotif({ tipo: "error", msg: "Error al eliminar el gasto." });
-    }
-  }, [eliminar]);
+  if (!isAdmin) {
+    setNotif({ tipo: "error", msg: "No tienes permisos para eliminar." });
+    return;
+  }
+
+  if (!window.confirm("¿Estás seguro de que deseas eliminar este gasto?")) return;
+
+  try {
+    await eliminar(id);
+    setNotif({ tipo: "ok", msg: "Gasto eliminado correctamente." });
+  } catch {
+    setNotif({ tipo: "error", msg: "Error al eliminar el gasto." });
+  }
+}, [eliminar, isAdmin]);
 
   const handleAbrirEdicion = useCallback((gasto) => {
     setModal({ abierto: true, datos: { ...gasto } });
@@ -291,6 +297,8 @@ export default function GastosPage() {
                   {/* ── Columna Acciones ─────────────────────────────── */}
                   <td>
                     <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
+                      
+                      {/* EDITAR → TODOS */}
                       <button
                         className="btn-icon btn-editar"
                         onClick={() => handleAbrirEdicion(gasto)}
@@ -299,14 +307,19 @@ export default function GastosPage() {
                       >
                         <ArrowDown size={18} />
                       </button>
-                      <button
-                        className="btn-icon btn-eliminar"
-                        onClick={() => handleEliminar(gasto.id)}
-                        aria-label="Eliminar gasto"
-                        title="Eliminar"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+
+                      {/* ELIMINAR → SOLO ADMIN */}
+                      {isAdmin && (
+                        <button
+                          className="btn-icon btn-eliminar"
+                          onClick={() => handleEliminar(gasto.id)}
+                          aria-label="Eliminar gasto"
+                          title="Eliminar"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
+
                     </div>
                   </td>
                 </tr>
