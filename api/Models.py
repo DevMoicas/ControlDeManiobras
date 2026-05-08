@@ -87,3 +87,25 @@ class Maniobra(models.Model):
     class Meta:
         managed = False  # Para que use tu tabla de pgAdmin
         db_table = 'maniobras'
+        
+class Gasto(models.Model):
+    maniobra = models.OneToOneField(Maniobra, on_delete=models.CASCADE, related_name='gasto')
+    fecha_entrega_mercancia = models.CharField(max_length=50, null=True, blank=True)
+    casetas_ida = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    casetas_regreso = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    gastos_adicionales = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    entregado = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    gasto_tag = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    gasto_diesel = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    comision_operador = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    reparaciones = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    gastos_totales = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    facturado = models.CharField(max_length=50, null=True, blank=True)
+    descripcion_gastos = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Carta Porte: {self.carta_porte}"
+
+    class Meta:
+        managed = False
+        db_table = 'gastos'
