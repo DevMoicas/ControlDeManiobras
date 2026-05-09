@@ -11,6 +11,7 @@ from .views import (
     ChoferViewSet,
     ManiobraViewSet,
     GastoViewSet,
+    VacioViewSet,
     CustomTokenObtainPairView,   # ← nueva, del mismo Views.py
 )
  
@@ -20,6 +21,7 @@ router.register(r'remolques', RemolqueViewSet, basename='remolques')
 router.register(r'choferes',  ChoferViewSet,   basename='choferes')
 router.register(r'maniobras', ManiobraViewSet, basename='maniobras')
 router.register(r'gastos', GastoViewSet, basename='gastos')
+router.register(r'vacios', VacioViewSet, basename='vacios')
  
 urlpatterns = [
     path('', include(router.urls)),

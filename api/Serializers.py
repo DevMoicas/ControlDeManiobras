@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
 import re
@@ -75,3 +75,8 @@ class GastoSerializer(serializers.ModelSerializer):
             "origen": obj.maniobra.origen if obj.maniobra else None,
             "destino": obj.maniobra.destino if obj.maniobra else None,
         }
+
+class VacioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vacio
+        fields = '__all__'

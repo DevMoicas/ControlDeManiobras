@@ -1,11 +1,9 @@
 from rest_framework import viewsets
-from .Models import Tracto, Remolque, Chofer, Maniobra
-from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio
+from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import CustomTokenObtainPairSerializer
-from .models import Gasto
-from .serializers import GastoSerializer
+from .Serializers import CustomTokenObtainPairSerializer
 class TractoViewSet(viewsets.ModelViewSet):
     queryset = Tracto.objects.all()
     serializer_class = TractoSerializer
@@ -35,3 +33,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class GastoViewSet(viewsets.ModelViewSet):
     queryset = Gasto.objects.all()
     serializer_class = GastoSerializer
+
+class VacioViewSet(viewsets.ModelViewSet):
+    queryset = Vacio.objects.all().order_by('-id')
+    serializer_class = VacioSerializer
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]

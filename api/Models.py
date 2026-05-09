@@ -109,3 +109,21 @@ class Gasto(models.Model):
     class Meta:
         managed = False
         db_table = 'gastos'
+
+class Vacio(models.Model):
+    contenedor = models.CharField(max_length=255, null=True, blank=True)
+    patio = models.CharField(max_length=255, null=True, blank=True)
+    fecha_maniobra = models.CharField(max_length=50, null=True, blank=True)
+    fecha_entrega = models.CharField(max_length=50, null=True, blank=True)
+    fecha_notificacion_cliente = models.CharField(max_length=50, null=True, blank=True)
+    status = models.CharField(max_length=100, null=True, blank=True)
+    operador = models.CharField(max_length=255, null=True, blank=True)
+    cita = models.CharField(max_length=255, null=True, blank=True)
+    cd = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.contenedor) if self.contenedor else "Vacio sin contenedor"
+
+    class Meta:
+        managed = False
+        db_table = 'vacios'
