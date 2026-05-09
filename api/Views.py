@@ -4,6 +4,10 @@ from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer,
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .Serializers import CustomTokenObtainPairSerializer
+from rest_framework.filters import OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
+
+
 class TractoViewSet(viewsets.ModelViewSet):
     queryset = Tracto.objects.all()
     serializer_class = TractoSerializer
@@ -21,9 +25,13 @@ class ChoferViewSet(viewsets.ModelViewSet):
 
 # --- NUEVA VISTA ---
 class ManiobraViewSet(viewsets.ModelViewSet):
-    queryset = Maniobra.objects.all().order_by('-id')
+    queryset = Maniobra.objects.all().order_by("-id")
     serializer_class = ManiobraSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ["status"]          # habilita ?status=activo
+    ordering_fields = ["id"]
+    ordering = ["-id"]
 
      
 class CustomTokenObtainPairView(TokenObtainPairView):

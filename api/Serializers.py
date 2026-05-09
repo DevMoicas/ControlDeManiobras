@@ -33,11 +33,11 @@ class ManiobraSerializer(serializers.ModelSerializer):
     def validate(self, data):
         # Longitud máxima por campo para evitar payloads enormes
         limites = {
-            "solicita": 100, "agencia": 100,
-            "terminal": 100, "placas_pis": 20,
-            "horario": 50, "cliente": 100, 
-            "origen": 100, "destino": 100, 
-            "asignacion_operador": 100,
+            "solicita": 30, "agencia": 30,
+            "terminal": 30, "placas_pis": 20,
+            "horario": 50, "cliente": 30, 
+            "origen": 20, "destino": 20, 
+            "asignacion_operador": 20,
         }
         for campo, limite in limites.items():
             if campo in data and len(str(data[campo])) > limite:

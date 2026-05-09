@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'api.Apps.ApiConfig',
     'corsheaders',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -81,7 +82,10 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "30/minute",   # máximo 30 peticiones por minuto sin login
         "user": "100/minute",  # máximo 100 peticiones por minuto con login
-    }
+    },
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 30,  
 }
 
 
@@ -111,9 +115,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'fraba'),
+        'NAME': os.getenv('DB_NAME', 'fraba_erp'),
         'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'nono3080'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'elastaxd'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
