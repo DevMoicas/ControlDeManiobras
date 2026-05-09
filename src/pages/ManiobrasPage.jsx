@@ -7,6 +7,7 @@ import StatusSelector from "../components/StatusSelector/StatusSelector";
 import "./ManiobrasPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
 import { useAuthContext } from "../context/AuthContext";
+
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const COLUMNAS = [
@@ -46,7 +47,16 @@ const MANIOBRA_VACIA = {
 
 const MODAL_CERRADO = { abierto: false, datos: null };
 
-// ── Sub-componente: fila de inputs para nueva maniobra ────────────────────────
+const FILTROS = [
+  { id: "todos",     label: "Todos" },
+  { id: "activo",    label: "Activos" },
+  { id: "pendiente", label: "Pendientes" },
+  { id: "quemada",   label: "Quemados" },
+  { id: "por_salir", label: "Por salir" },
+  { id: "vacio",     label: "Vacíos" },
+];
+
+// ── Sub-componente: fila nueva ────────────────────────────────────────────────
 
 function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
   return (
@@ -61,7 +71,6 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
           />
         </td>
       ))}
-      {/* Columna status vacía en fila nueva */}
       <td />
       <td>
         <div style={{ display: "flex", gap: "4px" }}>
@@ -73,7 +82,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
   );
 }
 
-// ── Sub-componente: modal de edición ──────────────────────────────────────────
+// ── Sub-componente: modal edición ─────────────────────────────────────────────
 
 function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
   useEffect(() => {
@@ -106,12 +115,8 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
             ))}
           </div>
           <div className="modal-acciones">
-            <button type="button" className="btn-cancelar" onClick={onCerrar}>
-              Cancelar
-            </button>
-            <button type="submit" className="btn-guardar">
-              Guardar Cambios
-            </button>
+            <button type="button" className="btn-cancelar" onClick={onCerrar}>Cancelar</button>
+            <button type="submit" className="btn-guardar">Guardar Cambios</button>
           </div>
         </form>
       </div>
@@ -122,49 +127,75 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function ManiobrasPage() {
-  const { maniobras, setManiobras, loading, error, eliminar, actualizar, agregar } = useManiobras();
-  const { updatingId, updateStatus } = useStatusUpdate(setManiobras);
+  const [filtroStatus, setFiltroStatus] = useState("todos");
+  const [busqueda,     setBusqueda]     = useState("");
 
-  const [modoAgregar, setModoAgregar] = useState(false);
-  const [nuevaManiobra, setNuevaManiobra] = useState(MANIOBRA_VACIA);
-  const [modal, setModal]                 = useState(MODAL_CERRADO);
-  const [notif, setNotif]                 = useState(null);
-  const [filtroStatus, setFiltroStatus]   = useState("todos");
-  const [busqueda, setBusqueda] = useState("");
+  // filtroStatus viaja al hook — cada cambio resetea la paginación
+  const {
+    maniobras, setManiobras,
+    loading, loadingMore, hasMore, error,
+    loadMore, eliminar, actualizar, agregar,
+  } = useManiobras(filtroStatus);
+
+  const { updatingId, updateStatus } = useStatusUpdate(setManiobras);
   const { isAdmin } = useAuthContext();
 
-  // ── Auto-dismiss de notificaciones ──────────────────────────────────────────
+  const [modoAgregar,    setModoAgregar]    = useState(false);
+  const [nuevaManiobra,  setNuevaManiobra]  = useState(MANIOBRA_VACIA);
+  const [modal,          setModal]          = useState(MODAL_CERRADO);
+  const [notif,          setNotif]          = useState(null);
+
+  // ── Scroll listener en window ────────────────────────────────────────────
+  // Más confiable que IntersectionObserver cuando hay overflow-x en contenedores hijos.
+  // Dispara loadMore cuando el usuario está a 300px del fondo del documento.
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+
+      requestAnimationFrame(() => {
+        const scrolled  = window.scrollY + window.innerHeight;
+        const threshold = document.documentElement.scrollHeight - 300;
+
+        if (scrolled >= threshold && hasMore && !loadingMore) {
+          loadMore();
+        }
+        ticking = false;
+      });
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [hasMore, loadingMore, loadMore]);
+
+  // ── Auto-dismiss notificaciones ───────────────────────────────────────────
   useEffect(() => {
     if (!notif) return;
     const t = setTimeout(() => setNotif(null), 3000);
     return () => clearTimeout(t);
   }, [notif]);
 
-  // ── Handlers CRUD ────────────────────────────────────────────────────────────
+  // ── Handlers CRUD ─────────────────────────────────────────────────────────
 
   const handleEliminar = useCallback(async (id) => {
-  if (!isAdmin) {
-    setNotif({ tipo: "error", msg: "No tienes permisos para eliminar." });
-    return;
-  }
+    if (!isAdmin) {
+      setNotif({ tipo: "error", msg: "No tienes permisos para eliminar." });
+      return;
+    }
+    if (!window.confirm("¿Estás seguro de que deseas eliminar esta maniobra?")) return;
+    try {
+      await eliminar(id);
+      setNotif({ tipo: "ok", msg: "Maniobra eliminada correctamente." });
+    } catch {
+      setNotif({ tipo: "error", msg: "Error al eliminar la maniobra." });
+    }
+  }, [eliminar, isAdmin]);
 
-  if (!window.confirm("¿Estás seguro de que deseas eliminar esta maniobra?")) return;
-
-  try {
-    await eliminar(id);
-    setNotif({ tipo: "ok", msg: "Maniobra eliminada correctamente." });
-  } catch {
-    setNotif({ tipo: "error", msg: "Error al eliminar la maniobra." });
-  }
-}, [eliminar, isAdmin]);
-
-  const handleAbrirEdicion = useCallback((maniobra) => {
-    setModal({ abierto: true, datos: { ...maniobra } });
-  }, []);
-
-  const handleCambioModal = useCallback((key, value) => {
-    setModal((prev) => ({ ...prev, datos: { ...prev.datos, [key]: value } }));
-  }, []);
+  const handleAbrirEdicion  = useCallback((m) => setModal({ abierto: true, datos: { ...m } }), []);
+  const handleCambioModal   = useCallback((key, value) =>
+    setModal((prev) => ({ ...prev, datos: { ...prev.datos, [key]: value } })), []);
 
   const handleGuardarEdicion = useCallback(async (e) => {
     e.preventDefault();
@@ -177,9 +208,8 @@ export default function ManiobrasPage() {
     }
   }, [modal.datos, actualizar]);
 
-  const handleCambioNueva = useCallback((key, value) => {
-    setNuevaManiobra((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  const handleCambioNueva = useCallback((key, value) =>
+    setNuevaManiobra((prev) => ({ ...prev, [key]: value })), []);
 
   const handleGuardarNueva = useCallback(async () => {
     try {
@@ -197,8 +227,6 @@ export default function ManiobrasPage() {
     setNuevaManiobra(MANIOBRA_VACIA);
   }, []);
 
-  // ── Handler de cambio de status ──────────────────────────────────────────────
-
   const handleStatusChange = useCallback(async (maniobra, newStatus) => {
     try {
       await updateStatus(maniobra, newStatus);
@@ -208,7 +236,18 @@ export default function ManiobrasPage() {
     }
   }, [updateStatus]);
 
-  // ── Estados de carga / error ─────────────────────────────────────────────────
+  // ── Filtro "vacio" — único que se resuelve en cliente ─────────────────────
+  // El backend filtra los 4 status reales; "vacio" = registros sin status válido
+  const maniobrasFiltradas = filtroStatus === "vacio"
+    ? maniobras.filter((m) => !isValidStatus(m.status))
+    : maniobras.filter((m) =>
+        !busqueda ||
+        Object.values(m).some((v) =>
+          String(v).toLowerCase().includes(busqueda.toLowerCase())
+        )
+      );
+
+  // ── Estados de carga / error ──────────────────────────────────────────────
 
   if (loading) return (
     <div className="maniobras-container">
@@ -227,36 +266,16 @@ export default function ManiobrasPage() {
     </div>
   );
 
-  // ── Render principal ─────────────────────────────────────────────────────────
-
-  const maniobrasFiltradas = maniobras.filter((m) => {
-  // 🔹 FILTRO POR STATUS
-  let cumpleStatus = false;
-
-  if (filtroStatus === "todos") cumpleStatus = true;
-  else if (filtroStatus === "activo") cumpleStatus = m.status === "activo";
-  else if (filtroStatus === "pendiente") cumpleStatus = m.status === "pendiente";
-  else if (filtroStatus === "quemada") cumpleStatus = m.status === "quemada";
-  else if (filtroStatus === "por_salir") cumpleStatus = m.status === "por_salir";
-  else if (filtroStatus === "vacio") cumpleStatus = !isValidStatus(m.status);
-
-  // 🔹 FILTRO POR BÚSQUEDA
-  const cumpleBusqueda = !busqueda || Object.values(m).some((valor) =>
-    String(valor).toLowerCase().includes(busqueda.toLowerCase())
-  );
-
-  // 🔥 AMBOS deben cumplirse
-  return cumpleStatus && cumpleBusqueda;
-});
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="maniobras-container">
       <h1 className="maniobras-title">
         <Truck size={36} className="title-icon" /> Control de Maniobras
       </h1>
-    {/* BARRA DE BÚSQUEDA */}
+
       <SearchBar value={busqueda} onChange={setBusqueda} />
-      
+
       {notif && (
         <div className={`notif notif-${notif.tipo}`} role="alert" aria-live="polite">
           {notif.msg}
@@ -265,44 +284,16 @@ export default function ManiobrasPage() {
 
       <div className="toolbar">
         <div className="filtros-status">
-          <button
-            className={`btn-filtro ${filtroStatus === "todos" ? "active" : ""}`}
-            onClick={() => setFiltroStatus("todos")}
-          >
-            Todos
-          </button>
-          <button
-            className={`btn-filtro ${filtroStatus === "activo" ? "active" : ""}`}
-            onClick={() => setFiltroStatus("activo")}
-          >
-            Activos
-          </button>
-          <button
-            className={`btn-filtro ${filtroStatus === "pendiente" ? "active" : ""}`}
-            onClick={() => setFiltroStatus("pendiente")}
-          >
-            Pendientes
-          </button>
-          <button
-            className={`btn-filtro ${filtroStatus === "quemada" ? "active" : ""}`}
-            onClick={() => setFiltroStatus("quemada")}
-          >
-            Quemados
-          </button>
-          <button
-            className={`btn-filtro ${filtroStatus === "por_salir" ? "active" : ""}`}
-            onClick={() => setFiltroStatus("por_salir")}
-          >
-            Por salir
-          </button>
-          <button
-            className={`btn-filtro ${filtroStatus === "vacio" ? "active" : ""}`}
-            onClick={() => setFiltroStatus("vacio")}
-          >
-            Vacíos
-          </button>
+          {FILTROS.map(({ id, label }) => (
+            <button
+              key={id}
+              className={`btn-filtro ${filtroStatus === id ? "active" : ""}`}
+              onClick={() => setFiltroStatus(id)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
-
         <button
           className="btn-agregar"
           onClick={() => setModoAgregar(true)}
@@ -344,18 +335,12 @@ export default function ManiobrasPage() {
               maniobrasFiltradas.map((maniobra) => {
                 const statusConfig = getStatusConfig(maniobra.status);
                 return (
-                  <tr
-                    key={maniobra.id}
-                    // Clase de color de fila según status; sin clase si status desconocido
-                    className={statusConfig?.rowClass ?? ""}
-                  >
+                  <tr key={maniobra.id} className={statusConfig?.rowClass ?? ""}>
                     {COLUMNAS.map((col) => (
                       <td key={col.key} style={col.style ?? {}}>
                         {maniobra[col.key]}
                       </td>
                     ))}
-
-                    {/* ── Columna Status con selector inline ───────────── */}
                     <td style={{ whiteSpace: "nowrap" }}>
                       <StatusSelector
                         currentStatus={maniobra.status}
@@ -363,12 +348,8 @@ export default function ManiobrasPage() {
                         loading={updatingId === maniobra.id}
                       />
                     </td>
-
-                    {/* ── Columna Acciones ─────────────────────────────── */}
                     <td>
                       <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-                        
-                        {/* EDITAR → TODOS */}
                         <button
                           className="btn-icon btn-editar"
                           onClick={() => handleAbrirEdicion(maniobra)}
@@ -377,8 +358,6 @@ export default function ManiobrasPage() {
                         >
                           <ArrowDown size={18} />
                         </button>
-
-                        {/* ELIMINAR → SOLO ADMIN */}
                         {isAdmin && (
                           <button
                             className="btn-icon btn-eliminar"
@@ -389,7 +368,6 @@ export default function ManiobrasPage() {
                             <Trash2 size={18} />
                           </button>
                         )}
-
                       </div>
                     </td>
                   </tr>
@@ -398,7 +376,20 @@ export default function ManiobrasPage() {
             )}
           </tbody>
         </table>
+
       </div>
+
+
+      {loadingMore && (
+        <div className="loading-more" aria-live="polite">
+          <span className="loading-more-spinner" />
+          Cargando más registros…
+        </div>
+      )}
+
+      {!hasMore && maniobras.length > 0 && !loadingMore && (
+        <p className="end-of-list">— Todos los registros cargados —</p>
+      )}
 
       {modal.abierto && modal.datos && (
         <ModalEditar

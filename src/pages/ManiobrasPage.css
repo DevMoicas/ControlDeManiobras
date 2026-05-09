@@ -302,3 +302,37 @@
 .maniobras-table tbody tr.row-status--por-salir:hover {
   background-color: #9281df;
 }
+
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 13px;
+  color: #6b7280;
+}
+ 
+.loading-more-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+ 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+ 
+.end-of-list {
+  text-align: center;
+  padding: 16px;
+  font-size: 12px;
+  color: #9ca3af;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
