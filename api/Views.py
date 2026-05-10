@@ -29,7 +29,7 @@ class ManiobraViewSet(viewsets.ModelViewSet):
     serializer_class = ManiobraSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ["status"]          # habilita ?status=activo
+    filterset_fields = ["status"]
     ordering_fields = ["id"]
     ordering = ["-id"]
 
@@ -43,6 +43,9 @@ class GastoViewSet(viewsets.ModelViewSet):
     serializer_class = GastoSerializer
 
 class VacioViewSet(viewsets.ModelViewSet):
-    queryset = Vacio.objects.all().order_by('-id')
+    queryset = Vacio.objects.all().order_by("-id")
     serializer_class = VacioSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    filter_backends = [OrderingFilter]
+    ordering_fields = ["id"]
+    ordering = ["-id"]

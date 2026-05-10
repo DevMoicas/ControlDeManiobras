@@ -81,11 +81,11 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "30/minute",   # máximo 30 peticiones por minuto sin login
-        "user": "100/minute",  # máximo 100 peticiones por minuto con login
+        "user": "200/minute",  # máximo 100 peticiones por minuto con login
     },
-    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 30,  
+    "PAGE_SIZE": 60,  # cambiado de 30 a 60
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],  
 }
 
 
