@@ -56,6 +56,17 @@ const FILTROS = [
   { id: "vacio",     label: "Vacíos" },
 ];
 
+// Columnas del header — reutilizadas en ambas tablas
+function HeaderRow() {
+  return (
+    <tr>
+      {COLUMNAS.map((col) => <th key={col.key}>{col.label}</th>)}
+      <th style={{ textAlign: "center" }}>Status</th>
+      <th style={{ textAlign: "center" }}>Acciones</th>
+    </tr>
+  );
+}
+
 // ── Sub-componente: fila nueva ────────────────────────────────────────────────
 
 function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
@@ -130,7 +141,6 @@ export default function ManiobrasPage() {
   const [filtroStatus, setFiltroStatus] = useState("todos");
   const [busqueda,     setBusqueda]     = useState("");
 
-  // filtroStatus viaja al hook — cada cambio resetea la paginación
   const {
     maniobras, setManiobras,
     loading, loadingMore, hasMore, error,
@@ -140,14 +150,12 @@ export default function ManiobrasPage() {
   const { updatingId, updateStatus } = useStatusUpdate(setManiobras);
   const { isAdmin } = useAuthContext();
 
-  const [modoAgregar,    setModoAgregar]    = useState(false);
-  const [nuevaManiobra,  setNuevaManiobra]  = useState(MANIOBRA_VACIA);
-  const [modal,          setModal]          = useState(MODAL_CERRADO);
-  const [notif,          setNotif]          = useState(null);
+  const [modoAgregar,   setModoAgregar]   = useState(false);
+  const [nuevaManiobra, setNuevaManiobra] = useState(MANIOBRA_VACIA);
+  const [modal,         setModal]         = useState(MODAL_CERRADO);
+  const [notif,         setNotif]         = useState(null);
 
-  // ── Scroll listener en window ────────────────────────────────────────────
-  // Más confiable que IntersectionObserver cuando hay overflow-x en contenedores hijos.
-  // Dispara loadMore cuando el usuario está a 300px del fondo del documento.
+  // ── Scroll listener en window ─────────────────────────────────────────────
   useEffect(() => {
     let ticking = false;
 
@@ -158,10 +166,7 @@ export default function ManiobrasPage() {
       requestAnimationFrame(() => {
         const scrolled  = window.scrollY + window.innerHeight;
         const threshold = document.documentElement.scrollHeight - 300;
-
-        if (scrolled >= threshold && hasMore && !loadingMore) {
-          loadMore();
-        }
+        if (scrolled >= threshold && hasMore && !loadingMore) loadMore();
         ticking = false;
       });
     };
@@ -236,8 +241,7 @@ export default function ManiobrasPage() {
     }
   }, [updateStatus]);
 
-  // ── Filtro "vacio" — único que se resuelve en cliente ─────────────────────
-  // El backend filtra los 4 status reales; "vacio" = registros sin status válido
+  // ── Filtrado ──────────────────────────────────────────────────────────────
   const maniobrasFiltradas = filtroStatus === "vacio"
     ? maniobras.filter((m) => !isValidStatus(m.status))
     : maniobras.filter((m) =>
@@ -304,81 +308,90 @@ export default function ManiobrasPage() {
       </div>
 
       <div className="table-responsive">
-        <table className="maniobras-table">
-          <thead>
-            <tr>
-              {COLUMNAS.map((col) => <th key={col.key}>{col.label}</th>)}
-              <th style={{ textAlign: "center" }}>Status</th>
-              <th style={{ textAlign: "center" }}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {modoAgregar && (
-              <FilaNueva
-                datos={nuevaManiobra}
-                onChange={handleCambioNueva}
-                onGuardar={handleGuardarNueva}
-                onCancelar={handleCancelarNueva}
-              />
-            )}
 
-            {maniobrasFiltradas.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={COLUMNAS.length + 2}
-                  style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}
-                >
-                  No hay maniobras que mostrar con el filtro actual
-                </td>
-              </tr>
-            ) : (
-              maniobrasFiltradas.map((maniobra) => {
-                const statusConfig = getStatusConfig(maniobra.status);
-                return (
-                  <tr key={maniobra.id} className={statusConfig?.rowClass ?? ""}>
-                    {COLUMNAS.map((col) => (
-                      <td key={col.key} style={col.style ?? {}}>
-                        {maniobra[col.key]}
+        {/* ── HEADER STICKY — fuera del scroll horizontal ── */}
+        <div className="table-header-wrapper">
+          <table className="maniobras-table">
+            <thead>
+              <HeaderRow />
+            </thead>
+          </table>
+        </div>
+
+        {/* ── BODY — scroll horizontal + vertical ── */}
+        <div className="table-scroll-wrapper">
+          <table className="maniobras-table">
+            {/* thead fantasma para sincronizar anchos de columna */}
+            <thead className="thead-ghost">
+              <HeaderRow />
+            </thead>
+            <tbody>
+              {modoAgregar && (
+                <FilaNueva
+                  datos={nuevaManiobra}
+                  onChange={handleCambioNueva}
+                  onGuardar={handleGuardarNueva}
+                  onCancelar={handleCancelarNueva}
+                />
+              )}
+
+              {maniobrasFiltradas.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={COLUMNAS.length + 2}
+                    style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}
+                  >
+                    No hay maniobras que mostrar con el filtro actual
+                  </td>
+                </tr>
+              ) : (
+                maniobrasFiltradas.map((maniobra) => {
+                  const statusConfig = getStatusConfig(maniobra.status);
+                  return (
+                    <tr key={maniobra.id} className={statusConfig?.rowClass ?? ""}>
+                      {COLUMNAS.map((col) => (
+                        <td key={col.key} style={col.style ?? {}}>
+                          {maniobra[col.key]}
+                        </td>
+                      ))}
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        <StatusSelector
+                          currentStatus={maniobra.status}
+                          onSelect={(newStatus) => handleStatusChange(maniobra, newStatus)}
+                          loading={updatingId === maniobra.id}
+                        />
                       </td>
-                    ))}
-                    <td style={{ whiteSpace: "nowrap" }}>
-                      <StatusSelector
-                        currentStatus={maniobra.status}
-                        onSelect={(newStatus) => handleStatusChange(maniobra, newStatus)}
-                        loading={updatingId === maniobra.id}
-                      />
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-                        <button
-                          className="btn-icon btn-editar"
-                          onClick={() => handleAbrirEdicion(maniobra)}
-                          aria-label="Editar maniobra"
-                          title="Editar"
-                        >
-                          <ArrowDown size={18} />
-                        </button>
-                        {isAdmin && (
+                      <td>
+                        <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
                           <button
-                            className="btn-icon btn-eliminar"
-                            onClick={() => handleEliminar(maniobra.id)}
-                            aria-label="Eliminar maniobra"
-                            title="Eliminar"
+                            className="btn-icon btn-editar"
+                            onClick={() => handleAbrirEdicion(maniobra)}
+                            aria-label="Editar maniobra"
+                            title="Editar"
                           >
-                            <Trash2 size={18} />
+                            <ArrowDown size={18} />
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                          {isAdmin && (
+                            <button
+                              className="btn-icon btn-eliminar"
+                              onClick={() => handleEliminar(maniobra.id)}
+                              aria-label="Eliminar maniobra"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
 
       </div>
-
 
       {loadingMore && (
         <div className="loading-more" aria-live="polite">

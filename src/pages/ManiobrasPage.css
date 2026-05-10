@@ -37,15 +37,37 @@
   color: var(--primary-blue);
 }
 
-/* Contenedor de Tabla */
+/* Contenedor visual externo — sin overflow para no romper sticky */
 .table-responsive {
   background: var(--card-bg);
   border-radius: 16px;
-  padding: 30px;
   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
   border: 1px solid var(--border-color);
+  overflow: visible; /* permite que el sticky se ancle al viewport */
+}
+
+/* Tabla de encabezados — sticky, SIN scroll horizontal */
+.table-header-wrapper {
+  overflow: hidden; /* oculta lo que sobresale, sincronizado con el body */
+  border-radius: 10px 10px 0 0;
+}
+
+.table-header-wrapper .maniobras-table {
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  margin-bottom: 0;
+}
+
+/* Wrapper del body — maneja el scroll horizontal */
+.table-scroll-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  /* Sin overflow-y ni max-height — el scroll vertical es del window */
+}
+
+.table-scroll-wrapper .maniobras-table {
+  border-top: none;
+  border-radius: 0 0 10px 10px;
 }
 
 /* Tabla de Maniobras */
@@ -54,10 +76,13 @@
   border-collapse: separate;
   border-spacing: 0;
   border-radius: 10px;
+  /* overflow:hidden aquí NO rompe sticky porque la tabla no es ancestro posicionado de los th */
   overflow: hidden;
   border: 1px solid var(--border-color);
 }
 
+/* ── Sticky header ─────────────────────────────────────────────────────────── */
+/* El sticky se ancla al scroll de la ventana (window), no al wrapper interno  */
 .maniobras-table th {
   background-color: #f9fafb;
   text-align: left;
@@ -69,6 +94,15 @@
   letter-spacing: 0.05em;
   border-bottom: 2px solid var(--border-color);
   min-width: 120px;
+}
+
+/* Sombra en el wrapper del header para separación visual al scrollear */
+.table-header-wrapper {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--card-bg);
 }
 
 .maniobras-table td {
@@ -157,28 +191,21 @@
 }
 
 @keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: .5;
-  }
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .5; }
 }
 
 /* Notificación */
-.notif           { padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; font-weight: 600; }
-.notif-ok        { background: #d1fae5; color: #065f46; }
-.notif-error     { background: #fee2e2; color: #991b1b; }
+.notif       { padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; font-weight: 600; }
+.notif-ok    { background: #d1fae5; color: #065f46; }
+.notif-error { background: #fee2e2; color: #991b1b; }
 
 /* Toolbar & Filtros */
-.toolbar { 
-  display: flex; 
-  justify-content: space-between; 
+.toolbar {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px; 
+  margin-bottom: 15px;
 }
 
 .filtros-status {
@@ -198,30 +225,23 @@
   transition: all 0.2s ease;
 }
 
-.btn-filtro:hover {
-  background: #f8fafc;
-}
+.btn-filtro:hover  { background: #f8fafc; }
+.btn-filtro.active { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
 
-.btn-filtro.active {
-  background: var(--primary-blue);
-  color: white;
-  border-color: var(--primary-blue);
-}
-
-.btn-agregar     { background: #2563eb; color: white; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+.btn-agregar          { background: #2563eb; color: white; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
 .btn-agregar:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-agregar:not(:disabled):hover { background-color: #2563EB; transform: scale(1.05); color: white; }
 
 /* Botones icono */
-.btn-icon        { background: transparent; border: none; cursor: pointer; padding: 6px; border-radius: 50%; transition: all 0.3s ease; }
-.btn-editar      { color: #2563eb; }
-.btn-editar:hover  { background-color: #2563EB; transform: scale(1.05); color: white; }
-.btn-eliminar    { color: #ef4444; }
+.btn-icon       { background: transparent; border: none; cursor: pointer; padding: 6px; border-radius: 50%; transition: all 0.3s ease; }
+.btn-editar     { color: #2563eb; }
+.btn-editar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+.btn-eliminar   { color: #ef4444; }
 .btn-eliminar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
 
 /* Modal */
-.modal-overlay   { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-.modal-content   {
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+.modal-content {
   background: white;
   padding: 30px;
   border-radius: 12px;
@@ -233,76 +253,53 @@
   box-shadow: 0 10px 25px rgba(0,0,0,0.5);
   color: #333;
 }
-.modal-titulo    { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; flex-shrink: 0; }
-.modal-form      { display: flex; flex-direction: column; gap: 15px; flex: 1; overflow: hidden; margin-top: 15px; }
-.modal-grid      { display: grid; grid-template-columns: 1fr; gap: 15px; overflow-y: auto; padding-right: 10px; }
-.modal-campo     { display: flex; flex-direction: column; gap: 4px; }
+.modal-titulo  { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; flex-shrink: 0; }
+.modal-form    { display: flex; flex-direction: column; gap: 15px; flex: 1; overflow: hidden; margin-top: 15px; }
+.modal-grid    { display: grid; grid-template-columns: 1fr; gap: 15px; overflow-y: auto; padding-right: 10px; }
+.modal-campo   { display: flex; flex-direction: column; gap: 4px; }
 .modal-campo label { font-size: 12px; font-weight: bold; color: #666; }
 .modal-campo input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 0.95rem; }
-.modal-acciones  { 
-  display: flex; 
-  justify-content: flex-end; 
-  gap: 10px; 
-  margin-top: 10px; 
+.modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
   padding-top: 15px;
   border-top: 1px solid #eee;
   flex-shrink: 0;
 }
-.btn-cancelar    { padding: 8px 15px; border-radius: 6px; border: none; background: #e5e7eb; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
+.btn-cancelar       { padding: 8px 15px; border-radius: 6px; border: none; background: #e5e7eb; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
 .btn-cancelar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
-.btn-guardar     { padding: 8px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
-.btn-guardar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+.btn-guardar        { padding: 8px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
+.btn-guardar:hover  { background-color: #2563EB; transform: scale(1.05); color: white; }
 
-/* Media Queries para Responsividad */
+/* Media Queries */
 @media (min-width: 768px) {
   .modal-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 768px) {
   .maniobras-container { padding: 15px; }
-  .table-responsive { padding: 30px 15px; } /* mantenemos padding vertical o lo bajamos */
+  .table-scroll-wrapper { padding: 0 15px 15px 15px; }
   .maniobras-title { font-size: 1.6rem; margin-bottom: 20px; }
   .maniobras-table th, .maniobras-table td { min-width: 100px; padding: 10px 8px; }
   .modal-content { padding: 20px; width: 95%; }
 }
 
-/* ─── Colores de fila por status ────────────────────────────────────────────
-   Añade estos bloques a tu ManiobrasPage.css existente.
-   (o crea un archivo separado e impórtalo en ManiobrasPage.jsx)
-   ──────────────────────────────────────────────────────────────────────────── */
+/* ── Colores de fila por status ──────────────────────────────────────────── */
+.maniobras-table tbody tr.row-status--activo    { background-color: #c6e5b1; }
+.maniobras-table tbody tr.row-status--activo:hover { background-color: #8cecae; }
 
-/* Activo / En viaje → verde suave */
-.maniobras-table tbody tr.row-status--activo {
-  background-color: #c6e5b1;
-}
-.maniobras-table tbody tr.row-status--activo:hover {
-  background-color: #8cecae;
-}
+.maniobras-table tbody tr.row-status--pendiente { background-color: #96c6e0; }
+.maniobras-table tbody tr.row-status--pendiente:hover { background-color: #72a5e7; }
 
-/* Pendiente → azul suave */
-.maniobras-table tbody tr.row-status--pendiente {
-  background-color: #96c6e0;
-}
-.maniobras-table tbody tr.row-status--pendiente:hover {
-  background-color: #72a5e7;
-}
+.maniobras-table tbody tr.row-status--quemada   { background-color: #ff6961; }
+.maniobras-table tbody tr.row-status--quemada:hover { background-color: #e28e8e; }
 
-/* Quemada → rojo suave */
-.maniobras-table tbody tr.row-status--quemada {
-  background-color: #ff6961;
-}
-.maniobras-table tbody tr.row-status--quemada:hover {
-  background-color: #e28e8e;
-}
+.maniobras-table tbody tr.row-status--por-salir { background-color: #c7b0d4; }
+.maniobras-table tbody tr.row-status--por-salir:hover { background-color: #9281df; }
 
-/* Por salir → morado suave */
-.maniobras-table tbody tr.row-status--por-salir {
-  background-color: #c7b0d4;
-}
-.maniobras-table tbody tr.row-status--por-salir:hover {
-  background-color: #9281df;
-}
-
+/* ── Infinite scroll indicators ─────────────────────────────────────────── */
 .loading-more {
   display: flex;
   align-items: center;
@@ -313,7 +310,7 @@
   font-size: 13px;
   color: #6b7280;
 }
- 
+
 .loading-more-spinner {
   display: inline-block;
   width: 16px;
@@ -324,11 +321,11 @@
   animation: spin 0.7s linear infinite;
   flex-shrink: 0;
 }
- 
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
- 
+
 .end-of-list {
   text-align: center;
   padding: 16px;
