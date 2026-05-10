@@ -12,7 +12,7 @@ export default function DashboardGastos() {
 
   useEffect(() => {
     axios.get("http://127.0.0.1:8000/api/gastos/")
-      .then(res => setData(res.data))
+      .then(res => setData(res.data.results || []))
       .catch(err => console.error(err));
   }, []);
 

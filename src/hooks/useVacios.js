@@ -19,17 +19,18 @@ export function useVacios() {
   const [error, setError] = useState(null);
 
   const cargarDatos = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await apiClient.get("/vacios/");
-      setVacios([...data].sort((a, b) => Number(a.id) - Number(b.id)));
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  setLoading(true);
+  setError(null);
+  try {
+    const data = await apiClient.get("/vacios/");
+    const lista = Array.isArray(data.results) ? data.results : [];
+    setVacios(lista.sort((a, b) => Number(a.id) - Number(b.id)));
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
   useEffect(() => { cargarDatos(); }, [cargarDatos]);
 
