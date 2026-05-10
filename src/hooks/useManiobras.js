@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiClient } from "../api/apiClient";
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 60;
 
 // status === "todos" o "vacio" se resuelven en cliente porque "vacio"
 // no es un valor real de BD — solo significa status NULL o inválido.

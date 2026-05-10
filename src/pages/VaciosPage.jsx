@@ -7,18 +7,20 @@ import { useNavigate } from "react-router-dom";
 import "./VaciosPage.css";
 
 const COLUMNAS = [
-  { key: "contenedor", label: "Contenedor" },
-  { key: "patio", label: "Patio" },
-  { key: "fecha_maniobra", label: "Fecha Maniobra" },
-  { key: "fecha_entrega", label: "Fecha Entrega" },
-  { key: "fecha_notificacion_cliente", label: "Notific. Cliente" },
-  { key: "status", label: "Status" },
-  { key: "operador", label: "Operador" },
-  { key: "cita", label: "Cita" },
-  { key: "cd", label: "CD" },
+  { key: "contenedor",                label: "Contenedor" },
+  { key: "patio",                     label: "Patio" },
+  { key: "fecha_maniobra",            label: "Fecha Maniobra" },
+  { key: "fecha_entrega",             label: "Fecha Entrega" },
+  { key: "fecha_notificacion_cliente",label: "Notific. Cliente" },
+  { key: "status",                    label: "Status" },
+  { key: "operador",                  label: "Operador" },
+  { key: "cita",                      label: "Cita" },
+  { key: "cd",                        label: "CD" },
 ];
 
 const MODAL_CERRADO = { abierto: false, datos: null };
+
+// ── Sub-componente: fila nueva ────────────────────────────────────────────────
 
 function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
   return (
@@ -42,6 +44,8 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
     </tr>
   );
 }
+
+// ── Sub-componente: modal edición ─────────────────────────────────────────────
 
 function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
   useEffect(() => {
@@ -83,22 +87,53 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
   );
 }
 
+// ── Componente principal ──────────────────────────────────────────────────────
+
 export default function VaciosPage() {
   const navigate = useNavigate();
-  const { vacios, loading, error, eliminar, actualizar, agregar, VACIO_VACIO } = useVacios();
+  const {
+    vacios, loading, loadingMore, hasMore, error,
+    loadMore, eliminar, actualizar, agregar, VACIO_VACIO,
+  } = useVacios();
   const { isAdmin } = useAuthContext();
 
   const [modoAgregar, setModoAgregar] = useState(false);
-  const [nuevoVacio, setNuevoVacio] = useState(VACIO_VACIO);
-  const [modal, setModal] = useState(MODAL_CERRADO);
-  const [notif, setNotif] = useState(null);
-  const [busqueda, setBusqueda] = useState("");
+  const [nuevoVacio,  setNuevoVacio]  = useState(VACIO_VACIO);
+  const [modal,       setModal]       = useState(MODAL_CERRADO);
+  const [notif,       setNotif]       = useState(null);
+  const [busqueda,    setBusqueda]    = useState("");
 
+  // ── Scroll listener en window ─────────────────────────────────────────────
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+
+      requestAnimationFrame(() => {
+        const scrolled   = window.scrollY + window.innerHeight;
+        const threshold  = document.documentElement.scrollHeight - 300;
+
+        if (scrolled >= threshold && hasMore && !loadingMore) {
+          loadMore();
+        }
+        ticking = false;
+      });
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [hasMore, loadingMore, loadMore]);
+
+  // ── Auto-dismiss notificaciones ───────────────────────────────────────────
   useEffect(() => {
     if (!notif) return;
     const t = setTimeout(() => setNotif(null), 3000);
     return () => clearTimeout(t);
   }, [notif]);
+
+  // ── Handlers CRUD ─────────────────────────────────────────────────────────
 
   const handleEliminar = useCallback(async (id) => {
     if (!isAdmin) {
@@ -106,7 +141,6 @@ export default function VaciosPage() {
       return;
     }
     if (!window.confirm("¿Estás seguro de que deseas eliminar este vacío?")) return;
-
     try {
       await eliminar(id);
       setNotif({ tipo: "ok", msg: "Vacío eliminado correctamente." });
@@ -115,13 +149,9 @@ export default function VaciosPage() {
     }
   }, [eliminar, isAdmin]);
 
-  const handleAbrirEdicion = useCallback((vacio) => {
-    setModal({ abierto: true, datos: { ...vacio } });
-  }, []);
-
-  const handleCambioModal = useCallback((key, value) => {
-    setModal((prev) => ({ ...prev, datos: { ...prev.datos, [key]: value } }));
-  }, []);
+  const handleAbrirEdicion  = useCallback((v) => setModal({ abierto: true, datos: { ...v } }), []);
+  const handleCambioModal   = useCallback((key, value) =>
+    setModal((prev) => ({ ...prev, datos: { ...prev.datos, [key]: value } })), []);
 
   const handleGuardarEdicion = useCallback(async (e) => {
     e.preventDefault();
@@ -134,9 +164,8 @@ export default function VaciosPage() {
     }
   }, [modal.datos, actualizar]);
 
-  const handleCambioNuevo = useCallback((key, value) => {
-    setNuevoVacio((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  const handleCambioNuevo = useCallback((key, value) =>
+    setNuevoVacio((prev) => ({ ...prev, [key]: value })), []);
 
   const handleGuardarNuevo = useCallback(async () => {
     try {
@@ -153,6 +182,17 @@ export default function VaciosPage() {
     setModoAgregar(false);
     setNuevoVacio(VACIO_VACIO);
   }, [VACIO_VACIO]);
+
+  // ── Filtro por búsqueda — solo sobre datos ya cargados ────────────────────
+  const vaciosFiltrados = busqueda
+    ? vacios.filter((v) =>
+        Object.values(v).some((val) =>
+          String(val).toLowerCase().includes(busqueda.toLowerCase())
+        )
+      )
+    : vacios;
+
+  // ── Estados de carga / error ──────────────────────────────────────────────
 
   if (loading) return (
     <div className="vacios-container">
@@ -171,19 +211,14 @@ export default function VaciosPage() {
     </div>
   );
 
-  const vaciosFiltrados = vacios.filter((v) => {
-    if (!busqueda) return true;
-    return Object.values(v).some((val) =>
-      String(val).toLowerCase().includes(busqueda.toLowerCase())
-    );
-  });
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="vacios-container">
       {isAdmin && (
-        <button 
-          className="vacios-admin-btn" 
-          onClick={() => navigate('../admin-vacios')}
+        <button
+          className="vacios-admin-btn"
+          onClick={() => navigate("../admin-vacios")}
         >
           ⚙ Admin Vacíos
         </button>
@@ -192,7 +227,7 @@ export default function VaciosPage() {
       <h1 className="vacios-title">
         <Package size={36} className="title-icon" /> Vacíos
       </h1>
-      
+
       <SearchBar value={busqueda} onChange={setBusqueda} />
 
       {notif && (
@@ -202,7 +237,7 @@ export default function VaciosPage() {
       )}
 
       <div className="toolbar">
-        <div className="filtros-status"></div>
+        <div className="filtros-status" />
         <button
           className="btn-agregar"
           onClick={() => setModoAgregar(true)}
@@ -236,7 +271,7 @@ export default function VaciosPage() {
                   colSpan={COLUMNAS.length + 1}
                   style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}
                 >
-                  No hay vacíos que mostrar con el filtro actual
+                  No hay vacíos que mostrar
                 </td>
               </tr>
             ) : (
@@ -274,6 +309,17 @@ export default function VaciosPage() {
         </table>
       </div>
 
+      {loadingMore && (
+        <div className="loading-more" aria-live="polite">
+          <span className="loading-more-spinner" />
+          Cargando más registros…
+        </div>
+      )}
+
+      {!hasMore && vacios.length > 0 && !loadingMore && (
+        <p className="end-of-list">— Todos los registros cargados —</p>
+      )}
+
       {modal.abierto && modal.datos && (
         <ModalEditar
           datos={modal.datos}
@@ -284,4 +330,4 @@ export default function VaciosPage() {
       )}
     </div>
   );
-}
+}

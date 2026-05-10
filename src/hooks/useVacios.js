@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { apiClient } from "../api/apiClient";
 
-const VACIO_VACIO = {
+const PAGE_SIZE = 60;
+
+export const VACIO_VACIO = {
   contenedor: "",
   patio: "",
   fecha_maniobra: "",
@@ -14,25 +16,51 @@ const VACIO_VACIO = {
 };
 
 export function useVacios() {
-  const [vacios, setVacios] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [vacios,      setVacios]      = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error,       setError]       = useState(null);
+  const [hasMore,     setHasMore]     = useState(true);
 
-  const cargarDatos = useCallback(async () => {
-  setLoading(true);
-  setError(null);
-  try {
-    const data = await apiClient.get("/vacios/");
-    const lista = Array.isArray(data.results) ? data.results : [];
-    setVacios(lista.sort((a, b) => Number(a.id) - Number(b.id)));
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-}, []);
+  const pageRef     = useRef(1);
+  const fetchingRef = useRef(false);
 
-  useEffect(() => { cargarDatos(); }, [cargarDatos]);
+  const fetchPage = useCallback(async (page, isFirstPage = false) => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+
+    isFirstPage ? setLoading(true) : setLoadingMore(true);
+    setError(null);
+
+    try {
+      const data    = await apiClient.get(
+        `/vacios/?page=${page}&page_size=${PAGE_SIZE}&ordering=-id`
+      );
+      const results = Array.isArray(data.results) ? data.results : data;
+
+      setVacios((prev) => isFirstPage ? results : [...prev, ...results]);
+      setHasMore(results.length === PAGE_SIZE && Boolean(data.next));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      isFirstPage ? setLoading(false) : setLoadingMore(false);
+      fetchingRef.current = false;
+    }
+  }, []);
+
+  // Carga inicial
+  useEffect(() => {
+    pageRef.current = 1;
+    fetchPage(1, true);
+  }, [fetchPage]);
+
+  const loadMore = useCallback(() => {
+    if (!hasMore || fetchingRef.current) return;
+    pageRef.current += 1;
+    fetchPage(pageRef.current, false);
+  }, [hasMore, fetchPage]);
+
+  // ── CRUD ────────────────────────────────────────────────────────────────────
 
   const eliminar = useCallback(async (id) => {
     await apiClient.delete(`/vacios/${id}/`);
@@ -42,17 +70,25 @@ export function useVacios() {
   const actualizar = useCallback(async (id, datos) => {
     const { id: _omit, ...datosSinId } = datos;
     const resultado = await apiClient.patch(`/vacios/${id}/`, datosSinId);
-    setVacios((prev) =>
-      prev.map((v) => (v.id === id ? resultado : v))
-    );
+    setVacios((prev) => prev.map((v) => (v.id === id ? resultado : v)));
   }, []);
 
   const agregar = useCallback(async (datos) => {
     const resultado = await apiClient.post("/vacios/", datos);
-    setVacios((prev) =>
-      [...prev, resultado].sort((a, b) => Number(a.id) - Number(b.id))
-    );
+    setVacios((prev) => [resultado, ...prev]);
   }, []);
 
-  return { vacios, setVacios, loading, error, eliminar, actualizar, agregar, VACIO_VACIO };
+  return {
+    vacios,
+    setVacios,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    loadMore,
+    eliminar,
+    actualizar,
+    agregar,
+    VACIO_VACIO,
+  };
 }
