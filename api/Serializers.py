@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
 import re
@@ -17,6 +17,11 @@ class RemolqueSerializer(serializers.ModelSerializer):
 class ChoferSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chofer
+        fields = '__all__'
+
+class EmpleadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Empleado
         fields = '__all__'
 
 class ManiobraSerializer(serializers.ModelSerializer):

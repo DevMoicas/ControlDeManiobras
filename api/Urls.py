@@ -9,6 +9,7 @@ from .views import (
     TractoViewSet,
     RemolqueViewSet,
     ChoferViewSet,
+    EmpleadoViewSet,
     ManiobraViewSet,
     GastoViewSet,
     VacioViewSet,
@@ -22,6 +23,7 @@ router.register(r'choferes',  ChoferViewSet,   basename='choferes')
 router.register(r'maniobras', ManiobraViewSet, basename='maniobras')
 router.register(r'gastos', GastoViewSet, basename='gastos')
 router.register(r'vacios', VacioViewSet, basename='vacios')
+router.register(r'empleados', EmpleadoViewSet, basename='empleados')
  
 urlpatterns = [
     path('', include(router.urls)),
@@ -32,4 +34,3 @@ urlpatterns = [
     # Refresh → el frontend lo llama automáticamente cuando expira el access
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
- 

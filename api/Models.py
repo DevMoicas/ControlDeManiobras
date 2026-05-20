@@ -127,3 +127,16 @@ class Vacio(models.Model):
     class Meta:
         managed = False
         db_table = 'vacios'
+
+class Empleado(models.Model):
+    nombre_trabajador = models.CharField(max_length=255)
+    fecha_ingreso = models.CharField(max_length=50, null=True, blank=True)
+    nss = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return self.nombre_trabajador
+
+    class Meta:
+        managed = False  # Usa tu propia tabla de pgAdmin
+        db_table = 'empleados'
+        ordering = ['id']

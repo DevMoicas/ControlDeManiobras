@@ -1,6 +1,6 @@
 from rest_framework import viewsets
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio
-from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado
+from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .Serializers import CustomTokenObtainPairSerializer
@@ -49,3 +49,11 @@ class VacioViewSet(viewsets.ModelViewSet):
     filter_backends = [OrderingFilter]
     ordering_fields = ["id"]
     ordering = ["-id"]
+
+class EmpleadoViewSet(viewsets.ModelViewSet):
+    queryset = Empleado.objects.all().order_by("-id")
+    serializer_class = EmpleadoSerializer
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    filter_backends = [OrderingFilter]
+    ordering_fields = ["id"]
+    ordering = ["id"]
