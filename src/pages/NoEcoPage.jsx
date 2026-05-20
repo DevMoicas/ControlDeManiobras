@@ -22,6 +22,9 @@ export default function NoEcoPage() {
     placas: "Placas",
     tipo: "Tipo",
     id: "ID",
+    nombre_trabajador: "Nombre del Trabajador",
+    fecha_ingreso: "Fecha de Ingreso",
+    nss: "NSS",
   };
 
   const configFormularios = {
@@ -41,78 +44,83 @@ export default function NoEcoPage() {
       { name: "nombre", label: "Nombre Completo", type: "text" },
       { name: "rfc", label: "RFC del operador", type: "text" },
       { name: "licencia", label: "Número de Licencia", type: "text" }
+    ],
+    empleados: [
+      { name: "nombre_trabajador", label: "Nombre del Trabajador", type: "text" },
+      { name: "fecha_ingreso", label: "Fecha de Ingreso", type: "date" },
+      { name: "nss", label: "NSS", type: "text" }
     ]
   };
 
   const cacheRef = useRef({});
 
-useEffect(() => {
-  // usar cache
-  if (cacheRef.current[vista]) {
-    setData(cacheRef.current[vista]);
-    return;
-  }
+  useEffect(() => {
+    // usar cache
+    if (cacheRef.current[vista]) {
+      setData(cacheRef.current[vista]);
+      return;
+    }
 
-  const controller = new AbortController();
+    const controller = new AbortController();
 
-  fetch(`http://127.0.0.1:8000/api/${vista}`, {
-    signal: controller.signal
-  })
-    .then(res => {
-      if (!res.ok) {
-        if (res.status === 429) {
-          console.warn("Demasiadas solicitudes (429)");
-          return null;
+    fetch(`http://127.0.0.1:8000/api/${vista}`, {
+      signal: controller.signal
+    })
+      .then(res => {
+        if (!res.ok) {
+          if (res.status === 429) {
+            console.warn("Demasiadas solicitudes (429)");
+            return null;
+          }
+          throw new Error("Error en la petición");
         }
-        throw new Error("Error en la petición");
-      }
-      return res.json();
-    })
-    .then(res => {
-      if (!res) return;
+        return res.json();
+      })
+      .then(res => {
+        if (!res) return;
 
-      const datos = Array.isArray(res)
-        ? res
-        : res.results || [];
+        const datos = Array.isArray(res)
+          ? res
+          : res.results || [];
 
-      cacheRef.current[vista] = datos; //guardar cache
-      setData(datos);
-    })
-    .catch(err => {
-      if (err.name !== "AbortError") {
-        console.error(err);
-      }
-    });
-
-  return () => {
-    controller.abort();
-  };
-}, [vista]);
-
-  const eliminarRegistro = async (id) => {
-  if (!isAdmin) {
-    alert("No tienes permisos para eliminar.");
-    return;
-  }
-
-  if (window.confirm("¿Estás seguro de que deseas eliminar este registro?")) {
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/api/${vista}/${id}/`, {
-        method: 'DELETE',
+        cacheRef.current[vista] = datos; //guardar cache
+        setData(datos);
+      })
+      .catch(err => {
+        if (err.name !== "AbortError") {
+          console.error(err);
+        }
       });
 
-      if (response.ok) {
-        sessionStorage.removeItem("adminConteo");
-        setData(data.filter(item => item.id !== id));
-        alert("Eliminado con éxito");
-      } else {
-        alert("Error al eliminar");
-      }
-    } catch (error) {
-      console.error("Error:", error);
+    return () => {
+      controller.abort();
+    };
+  }, [vista]);
+
+  const eliminarRegistro = async (id) => {
+    if (!isAdmin) {
+      alert("No tienes permisos para eliminar.");
+      return;
     }
-  }
-};
+
+    if (window.confirm("¿Estás seguro de que deseas eliminar este registro?")) {
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/api/${vista}/${id}/`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          sessionStorage.removeItem("adminConteo");
+          setData(data.filter(item => item.id !== id));
+          alert("Eliminado con éxito");
+        } else {
+          alert("Error al eliminar");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+  };
 
   const iniciarEdicion = (item) => {
     setEditando(true);
@@ -161,18 +169,19 @@ useEffect(() => {
   const nombresSingulares = {
     tractos: "Tracto",
     remolques: "Remolque",
-    choferes: "Chofer"
+    choferes: "Chofer",
+    empleados: "Empleado"
   };
-  
+
   const dataFiltrada = Array.isArray(data)
-  ? data.filter((item) => {
+    ? data.filter((item) => {
       if (!busqueda) return true;
 
       return Object.values(item).some((valor) =>
         String(valor).toLowerCase().includes(busqueda.toLowerCase())
       );
     })
-  : [];
+    : [];
   return (
     <div className="noeco-container">
 
@@ -193,7 +202,7 @@ useEffect(() => {
           </button>
         )}
       </div>
-    {/* BARRA DE BÚSQUEDA */}
+      {/* BARRA DE BÚSQUEDA */}
       <SearchBar value={busqueda} onChange={setBusqueda} />
       {/* Tabs */}
       <div className="tabs">
@@ -214,6 +223,12 @@ useEffect(() => {
           onClick={() => setVista("choferes")}
         >
           Choferes
+        </button>
+        <button
+          className={`tab-button ${vista === "empleados" ? "active" : ""}`}
+          onClick={() => setVista("empleados")}
+        >
+          Empleados
         </button>
       </div>
 
@@ -260,7 +275,7 @@ useEffect(() => {
                   ))}
                   <td>
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                      
+
                       {/* EDITAR → TODOS */}
                       <button
                         onClick={() => iniciarEdicion(item)}
