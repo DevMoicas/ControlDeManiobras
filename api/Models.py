@@ -44,7 +44,7 @@ class Maniobra(models.Model):
     codigo_pis = models.CharField(max_length=100, null=True, blank=True)
     terminal = models.CharField(max_length=100, null=True, blank=True)
     placas_pis = models.CharField(max_length=100, null=True, blank=True)
-    fecha_pis = models.CharField(max_length=50, null=True, blank=True)
+    fecha_pis = models.DateField(max_length=50, null=True, blank=True)
     horario = models.CharField(max_length=50, null=True, blank=True)
     
     # Nuevos campos agregados
@@ -61,7 +61,7 @@ class Maniobra(models.Model):
     folio = models.CharField(max_length=100, null=True, blank=True)
     vacio_patio = models.CharField(max_length=255, null=True, blank=True)
     status_vacio = models.CharField(max_length=100, null=True, blank=True)
-    fecha_entrega_mercancia = models.CharField(max_length=50, null=True, blank=True)
+    fecha_entrega_mercancia = models.DateField(max_length=50, null=True, blank=True)
     no_factura = models.CharField(max_length=100, null=True, blank=True)
     ccp = models.CharField(max_length=100, null=True, blank=True)
 

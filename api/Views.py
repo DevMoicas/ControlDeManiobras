@@ -30,7 +30,7 @@ class ManiobraViewSet(viewsets.ModelViewSet):
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ["status"]
-    ordering_fields = ["id"]
+    ordering_fields = ["id", "fecha_pis", "fecha_entrega_mercancia"]
     ordering = ["-id"]
 
      
