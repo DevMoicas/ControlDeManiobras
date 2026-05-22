@@ -15,6 +15,7 @@ export default function NoEcoPage() {
   const [editando, setEditando] = useState(false);
   const [registroEditando, setRegistroEditando] = useState(null);
   const [busqueda, setBusqueda] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const TRADUCCIONES_COLUMNAS = {
     no_eco: "No. Eco",
     anio: "Año",
@@ -104,6 +105,7 @@ export default function NoEcoPage() {
     }
 
     if (window.confirm("¿Estás seguro de que deseas eliminar este registro?")) {
+      setIsSubmitting(true);
       try {
         const response = await fetch(`http://127.0.0.1:8000/api/${vista}/${id}/`, {
           method: 'DELETE',
@@ -118,6 +120,8 @@ export default function NoEcoPage() {
         }
       } catch (error) {
         console.error("Error:", error);
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -135,6 +139,7 @@ export default function NoEcoPage() {
 
   const guardarNuevoRegistro = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const url = editando
         ? `http://127.0.0.1:8000/api/${vista}/${registroEditando.id}/`
@@ -163,6 +168,8 @@ export default function NoEcoPage() {
       }
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -243,6 +250,7 @@ export default function NoEcoPage() {
               setModalAbierto(true);
             }}
             className="btn-add"
+            disabled={isSubmitting}
           >
             <span>+</span> Agregar Nuevo {nombresSingulares[vista] || "Registro"}
           </button>
@@ -284,9 +292,11 @@ export default function NoEcoPage() {
                           background: 'transparent',
                           border: 'none',
                           fontWeight: '600',
-                          cursor: 'pointer',
-                          padding: '4px 8px'
+                          cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                          padding: '4px 8px',
+                          opacity: isSubmitting ? 0.5 : 1
                         }}
+                        disabled={isSubmitting}
                       >
                         Editar
                       </button>
@@ -296,6 +306,7 @@ export default function NoEcoPage() {
                         <button
                           className="btn-delete"
                           onClick={() => eliminarRegistro(item.id)}
+                          disabled={isSubmitting}
                         >
                           Eliminar
                         </button>
@@ -342,11 +353,12 @@ export default function NoEcoPage() {
                     setEditando(false);
                     setRegistroEditando(null);
                   }}
+                  disabled={isSubmitting}
                 >
                   Cancelar
                 </button>
-                <button type="submit" className="btn-save">
-                  Guardar
+                <button type="submit" className="btn-save" disabled={isSubmitting}>
+                  {isSubmitting ? 'Guardando...' : 'Guardar'}
                 </button>
               </div>
             </form>

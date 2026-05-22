@@ -34,7 +34,7 @@ const MODAL_CERRADO = { abierto: false, datos: null };
 
 // ── Sub-componente: fila de inputs para nuevo gasto ──────────────────────────
 
-function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
+function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
   return (
     <tr>
       {COLUMNAS.map((col) => (
@@ -49,8 +49,8 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
       ))}
       <td>
         <div style={{ display: "flex", gap: "4px" }}>
-          <button className="btn-accion btn-guardar-fila" onClick={onGuardar}>Guardar</button>
-          <button className="btn-accion btn-cancelar-fila" onClick={onCancelar}>Cancelar</button>
+          <button className="btn-accion btn-guardar-fila" onClick={onGuardar} disabled={isSubmitting}>{isSubmitting ? '...' : 'Guardar'}</button>
+          <button className="btn-accion btn-cancelar-fila" onClick={onCancelar} disabled={isSubmitting}>Cancelar</button>
         </div>
       </td>
     </tr>
@@ -59,7 +59,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
 
 // ── Sub-componente: modal de edición ──────────────────────────────────────────
 
-function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
+function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onCerrar(); };
     window.addEventListener("keydown", onKey);
@@ -90,11 +90,11 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
             ))}
           </div>
           <div className="modal-acciones">
-            <button type="button" className="btn-cancelar" onClick={onCerrar}>
+            <button type="button" className="btn-cancelar" onClick={onCerrar} disabled={isSubmitting}>
               Cancelar
             </button>
-            <button type="submit" className="btn-guardar">
-              Guardar Cambios
+            <button type="submit" className="btn-guardar" disabled={isSubmitting}>
+              {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
             </button>
           </div>
         </form>
@@ -115,6 +115,7 @@ export default function GastosPage() {
   const [modal, setModal]                 = useState(MODAL_CERRADO);
   const [notif, setNotif]                 = useState(null);
   const [busqueda, setBusqueda] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ── Formateador de moneda ───────────────────────────────────────────────────
   const formatMoneda = (valor) => {
@@ -147,11 +148,14 @@ export default function GastosPage() {
 
   if (!window.confirm("¿Estás seguro de que deseas eliminar este gasto?")) return;
 
+  setIsSubmitting(true);
   try {
     await eliminar(id);
     setNotif({ tipo: "ok", msg: "Gasto eliminado correctamente." });
   } catch {
     setNotif({ tipo: "error", msg: "Error al eliminar el gasto." });
+  } finally {
+    setIsSubmitting(false);
   }
 }, [eliminar, isAdmin]);
 
@@ -165,12 +169,15 @@ export default function GastosPage() {
 
   const handleGuardarEdicion = useCallback(async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await actualizar(modal.datos.id, modal.datos);
       setNotif({ tipo: "ok", msg: "Gasto actualizado correctamente." });
       setModal(MODAL_CERRADO);
     } catch {
       setNotif({ tipo: "error", msg: "Error al actualizar el gasto." });
+    } finally {
+      setIsSubmitting(false);
     }
   }, [modal.datos, actualizar]);
 
@@ -179,6 +186,7 @@ export default function GastosPage() {
   }, []);
 
   const handleGuardarNueva = useCallback(async () => {
+    setIsSubmitting(true);
     try {
       await agregar(nuevoGasto);
       setNuevoGasto(GASTO_VACIO);
@@ -186,6 +194,8 @@ export default function GastosPage() {
       setNotif({ tipo: "ok", msg: "Gasto agregado correctamente." });
     } catch {
       setNotif({ tipo: "error", msg: "Error al agregar el gasto." });
+    } finally {
+      setIsSubmitting(false);
     }
   }, [nuevoGasto, agregar]);
 
@@ -252,7 +262,7 @@ export default function GastosPage() {
         <button
           className="btn-agregar"
           onClick={() => setModoAgregar(true)}
-          disabled={modoAgregar}
+          disabled={modoAgregar || isSubmitting}
         >
           + Agregar Registro
         </button>
@@ -273,6 +283,7 @@ export default function GastosPage() {
                 onChange={handleCambioNueva}
                 onGuardar={handleGuardarNueva}
                 onCancelar={handleCancelarNueva}
+                isSubmitting={isSubmitting}
               />
             )}
 
@@ -304,6 +315,7 @@ export default function GastosPage() {
                         onClick={() => handleAbrirEdicion(gasto)}
                         aria-label="Editar gasto"
                         title="Editar"
+                        disabled={isSubmitting}
                       >
                         <ArrowDown size={18} />
                       </button>
@@ -315,6 +327,7 @@ export default function GastosPage() {
                           onClick={() => handleEliminar(gasto.id)}
                           aria-label="Eliminar gasto"
                           title="Eliminar"
+                          disabled={isSubmitting}
                         >
                           <Trash2 size={18} />
                         </button>
@@ -335,6 +348,7 @@ export default function GastosPage() {
           onChange={handleCambioModal}
           onGuardar={handleGuardarEdicion}
           onCerrar={() => setModal(MODAL_CERRADO)}
+          isSubmitting={isSubmitting}
         />
       )}
     </div>
