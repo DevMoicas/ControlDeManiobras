@@ -7,7 +7,7 @@ const PAGE_SIZE = 60;
 // no es un valor real de BD — solo significa status NULL o inválido.
 const STATUS_BACKEND = ["activo", "pendiente", "quemada", "por_salir"];
 
-export function useManiobras(filtroStatus = "todos") {
+export function useManiobras(filtroStatus = "todos", ordenFecha = "desc") {
   const [maniobras,   setManiobras]   = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -19,11 +19,12 @@ export function useManiobras(filtroStatus = "todos") {
 
   // Construye la query string según el filtro activo
   const buildUrl = useCallback((page) => {
-    const params = new URLSearchParams({
-      page,
-      page_size: PAGE_SIZE,
-      ordering: "-id",
-    });
+  const ordenCampo = ordenFecha === "asc" ? "fecha_pis" : "-fecha_pis";
+  const params = new URLSearchParams({
+    page,
+    page_size: PAGE_SIZE,
+    ordering: ordenCampo,
+  });
 
     // Solo los status reales van al backend; "todos" y "vacio" no
     if (STATUS_BACKEND.includes(filtroStatus)) {
@@ -31,7 +32,7 @@ export function useManiobras(filtroStatus = "todos") {
     }
 
     return `/maniobras/?${params.toString()}`;
-  }, [filtroStatus]);
+  }, [filtroStatus, ordenFecha]);
 
   const fetchPage = useCallback(async (page, isFirstPage = false) => {
     if (fetchingRef.current) return;

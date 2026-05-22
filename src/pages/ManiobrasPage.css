@@ -333,3 +333,20 @@
   color: #9ca3af;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
+
+/* ── Botón ordenar fecha ─────────────────────────────────────────────────── */
+.btn-ordenar {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.btn-ordenar:hover {
+  color: var(--primary-blue);
+}
+

@@ -19,7 +19,7 @@ const COLUMNAS = [
   },
   { key: "terminal", label: "Terminal" },
   { key: "placas_pis", label: "Placas PIS" },
-  { key: "fecha_pis", label: "Fecha PIS" },
+  { key: "fecha_pis", label: "Fecha PIS", sortable: true },
   { key: "horario", label: "Horario" },
   { key: "tipo_y_peso", label: "Tipo y Peso" },
   { key: "contenedor", label: "Contenedor" },
@@ -32,7 +32,7 @@ const COLUMNAS = [
   { key: "folio", label: "Folio" },
   { key: "vacio_patio", label: "Vacio Patio" },
   { key: "status_vacio", label: "Status Vacío" },
-  { key: "fecha_entrega_mercancia", label: "Entrega Mercancía" },
+  { key: "fecha_entrega_mercancia", label: "Entrega Mercancía", sortable: true },
   { key: "no_factura", label: "No. Factura" },
   { key: "ccp", label: "CCP" },
 ];
@@ -47,6 +47,22 @@ const MANIOBRA_VACIA = {
 
 const MODAL_CERRADO = { abierto: false, datos: null };
 
+// Convierte YYYY-MM-DD (backend) → DD/MM/YYYY (lo que ve el usuario)
+function fechaParaMostrar(valor) {
+  if (!valor) return "";
+  const [y, m, d] = valor.split("-");
+  if (!y || !m || !d) return valor;
+  return `${d}/${m}/${y}`;
+}
+
+// Convierte DD/MM/YYYY (input del usuario) → YYYY-MM-DD (backend)
+function fechaParaBackend(valor) {
+  if (!valor) return "";
+  const [d, m, y] = valor.split("/");
+  if (!y || !m || !d) return valor;
+  return `${y}-${m}-${d}`;
+}
+
 const FILTROS = [
   { id: "todos",     label: "Todos" },
   { id: "activo",    label: "Activos" },
@@ -57,10 +73,26 @@ const FILTROS = [
 ];
 
 // Columnas del header — reutilizadas en ambas tablas
-function HeaderRow() {
+function HeaderRow({ ordenFecha, onOrdenar }) {
+  const iconoFlecha = ordenFecha === "asc" ? "↑" : "↓";
   return (
     <tr>
-      {COLUMNAS.map((col) => <th key={col.key}>{col.label}</th>)}
+      {COLUMNAS.map((col) => (
+        <th key={col.key}>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            {col.label}
+            {col.sortable && (
+              <button
+                className="btn-ordenar"
+                onClick={() => onOrdenar(col.key)}
+                title={ordenFecha === "asc" ? "Más reciente primero" : "Más antiguo primero"}
+              >
+                {iconoFlecha}
+              </button>
+            )}
+          </div>
+        </th>
+      ))}
       <th style={{ textAlign: "center" }}>Status</th>
       <th style={{ textAlign: "center" }}>Acciones</th>
     </tr>
@@ -119,8 +151,10 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
                 <label htmlFor={`edit-${col.key}`}>{col.label}</label>
                 <input
                   id={`edit-${col.key}`}
-                  value={datos[col.key] ?? ""}
-                  onChange={(e) => onChange(col.key, e.target.value)}
+                  value={col.sortable ? fechaParaMostrar(datos[col.key] ?? "") : (datos[col.key] ?? "")}
+                  onChange={(e) =>
+                    onChange(col.key, col.sortable ? fechaParaBackend(e.target.value) : e.target.value)}
+                  placeholder={col.sortable ? "DD/MM/YYYY" : ""}
                 />
               </div>
             ))}
@@ -140,12 +174,19 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
 export default function ManiobrasPage() {
   const [filtroStatus, setFiltroStatus] = useState("todos");
   const [busqueda,     setBusqueda]     = useState("");
+  const [ordenFecha, setOrdenFecha] = useState("desc");
+  const handleOrdenar = useCallback((campo) => {
+  setOrdenFecha((prev) => {
+    const nuevo = prev === "desc" ? "asc" : "desc";
+    return nuevo;
+  });
+}, []);
 
   const {
     maniobras, setManiobras,
     loading, loadingMore, hasMore, error,
     loadMore, eliminar, actualizar, agregar,
-  } = useManiobras(filtroStatus);
+  } = useManiobras(filtroStatus, ordenFecha);
 
   const { updatingId, updateStatus } = useStatusUpdate(setManiobras);
   const { isAdmin } = useAuthContext();
@@ -313,7 +354,7 @@ export default function ManiobrasPage() {
         <div className="table-header-wrapper">
           <table className="maniobras-table">
             <thead>
-              <HeaderRow />
+              <HeaderRow ordenFecha={ordenFecha} onOrdenar={handleOrdenar} />
             </thead>
           </table>
         </div>
@@ -323,7 +364,7 @@ export default function ManiobrasPage() {
           <table className="maniobras-table">
             {/* thead fantasma para sincronizar anchos de columna */}
             <thead className="thead-ghost">
-              <HeaderRow />
+              <HeaderRow ordenFecha={ordenFecha} onOrdenar={handleOrdenar} />
             </thead>
             <tbody>
               {modoAgregar && (
@@ -351,7 +392,7 @@ export default function ManiobrasPage() {
                     <tr key={maniobra.id} className={statusConfig?.rowClass ?? ""}>
                       {COLUMNAS.map((col) => (
                         <td key={col.key} style={col.style ?? {}}>
-                          {maniobra[col.key]}
+                          {col.sortable ? fechaParaMostrar(maniobra[col.key]) : maniobra[col.key]}
                         </td>
                       ))}
                       <td style={{ whiteSpace: "nowrap" }}>
