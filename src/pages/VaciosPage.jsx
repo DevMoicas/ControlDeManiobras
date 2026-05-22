@@ -22,7 +22,7 @@ const MODAL_CERRADO = { abierto: false, datos: null };
 
 // ── Sub-componente: fila nueva ────────────────────────────────────────────────
 
-function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
+function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
   return (
     <tr>
       {COLUMNAS.map((col) => (
@@ -37,8 +37,8 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
       ))}
       <td>
         <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
-          <button className="btn-accion btn-guardar-fila" onClick={onGuardar}>Guardar</button>
-          <button className="btn-accion btn-cancelar-fila" onClick={onCancelar}>Cancelar</button>
+          <button className="btn-accion btn-guardar-fila" onClick={onGuardar} disabled={isSubmitting}>{isSubmitting ? '...' : 'Guardar'}</button>
+          <button className="btn-accion btn-cancelar-fila" onClick={onCancelar} disabled={isSubmitting}>Cancelar</button>
         </div>
       </td>
     </tr>
@@ -47,7 +47,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar }) {
 
 // ── Sub-componente: modal edición ─────────────────────────────────────────────
 
-function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
+function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onCerrar(); };
     window.addEventListener("keydown", onKey);
@@ -78,8 +78,8 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar }) {
             ))}
           </div>
           <div className="modal-acciones">
-            <button type="button" className="btn-cancelar" onClick={onCerrar}>Cancelar</button>
-            <button type="submit" className="btn-guardar">Guardar Cambios</button>
+            <button type="button" className="btn-cancelar" onClick={onCerrar} disabled={isSubmitting}>Cancelar</button>
+            <button type="submit" className="btn-guardar" disabled={isSubmitting}>{isSubmitting ? 'Guardando...' : 'Guardar Cambios'}</button>
           </div>
         </form>
       </div>
@@ -102,6 +102,7 @@ export default function VaciosPage() {
   const [modal,       setModal]       = useState(MODAL_CERRADO);
   const [notif,       setNotif]       = useState(null);
   const [busqueda,    setBusqueda]    = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ── Scroll listener en window ─────────────────────────────────────────────
   useEffect(() => {
@@ -141,11 +142,14 @@ export default function VaciosPage() {
       return;
     }
     if (!window.confirm("¿Estás seguro de que deseas eliminar este vacío?")) return;
+    setIsSubmitting(true);
     try {
       await eliminar(id);
       setNotif({ tipo: "ok", msg: "Vacío eliminado correctamente." });
     } catch {
       setNotif({ tipo: "error", msg: "Error al eliminar el vacío." });
+    } finally {
+      setIsSubmitting(false);
     }
   }, [eliminar, isAdmin]);
 
@@ -155,12 +159,15 @@ export default function VaciosPage() {
 
   const handleGuardarEdicion = useCallback(async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await actualizar(modal.datos.id, modal.datos);
       setNotif({ tipo: "ok", msg: "Vacío actualizado correctamente." });
       setModal(MODAL_CERRADO);
     } catch {
       setNotif({ tipo: "error", msg: "Error al actualizar el vacío." });
+    } finally {
+      setIsSubmitting(false);
     }
   }, [modal.datos, actualizar]);
 
@@ -168,6 +175,7 @@ export default function VaciosPage() {
     setNuevoVacio((prev) => ({ ...prev, [key]: value })), []);
 
   const handleGuardarNuevo = useCallback(async () => {
+    setIsSubmitting(true);
     try {
       await agregar(nuevoVacio);
       setNuevoVacio(VACIO_VACIO);
@@ -175,6 +183,8 @@ export default function VaciosPage() {
       setNotif({ tipo: "ok", msg: "Vacío agregado correctamente." });
     } catch {
       setNotif({ tipo: "error", msg: "Error al agregar el vacío." });
+    } finally {
+      setIsSubmitting(false);
     }
   }, [nuevoVacio, agregar, VACIO_VACIO]);
 
@@ -241,7 +251,7 @@ export default function VaciosPage() {
         <button
           className="btn-agregar"
           onClick={() => setModoAgregar(true)}
-          disabled={modoAgregar}
+          disabled={modoAgregar || isSubmitting}
         >
           + Agregar Vacío
         </button>
@@ -262,6 +272,7 @@ export default function VaciosPage() {
                 onChange={handleCambioNuevo}
                 onGuardar={handleGuardarNuevo}
                 onCancelar={handleCancelarNuevo}
+                isSubmitting={isSubmitting}
               />
             )}
 
@@ -287,6 +298,7 @@ export default function VaciosPage() {
                         onClick={() => handleAbrirEdicion(vacio)}
                         aria-label="Editar vacío"
                         title="Editar"
+                        disabled={isSubmitting}
                       >
                         <ArrowDown size={18} />
                       </button>
@@ -296,6 +308,7 @@ export default function VaciosPage() {
                           onClick={() => handleEliminar(vacio.id)}
                           aria-label="Eliminar vacío"
                           title="Eliminar"
+                          disabled={isSubmitting}
                         >
                           <Trash2 size={18} />
                         </button>
@@ -326,6 +339,7 @@ export default function VaciosPage() {
           onChange={handleCambioModal}
           onGuardar={handleGuardarEdicion}
           onCerrar={() => setModal(MODAL_CERRADO)}
+          isSubmitting={isSubmitting}
         />
       )}
     </div>

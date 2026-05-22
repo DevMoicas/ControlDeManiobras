@@ -22,6 +22,7 @@ const LoginPage = () => {
   const [password, setPassword]      = useState('');
   const [fieldErrors, setFieldErrors] = useState({ username: '', password: '' });
   const [apiError, setApiError]       = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockoutEndTime, setLockoutEndTime] = useState(null);
@@ -75,6 +76,8 @@ const LoginPage = () => {
 
     if (!validateFields()) return;
 
+    setIsSubmitting(true);
+
     try {
       await login(username, password);
       setFailedAttempts(0);
@@ -97,6 +100,8 @@ const LoginPage = () => {
           visible: true,
         });
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -148,7 +153,7 @@ const LoginPage = () => {
             <input
               type="text"
               required
-              disabled={remainingTime > 0}
+              disabled={remainingTime > 0 || isSubmitting}
               value={username}
               placeholder="Introduce tu usuario"
               className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-[#2563eb] transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -169,7 +174,7 @@ const LoginPage = () => {
             <input
               type="password"
               required
-              disabled={remainingTime > 0}
+              disabled={remainingTime > 0 || isSubmitting}
               value={password}
               placeholder="••••••••"
               className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-[#2563eb] transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -193,14 +198,14 @@ const LoginPage = () => {
 
           <button
             type="submit"
-            disabled={remainingTime > 0}
+            disabled={remainingTime > 0 || isSubmitting}
             className={`w-full text-white py-3 px-4 rounded-xl font-bold transition-all duration-300 shadow-md ${
-              remainingTime > 0
+              (remainingTime > 0 || isSubmitting)
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-[#2563eb] hover:bg-blue-700 hover:-translate-y-[2px] active:scale-95 hover:shadow-lg'
             }`}
           >
-            Iniciar sesión
+            {isSubmitting ? 'Iniciando sesión...' : 'Iniciar sesión'}
           </button>
         </form>
       </div>
