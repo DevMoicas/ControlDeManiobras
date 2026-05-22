@@ -76,3 +76,10 @@ CREATE TABLE gastos (
     facturado TEXT,
     descripcion_gastos TEXT
 );
+
+CREATE TABLE empleados (
+    id SERIAL PRIMARY KEY,
+    nombre_trabajador VARCHAR(100),
+    fecha_ingreso DATE,
+    nss VARCHAR (100)
+)
