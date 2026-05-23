@@ -103,6 +103,19 @@ class Gasto(models.Model):
     facturado = models.CharField(max_length=50, null=True, blank=True)
     descripcion_gastos = models.TextField(null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        campos = [
+            self.casetas_ida or 0,
+            self.casetas_regreso or 0,
+            self.gastos_adicionales or 0,
+            self.gasto_tag or 0,
+            self.gasto_diesel or 0,
+            self.comision_operador or 0,
+            self.reparaciones or 0,
+        ]
+        self.gastos_totales = sum(campos)
+        super().save(*args, **kwargs)
+        
     def __str__(self):
         return f"Carta Porte: {self.carta_porte}"
 
