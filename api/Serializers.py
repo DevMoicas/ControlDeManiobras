@@ -68,10 +68,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     
 class GastoSerializer(serializers.ModelSerializer):
     folio = serializers.CharField(source='maniobra.folio', read_only=True)
-    
+
     class Meta:
         model = Gasto
         fields = '__all__'
+        extra_kwargs = {
+            'maniobra': {'required': False}  # para que PUT no lo exija
+        }
 
     def get_maniobra_info(self, obj):
         return {

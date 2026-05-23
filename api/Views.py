@@ -42,6 +42,22 @@ class GastoViewSet(viewsets.ModelViewSet):
     queryset = Gasto.objects.all()
     serializer_class = GastoSerializer
 
+    def perform_create(self, serializer):
+        maniobra_id = self.request.data.get('maniobra')
+        if not maniobra_id:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'maniobra': 'Este campo es requerido.'})
+        try:
+            maniobra = Maniobra.objects.get(id=maniobra_id)
+        except Maniobra.DoesNotExist:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'maniobra': f'No existe una maniobra con id {maniobra_id}.'})
+        serializer.save(maniobra=maniobra)  
+
+    def perform_update(self, serializer):
+        # En update no tocamos la maniobra, solo los campos del gasto
+        serializer.save()
+
 class VacioViewSet(viewsets.ModelViewSet):
     queryset = Vacio.objects.all().order_by("-id")
     serializer_class = VacioSerializer
