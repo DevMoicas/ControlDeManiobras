@@ -9,7 +9,7 @@ import "./GastosPage.css";
 // ── Definición de Columnas según tu DB ────────────────────────────────────────
 
 const COLUMNAS = [
-  { key: "folio", label: "Carta Porte" },
+  { key: "maniobra", label: "carta_porte" },
   { key: "fecha_entrega_mercancia", label: "Fecha Entrega" },
   { key: "casetas_ida", label: "Casetas Ida" },
   { key: "casetas_regreso", label: "Casetas Regreso" },
@@ -25,9 +25,11 @@ const COLUMNAS = [
 ];
 
 const GASTO_VACIO = {
-  carta_porte: "", fecha_entrega_mercancia: "", casetas_ida: 0, casetas_regreso: 0,
+  maniobra: "",  // el usuario escribe el ID de la maniobra
+  fecha_entrega_mercancia: "", casetas_ida: 0, casetas_regreso: 0,
   gastos_adicionales: 0, entregado: 0, gasto_tag: 0, gasto_diesel: 0,
-  comision_operador: 0, reparaciones: 0, gastos_totales: 0, facturado: "", descripcion_gastos: ""
+  comision_operador: 0, reparaciones: 0, facturado: "", descripcion_gastos: ""
+  // gastos_totales lo quitas porque es calculado
 };
 
 const MODAL_CERRADO = { abierto: false, datos: null };

@@ -21,22 +21,36 @@ export const useGastos = () => {
     useEffect(() => { fetchGastos(); }, []);
 
     const agregar = async (nuevo) => {
-        const response = await fetch("http://127.0.0.1:8000/api/gastos/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(nuevo),
-        });
-        if (response.ok) fetchGastos();
-    };
+    console.log("Datos a enviar:", nuevo);
+    const { folio, ...datosLimpios } = nuevo;
+    const response = await fetch("http://127.0.0.1:8000/api/gastos/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datosLimpios),
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        console.error("Error POST:", err);
+        throw new Error(JSON.stringify(err));
+    }
+    fetchGastos();
+};
 
-    const actualizar = async (id, datos) => {
-        const response = await fetch(`http://127.0.0.1:8000/api/gastos/${id}/`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(datos),
-        });
-        if (response.ok) fetchGastos();
-    };
+const actualizar = async (id, datos) => {
+    // Excluye campos read-only
+    const { folio, maniobra, ...datosLimpios } = datos;
+    const response = await fetch(`http://127.0.0.1:8000/api/gastos/${id}/`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datosLimpios),
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        console.error("Error PUT:", err);
+        throw new Error(JSON.stringify(err));
+    }
+    fetchGastos();
+};
 
     const eliminar = async (id) => {
         const response = await fetch(`http://127.0.0.1:8000/api/gastos/${id}/`, {
