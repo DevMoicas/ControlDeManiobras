@@ -43,15 +43,18 @@ function decodeJwtPayload(token) {
   }
 }
 
-// ── Token store en memoria (más seguro que localStorage) ──
-let _accessToken = null;
-let _refreshToken = null;
-
+// ── Token store en localStorage para persistencia al refrescar ──
 const tokenStore = {
-  getAccess:   () => _accessToken,
-  getRefresh:  () => _refreshToken,
-  setTokens:   (access, refresh) => { _accessToken = access; _refreshToken = refresh; },
-  clearTokens: () => { _accessToken = null; _refreshToken = null; },
+  getAccess:   () => localStorage.getItem("accessToken"),
+  getRefresh:  () => localStorage.getItem("refreshToken"),
+  setTokens:   (access, refresh) => { 
+    localStorage.setItem("accessToken", access); 
+    localStorage.setItem("refreshToken", refresh); 
+  },
+  clearTokens: () => { 
+    localStorage.removeItem("accessToken"); 
+    localStorage.removeItem("refreshToken"); 
+  },
 };
 
 // ── Provider ──
