@@ -1,103 +1,218 @@
 # Desarrollo del entorno tecnológico para FRABA CONTAINER
 
-Este repositorio reúne el trabajo del proyecto **Desarrollo del entorno tecnológico para FRABA CONTAINER** en tres ramas principales. La intención de este README es dar contexto general sobre qué parte del sistema se está construyendo en cada rama y qué tecnologías se están usando, sin entrar todavía en el funcionamiento detallado.
+Este repositorio reúne el trabajo del proyecto **Desarrollo del entorno tecnológico para FRABA CONTAINER**, organizado en tres ramas principales. El objetivo de este README es proporcionar una descripción detallada del proyecto, las herramientas utilizadas durante el desarrollo y el objetivo principal del sistema.
 
-## Contexto general
+---
 
-El proyecto está organizado para separar el desarrollo por capas:
+##  Descripción del Proyecto
 
-- una rama enfocada en la interfaz de usuario,
-- una rama enfocada en el backend y la API,
-- y una rama principal con archivos base y datos de apoyo.
+###  Descripción general del sistema
 
-## Ramas del repositorio
+FRABA CONTAINER es un sistema web diseñado para automatizar y gestionar el control de operaciones logísticas de contenedores. La plataforma centraliza el registro de maniobras, gastos en efectivo, números económicos y contenedores vacíos, reemplazando procesos manuales basados en hojas de cálculo por una solución digital estructurada, accesible y segura.
 
-### `main`
+El sistema está dividido en tres capas de desarrollo:
 
-Rama base del repositorio. Aquí se concentran archivos de soporte y datos iniciales del proyecto, como:
+* **Frontend (Interfaz de usuario):** Aplicación React que permite la navegación, captura y visualización de datos.
+* **Backend (API y lógica del servidor):** Servicio Django REST que expone los datos y gestiona la lógica de negocio.
+* **Base de datos (Main):** Esquema relacional en PostgreSQL con archivos SQL y CSV de carga inicial.
 
-- archivos `.sql` para inserción de datos,
-- archivos `.csv` como fuente de información,
-- y el esquema de base de datos.
+---
 
-**Tecnologías y formatos usados:**
+###  Objetivo principal del software
 
-- SQL
-- CSV
-- modelado de base de datos relacional
+Proveer una herramienta digital integral que permita registrar, consultar y administrar de forma eficiente las operaciones de FRABA CONTAINER, reduciendo errores humanos, mejorando la trazabilidad de la información y estableciendo control de acceso diferenciado entre usuarios.
 
-### `feature/inicio-botones`
+---
 
-Rama enfocada en el frontend del sistema. Aquí se trabaja la interfaz visual y la navegación de la aplicación.
+###  Funcionalidades principales
 
-**Tecnologías usadas:**
+* Registro y gestión de maniobras de contenedores
+* Control de gastos en efectivo
+* Administración de contenedores vacíos
+* Gestión de números económicos (No. ECO)
+* Panel de administración con rutas protegidas por rol
+* Autenticación con control de acceso basado en permisos
+* Navegación con botón de regreso al inicio
+* Footer institucional en todas las pantallas
 
-- React
-- JavaScript
-- React Router DOM
-- Tailwind CSS
-- CSS
-- Lucide React
+---
 
-### `backend/api`
+##  Tecnologías Utilizadas
 
-Rama enfocada en la API y la lógica del servidor. Aquí se trabaja la exposición de datos y la conexión con la base de datos.
+###  Frontend
 
-**Tecnologías usadas:**
+| Tecnología              | Descripción                |
+| ----------------------- | -------------------------- |
+| React 19.2.4            | Biblioteca principal de UI |
+| JavaScript              | Lenguaje del frontend      |
+| React Router DOM 7.13.2 | Manejo de rutas            |
+| Tailwind CSS 3.4.19     | Framework de estilos       |
+| CSS                     | Estilos personalizados     |
+| Lucide React 1.8.0      | Íconos                     |
+| Axios 1.16.0            | Cliente HTTP               |
+| Chart.js 4.5.1          | Gráficas                   |
+| React Chart.js 2 5.3.1  | Integración con React      |
+| Recharts 3.8.1          | Gráficas alternativas      |
+| React Datepicker 9.1.0  | Selección de fechas        |
+| PostCSS 8.5.9           | Procesador CSS             |
+| Autoprefixer 10.4.27    | Compatibilidad CSS         |
 
-- Python
-- Django
-- Django REST Framework
-- PostgreSQL
-- python-dotenv
-- django-cors-headers
+---
 
-## Objetivo del repositorio
+###  Backend
 
-El objetivo general es construir una solución para control de maniobras separando responsabilidades entre:
+| Tecnología                   | Descripción          |
+| ---------------------------- | -------------------- |
+| Python                       | Lenguaje backend     |
+| Django 6.0.3                 | Framework principal  |
+| Django REST Framework 3.17.1 | API REST             |
+| simplejwt 5.5.1              | Autenticación JWT    |
+| django-cors-headers 4.9.0    | Manejo CORS          |
+| django-filter 25.2           | Filtrado             |
+| Flask 3.1.2                  | Servicios auxiliares |
+| flask-cors 6.0.1             | CORS en Flask        |
+| openai 2.7.2                 | Integración IA       |
+| psycopg2-binary 2.9.12       | Conector PostgreSQL  |
+| python-dotenv 1.2.2          | Variables de entorno |
+| PyJWT 2.12.1                 | Tokens               |
+| httpx 0.28.1                 | Cliente HTTP         |
+| pydantic 2.12.4              | Validación           |
 
-- presentación visual,
-- servicio de datos,
-- y preparación de información para la base de datos.
+---
 
-## Instalación y ejecución por rama
+###  Base de Datos
 
-Las instrucciones siguientes sirven como guía general. Cada rama puede tener archivos distintos, así que primero cambia a la rama correspondiente y luego revisa sus dependencias.
+| Tecnología | Descripción              |
+| ---------- | ------------------------ |
+| PostgreSQL | Base de datos relacional |
+| SQL        | Definición de datos      |
+| CSV        | Carga inicial            |
 
-### `main`
+---
 
-Esta rama contiene archivos base y datos de apoyo, por lo que no se ejecuta como una aplicación.
+##  Ejecución del Proyecto
 
-Uso general:
+###  Rama `main`
 
-- revisar los archivos `.sql` y `.csv`,
-- consultar el esquema de base de datos,
-- y tomar estos archivos como material de carga inicial.
+Contiene archivos de soporte:
 
-### `feature/inicio-botones`
+* Archivos `.sql` (estructura y datos)
+* Archivos `.csv` (datos iniciales)
 
-Esta rama corresponde al frontend.
+---
 
-Pasos generales de ejecución:
+###  Rama `feature/inicio-botones` (Frontend)
 
-1. Instalar Node.js.
-2. Cambiar a la rama `feature/inicio-botones`.
-3. Instalar dependencias del proyecto frontend.
-4. Ejecutar la aplicación en modo desarrollo.
+**Requisitos:** Node.js
 
-### `backend/api`
+```bash
+# Cambiar de rama
+git checkout feature/inicio-botones
 
-Esta rama corresponde al backend y la API.
+# Instalar dependencias
+npm install
 
-Pasos generales de ejecución:
+# Ejecutar
+npm start
+```
+**Configuración del entorno:**
 
-1. Instalar Python.
-2. Cambiar a la rama `backend/api`.
-3. Crear y activar un entorno virtual.
-4. Instalar las dependencias del backend.
-5. Ejecutar las migraciones o el arranque del servidor según corresponda.
+Crear un archivo .env en la raíz del proyecto frontend con la URL base de la API:
 
-## Nota
+**.env:**
+
+```env
+VITE_API_BASE_URL=http://localhost:8000/api
+```
+
+---
+
+###  Rama `backend/api` (Backend)
+
+**Requisitos:** Python 3.10+
+
+```bash
+# Cambiar de rama
+git checkout backend/api
+
+# Crear entorno virtual
+python -m venv venv
+
+# Activar entorno
+source venv/bin/activate     # Linux/macOS
+venv\Scripts\activate        # Windows
+
+# Instalar dependencias
+pip install -r requirements.txt
+```
+**Configurar variables de entorno:**
+
+Crear un archivo .env en la raíz con el siguiente contenido:
+
+**.env:**
+
+```env
+SECRET_KEY=tu_clave_secreta
+DEBUG=True
+DB_NAME=nombre_base_de_datos
+DB_USER=usuario
+DB_PASSWORD=contraseña
+DB_HOST=localhost
+DB_PORT=5432
+```
+**Aplicar migraciones**
+```bash
+# Migraciones
+python manage.py migrate
+
+# Ejecutar servidor
+python manage.py runserver
+```
+
+---
+
+##  Seguridad Implementada
+
+###  Hashing de contraseñas
+
+Uso de PBKDF2 con SHA-256 (Django), evitando almacenamiento en texto plano.
+
+###  Validación de datos
+
+* Validación en frontend
+* Validación en backend (serializers)
+* Protección contra SQL Injection mediante ORM
+
+###  Control de acceso
+
+* Roles: usuario / administrador
+* Rutas protegidas (`ProtectedRoute`)
+* Validación de permisos en backend
+
+---
+
+##  Créditos del Proyecto
+
+Proyecto realizado por estudiantes de la **Facultad de Telemática de la Universidad de Colima**.
+
+### Backend
+
+* Desarrollador Backend 1
+* Desarrollador Backend 2
+
+### Frontend
+
+* Desarrollador Frontend 1
+* Desarrollador Frontend 2
+
+### Tester y Desarrollo General
+
+* Luis Enrique Hernandez Valdivia
+
+### Scrum Master
+
+* Moises Alejandro Grimaldo Garcia
+
 
 Este README sigue siendo una introducción general al proyecto. Más adelante se puede ampliar con:
 
