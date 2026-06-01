@@ -197,13 +197,13 @@ Proyecto realizado por estudiantes de la **Facultad de Telemática de la Univers
 
 ### Backend
 
-* Desarrollador Backend 1
-* Desarrollador Backend 2
+* Ernesto Rosendo Licea
+* Javier Alejandro Gónzalez Peredia
 
 ### Frontend
 
-* Desarrollador Frontend 1
-* Desarrollador Frontend 2
+* Daniel Ramírez Chávez
+* Ramón de Jesús Peregrino Larios
 
 ### Tester y Desarrollo General
 
