@@ -111,7 +111,7 @@ button:hover {
 
 /* PÁGINAS VACÍAS */
 .blank-page {
-  min-height: 100vh;
+  min-height: calc(100vh - 40px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -126,4 +126,14 @@ button:hover {
 
 .blank-page p {
   color: #666;
+}
+/* LAYOUT BASE — necesario para que el footer quede siempre abajo */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+/* Corrige home-page para que no compita con el flex del layout */
+.home-page {
+  min-height: calc(100vh - 40px); /* descuenta la altura del footer */
 }

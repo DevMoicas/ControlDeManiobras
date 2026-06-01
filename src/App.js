@@ -62,64 +62,86 @@ function AppRoutes() {
   const showBackButton = location.pathname !== '/home' && location.pathname !== '/home/';
 
   return (
-    <>
-      {showBackButton && (
-        <button
-          onClick={() => navigate('/home')}
-          style={{
-            position: 'absolute',
-            top: '5px',
-            left: '20px',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'black',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '5px'
-          }}
-          title="Regresar al Home"
-        >
-          <HomeIcon size={32} />
-        </button>
-      )}
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="maniobras" element={<ManiobrasPage title="MANIOBRAS" />} />
-        <Route path="gastos-efectivo" element={<GastosPage title="GASTOS EFECTIVO" />} />
-        <Route path="vacios" element={<VaciosPage/>} />
-        <Route path="no-eco" element={<NoEcoPage />} />
+      {/* Contenido principal — crece para llenar el espacio disponible */}
+      <div style={{ flex: 1, position: 'relative', paddingBottom: '40px' }}>
 
-        {/* Ruta protegida — solo administradores */}
-        <Route
-          path="admin-no-eco"
-          element={
-            <ProtectedRoute requireAdmin>
-              <AdministracionNoEco />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="admin-gastos"
-          element={
-            <ProtectedRoute requireAdmin>
-              <AdministracionGastos />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="admin-vacios"
-          element={
-            <ProtectedRoute requireAdmin>
-              <AdminVaciosPage />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </>
+        {showBackButton && (
+          <button
+            onClick={() => navigate('/home')}
+            style={{
+              position: 'absolute',
+              top: '5px',
+              left: '20px',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'black',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '5px'
+            }}
+            title="Regresar al Home"
+          >
+            <HomeIcon size={32} />
+          </button>
+        )}
+
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="maniobras" element={<ManiobrasPage title="MANIOBRAS" />} />
+          <Route path="gastos-efectivo" element={<GastosPage title="GASTOS EFECTIVO" />} />
+          <Route path="vacios" element={<VaciosPage />} />
+          <Route path="no-eco" element={<NoEcoPage />} />
+
+
+          {/* Ruta protegida — solo administradores */}
+          <Route
+            path="admin-no-eco"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdministracionNoEco />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="admin-gastos"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdministracionGastos />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="admin-vacios"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminVaciosPage />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </div>
+
+      {/* Footer */}
+      <footer
+        style={{
+          backgroundColor: '#1565C0',
+          padding: '10px 0',
+          textAlign: 'center',
+          borderTop: '1px solid rgba(255,255,255,0.15)',
+          flexShrink: 0
+        }}
+      >
+        <span style={{ color: 'white', fontSize: '13px' }}>
+          © 2026 FRABA Todos los derechos reservados
+        </span>
+      </footer>
+
+    </div>
   );
 }
 
