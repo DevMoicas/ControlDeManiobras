@@ -6,6 +6,18 @@ import { useGastos } from "../hooks/useGastos";
 import SearchBar from "../components/SearchBar/SearchBar";
 import "./GastosPage.css";
 
+
+//Hook para cargar maniobras disponibles
+function useManiobras() {
+  const [maniobras, setManiobras] = useState([]);
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/api/maniobras/")
+    .then(r => r.json())
+    .then(data => setManiobras(Array.isArray(data) ? data : data.results || []))
+    .catch(() => {});
+  }, []);
+  return maniobras;
+}
 // ── Definición de Columnas según tu DB ────────────────────────────────────────
 
 const COLUMNAS = [
@@ -36,23 +48,46 @@ const MODAL_CERRADO = { abierto: false, datos: null };
 
 // ── Sub-componente: fila de inputs para nuevo gasto ──────────────────────────
 
-function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
+function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting, maniobras }) {
   return (
     <tr>
-      {COLUMNAS.map((col) => (
+      {/* Dropdown para carta porte */}
+      <td>
+        <select
+        value= {datos.maniobra}
+        onChange={(e) => onChange("maniobra", e.target.value)}
+        aria-label="Carta Porte"
+        >
+          <option value="">Seleccionar...</option>
+          {maniobras.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.folio || `ID ${m.id}`}
+            </option>
+          ))}
+        </select>
+      </td>
+
+      {/*Resto de columnas sin maniobra */}
+      {COLUMNAS.slice(1).map((col) => (
         <td key={col.key}>
           <input
-            value={datos[col.key]}
+            value={datos[col.key] ?? ""}
             onChange={(e) => onChange(col.key, e.target.value)}
             placeholder={col.label}
             aria-label={col.label}
+            disabled={col.key === "gastos_totales"} //deshabilitado
           />
         </td>
       ))}
+
       <td>
         <div style={{ display: "flex", gap: "4px" }}>
-          <button className="btn-accion btn-guardar-fila" onClick={onGuardar} disabled={isSubmitting}>{isSubmitting ? '...' : 'Guardar'}</button>
-          <button className="btn-accion btn-cancelar-fila" onClick={onCancelar} disabled={isSubmitting}>Cancelar</button>
+          <button className="btn-accion btn-guardar-fila" onClick={onGuardar} disabled={isSubmitting}>
+            {isSubmitting ? '...' : 'Guardar'}
+          </button>
+          <button className="btn-accion btn-cancelar-fila" onClick={onCancelar} disabled={isSubmitting}>
+            Cancelar
+          </button>
         </div>
       </td>
     </tr>
@@ -61,7 +96,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
 
 // ── Sub-componente: modal de edición ──────────────────────────────────────────
 
-function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
+function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting, maniobras }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onCerrar(); };
     window.addEventListener("keydown", onKey);
@@ -118,6 +153,7 @@ export default function GastosPage() {
   const [notif, setNotif]                 = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const maniobras = useManiobras();
 
   // ── Formateador de moneda ───────────────────────────────────────────────────
   const formatMoneda = (valor) => {
@@ -286,6 +322,7 @@ export default function GastosPage() {
                 onGuardar={handleGuardarNueva}
                 onCancelar={handleCancelarNueva}
                 isSubmitting={isSubmitting}
+                maniobras={maniobras}
               />
             )}
 
