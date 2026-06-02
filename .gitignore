@@ -1,1 +1,4 @@
 node_modules
+
+# Variables de entorno — nunca subir al repositorio
+.env 
