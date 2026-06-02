@@ -1,5 +1,5 @@
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon } from 'lucide-react';
+import { Home as HomeIcon, UserCircle } from 'lucide-react';
 import './App.css';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import NoEcoPage from './pages/NoEcoPage';
@@ -9,11 +9,35 @@ import GastosPage from "./pages/GastosPage";
 import AdministracionGastos from './pages/AdministracionGastos';
 import VaciosPage from './pages/VaciosPage';
 import AdminVaciosPage from './pages/AdminVaciosPage';
+import PerfilPage from './pages/PerfilPage';
 function Home() {
   const navigate = useNavigate();
 
   return (
     <div className="home-page"> {/* NUEVO CONTENEDOR */}
+
+      {/* Botón de perfil — esquina superior derecha */}
+      <button
+        onClick={() => navigate('perfil')}
+        style={{
+          position: 'absolute',
+          top: '5px',
+          right: '20px',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'black',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '5px',
+        }}
+        title="Ver perfil"
+      >
+        <UserCircle size={32} />
+      </button>
+
       <div className="container">
         <h1>Control de Maniobras</h1>
 
@@ -96,6 +120,7 @@ function AppRoutes() {
           <Route path="gastos-efectivo" element={<GastosPage title="GASTOS EFECTIVO" />} />
           <Route path="vacios" element={<VaciosPage />} />
           <Route path="no-eco" element={<NoEcoPage />} />
+          <Route path="perfil" element={<PerfilPage />} />
 
 
           {/* Ruta protegida — solo administradores */}
