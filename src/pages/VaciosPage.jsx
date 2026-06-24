@@ -1,19 +1,59 @@
 import { useState, useEffect, useCallback } from "react";
-import { Trash2, ArrowDown, Package } from "lucide-react";
+import { Trash2, SquarePen, Package, Container } from "lucide-react";
 import { useVacios } from "../hooks/useVacios";
 import { useAuthContext } from "../context/AuthContext";
+import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
 import SearchBar from "../components/SearchBar/SearchBar";
 import { useNavigate } from "react-router-dom";
+import VacioStatusSelector from "../components/VacioStatusSelector/VacioStatusSelector";
+import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
+import PatioSelector from "../components/PatioSelector/PatioSelector";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { registerLocale } from "react-datepicker";
+import es from "date-fns/locale/es";
 import "./VaciosPage.css";
+registerLocale("es", es);
+
+function fechaParaMostrar(valor) {
+  if (!valor) return "";
+  const [y, m, d] = valor.split("-");
+  if (!y || !m || !d) return valor;
+  return `${d}/${m}/${y}`;
+}
+
+function fechaParaBackend(valor) {
+  if (!valor) return "";
+  const [d, m, y] = valor.split("/");
+  if (!y || !m || !d) return valor;
+  return `${y}-${m}-${d}`;
+}
+
+function fechaADate(valorYYYYMMDD) {
+  if (!valorYYYYMMDD) return null;
+  const parts = valorYYYYMMDD.split("-");
+  if (parts.length !== 3) return null;
+  const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  if (isNaN(d.getTime())) return null;
+  return d;
+}
+
+function dateAFechaBackend(dateObject) {
+  if (!dateObject) return "";
+  const y = dateObject.getFullYear();
+  const m = String(dateObject.getMonth() + 1).padStart(2, "0");
+  const d = String(dateObject.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
 const COLUMNAS = [
   { key: "contenedor",                label: "Contenedor" },
-  { key: "patio",                     label: "Patio" },
-  { key: "fecha_maniobra",            label: "Fecha Maniobra" },
-  { key: "fecha_entrega",             label: "Fecha Entrega" },
-  { key: "fecha_notificacion_cliente",label: "Notific. Cliente" },
-  { key: "status",                    label: "Status" },
-  { key: "operador",                  label: "Operador" },
+  { key: "patio",                     label: "Patio",             isPatio: true },
+  { key: "fecha_maniobra",            label: "Fecha Maniobra",  isFecha: true },
+  { key: "fecha_entrega",             label: "Fecha Entrega",   isFecha: true },
+  { key: "fecha_notificacion_cliente",label: "Cometarios" },
+  { key: "status",                    label: "Status",            isStatus: true },
+  { key: "operador",                  label: "Operador",          isOperador: true },
   { key: "cita",                      label: "Cita" },
   { key: "cd",                        label: "CD" },
 ];
@@ -27,12 +67,43 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
     <tr>
       {COLUMNAS.map((col) => (
         <td key={col.key}>
-          <input
-            value={datos[col.key] || ""}
-            onChange={(e) => onChange(col.key, e.target.value)}
-            placeholder={col.label}
-            aria-label={col.label}
-          />
+          {col.isFecha ? (
+            <DatePicker
+              locale="es"
+              dateFormat="dd/MM/yyyy"
+              selected={fechaADate(datos[col.key])}
+              onChange={(date) => onChange(col.key, dateAFechaBackend(date))}
+              placeholderText="DD/MM/YYYY"
+              className="date-picker-input"
+              isClearable
+              disabled={isSubmitting}
+            />
+          ) : col.isStatus ? (
+            <VacioStatusSelector
+              currentStatus={datos[col.key] || ""}
+              onSelect={(val) => onChange(col.key, val)}
+              loading={false}
+            />
+          ) : col.isOperador ? (
+            <OperadorSelector
+              currentValue={datos[col.key] || ""}
+              onSelect={(val) => onChange(col.key, val)}
+              disabled={isSubmitting}
+            />
+          ) : col.isPatio ? (
+            <PatioSelector
+              currentValue={datos[col.key] || ""}
+              onSelect={(val) => onChange(col.key, val)}
+              disabled={isSubmitting}
+            />
+          ) : (
+            <input
+              value={datos[col.key] || ""}
+              onChange={(e) => onChange(col.key, e.target.value)}
+              placeholder={col.label}
+              aria-label={col.label}
+            />
+          )}
         </td>
       ))}
       <td>
@@ -50,8 +121,8 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
 function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onCerrar(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [onCerrar]);
 
   return (
@@ -69,11 +140,42 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
             {COLUMNAS.map((col) => (
               <div key={col.key} className="modal-campo">
                 <label htmlFor={`edit-${col.key}`}>{col.label}</label>
-                <input
-                  id={`edit-${col.key}`}
-                  value={datos[col.key] || ""}
-                  onChange={(e) => onChange(col.key, e.target.value)}
-                />
+                {col.isFecha ? (
+                  <DatePicker
+                    id={`edit-${col.key}`}
+                    locale="es"
+                    dateFormat="dd/MM/yyyy"
+                    selected={fechaADate(datos[col.key] ?? "")}
+                    onChange={(date) => onChange(col.key, dateAFechaBackend(date))}
+                    placeholderText="DD/MM/YYYY"
+                    className="date-picker-input"
+                    isClearable
+                  />
+                ) : col.isStatus ? (
+                  <VacioStatusSelector
+                    currentStatus={datos[col.key] || ""}
+                    onSelect={(val) => onChange(col.key, val)}
+                    loading={false}
+                  />
+                ) : col.isOperador ? (
+                  <OperadorSelector
+                    currentValue={datos[col.key] || ""}
+                    onSelect={(val) => onChange(col.key, val)}
+                    disabled={isSubmitting}
+                  />
+                ) : col.isPatio ? (
+                  <PatioSelector
+                    currentValue={datos[col.key] || ""}
+                    onSelect={(val) => onChange(col.key, val)}
+                    disabled={isSubmitting}
+                  />
+                ) : (
+                  <input
+                    id={`edit-${col.key}`}
+                    value={datos[col.key] || ""}
+                    onChange={(e) => onChange(col.key, e.target.value)}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -92,10 +194,11 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
 export default function VaciosPage() {
   const navigate = useNavigate();
   const {
-    vacios, loading, loadingMore, hasMore, error,
+    vacios, setVacios, loading, loadingMore, hasMore, error,
     loadMore, eliminar, actualizar, agregar, VACIO_VACIO,
   } = useVacios();
   const { isAdmin } = useAuthContext();
+  const { updatingId, updateStatus } = useVacioStatusUpdate(setVacios);
 
   const [modoAgregar, setModoAgregar] = useState(false);
   const [nuevoVacio,  setNuevoVacio]  = useState(VACIO_VACIO);
@@ -193,6 +296,47 @@ export default function VaciosPage() {
     setNuevoVacio(VACIO_VACIO);
   }, [VACIO_VACIO]);
 
+  const handleStatusChange = useCallback(async (vacio, nuevoStatus) => {
+    try {
+      await updateStatus(vacio, nuevoStatus);
+      setNotif({ tipo: "ok", msg: "Status actualizado." });
+    } catch (err) {
+      setNotif({ tipo: "error", msg: `Error al cambiar status: ${err.message}` });
+    }
+  }, [updateStatus]);
+
+  const handleOperadorChange = useCallback(async (vacio, nombreSeleccionado) => {
+    const prevOperador = vacio.operador;
+    setVacios((prev) =>
+      prev.map((v) => (v.id === vacio.id ? { ...v, operador: nombreSeleccionado } : v))
+    );
+    try {
+      await actualizar(vacio.id, { ...vacio, operador: nombreSeleccionado });
+      setNotif({ tipo: "ok", msg: "Operador actualizado." });
+    } catch (err) {
+      setVacios((prev) =>
+        prev.map((v) => (v.id === vacio.id ? { ...v, operador: prevOperador } : v))
+      );
+      setNotif({ tipo: "error", msg: `Error al cambiar operador: ${err.message}` });
+    }
+  }, [actualizar, setVacios]);
+
+  const handlePatioChange = useCallback(async (vacio, nombreSeleccionado) => {
+    const prevPatio = vacio.patio;
+    setVacios((prev) =>
+      prev.map((v) => (v.id === vacio.id ? { ...v, patio: nombreSeleccionado } : v))
+    );
+    try {
+      await actualizar(vacio.id, { ...vacio, patio: nombreSeleccionado });
+      setNotif({ tipo: "ok", msg: "Patio actualizado." });
+    } catch (err) {
+      setVacios((prev) =>
+        prev.map((v) => (v.id === vacio.id ? { ...v, patio: prevPatio } : v))
+      );
+      setNotif({ tipo: "error", msg: `Error al cambiar patio: ${err.message}` });
+    }
+  }, [actualizar, setVacios]);
+
   // ── Filtro por búsqueda — solo sobre datos ya cargados ────────────────────
   const vaciosFiltrados = busqueda
     ? vacios.filter((v) =>
@@ -235,7 +379,7 @@ export default function VaciosPage() {
       )}
 
       <h1 className="vacios-title">
-        <Package size={36} className="title-icon" /> Vacíos
+        <Container size={45} className="title-icon" /> Vacíos
       </h1>
 
       <SearchBar value={busqueda} onChange={setBusqueda} />
@@ -289,7 +433,29 @@ export default function VaciosPage() {
               vaciosFiltrados.map((vacio) => (
                 <tr key={vacio.id}>
                   {COLUMNAS.map((col) => (
-                    <td key={col.key}>{vacio[col.key]}</td>
+                    <td key={col.key}>
+                      {col.isStatus ? (
+                        <VacioStatusSelector
+                          currentStatus={vacio.status}
+                          onSelect={(nuevoStatus) => handleStatusChange(vacio, nuevoStatus)}
+                          loading={updatingId === vacio.id}
+                        />
+                      ) : col.isOperador ? (
+                        <OperadorSelector
+                          currentValue={vacio.operador}
+                          onSelect={(nombre) => handleOperadorChange(vacio, nombre)}
+                        />
+                      ) : col.isPatio ? (
+                        <PatioSelector
+                          currentValue={vacio.patio}
+                          onSelect={(nombre) => handlePatioChange(vacio, nombre)}
+                        />
+                      ) : col.isFecha ? (
+                        fechaParaMostrar(vacio[col.key])
+                      ) : (
+                        vacio[col.key]
+                      )}
+                    </td>
                   ))}
                   <td>
                     <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
@@ -300,7 +466,7 @@ export default function VaciosPage() {
                         title="Editar"
                         disabled={isSubmitting}
                       >
-                        <ArrowDown size={18} />
+                        <SquarePen size={18} />
                       </button>
                       {isAdmin && (
                         <button

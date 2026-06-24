@@ -1,10 +1,39 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuthContext } from "../context/AuthContext";
 import { useNavigate } from 'react-router-dom';
-import { Receipt, Trash2, ArrowDown } from "lucide-react";
+import { Receipt, Trash2, SquarePen, CircleDollarSign } from "lucide-react";
 import { useGastos } from "../hooks/useGastos";
 import SearchBar from "../components/SearchBar/SearchBar";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { registerLocale } from "react-datepicker";
+import es from "date-fns/locale/es";
 import "./GastosPage.css";
+registerLocale("es", es);
+
+function fechaParaMostrar(valor) {
+  if (!valor) return "";
+  const [y, m, d] = valor.split("-");
+  if (!y || !m || !d) return valor;
+  return `${d}/${m}/${y}`;
+}
+
+function fechaADate(valorYYYYMMDD) {
+  if (!valorYYYYMMDD) return null;
+  const parts = valorYYYYMMDD.split("-");
+  if (parts.length !== 3) return null;
+  const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  if (isNaN(d.getTime())) return null;
+  return d;
+}
+
+function dateAFechaBackend(dateObject) {
+  if (!dateObject) return "";
+  const y = dateObject.getFullYear();
+  const m = String(dateObject.getMonth() + 1).padStart(2, "0");
+  const d = String(dateObject.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
 
 //Hook para cargar maniobras disponibles
@@ -22,7 +51,7 @@ function useManiobras() {
 
 const COLUMNAS = [
   { key: "maniobra", label: "carta_porte" },
-  { key: "fecha_entrega_mercancia", label: "Fecha Entrega" },
+  { key: "fecha_entrega_mercancia", label: "Fecha Entrega", isFecha: true },
   { key: "casetas_ida", label: "Casetas Ida" },
   { key: "casetas_regreso", label: "Casetas Regreso" },
   { key: "gastos_adicionales", label: "G. Adicionales" },
@@ -31,8 +60,9 @@ const COLUMNAS = [
   { key: "gasto_diesel", label: "Diesel" },
   { key: "comision_operador", label: "Comisión Op." },
   { key: "reparaciones", label: "Reparaciones" },
-  { key: "gastos_totales", label: "G. Totales", style: { fontWeight: 'bold', color: '#059669' } },
-  { key: "facturado", label: "Facturado" },
+  { key: "gastos_totales", label: "G. Totales", style: { fontWeight: 'bold', color: '#d61b1b' } },
+  { key: "facturado", label: "Ingresos", style: { fontWeight: 'bold', color: '#0b0c06' }  },
+  { key: "utilidad_bruta", label: "Utilidad Bruta", isComputed: true, style: { fontWeight: 'bold', color: '#059669' } },
   { key: "descripcion_gastos", label: "Descripción" },
 ];
 
@@ -70,13 +100,38 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting, manio
       {/*Resto de columnas sin maniobra */}
       {COLUMNAS.slice(1).map((col) => (
         <td key={col.key}>
-          <input
-            value={datos[col.key] ?? ""}
-            onChange={(e) => onChange(col.key, e.target.value)}
-            placeholder={col.label}
-            aria-label={col.label}
-            disabled={col.key === "gastos_totales"} //deshabilitado
-          />
+          {col.isFecha ? (
+            <DatePicker
+              locale="es"
+              dateFormat="dd/MM/yyyy"
+              selected={fechaADate(datos[col.key])}
+              onChange={(date) => onChange(col.key, dateAFechaBackend(date))}
+              placeholderText="DD/MM/YYYY"
+              className="date-picker-input"
+              isClearable
+              disabled={isSubmitting}
+            />
+          ) : col.isComputed ? (
+            <input
+              value={(() => {
+                const ingreso = Number(datos.facturado || 0);
+                const total = Number(datos.gastos_totales || 0);
+                const utilidad = ingreso - total;
+                return isNaN(utilidad) ? "" : `$${utilidad.toFixed(2)}`;
+              })()}
+              aria-label={col.label}
+              disabled
+              style={{ color: '#059669', fontWeight: 'bold' }}
+            />
+          ) : (
+            <input
+              value={datos[col.key] ?? ""}
+              onChange={(e) => onChange(col.key, e.target.value)}
+              placeholder={col.label}
+              aria-label={col.label}
+              disabled={col.key === "gastos_totales"}
+            />
+          )}
         </td>
       ))}
 
@@ -118,11 +173,37 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting, manio
             {COLUMNAS.map((col) => (
               <div key={col.key} className="modal-campo">
                 <label htmlFor={`edit-${col.key}`}>{col.label}</label>
-                <input
-                  id={`edit-${col.key}`}
-                  value={datos[col.key] ?? ""}
-                  onChange={(e) => onChange(col.key, e.target.value)}
-                />
+                {col.isFecha ? (
+                  <DatePicker
+                    id={`edit-${col.key}`}
+                    locale="es"
+                    dateFormat="dd/MM/yyyy"
+                    selected={fechaADate(datos[col.key] ?? "")}
+                    onChange={(date) => onChange(col.key, dateAFechaBackend(date))}
+                    placeholderText="DD/MM/YYYY"
+                    className="date-picker-input"
+                    isClearable
+                  />
+                ) : col.isComputed ? (
+                  <input
+                    id={`edit-${col.key}`}
+                    value={(() => {
+                      const ingreso = Number(datos.facturado || 0);
+                      const total = Number(datos.gastos_totales || 0);
+                      const utilidad = ingreso - total;
+                      return isNaN(utilidad) ? "" : `$${utilidad.toFixed(2)}`;
+                    })()}
+                    aria-label={col.label}
+                    disabled
+                    style={{ color: '#059669', fontWeight: 'bold' }}
+                  />
+                ) : (
+                  <input
+                    id={`edit-${col.key}`}
+                    value={datos[col.key] ?? ""}
+                    onChange={(e) => onChange(col.key, e.target.value)}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -281,7 +362,7 @@ export default function GastosPage() {
       )}
 
       <h1 className="gastos-title">
-        <Receipt size={36} className="title-icon" /> Gastos
+        <CircleDollarSign size={45} className="title-icon" /> GASTOS
       </h1>
       
       {/* BARRA DE BÚSQUEDA */}
@@ -340,7 +421,14 @@ export default function GastosPage() {
                 <tr key={gasto.id}>
                   {COLUMNAS.map((col) => (
                     <td key={col.key} style={col.style ?? {}}>
-                      {columnasMoneda.includes(col.key) ? formatMoneda(gasto[col.key]) : gasto[col.key]}
+                      {col.isComputed
+                        ? formatMoneda(Number(gasto.facturado || 0) - Number(gasto.gastos_totales || 0))
+                        : col.isFecha
+                        ? fechaParaMostrar(gasto[col.key])
+                        : columnasMoneda.includes(col.key)
+                        ? formatMoneda(gasto[col.key])
+                        : gasto[col.key]
+                      }
                     </td>
                   ))}
 
@@ -356,7 +444,7 @@ export default function GastosPage() {
                         title="Editar"
                         disabled={isSubmitting}
                       >
-                        <ArrowDown size={18} />
+                        <SquarePen size={18} />
                       </button>
 
                       {/* ELIMINAR → SOLO ADMIN */}

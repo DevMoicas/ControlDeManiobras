@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiClient } from "../api/apiClient";
 
 export const useGastos = () => {
     const [gastos, setGastos] = useState([]);
@@ -8,8 +9,7 @@ export const useGastos = () => {
     const fetchGastos = async () => {
         try {
             setLoading(true);
-            const response = await fetch("http://127.0.0.1:8000/api/gastos/");
-            const data = await response.json();
+            const data = await apiClient.get("/gastos/");
             setGastos(Array.isArray(data) ? data : data.results || []);
         } catch (err) {
             setError(err.message);
@@ -21,42 +21,20 @@ export const useGastos = () => {
     useEffect(() => { fetchGastos(); }, []);
 
     const agregar = async (nuevo) => {
-    console.log("Datos a enviar:", nuevo);
     const { folio, ...datosLimpios } = nuevo;
-    const response = await fetch("http://127.0.0.1:8000/api/gastos/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datosLimpios),
-    });
-    if (!response.ok) {
-        const err = await response.json();
-        console.error("Error POST:", err);
-        throw new Error(JSON.stringify(err));
-    }
+    await apiClient.post("/gastos/", datosLimpios);
     fetchGastos();
 };
 
 const actualizar = async (id, datos) => {
-    // Excluye campos read-only
     const { folio, maniobra, ...datosLimpios } = datos;
-    const response = await fetch(`http://127.0.0.1:8000/api/gastos/${id}/`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datosLimpios),
-    });
-    if (!response.ok) {
-        const err = await response.json();
-        console.error("Error PUT:", err);
-        throw new Error(JSON.stringify(err));
-    }
+    await apiClient.put(`/gastos/${id}/`, datosLimpios);
     fetchGastos();
 };
 
     const eliminar = async (id) => {
-        const response = await fetch(`http://127.0.0.1:8000/api/gastos/${id}/`, {
-            method: "DELETE",
-        });
-        if (response.ok) fetchGastos();
+        await apiClient.delete(`/gastos/${id}/`);
+        fetchGastos();
     };
 
     return { gastos, loading, error, agregar, actualizar, eliminar };

@@ -1,12 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
-import { Trash2, ArrowDown, Truck } from "lucide-react";
+import { Trash2, SquarePen, Truck } from "lucide-react";
 import { useManiobras } from "../hooks/useManiobras";
 import { useStatusUpdate } from "../hooks/useStatusUpdate";
 import { getStatusConfig, isValidStatus } from "../config/statusConfig";
 import StatusSelector from "../components/StatusSelector/StatusSelector";
+import PlacasSelector from "../components/PlacasSelector/PlacasSelector";
+import RemolqueSelector from "../components/RemolqueSelector/RemolqueSelector";
+import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
+import VacioStatusSelector from "../components/VacioStatusSelector/VacioStatusSelector";
 import "./ManiobrasPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
 import { useAuthContext } from "../context/AuthContext";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { registerLocale } from "react-datepicker";
+import es from "date-fns/locale/es";
+registerLocale("es", es);
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -18,7 +27,7 @@ const COLUMNAS = [
     style: { color: "var(--primary-blue)", fontWeight: "bold", fontFamily: "monospace" }
   },
   { key: "terminal", label: "Terminal" },
-  { key: "placas_pis", label: "Placas PIS" },
+  { key: "placas_pis", label: "Placas PIS", isPlacas: true },
   { key: "fecha_pis", label: "Fecha PIS", sortable: true },
   { key: "horario", label: "Horario" },
   { key: "tipo_y_peso", label: "Tipo y Peso" },
@@ -27,11 +36,13 @@ const COLUMNAS = [
   { key: "cliente", label: "Cliente" },
   { key: "origen", label: "Origen" },
   { key: "destino", label: "Destino" },
-  { key: "asignacion_operador_status", label: "Operador" },
-  { key: "unidad", label: "Unidad" },
+  { key: "asignacion_operador_status", label: "Operador", isOperador: true },
+  { key: "unidad", label: "Unidad", isPlacas: true },
+  { key: "remolque",   label: "Remolque 1", isRemolque: true },
+  { key: "remolque_2", label: "Remolque 2", isRemolque2: true },
   { key: "folio", label: "Folio" },
   { key: "vacio_patio", label: "Vacio Patio" },
-  { key: "status_vacio", label: "Status Vacío" },
+  { key: "status_vacio", label: "Status Vacío", isStatusVacio: true },
   { key: "fecha_entrega_mercancia", label: "Entrega Mercancía", sortable: true },
   { key: "no_factura", label: "No. Factura" },
   { key: "ccp", label: "CCP" },
@@ -41,7 +52,7 @@ const MANIOBRA_VACIA = {
   solicita: "", agencia: "", codigo_pis: "", terminal: "", placas_pis: "",
   fecha_pis: "", horario: "", tipo_y_peso: "", contenedor: "", pedimento: "",
   cliente: "", origen: "", destino: "", asignacion_operador_status: "",
-  unidad: "", folio: "", vacio_patio: "", status_vacio: "",
+  unidad: "", remolque: "", remolque_2: "", folio: "", vacio_patio: "", status_vacio: "",
   fecha_entrega_mercancia: "", no_factura: "", ccp: "",
 };
 
@@ -61,6 +72,37 @@ function fechaParaBackend(valor) {
   const [d, m, y] = valor.split("/");
   if (!y || !m || !d) return valor;
   return `${y}-${m}-${d}`;
+}
+
+// Convierte YYYY-MM-DD → objeto Date para el DatePicker
+function fechaADate(valorYYYYMMDD) {
+  if (!valorYYYYMMDD) return null;
+  const parts = valorYYYYMMDD.split("-");
+  if (parts.length !== 3) return null;
+  const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  if (isNaN(d.getTime())) return null;
+  return d;
+}
+
+// Convierte objeto Date → YYYY-MM-DD para el backend
+function dateAFechaBackend(dateObject) {
+  if (!dateObject) return "";
+  const y = dateObject.getFullYear();
+  const m = String(dateObject.getMonth() + 1).padStart(2, "0");
+  const d = String(dateObject.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function vacioStatusStyle(status) {
+  if (status === "pendiente") return { background: "#fef9c3", color: "#854d0e" };
+  if (status === "entregado") return { background: "#dcfce7", color: "#166534" };
+  return { background: "#f3f4f6", color: "#6b7280" };
+}
+
+function vacioStatusLabel(status) {
+  if (status === "pendiente") return "Pendiente";
+  if (status === "entregado") return "Entregado";
+  return status || "—";
 }
 
 const FILTROS = [
@@ -106,12 +148,54 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
     <tr>
       {COLUMNAS.map((col) => (
         <td key={col.key}>
-          <input
-            value={datos[col.key]}
-            onChange={(e) => onChange(col.key, e.target.value)}
-            placeholder={col.label}
-            aria-label={col.label}
-          />
+          {col.sortable ? (
+            <DatePicker
+              locale="es"
+              dateFormat="dd/MM/yyyy"
+              selected={fechaADate(datos[col.key])}
+              onChange={(date) => onChange(col.key, dateAFechaBackend(date))}
+              placeholderText="DD/MM/YYYY"
+              className="date-picker-input"
+              isClearable
+            />
+          ) : col.isPlacas ? (
+            <PlacasSelector
+              currentValue={datos[col.key]}
+              onSelect={(val) => onChange(col.key, val)}
+              disabled={isSubmitting}
+            />
+          ) : col.isOperador ? (
+            <OperadorSelector
+              currentValue={datos[col.key]}
+              onSelect={(val) => onChange(col.key, val)}
+              disabled={isSubmitting}
+            />
+          ) : col.isStatusVacio ? (
+            <VacioStatusSelector
+              currentStatus={datos[col.key]}
+              onSelect={(val) => onChange(col.key, val)}
+              loading={false}
+            />
+          ) : col.isRemolque ? (
+            <RemolqueSelector
+              currentValue={datos[col.key]}
+              onSelect={(val) => onChange(col.key, val)}
+              disabled={isSubmitting}
+            />
+          ) : col.isRemolque2 ? (
+            <RemolqueSelector
+              currentValue={datos[col.key]}
+              onSelect={(val) => onChange(col.key, val)}
+              disabled={isSubmitting || (datos.contenedor || "").length <= 32}
+            />
+          ) : (
+            <input
+              value={datos[col.key]}
+              onChange={(e) => onChange(col.key, e.target.value)}
+              placeholder={col.label}
+              aria-label={col.label}
+            />
+          )}
         </td>
       ))}
       <td />
@@ -130,8 +214,8 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
 function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onCerrar(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [onCerrar]);
 
   return (
@@ -149,13 +233,54 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
             {COLUMNAS.map((col) => (
               <div key={col.key} className="modal-campo">
                 <label htmlFor={`edit-${col.key}`}>{col.label}</label>
-                <input
-                  id={`edit-${col.key}`}
-                  value={col.sortable ? fechaParaMostrar(datos[col.key] ?? "") : (datos[col.key] ?? "")}
-                  onChange={(e) =>
-                    onChange(col.key, col.sortable ? fechaParaBackend(e.target.value) : e.target.value)}
-                  placeholder={col.sortable ? "DD/MM/YYYY" : ""}
-                />
+                {col.sortable ? (
+                  <DatePicker
+                    id={`edit-${col.key}`}
+                    locale="es"
+                    dateFormat="dd/MM/yyyy"
+                    selected={fechaADate(datos[col.key] ?? "")}
+                    onChange={(date) => onChange(col.key, dateAFechaBackend(date))}
+                    placeholderText="DD/MM/YYYY"
+                    className="date-picker-input"
+                    isClearable
+                  />
+                ) : col.isPlacas ? (
+                  <PlacasSelector
+                    currentValue={datos[col.key] ?? ""}
+                    onSelect={(val) => onChange(col.key, val)}
+                    disabled={isSubmitting}
+                  />
+                ) : col.isOperador ? (
+                  <OperadorSelector
+                    currentValue={datos[col.key] ?? ""}
+                    onSelect={(val) => onChange(col.key, val)}
+                    disabled={isSubmitting}
+                  />
+                ) : col.isStatusVacio ? (
+                  <VacioStatusSelector
+                    currentStatus={datos[col.key] ?? ""}
+                    onSelect={(val) => onChange(col.key, val)}
+                    loading={false}
+                  />
+                ) : col.isRemolque ? (
+                  <RemolqueSelector
+                    currentValue={datos[col.key] ?? ""}
+                    onSelect={(val) => onChange(col.key, val)}
+                    disabled={isSubmitting}
+                  />
+                ) : col.isRemolque2 ? (
+                  <RemolqueSelector
+                    currentValue={datos[col.key] ?? ""}
+                    onSelect={(val) => onChange(col.key, val)}
+                    disabled={isSubmitting || (datos.contenedor || "").length <= 32}
+                  />
+                ) : (
+                  <input
+                    id={`edit-${col.key}`}
+                    value={datos[col.key] ?? ""}
+                    onChange={(e) => onChange(col.key, e.target.value)}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -326,7 +451,7 @@ export default function ManiobrasPage() {
   return (
     <div className="maniobras-container">
       <h1 className="maniobras-title">
-        <Truck size={36} className="title-icon" /> Control de Maniobras
+        <Truck size={45} className="title-icon" /> Control de Maniobras
       </h1>
 
       <SearchBar value={busqueda} onChange={setBusqueda} />
@@ -359,15 +484,6 @@ export default function ManiobrasPage() {
       </div>
 
       <div className="table-responsive">
-
-        {/* ── HEADER STICKY — fuera del scroll horizontal ── */}
-        <div className="table-header-wrapper">
-          <table className="maniobras-table">
-            <thead>
-              <HeaderRow ordenFecha={ordenFecha} onOrdenar={handleOrdenar} />
-            </thead>
-          </table>
-        </div>
 
         {/* ── BODY — scroll horizontal + vertical ── */}
         <div className="table-scroll-wrapper">
@@ -403,7 +519,15 @@ export default function ManiobrasPage() {
                     <tr key={maniobra.id} className={statusConfig?.rowClass ?? ""}>
                       {COLUMNAS.map((col) => (
                         <td key={col.key} style={col.style ?? {}}>
-                          {col.sortable ? fechaParaMostrar(maniobra[col.key]) : maniobra[col.key]}
+                          {col.sortable ? (
+                            fechaParaMostrar(maniobra[col.key])
+                          ) : col.isStatusVacio ? (
+                            <span style={{ ...vacioStatusStyle(maniobra[col.key]), padding: "3px 10px", borderRadius: "6px", fontSize: "0.82rem", fontWeight: "600", display: "inline-block" }}>
+                              {vacioStatusLabel(maniobra[col.key])}
+                            </span>
+                          ) : (
+                            maniobra[col.key]
+                          )}
                         </td>
                       ))}
                       <td style={{ whiteSpace: "nowrap" }}>
@@ -422,7 +546,7 @@ export default function ManiobrasPage() {
                             title="Editar"
                             disabled={isSubmitting}
                           >
-                            <ArrowDown size={18} />
+                            <SquarePen size={18} />
                           </button>
                           {isAdmin && (
                             <button

@@ -24,8 +24,9 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 28px;
   font-weight: 700;
+  text-transform: uppercase;
   margin-bottom: 15px;
-  color: #2563EB;
+  color: #000000;
   display: flex;
   align-items: center;
   justify-content: center;

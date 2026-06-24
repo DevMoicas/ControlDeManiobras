@@ -6,13 +6,16 @@ const ERROR_USUARIO  = 'El campo de usuario está vacío, ingresa tu nombre de u
 const ERROR_PASSWORD = 'El campo de contraseña está vacío, ingresa tu contraseña';
 const ERROR_CREDS    = 'Usuario o contraseña incorrectos';
 
-const errorStyle = {
-  fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
-  fontSize: '10px',
-  fontWeight: '700',
-  color: '#dc2626',
-  marginTop: '4px',
+// Panel de patio — rejilla de carriles sobre degradado azul
+const laneGrid = {
+  backgroundColor: '#1d4ed8',
+  backgroundImage:
+    'repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 64px),' +
+    'repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 64px),' +
+    'linear-gradient(135deg, #2563eb 0%, #1565C0 100%)',
 };
+
+const fieldError = 'mt-1.5 text-[11px] font-semibold tracking-wide text-[#dc2626]';
 
 const LoginPage = () => {
   const navigate    = useNavigate();
@@ -111,20 +114,23 @@ const LoginPage = () => {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+  const locked = remainingTime > 0 || isSubmitting;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f4f7fb] relative">
+    <div className="min-h-screen w-full bg-[#f4f7fb] lg:grid lg:grid-cols-[1.05fr_1fr]">
 
       {/* Alert Modal — bloqueo por intentos */}
       {alertConfig?.visible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-2xl relative">
-            <div className="bg-yellow-500 text-white p-4 rounded-md mb-6 font-medium text-center">
-              {alertConfig.message}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4">
+          <div className="w-full max-w-sm overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-start gap-3 bg-amber-50 p-5">
+              <span aria-hidden className="text-xl leading-none text-amber-500">⚠</span>
+              <p className="text-sm font-medium text-amber-900">{alertConfig.message}</p>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-end px-5 py-4">
               <button
                 onClick={() => setAlertConfig(null)}
-                className="bg-[#2563eb] text-white py-2 px-6 rounded-md font-bold hover:bg-blue-700 transition-colors"
+                className="rounded-lg bg-[#2563eb] px-6 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#1d4ed8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563eb]"
               >
                 Aceptar
               </button>
@@ -133,82 +139,148 @@ const LoginPage = () => {
         </div>
       )}
 
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-[#2563eb]">Control de Maniobras</h2>
-          <p className="text-gray-500 mt-2">Inicio de sesión</p>
+      {/* ── YARD BOARD (panel izquierdo) — la firma ── */}
+      <aside
+        style={laneGrid}
+        className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-center lg:p-12 xl:p-16"
+      >
+        {/* franja de patio animada */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 overflow-hidden">
+          <div className="lane-stripe h-px w-1/3 bg-gradient-to-r from-transparent via-white to-transparent" />
         </div>
 
-        {remainingTime > 0 && (
-          <div className="text-center text-red-500 font-bold mb-4 bg-red-100 p-3 rounded-xl">
-            Tiempo de bloqueo restante: {formatTime(remainingTime)}
-          </div>
-        )}
+        <p
+          style={{ fontFamily: '"IBM Plex Mono", monospace' }}
+          className="mb-8 text-[11px] uppercase tracking-[0.32em] text-white/70"
+        >
+          Sistema de Control
+        </p>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-6">
+        {/* bloque de identidad estarcido (stencil) */}
+        <div className="relative">
+          <div className="mb-6 h-2 w-16 bg-white" aria-hidden />
+          <h1
+            style={{ fontFamily: 'Oswald, sans-serif' }}
+            className="text-6xl font-bold uppercase leading-[0.92] tracking-[0.04em] text-white xl:text-7xl"
+          >
+            Control<br />de<br /><span className="text-blue-200">Maniobras</span>
+          </h1>
+          <p className="mt-6 max-w-xs text-sm leading-relaxed text-white/75">
+            Coordinación de tractos, remolques y maniobras. Acceso restringido a personal autorizado.
+          </p>
+        </div>
+      </aside>
 
-          {/* ── Usuario ── */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
-            <input
-              type="text"
-              required
-              disabled={remainingTime > 0 || isSubmitting}
-              value={username}
-              placeholder="Introduce tu usuario"
-              className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-[#2563eb] transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
-              onChange={(e) => {
-                setUsuario(e.target.value);
-                setApiError('');
-                if (fieldErrors.username) setFieldErrors((prev) => ({ ...prev, username: '' }));
-              }}
-            />
-            {fieldErrors.username && (
-              <p style={errorStyle} role="alert">{fieldErrors.username}</p>
-            )}
-          </div>
+      {/* ── PANEL DE ACCESO (formulario) ── */}
+      <main className="flex min-h-screen items-center justify-center bg-[#f4f7fb] px-6 py-12 sm:px-10 lg:min-h-0">
+        <div className="w-full max-w-sm">
 
-          {/* ── Contraseña ── */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-            <input
-              type="password"
-              required
-              disabled={remainingTime > 0 || isSubmitting}
-              value={password}
-              placeholder="••••••••"
-              className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-[#2563eb] transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setApiError('');
-                if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: '' }));
-              }}
-            />
-            {fieldErrors.password && (
-              <p style={errorStyle} role="alert">{fieldErrors.password}</p>
-            )}
-          </div>
-
-          {/* ── Error de API (credenciales rechazadas por el servidor) ── */}
-          {apiError && (
-            <p style={{ ...errorStyle, fontSize: '11px', textAlign: 'center' }} role="alert">
-              {apiError}
+          {/* encabezado compacto — visible en móvil donde no hay yard board */}
+          <div className="mb-10">
+            <div className="mb-4 h-1.5 w-12 bg-[#2563eb] lg:hidden" aria-hidden />
+            <h2
+              style={{ fontFamily: 'Oswald, sans-serif' }}
+              className="text-2xl font-semibold uppercase tracking-[0.06em] text-[#1d4ed8] lg:hidden"
+            >
+              Control de Maniobras
+            </h2>
+            <p
+              style={{ fontFamily: '"IBM Plex Mono", monospace' }}
+              className="mt-2 text-[15px] font-semibold uppercase tracking-[0.12em] text-slate-700"
+            >
+              Acceso al sistema
             </p>
+          </div>
+
+          {remainingTime > 0 && (
+            <div
+              style={{ fontFamily: '"IBM Plex Mono", monospace' }}
+              className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
+              role="alert"
+            >
+              <span className="uppercase tracking-wide">Sistema bloqueado</span>
+              <span className="tabular-nums font-semibold">{formatTime(remainingTime)}</span>
+            </div>
           )}
 
-          <button
-            type="submit"
-            disabled={remainingTime > 0 || isSubmitting}
-            className={`w-full text-white py-3 px-4 rounded-xl font-bold transition-all duration-300 shadow-md ${
-              (remainingTime > 0 || isSubmitting)
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-[#2563eb] hover:bg-blue-700 hover:-translate-y-[2px] active:scale-95 hover:shadow-lg'
-            }`}
-          >
-            {isSubmitting ? 'Iniciando sesión...' : 'Iniciar sesión'}
-          </button>
-        </form>
-      </div>
+          <form onSubmit={handleSubmit} noValidate className="space-y-5">
+
+            {/* ── Usuario ── */}
+            <div>
+              <label
+                htmlFor="login-usuario"
+                style={{ fontFamily: '"IBM Plex Mono", monospace' }}
+                className="mb-2 block text-[15px] font-semibold uppercase tracking-[0.08em] text-slate-800"
+              >
+                Usuario
+              </label>
+              <input
+                id="login-usuario"
+                type="text"
+                required
+                disabled={locked}
+                value={username}
+                placeholder="Introduce tu usuario"
+                className="block w-full rounded-lg border-2 border-slate-200 bg-white px-4 py-3 text-slate-800 transition-colors placeholder:text-slate-400 focus:border-[#2563eb] focus:outline-none focus:ring-4 focus:ring-[#2563eb]/15 disabled:cursor-not-allowed disabled:bg-slate-100"
+                onChange={(e) => {
+                  setUsuario(e.target.value);
+                  setApiError('');
+                  if (fieldErrors.username) setFieldErrors((prev) => ({ ...prev, username: '' }));
+                }}
+              />
+              {fieldErrors.username && (
+                <p className={fieldError} role="alert">{fieldErrors.username}</p>
+              )}
+            </div>
+
+            {/* ── Contraseña ── */}
+            <div>
+              <label
+                htmlFor="login-password"
+                style={{ fontFamily: '"IBM Plex Mono", monospace' }}
+                className="mb-2 block text-[15px] font-semibold uppercase tracking-[0.08em] text-slate-800"
+              >
+                Contraseña
+              </label>
+              <input
+                id="login-password"
+                type="password"
+                required
+                disabled={locked}
+                value={password}
+                placeholder="••••••••"
+                className="block w-full rounded-lg border-2 border-slate-200 bg-white px-4 py-3 text-slate-800 transition-colors placeholder:text-slate-400 focus:border-[#2563eb] focus:outline-none focus:ring-4 focus:ring-[#2563eb]/15 disabled:cursor-not-allowed disabled:bg-slate-100"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setApiError('');
+                  if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: '' }));
+                }}
+              />
+              {fieldErrors.password && (
+                <p className={fieldError} role="alert">{fieldErrors.password}</p>
+              )}
+            </div>
+
+            {/* ── Error de API (credenciales rechazadas por el servidor) ── */}
+            {apiError && (
+              <p className={`${fieldError} text-center`} role="alert">{apiError}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={locked}
+              style={{ fontFamily: 'Oswald, sans-serif' }}
+              className={`w-full rounded-lg px-4 py-3.5 text-sm font-semibold uppercase tracking-[0.14em] text-white shadow-md transition-all ${
+                locked
+                  ? 'cursor-not-allowed bg-slate-300 shadow-none'
+                  : 'bg-[#2563eb] shadow-[#2563eb]/25 hover:bg-[#1d4ed8] hover:-translate-y-px active:translate-y-0 active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563eb]'
+              }`}
+            >
+              {isSubmitting ? 'Iniciando sesión…' : 'Iniciar sesión'}
+            </button>
+          </form>
+        </div>
+      </main>
     </div>
   );
 };

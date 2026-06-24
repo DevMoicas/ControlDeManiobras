@@ -23,7 +23,8 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 28px;
   font-weight: 700;
-  color: #2563EB;
+  text-transform: uppercase;
+  color: #000000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -243,6 +244,18 @@
 .btn-cancelar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
 .btn-guardar { padding: 8px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
 .btn-guardar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+
+.date-picker-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+.react-datepicker-wrapper { width: 100%; }
+.react-datepicker-popper  { z-index: 9999; }
 
 /* Media Queries para Responsividad */
 @media (min-width: 768px) {

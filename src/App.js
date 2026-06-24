@@ -1,8 +1,10 @@
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, UserCircle } from 'lucide-react';
+import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, ChevronRight } from 'lucide-react';
 import './App.css';
+import logoFraba from './pages/Logo Fraba.png';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
-import NoEcoPage from './pages/NoEcoPage';
+import CatalogosPage from './pages/CatalogosPage';
+import DocumentosViajePage from './pages/DocumentosViajePage';
 import ManiobrasPage from './pages/ManiobrasPage';
 import AdministracionNoEco from './pages/AdministracionNoEco';
 import GastosPage from "./pages/GastosPage";
@@ -10,63 +12,53 @@ import AdministracionGastos from './pages/AdministracionGastos';
 import VaciosPage from './pages/VaciosPage';
 import AdminVaciosPage from './pages/AdminVaciosPage';
 import PerfilPage from './pages/PerfilPage';
+const HOME_MODULES = [
+  { to: 'maniobras',       icon: Truck,       title: 'Maniobras',           desc: 'Registra y consulta los servicios.' },
+  { to: 'gastos-efectivo', icon: CircleDollarSign,      title: 'Gastos efectivo',     desc: 'Controla los gastos en efectivo de cada operación.' },
+  { to: 'vacios',          icon: Container, title: 'Vacíos',              desc: 'Administra los contenedores vacíos.' },
+  { to: 'catalogos',       icon: Library,     title: 'Catálogos',           desc: 'Gestiona operadores, placas, patios, unidades, etc.' },
+  { to: 'documentos-viaje',icon: FileText,    title: 'Documentos de viaje', desc: 'Genera y consulta la documentación de cada viaje.' },
+];
+
 function Home() {
   const navigate = useNavigate();
 
   return (
-    <div className="home-page"> {/* NUEVO CONTENEDOR */}
+    <div className="home-page">
 
-      {/* Botón de perfil — esquina superior derecha */}
-      <button
-        onClick={() => navigate('perfil')}
-        style={{
-          position: 'absolute',
-          top: '5px',
-          right: '20px',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          color: 'black',
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '5px',
-        }}
-        title="Ver perfil"
-      >
-        <UserCircle size={32} />
-      </button>
+      <header className="home-topbar">
+        <div className="home-brand">
+          <span className="home-brand-mark"><Truck size={20} /></span>
+          <span className="home-brand-name">Control de Maniobras</span>
+        </div>
+        <button className="home-profile" onClick={() => navigate('perfil')} title="Ver perfil">
+          <UserCircle size={26} />
+        </button>
+      </header>
 
-      <div className="container">
-        <h1>Control de Maniobras</h1>
-
-        <div className="description">
-          Sistema para automatizar y gestionar registros en Excel de forma rápida y eficiente.
+      <main className="home-main">
+        <div className="home-head">
+          <img src={logoFraba} alt="Logo Fraba" className="home-logo" />
+          <h1>Control de Maniobras</h1>
+          <p>Elige un módulo para comenzar.</p>
         </div>
 
         <div className="grid">
-          <div className="card" onClick={() => navigate('maniobras')}>
-            <div className="icon">🚚</div>
-            <div className="title">MANIOBRAS</div>
-          </div>
-
-          <div className="card" onClick={() => navigate('gastos-efectivo')}>
-            <div className="icon">💰</div>
-            <div className="title">GASTOS EFECTIVO</div>
-          </div>
-
-          <div className="card" onClick={() => navigate('vacios')}>
-            <div className="icon">📭</div>
-            <div className="title">VACÍOS</div>
-          </div>
-
-          <div className="card" onClick={() => navigate('no-eco')}>
-            <div className="icon">🔢</div>
-            <div className="title">NO. ECO</div>
-          </div>
+          {HOME_MODULES.map(({ to, icon: Icon, title, desc }, i) => (
+            <button
+              key={to}
+              className="card"
+              style={{ animationDelay: `${i * 60}ms` }}
+              onClick={() => navigate(to)}
+            >
+              <span className="card-icon"><Icon size={45} /></span>
+              <span className="card-title">{title}</span>
+              <span className="card-desc">{desc}</span>
+              <span className="card-go"><ChevronRight size={18} /></span>
+            </button>
+          ))}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
@@ -119,7 +111,8 @@ function AppRoutes() {
           <Route path="maniobras" element={<ManiobrasPage title="MANIOBRAS" />} />
           <Route path="gastos-efectivo" element={<GastosPage title="GASTOS EFECTIVO" />} />
           <Route path="vacios" element={<VaciosPage />} />
-          <Route path="no-eco" element={<NoEcoPage />} />
+          <Route path="catalogos" element={<CatalogosPage />} />
+          <Route path="documentos-viaje" element={<DocumentosViajePage />} />
           <Route path="perfil" element={<PerfilPage />} />
 
 

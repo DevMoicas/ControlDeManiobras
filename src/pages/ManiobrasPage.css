@@ -23,8 +23,9 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 28px;
   font-weight: 700;
+  text-transform: uppercase;
   margin-bottom: 30px;
-  color: #2563EB;
+  color: #000000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -46,23 +47,11 @@
   overflow: visible; /* permite que el sticky se ancle al viewport */
 }
 
-/* Tabla de encabezados — sticky, SIN scroll horizontal */
-.table-header-wrapper {
-  overflow: hidden; /* oculta lo que sobresale, sincronizado con el body */
-  border-radius: 10px 10px 0 0;
-}
-
-.table-header-wrapper .maniobras-table {
-  border-bottom: none;
-  border-radius: 10px 10px 0 0;
-  margin-bottom: 0;
-}
-
-/* Wrapper del body — maneja el scroll horizontal */
+/* Wrapper del body — scroll horizontal + vertical propios, para anclar el header sticky */
 .table-scroll-wrapper {
-  overflow-x: auto;
+  overflow: auto;
   -webkit-overflow-scrolling: touch;
-  /* Sin overflow-y ni max-height — el scroll vertical es del window */
+  max-height: calc(100vh - 230px);
 }
 
 .table-scroll-wrapper .maniobras-table {
@@ -96,13 +85,11 @@
   min-width: 120px;
 }
 
-/* Sombra en el wrapper del header para separación visual al scrollear */
-.table-header-wrapper {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+/* Header fijo al scrollear dentro del wrapper */
+.maniobras-table thead th {
   position: sticky;
   top: 0;
-  z-index: 20;
-  background: var(--card-bg);
+  z-index: 10;
 }
 
 .maniobras-table td {
@@ -333,6 +320,19 @@
   color: #9ca3af;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
+
+/* ── DatePicker ──────────────────────────────────────────────────────────── */
+.date-picker-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+.react-datepicker-wrapper { width: 100%; }
+.react-datepicker-popper { z-index: 9999; }
 
 /* ── Botón ordenar fecha ─────────────────────────────────────────────────── */
 .btn-ordenar {

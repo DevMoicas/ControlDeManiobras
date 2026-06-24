@@ -109,7 +109,7 @@ export default function AdministracionNoEco() {
         
         <h2 className="flex items-center gap-2 text-xl font-semibold">
           <span className="text-2xl mt-10">📊</span>
-          <span span className="text-2xl mt-10">Administración NoEco</span>
+          <span span className="text-2xl mt-10 font-bold text-black uppercase">Administración NoEco</span>
         </h2>
 
         {/* BOTÓN REGRESAR */}

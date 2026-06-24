@@ -5,15 +5,19 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000/api
 
 
 async function request(endpoint, options = {}) {
+  // Leer el access token en cada petición (puede actualizarse entre llamadas)
+  const token = localStorage.getItem("accessToken");
+
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
     headers: {
       ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { "Authorization": `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
 
-    if (response.status === 429) {
+  if (response.status === 429) {
     const retryAfter = response.headers.get("Retry-After") ?? "unos segundos";
     throw new Error(`Demasiadas peticiones. Intenta de nuevo en ${retryAfter}.`);
   }

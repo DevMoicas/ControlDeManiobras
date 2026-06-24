@@ -1,5 +1,6 @@
 // src/context/AuthContext.jsx
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { apiClient } from "../api/apiClient";
 
 const AuthContext = createContext(null);
 
@@ -66,15 +67,13 @@ export function AuthProvider({ children }) {
     const safePassword = String(password ?? "").slice(0, 128);
     if (!safeUsername || !safePassword) throw new Error("Credenciales inválidas");
 
-    const res = await fetch("http://127.0.0.1:8000/api/login/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: safeUsername, password: safePassword }),
-    });
+    let data;
+    try {
+      data = await apiClient.post("/login/", { username: safeUsername, password: safePassword });
+    } catch {
+      throw new Error("Usuario o contraseña incorrectos");
+    }
 
-    if (!res.ok) throw new Error("Usuario o contraseña incorrectos");
-
-    const data = await res.json();
     if (!data?.access || !data?.refresh) throw new Error("Respuesta inválida del servidor");
 
     tokenStore.setTokens(data.access, data.refresh);
@@ -89,6 +88,45 @@ export function AuthProvider({ children }) {
     tokenStore.clearTokens();
     setUser(null);
   }, []);
+
+  // Refresca el access token al montar si está expirado pero el refresh sigue vigente
+  useEffect(() => {
+    const refreshOnMount = async () => {
+      const access = tokenStore.getAccess();
+      const refresh = tokenStore.getRefresh();
+
+      // Si el access token es válido, no hay nada que hacer
+      if (decodeJwtPayload(access)) return;
+
+      // Si no hay refresh token, el usuario no está autenticado
+      if (!refresh) return;
+
+      try {
+        const data = await apiClient.post("/token/refresh/", { refresh });
+
+        if (!data?.access) {
+          tokenStore.clearTokens();
+          setUser(null);
+          return;
+        }
+
+        tokenStore.setTokens(data.access, refresh);
+        const decoded = decodeJwtPayload(data.access);
+        if (decoded) {
+          setUser(decoded);
+        } else {
+          tokenStore.clearTokens();
+          setUser(null);
+        }
+      } catch {
+        // El refresh token también expiró — limpiar sesión completamente
+        tokenStore.clearTokens();
+        setUser(null);
+      }
+    };
+
+    refreshOnMount();
+  }, []); // Ejecutar solo al montar el provider
 
   // Escucha el evento de sesión expirada que dispara apiClient
   useEffect(() => {
