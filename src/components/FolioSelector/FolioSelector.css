@@ -1,0 +1,78 @@
+.fsl-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.fsl-btn {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.875rem;
+  color: var(--text, #1f2937);
+  transition: border-color 0.15s;
+}
+.fsl-btn:hover:not(:disabled) {
+  border-color: var(--primary, #2563eb);
+}
+.fsl-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fsl-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 200;
+  min-width: 260px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.fsl-msg {
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  color: var(--text-light, #6b7280);
+}
+.fsl-error { color: #dc2626; }
+
+.fsl-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+.fsl-item:hover {
+  background: var(--primary-light, #eaf1ff);
+}
+.fsl-item--selected {
+  background: #dbeafe;
+  font-weight: 600;
+}
+
+.fsl-folio {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text, #1f2937);
+  font-family: monospace;
+}
+.fsl-ruta {
+  font-size: 0.75rem;
+  color: var(--text-light, #6b7280);
+  margin-top: 1px;
+}

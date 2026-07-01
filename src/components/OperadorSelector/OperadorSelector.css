@@ -48,9 +48,7 @@
 }
 
 .op-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
+  position: fixed;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -106,4 +104,17 @@
 .op-check {
   font-size: 0.75rem;
   color: #0369a1;
+}
+
+.op-option--vencido {
+  opacity: 0.5;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.op-badge-vencido {
+  color: #dc2626;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-decoration: none;
 }

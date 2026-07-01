@@ -390,9 +390,9 @@
 
 .btn-cancel {
   padding: 11px 22px;
-  background-color: #f1f3f6;
-  color: #4b5563;
-  border: none;
+  background-color: transparent;
+  color: var(--danger, #ef4444);
+  border: 1px solid var(--danger, #ef4444);
   border-radius: 10px;
   font-weight: 700;
   font-size: 0.9rem;
@@ -401,8 +401,8 @@
 }
 
 .btn-cancel:hover {
-  background-color: #e2e6eb;
-  color: var(--slate-900);
+  background-color: var(--danger, #ef4444);
+  color: #fff;
 }
 
 .btn-save {

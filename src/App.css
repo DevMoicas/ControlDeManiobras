@@ -251,6 +251,20 @@ html, body, #root {
   margin: 0;
   padding: 0;
 }
+/* Contenedor de alertas de vencimiento en Home */
+.home-alertas-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  padding: 16px 24px 8px;
+  /* Rompe el max-width de .home-main para llenar el ancho de la pantalla:
+     las alertas van en línea hasta el borde y solo ahí bajan de fila. */
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  box-sizing: border-box;
+}
+
 /* Corrige home-page para que no compita con el flex del layout */
 .home-page {
   min-height: calc(100vh - 40px); /* descuenta la altura del footer */

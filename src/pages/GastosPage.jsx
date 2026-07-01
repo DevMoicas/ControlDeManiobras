@@ -164,9 +164,8 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting, manio
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-titulo"
-      onClick={onCerrar}
     >
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content">
         <h2 id="modal-titulo" className="modal-titulo">Editar Gasto</h2>
         <form onSubmit={onGuardar} className="modal-form">
           <div className="modal-grid">

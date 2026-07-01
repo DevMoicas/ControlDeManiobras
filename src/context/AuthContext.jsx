@@ -44,17 +44,18 @@ function decodeJwtPayload(token) {
   }
 }
 
-// ── Token store en localStorage para persistencia al refrescar ──
+// ── Token store en sessionStorage: los tokens desaparecen al cerrar el
+// navegador/pestaña, pero sobreviven un refresh (F5) de la misma pestaña. ──
 const tokenStore = {
-  getAccess:   () => localStorage.getItem("accessToken"),
-  getRefresh:  () => localStorage.getItem("refreshToken"),
-  setTokens:   (access, refresh) => { 
-    localStorage.setItem("accessToken", access); 
-    localStorage.setItem("refreshToken", refresh); 
+  getAccess:   () => sessionStorage.getItem("accessToken"),
+  getRefresh:  () => sessionStorage.getItem("refreshToken"),
+  setTokens:   (access, refresh) => {
+    sessionStorage.setItem("accessToken", access);
+    sessionStorage.setItem("refreshToken", refresh);
   },
-  clearTokens: () => { 
-    localStorage.removeItem("accessToken"); 
-    localStorage.removeItem("refreshToken"); 
+  clearTokens: () => {
+    sessionStorage.removeItem("accessToken");
+    sessionStorage.removeItem("refreshToken");
   },
 };
 

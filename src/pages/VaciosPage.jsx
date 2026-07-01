@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Trash2, SquarePen, Package, Container } from "lucide-react";
+import { Trash2, SquarePen, Package, Container, Camera } from "lucide-react";
 import { useVacios } from "../hooks/useVacios";
 import { useAuthContext } from "../context/AuthContext";
 import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
@@ -12,6 +12,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { registerLocale } from "react-datepicker";
 import es from "date-fns/locale/es";
+import FotoModal from "../components/FotoModal/FotoModal";
 import "./VaciosPage.css";
 registerLocale("es", es);
 
@@ -131,9 +132,8 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-titulo"
-      onClick={onCerrar}
     >
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content">
         <h2 id="modal-titulo" className="modal-titulo">Editar Vacío</h2>
         <form onSubmit={onGuardar} className="modal-form">
           <div className="modal-grid">
@@ -206,6 +206,7 @@ export default function VaciosPage() {
   const [notif,       setNotif]       = useState(null);
   const [busqueda,    setBusqueda]    = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fotoModal,   setFotoModal]   = useState(null); // { registroId } | null
 
   // ── Scroll listener en window ─────────────────────────────────────────────
   useEffect(() => {
@@ -267,8 +268,8 @@ export default function VaciosPage() {
       await actualizar(modal.datos.id, modal.datos);
       setNotif({ tipo: "ok", msg: "Vacío actualizado correctamente." });
       setModal(MODAL_CERRADO);
-    } catch {
-      setNotif({ tipo: "error", msg: "Error al actualizar el vacío." });
+    } catch (err) {
+      setNotif({ tipo: "error", msg: err.message || "Error al actualizar el vacío." });
     } finally {
       setIsSubmitting(false);
     }
@@ -284,8 +285,8 @@ export default function VaciosPage() {
       setNuevoVacio(VACIO_VACIO);
       setModoAgregar(false);
       setNotif({ tipo: "ok", msg: "Vacío agregado correctamente." });
-    } catch {
-      setNotif({ tipo: "error", msg: "Error al agregar el vacío." });
+    } catch (err) {
+      setNotif({ tipo: "error", msg: err.message || "Error al agregar el vacío." });
     } finally {
       setIsSubmitting(false);
     }
@@ -468,6 +469,16 @@ export default function VaciosPage() {
                       >
                         <SquarePen size={18} />
                       </button>
+                      <button
+                        type="button"
+                        className="btn-icon btn-foto"
+                        onClick={() => setFotoModal({ registroId: vacio.id })}
+                        aria-label="Ver fotos del vacío"
+                        title="Fotos"
+                        disabled={isSubmitting}
+                      >
+                        <Camera size={18} />
+                      </button>
                       {isAdmin && (
                         <button
                           className="btn-icon btn-eliminar"
@@ -506,6 +517,15 @@ export default function VaciosPage() {
           onGuardar={handleGuardarEdicion}
           onCerrar={() => setModal(MODAL_CERRADO)}
           isSubmitting={isSubmitting}
+        />
+      )}
+
+      {fotoModal && (
+        <FotoModal
+          tipo="vacio"
+          registroId={fotoModal.registroId}
+          onCerrar={() => setFotoModal(null)}
+          isAdmin={isAdmin}
         />
       )}
     </div>

@@ -1,6 +1,10 @@
+import { useState, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, ChevronRight } from 'lucide-react';
 import './App.css';
+import { useAuthContext } from './context/AuthContext';
+import { useInactivityTimer } from './hooks/useInactivityTimer';
+import InactivityModal from './components/InactivityModal/InactivityModal';
 import logoFraba from './pages/Logo Fraba.png';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import CatalogosPage from './pages/CatalogosPage';
@@ -12,16 +16,21 @@ import AdministracionGastos from './pages/AdministracionGastos';
 import VaciosPage from './pages/VaciosPage';
 import AdminVaciosPage from './pages/AdminVaciosPage';
 import PerfilPage from './pages/PerfilPage';
+import MovimientosLocalesPage from './pages/MovimientosLocalesPage';
+import { useAlertasVencimiento } from './hooks/useAlertasVencimiento';
+import AlertaVencimiento from './components/AlertaVencimiento/AlertaVencimiento';
 const HOME_MODULES = [
   { to: 'maniobras',       icon: Truck,       title: 'Maniobras',           desc: 'Registra y consulta los servicios.' },
   { to: 'gastos-efectivo', icon: CircleDollarSign,      title: 'Gastos efectivo',     desc: 'Controla los gastos en efectivo de cada operación.' },
   { to: 'vacios',          icon: Container, title: 'Vacíos',              desc: 'Administra los contenedores vacíos.' },
+  { to: 'movimientos-locales', icon: Wallet, title: 'Movimientos locales', desc: 'Controla los movimientos locales pendientes y pagados.' },
   { to: 'catalogos',       icon: Library,     title: 'Catálogos',           desc: 'Gestiona operadores, placas, patios, unidades, etc.' },
   { to: 'documentos-viaje',icon: FileText,    title: 'Documentos de viaje', desc: 'Genera y consulta la documentación de cada viaje.' },
 ];
 
 function Home() {
   const navigate = useNavigate();
+  const { alertas } = useAlertasVencimiento();
 
   return (
     <div className="home-page">
@@ -37,6 +46,15 @@ function Home() {
       </header>
 
       <main className="home-main">
+        {/* Alertas de vencimiento — solo visibles en Home */}
+        {alertas.length > 0 && (
+          <div className="home-alertas-container">
+            {alertas.map((alerta, index) => (
+              <AlertaVencimiento key={`${alerta.tipo}-${index}`} alerta={alerta} />
+            ))}
+          </div>
+        )}
+
         <div className="home-head">
           <img src={logoFraba} alt="Logo Fraba" className="home-logo" />
           <h1>Control de Maniobras</h1>
@@ -74,8 +92,37 @@ function BlankPage({ title }) {
 function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuthContext();
 
   const showBackButton = location.pathname !== '/home' && location.pathname !== '/home/';
+
+  // ── Modales de inactividad ──────────────────────────────────────────────────
+  const [showWarnModal,    setShowWarnModal]    = useState(false);
+  const [showExpiredModal, setShowExpiredModal] = useState(false);
+
+  // Al expirar: mostrar el modal SIN hacer logout todavía. El logout ocurre al
+  // hacer click en Aceptar para garantizar que el modal sea visible antes de salir.
+  const handleExpire = useCallback(() => {
+    setShowWarnModal(false);
+    setShowExpiredModal(true);
+  }, []);
+
+  // Timer activo solo con sesión iniciada
+  useInactivityTimer({
+    enabled: !!user,
+    onWarn: setShowWarnModal,
+    onExpire: handleExpire,
+  });
+
+  // Aceptar del aviso (10 min): solo cierra el modal. El timer NO se reinicia (Option B).
+  const handleWarnAceptar = () => setShowWarnModal(false);
+
+  // Aceptar de expiración (20 min): logout completo + redirección al login ("/").
+  const handleExpiredAceptar = useCallback(() => {
+    setShowExpiredModal(false);
+    logout();
+    navigate('/');
+  }, [logout, navigate]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -111,6 +158,7 @@ function AppRoutes() {
           <Route path="maniobras" element={<ManiobrasPage title="MANIOBRAS" />} />
           <Route path="gastos-efectivo" element={<GastosPage title="GASTOS EFECTIVO" />} />
           <Route path="vacios" element={<VaciosPage />} />
+          <Route path="movimientos-locales" element={<MovimientosLocalesPage />} />
           <Route path="catalogos" element={<CatalogosPage />} />
           <Route path="documentos-viaje" element={<DocumentosViajePage />} />
           <Route path="perfil" element={<PerfilPage />} />
@@ -158,6 +206,16 @@ function AppRoutes() {
           © 2026 FRABA Todos los derechos reservados
         </span>
       </footer>
+
+      {/* Modal de aviso de inactividad (10 min) */}
+      {showWarnModal && (
+        <InactivityModal tipo="warn" onAceptar={handleWarnAceptar} />
+      )}
+
+      {/* Modal de sesión expirada (20 min) */}
+      {showExpiredModal && (
+        <InactivityModal tipo="expired" onAceptar={handleExpiredAceptar} />
+      )}
 
     </div>
   );

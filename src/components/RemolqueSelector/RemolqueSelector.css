@@ -1,7 +1,27 @@
 .rs-container {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
+
+.rs-clear {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.72rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.rs-clear:hover { background: #dc2626; color: #fff; }
 
 .rs-trigger {
   display: flex;

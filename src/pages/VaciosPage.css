@@ -138,8 +138,8 @@
 .btn-guardar-fila { background-color: #2563eb; color: white; }
 .btn-guardar-fila:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
 
-.btn-cancelar-fila { background-color: #e5e7eb; color: #333; }
-.btn-cancelar-fila:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+.btn-cancelar-fila { background-color: transparent; color: #ef4444; border: 1px solid #ef4444; }
+.btn-cancelar-fila:hover { background-color: #ef4444; transform: scale(1.05); color: white; }
 
 /* Estados de carga y error */
 .loading-box,
@@ -210,6 +210,8 @@
 .btn-editar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
 .btn-eliminar { color: #ef4444; }
 .btn-eliminar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+.btn-foto { color: #7c3aed; }
+.btn-foto:hover { background-color: #7c3aed; transform: scale(1.05); color: white; }
 
 /* Modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 9999; }
@@ -240,8 +242,8 @@
   border-top: 1px solid #eee;
   flex-shrink: 0;
 }
-.btn-cancelar { padding: 8px 15px; border-radius: 6px; border: none; background: #e5e7eb; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
-.btn-cancelar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+.btn-cancelar { padding: 8px 15px; border-radius: 6px; border: 1px solid #ef4444; background: transparent; color: #ef4444; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
+.btn-cancelar:hover { background-color: #ef4444; transform: scale(1.05); color: white; }
 .btn-guardar { padding: 8px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
 .btn-guardar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
 

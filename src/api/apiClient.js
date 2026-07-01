@@ -6,14 +6,17 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000/api
 
 async function request(endpoint, options = {}) {
   // Leer el access token en cada petición (puede actualizarse entre llamadas)
-  const token = localStorage.getItem("accessToken");
+  const token = sessionStorage.getItem("accessToken");
+
+  // isUpload: FormData — el navegador pone el Content-Type con boundary solo.
+  const { isUpload, ...fetchOptions } = options;
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
+    ...fetchOptions,
     headers: {
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(!isUpload && fetchOptions.body ? { "Content-Type": "application/json" } : {}),
       ...(token ? { "Authorization": `Bearer ${token}` } : {}),
-      ...options.headers,
+      ...fetchOptions.headers,
     },
   });
 
@@ -35,12 +38,13 @@ async function request(endpoint, options = {}) {
 function sanitizarPayload(body) {
   return Object.fromEntries(
     Object.entries(body)
-      .filter(([_, v]) => v !== null && v !== undefined && v !== "")
+      .filter(([_, v]) => v !== undefined)
       .map(([k, v]) => [
         // Solo permite keys alfanuméricas con guión bajo (evita keys maliciosas)
         k.replace(/[^a-zA-Z0-9_]/g, ""),
-        // Convierte a string y recorta espacios
-        String(v).trim()
+        // "" o null → null explícito: permite LIMPIAR campos (deseleccionar) y
+        // evita errores de formato en campos date/number que rechazan "".
+        v === null || v === "" ? null : String(v).trim(),
       ])
   );
 }
@@ -51,4 +55,33 @@ export const apiClient = {
 put:   (endpoint, body) => request(endpoint, { method: "PUT",   body: JSON.stringify(sanitizarPayload(body)) }),
 patch: (endpoint, body) => request(endpoint, { method: "PATCH", body: JSON.stringify(sanitizarPayload(body)) }),
   delete: (endpoint)        => request(endpoint, { method: "DELETE" }),
+  // Subir archivos: FormData directo, sin sanitizar ni forzar Content-Type
+  upload: (endpoint, formData) => request(endpoint, { method: "POST", body: formData, isUpload: true }),
+  // POST que devuelve un Blob (descarga de archivos binarios como PDFs)
+  download: async (endpoint, body) => {
+    const token = sessionStorage.getItem("accessToken");
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (response.status === 401) {
+      window.dispatchEvent(new Event("auth:expired"));
+      throw new Error("Sesión expirada.");
+    }
+    if (!response.ok) {
+      let mensaje = `Error ${response.status}`;
+      try {
+        const err = await response.json();
+        mensaje = err.detail || mensaje;
+      } catch (_) { /* ignorar */ }
+      throw new Error(mensaje);
+    }
+
+    return response.blob();
+  },
 };

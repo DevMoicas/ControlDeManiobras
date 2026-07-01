@@ -1,31 +1,57 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { apiClient } from "../../api/apiClient";
 import "./PlacasSelector.css";
 
-export default function PlacasSelector({ currentValue, onSelect, disabled }) {
+export default function PlacasSelector({ currentValue, onSelect, disabled, transportista, todas }) {
+  // todas → tractos propios + unidades de TODOS los terceros (para placas_pis).
+  // Transportista tercero (≠ FRABA CONTAINER) → solo sus unidades.
+  // propio/sin transportista → tractos internos.
+  const esTercero = transportista && transportista.trim().toUpperCase() !== "FRABA CONTAINER";
   const [open, setOpen] = useState(false);
   const [tractos, setTractos] = useState([]);
   const [loadingList, setLoadingList] = useState(false);
   const [errorList, setErrorList] = useState(null);
+  const [coords, setCoords] = useState(null);
   const containerRef = useRef(null);
+  const dropRef = useRef(null);
+
+  // Portal con position: fixed para que el overflow de la tabla no recorte la
+  // lista (mismo patrón que PendientePagadoSelector).
+  const actualizarCoords = () => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 4, left: r.left });
+  };
+
+  useLayoutEffect(() => {
+    if (open) actualizarCoords();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     setLoadingList(true);
     setErrorList(null);
-    apiClient.get("/tractos/")
-      .then((res) => {
-        const lista = Array.isArray(res) ? res : (res?.results ?? []);
-        setTractos(lista);
-      })
-      .catch(() => setErrorList("Error al cargar tractos"))
+    const arr = (res) => (Array.isArray(res) ? res : (res?.results ?? []));
+    const peticion = todas
+      ? Promise.all([apiClient.get("/tractos/"), apiClient.get("/unidades-terceros/")])
+          .then(([t, u]) => [...arr(t), ...arr(u).map((x) => ({ id: x.id, placas: x.placas, transportista: x.transportista }))])
+      : apiClient.get(esTercero
+            ? `/unidades-terceros/?transportista=${encodeURIComponent(transportista)}`
+            : "/tractos/")
+          .then((res) => (esTercero ? arr(res).map((x) => ({ id: x.id, placas: x.placas, transportista: x.transportista })) : arr(res)));
+    peticion
+      .then(setTractos)
+      .catch(() => setErrorList("Error al cargar unidades"))
       .finally(() => setLoadingList(false));
-  }, [open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, transportista, todas]);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
       if (containerRef.current && containerRef.current.contains(e.target)) return;
+      if (dropRef.current && dropRef.current.contains(e.target)) return;
       setOpen(false);
     };
     const keyHandler = (e) => {
@@ -34,17 +60,24 @@ export default function PlacasSelector({ currentValue, onSelect, disabled }) {
         setOpen(false);
       }
     };
+    const reposicionar = () => actualizarCoords();
     document.addEventListener("mousedown", handler);
     document.addEventListener("keydown", keyHandler);
+    window.addEventListener("scroll", reposicionar, true);
+    window.addEventListener("resize", reposicionar);
     return () => {
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("keydown", keyHandler);
+      window.removeEventListener("scroll", reposicionar, true);
+      window.removeEventListener("resize", reposicionar);
     };
   }, [open]);
 
-  const handleSelect = (placas) => {
+  const handleSelect = (tracto) => {
     setOpen(false);
-    onSelect(placas);
+    // Retrocompatible: 1er arg = placas (string), 2º arg = tracto completo
+    // reelegir la misma = deseleccionar
+    onSelect(tracto.placas === currentValue ? "" : tracto.placas, tracto);
   };
 
   return (
@@ -61,8 +94,13 @@ export default function PlacasSelector({ currentValue, onSelect, disabled }) {
         <span className="ps-chevron">{open ? "▲" : "▼"}</span>
       </button>
 
-      {open && (
-        <ul className="ps-dropdown" role="listbox">
+      {open && coords && createPortal(
+        <ul
+          ref={dropRef}
+          className="ps-dropdown"
+          style={{ top: coords.top, left: coords.left }}
+          role="listbox"
+        >
           {loadingList && <li className="ps-state">Cargando...</li>}
           {errorList && <li className="ps-state ps-state--error">{errorList}</li>}
           {!loadingList && !errorList && tractos.length === 0 && (
@@ -70,18 +108,21 @@ export default function PlacasSelector({ currentValue, onSelect, disabled }) {
           )}
           {!loadingList && !errorList && tractos.map((t) => (
             <li
-              key={t.id}
+              key={`${t.no_eco || "t3"}-${t.id}`}
               role="option"
               aria-selected={t.placas === currentValue}
               className={`ps-option ${t.placas === currentValue ? "ps-option--selected" : ""}`}
-              onClick={(e) => { e.stopPropagation(); handleSelect(t.placas); }}
+              onClick={(e) => { e.stopPropagation(); handleSelect(t); }}
             >
               <span>{t.placas}</span>
-              <span className="ps-eco">Eco: {t.no_eco}</span>
+              {t.no_eco
+                ? <span className="ps-eco">Eco: {t.no_eco}</span>
+                : t.transportista && <span className="ps-eco">{t.transportista}</span>}
               {t.placas === currentValue && <span className="ps-check">✓</span>}
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );

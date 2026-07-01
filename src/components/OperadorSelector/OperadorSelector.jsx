@@ -1,31 +1,68 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { apiClient } from "../../api/apiClient";
 import "./OperadorSelector.css";
 
-export default function OperadorSelector({ currentValue, onSelect, disabled }) {
+export default function OperadorSelector({ currentValue, onSelect, disabled, transportista }) {
+  // Transportista tercero (≠ FRABA CONTAINER) → lista sus operadores registrados
+  // en Terceros; propio/sin transportista → choferes internos.
+  const esTercero = transportista && transportista.trim().toUpperCase() !== "FRABA CONTAINER";
   const [open, setOpen] = useState(false);
   const [choferes, setChoferes] = useState([]);
   const [loadingList, setLoadingList] = useState(false);
   const [errorList, setErrorList] = useState(null);
+  const [coords, setCoords] = useState(null);
   const containerRef = useRef(null);
+  const dropRef = useRef(null);
+
+  // El desplegable se renderiza en un portal con position: fixed para que no lo
+  // recorte el overflow de la tabla (mismo patrón que PendientePagadoSelector).
+  const actualizarCoords = () => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 4, left: r.left });
+  };
+
+  useLayoutEffect(() => {
+    if (open) actualizarCoords();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     setLoadingList(true);
     setErrorList(null);
-    apiClient.get("/choferes/")
+    const url = esTercero
+      ? `/operadores-terceros/?transportista=${encodeURIComponent(transportista)}`
+      : "/choferes/";
+    apiClient.get(url)
       .then((res) => {
         const lista = Array.isArray(res) ? res : (res?.results ?? []);
-        setChoferes(lista);
+        if (esTercero) {
+          setChoferes(lista.map((o) => ({ id: o.id, nombre: o.nombre, licenciaVencida: false })));
+          return;
+        }
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const conVigencia = lista.map((c) => {
+          let vencida = false;
+          if (c.fecha_vencimiento_licencia) {
+            const fechaVenc = new Date(c.fecha_vencimiento_licencia + "T00:00:00");
+            vencida = fechaVenc < hoy;
+          }
+          return { ...c, licenciaVencida: vencida };
+        });
+        setChoferes(conVigencia);
       })
       .catch(() => setErrorList("Error al cargar choferes"))
       .finally(() => setLoadingList(false));
-  }, [open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, transportista]);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
       if (containerRef.current && containerRef.current.contains(e.target)) return;
+      if (dropRef.current && dropRef.current.contains(e.target)) return;
       setOpen(false);
     };
     const keyHandler = (e) => {
@@ -34,17 +71,22 @@ export default function OperadorSelector({ currentValue, onSelect, disabled }) {
         setOpen(false);
       }
     };
+    const reposicionar = () => actualizarCoords();
     document.addEventListener("mousedown", handler);
     document.addEventListener("keydown", keyHandler);
+    window.addEventListener("scroll", reposicionar, true);
+    window.addEventListener("resize", reposicionar);
     return () => {
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("keydown", keyHandler);
+      window.removeEventListener("scroll", reposicionar, true);
+      window.removeEventListener("resize", reposicionar);
     };
   }, [open]);
 
   const handleSelect = (nombre) => {
     setOpen(false);
-    onSelect(nombre);
+    onSelect(nombre === currentValue ? "" : nombre);   // reelegir = deseleccionar
   };
 
   return (
@@ -61,8 +103,13 @@ export default function OperadorSelector({ currentValue, onSelect, disabled }) {
         <span className="op-chevron">{open ? "▲" : "▼"}</span>
       </button>
 
-      {open && (
-        <ul className="op-dropdown" role="listbox">
+      {open && coords && createPortal(
+        <ul
+          ref={dropRef}
+          className="op-dropdown"
+          style={{ top: coords.top, left: coords.left }}
+          role="listbox"
+        >
           {loadingList && (
             <li className="op-state">Cargando…</li>
           )}
@@ -77,14 +124,18 @@ export default function OperadorSelector({ currentValue, onSelect, disabled }) {
               key={c.id}
               role="option"
               aria-selected={c.nombre === currentValue}
-              className={`op-option ${c.nombre === currentValue ? "op-option--selected" : ""}`}
-              onClick={(e) => { e.stopPropagation(); handleSelect(c.nombre); }}
+              aria-disabled={c.licenciaVencida}
+              className={`op-option ${c.nombre === currentValue ? "op-option--selected" : ""} ${c.licenciaVencida ? "op-option--vencido" : ""}`}
+              title={c.licenciaVencida ? "Licencia vencida — no se puede asignar" : ""}
+              onClick={(e) => { e.stopPropagation(); if (!c.licenciaVencida) handleSelect(c.nombre); }}
             >
               {c.nombre}
+              {c.licenciaVencida && <span className="op-badge-vencido"> (Licencia vencida)</span>}
               {c.nombre === currentValue && <span className="op-check">✓</span>}
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );

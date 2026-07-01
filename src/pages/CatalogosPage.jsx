@@ -5,6 +5,12 @@ import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import "./CatalogosPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
+import CargoSelector from "../components/CargoSelector/CargoSelector";
+import TransportistaSelector from "../components/TransportistaSelector/TransportistaSelector";
+
+// Todas las tablas de catálogos se muestran estrictamente por id ascendente.
+const porId = (arr) => [...arr].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
+
 export default function NoEcoPage() {
   const navigate = useNavigate();
   const { isAdmin } = useAuthContext();
@@ -19,6 +25,8 @@ export default function NoEcoPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dataOrigenes, setDataOrigenes] = useState([]);
   const [dataDestinos, setDataDestinos] = useState([]);
+  const [dataUnidades, setDataUnidades] = useState([]);
+  const [dataOperadores, setDataOperadores] = useState([]);
   const [subVista, setSubVista] = useState(null);
   const TRADUCCIONES_COLUMNAS = {
     no_eco: "No. Eco",
@@ -33,16 +41,25 @@ export default function NoEcoPage() {
     nombre: "Nombre",
     nombre_cliente: "Nombre del Cliente",
     domicilio: "Domicilio",
+    colonia: "Colonia",
     ciudad: "Ciudad",
+    fecha_vencimiento_licencia: "Fecha Vencimiento Licencia",
+    fecha_vencimiento_poliza: "Fecha Vencimiento Póliza",
+    tag: "Tag",
+    cargo: "Cargo",
+    telefono: "Teléfono",
+    transportista: "Transportista",
   };
 
   const configFormularios = {
     tractos: [
       { name: "no_eco", label: "No. Eco", type: "text" },
+      { name: "tag", label: "Tag", type: "text", required: false },
       { name: "unidad", label: "Unidad", type: "text" },
       { name: "anio", label: "Año", type: "number" },
       { name: "placas", label: "Placas", type: "text" },
-      { name: "tipo", label: "Tipo", type: "text" }
+      { name: "tipo", label: "Tipo", type: "text" },
+      { name: "fecha_vencimiento_poliza", label: "Fecha Vencimiento Póliza", type: "date", required: false }
     ],
     remolques: [
       { name: "color", label: "Color", type: "text" },
@@ -52,25 +69,44 @@ export default function NoEcoPage() {
     choferes: [
       { name: "nombre", label: "Nombre Completo", type: "text" },
       { name: "rfc", label: "RFC del operador", type: "text" },
-      { name: "licencia", label: "Número de Licencia", type: "text" }
+      { name: "licencia", label: "Número de Licencia", type: "text" },
+      { name: "fecha_vencimiento_licencia", label: "Fecha Vencimiento Licencia", type: "date", required: false }
     ],
     empleados: [
       { name: "nombre_trabajador", label: "Nombre del Trabajador", type: "text" },
       { name: "fecha_ingreso", label: "Fecha de Ingreso", type: "date" },
-      { name: "nss", label: "NSS", type: "text" }
+      { name: "nss", label: "NSS", type: "text" },
+      { name: "cargo", label: "Cargo", type: "selector", selector: "cargo", required: false },
+      { name: "telefono", label: "Teléfono", type: "tel", required: false }
     ],
     patios: [
       { name: "nombre", label: "Nombre", type: "text" }
     ],
     clientes: [
       { name: "nombre_cliente", label: "Nombre del Cliente", type: "text" },
-      { name: "domicilio", label: "Domicilio", type: "text" }
+      { name: "domicilio", label: "Domicilio", type: "text" },
+      { name: "colonia", label: "Colonia", type: "text", required: false },
+      { name: "ciudad", label: "Ciudad", type: "text", required: false }
     ],
     origenes: [
       { name: "ciudad", label: "Ciudad", type: "text" }
     ],
     destinos: [
       { name: "ciudad", label: "Ciudad", type: "text" }
+    ],
+    transportistas: [
+      { name: "nombre", label: "Nombre", type: "text" }
+    ],
+    cargos: [
+      { name: "nombre", label: "Nombre", type: "text" }
+    ],
+    "unidades-terceros": [
+      { name: "placas", label: "Placas", type: "text" },
+      { name: "transportista", label: "Transportista", type: "selector", selector: "transportista", required: false }
+    ],
+    "operadores-terceros": [
+      { name: "nombre", label: "Nombre", type: "text" },
+      { name: "transportista", label: "Transportista", type: "selector", selector: "transportista", required: false }
     ],
   };
 
@@ -87,7 +123,7 @@ export default function NoEcoPage() {
         apiClient.get("/origenes/")
           .then(res => {
             if (cancelled) return;
-            const datos = Array.isArray(res) ? res : res.results || [];
+            const datos = porId(Array.isArray(res) ? res : res.results || []);
             cacheRef.current["origenes"] = datos;
             setDataOrigenes(datos);
           })
@@ -104,7 +140,7 @@ export default function NoEcoPage() {
         apiClient.get("/destinos/")
           .then(res => {
             if (cancelled) return;
-            const datos = Array.isArray(res) ? res : res.results || [];
+            const datos = porId(Array.isArray(res) ? res : res.results || []);
             cacheRef.current["destinos"] = datos;
             setDataDestinos(datos);
           })
@@ -117,6 +153,26 @@ export default function NoEcoPage() {
       return () => { cancelled = true; };
     }
 
+    if (vista === "terceros") {
+      const cargar = (endpoint, cacheKey, setter) => {
+        if (cacheRef.current[cacheKey]) {
+          setter(cacheRef.current[cacheKey]);
+          return;
+        }
+        apiClient.get(`/${endpoint}/`)
+          .then(res => {
+            if (cancelled) return;
+            const datos = porId(Array.isArray(res) ? res : res.results || []);
+            cacheRef.current[cacheKey] = datos;
+            setter(datos);
+          })
+          .catch(err => { if (!cancelled) console.error(err); });
+      };
+      cargar("unidades-terceros", "unidades-terceros", setDataUnidades);
+      cargar("operadores-terceros", "operadores-terceros", setDataOperadores);
+      return () => { cancelled = true; };
+    }
+
     // Caso normal: una sola vista, un endpoint
     if (cacheRef.current[vista]) {
       setData(cacheRef.current[vista]);
@@ -126,7 +182,7 @@ export default function NoEcoPage() {
     apiClient.get(`/${vista}/`)
       .then(res => {
         if (cancelled) return;
-        const datos = Array.isArray(res) ? res : res.results || [];
+        const datos = porId(Array.isArray(res) ? res : res.results || []);
         cacheRef.current[vista] = datos;
         setData(datos);
       })
@@ -156,6 +212,10 @@ export default function NoEcoPage() {
           setDataOrigenes(prev => prev.filter(item => item.id !== id));
         } else if (vistaActiva === "destinos") {
           setDataDestinos(prev => prev.filter(item => item.id !== id));
+        } else if (vistaActiva === "unidades-terceros") {
+          setDataUnidades(prev => prev.filter(item => item.id !== id));
+        } else if (vistaActiva === "operadores-terceros") {
+          setDataOperadores(prev => prev.filter(item => item.id !== id));
         } else {
           setData(prev => prev.filter(item => item.id !== id));
         }
@@ -223,6 +283,18 @@ export default function NoEcoPage() {
             ? prev.map(item => item.id === registroEditando.id ? resultado : item)
             : [...prev, resultado]
         );
+      } else if (vistaActiva === "unidades-terceros") {
+        setDataUnidades(prev =>
+          editando
+            ? prev.map(item => item.id === registroEditando.id ? resultado : item)
+            : [...prev, resultado]
+        );
+      } else if (vistaActiva === "operadores-terceros") {
+        setDataOperadores(prev =>
+          editando
+            ? prev.map(item => item.id === registroEditando.id ? resultado : item)
+            : [...prev, resultado]
+        );
       } else {
         setData(prev =>
           editando
@@ -254,6 +326,10 @@ export default function NoEcoPage() {
     clientes: "Cliente",
     origenes: "Origen",
     destinos: "Destino",
+    transportistas: "Transportista",
+    cargos: "Cargo",
+    "unidades-terceros": "Unidad",
+    "operadores-terceros": "Operador",
   };
 
   const dataFiltrada = Array.isArray(data)
@@ -277,6 +353,24 @@ export default function NoEcoPage() {
 
   const dataDestinosFiltrada = Array.isArray(dataDestinos)
     ? dataDestinos.filter((item) => {
+        if (!busqueda) return true;
+        return Object.values(item).some((valor) =>
+          String(valor).toLowerCase().includes(busqueda.toLowerCase())
+        );
+      })
+    : [];
+
+  const dataUnidadesFiltrada = Array.isArray(dataUnidades)
+    ? dataUnidades.filter((item) => {
+        if (!busqueda) return true;
+        return Object.values(item).some((valor) =>
+          String(valor).toLowerCase().includes(busqueda.toLowerCase())
+        );
+      })
+    : [];
+
+  const dataOperadoresFiltrada = Array.isArray(dataOperadores)
+    ? dataOperadores.filter((item) => {
         if (!busqueda) return true;
         return Object.values(item).some((valor) =>
           String(valor).toLowerCase().includes(busqueda.toLowerCase())
@@ -348,6 +442,24 @@ export default function NoEcoPage() {
           onClick={() => { setSubVista(null); setVista("origenes_destinos"); }}
         >
           Orígenes y Destinos
+        </button>
+        <button
+          className={`tab-button ${vista === "transportistas" ? "active" : ""}`}
+          onClick={() => { setSubVista(null); setVista("transportistas"); }}
+        >
+          Transportistas
+        </button>
+        <button
+          className={`tab-button ${vista === "cargos" ? "active" : ""}`}
+          onClick={() => { setSubVista(null); setVista("cargos"); }}
+        >
+          Cargos
+        </button>
+        <button
+          className={`tab-button ${vista === "terceros" ? "active" : ""}`}
+          onClick={() => { setSubVista(null); setVista("terceros"); }}
+        >
+          Terceros
         </button>
       </div>
 
@@ -486,6 +598,140 @@ export default function NoEcoPage() {
             </table>
           </div>
         </>
+      ) : vista === "terceros" ? (
+        <>
+          {/* ── TABLA UNIDADES ── */}
+          <div className="table-container" style={{ marginBottom: "30px" }}>
+            <div className="add-button-container">
+              <button
+                onClick={() => abrirModalAgregar("unidades-terceros")}
+                className="btn-add"
+                disabled={isSubmitting}
+              >
+                <span>+</span> Agregar Unidad
+              </button>
+            </div>
+            <h3 className="subtable-title">
+              Unidades
+            </h3>
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  {dataUnidades.length > 0 &&
+                    Object.keys(dataUnidades[0]).map((key) => (
+                      <th key={key}>
+                        {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
+                      </th>
+                    ))}
+                  {dataUnidades.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {dataUnidadesFiltrada.length === 0 ? (
+                  <tr>
+                    <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
+                      No hay registros de unidades de terceros en la base de datos
+                    </td>
+                  </tr>
+                ) : (
+                  dataUnidadesFiltrada.map((item) => (
+                    <tr key={item.id}>
+                      {Object.values(item).map((val, i) => (
+                        <td key={i}>{val}</td>
+                      ))}
+                      <td>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                          <button
+                            onClick={() => iniciarEdicion(item, "unidades-terceros")}
+                            className="btn-edit"
+                            disabled={isSubmitting}
+                          >
+                            <SquarePen size={18} />
+                          </button>
+                          {isAdmin && (
+                            <button
+                              className="btn-delete"
+                              onClick={() => eliminarRegistro(item.id, "unidades-terceros")}
+                              disabled={isSubmitting}
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ── TABLA OPERADORES ── */}
+          <div className="table-container">
+            <div className="add-button-container">
+              <button
+                onClick={() => abrirModalAgregar("operadores-terceros")}
+                className="btn-add"
+                disabled={isSubmitting}
+              >
+                <span>+</span> Agregar Operador
+              </button>
+            </div>
+            <h3 className="subtable-title">
+              Operadores
+            </h3>
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  {dataOperadores.length > 0 &&
+                    Object.keys(dataOperadores[0]).map((key) => (
+                      <th key={key}>
+                        {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
+                      </th>
+                    ))}
+                  {dataOperadores.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {dataOperadoresFiltrada.length === 0 ? (
+                  <tr>
+                    <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
+                      No hay registros de operadores de terceros en la base de datos
+                    </td>
+                  </tr>
+                ) : (
+                  dataOperadoresFiltrada.map((item) => (
+                    <tr key={item.id}>
+                      {Object.values(item).map((val, i) => (
+                        <td key={i}>{val}</td>
+                      ))}
+                      <td>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                          <button
+                            onClick={() => iniciarEdicion(item, "operadores-terceros")}
+                            className="btn-edit"
+                            disabled={isSubmitting}
+                          >
+                            <SquarePen size={18} />
+                          </button>
+                          {isAdmin && (
+                            <button
+                              className="btn-delete"
+                              onClick={() => eliminarRegistro(item.id, "operadores-terceros")}
+                              disabled={isSubmitting}
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
       ) : (
         <div className="table-container">
           <div className="add-button-container">
@@ -562,15 +808,29 @@ export default function NoEcoPage() {
               {configFormularios[subVista || vista]?.map((campo) => (
                 <div key={campo.name} className="form-group">
                   <label>{campo.label}</label>
-                  <input
-                    type={campo.type}
-                    name={campo.name}
-                    value={formData[campo.name] || ""}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder={`Ingresa ${campo.label.toLowerCase()}`}
-                    required={campo.required !== false}
-                  />
+                  {campo.type === "selector" && campo.selector === "cargo" ? (
+                    <CargoSelector
+                      currentValue={formData[campo.name] || ""}
+                      onSelect={(nombre) => setFormData({ ...formData, [campo.name]: nombre })}
+                      disabled={false}
+                    />
+                  ) : campo.type === "selector" && campo.selector === "transportista" ? (
+                    <TransportistaSelector
+                      currentValue={formData[campo.name] || ""}
+                      onSelect={(nombre) => setFormData({ ...formData, [campo.name]: nombre })}
+                      disabled={false}
+                    />
+                  ) : (
+                    <input
+                      type={campo.type}
+                      name={campo.name}
+                      value={formData[campo.name] || ""}
+                      onChange={handleInputChange}
+                      className="form-input"
+                      placeholder={`Ingresa ${campo.label.toLowerCase()}`}
+                      required={campo.required !== false}
+                    />
+                  )}
                 </div>
               ))}
               <div className="modal-actions">

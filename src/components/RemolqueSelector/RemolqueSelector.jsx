@@ -42,9 +42,11 @@ export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
     };
   }, [open]);
 
-  const handleSelect = (placas) => {
+  const handleSelect = (remolque) => {
     setOpen(false);
-    onSelect(placas);
+    // Retrocompatible: 1er arg = placas (string), 2º arg = remolque completo
+    // reelegir la misma = deseleccionar
+    onSelect(remolque.placas === currentValue ? "" : remolque.placas, remolque);
   };
 
   return (
@@ -61,6 +63,20 @@ export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
         <span className="rs-chevron">{open ? "▲" : "▼"}</span>
       </button>
 
+      {/* Limpiar: funciona aunque el trigger esté bloqueado (ej. remolque 2 en
+          servicio no-full), para poder quitar un valor previo. */}
+      {currentValue && (
+        <button
+          type="button"
+          className="rs-clear"
+          onClick={(e) => { e.stopPropagation(); onSelect(""); }}
+          title="Quitar remolque"
+          aria-label="Quitar remolque"
+        >
+          ✕
+        </button>
+      )}
+
       {open && (
         <ul className="rs-dropdown" role="listbox">
           {loadingList && <li className="rs-state">Cargando...</li>}
@@ -74,7 +90,7 @@ export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
               role="option"
               aria-selected={r.placas === currentValue}
               className={`rs-option ${r.placas === currentValue ? "rs-option--selected" : ""}`}
-              onClick={(e) => { e.stopPropagation(); handleSelect(r.placas); }}
+              onClick={(e) => { e.stopPropagation(); handleSelect(r); }}
             >
               <span>{r.placas}</span>
               <span className="rs-tipo">Tipo: {r.tipo}</span>

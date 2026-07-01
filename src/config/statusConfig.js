@@ -51,7 +51,7 @@ export const STATUS_MAP = Object.freeze({
   }),
   por_salir: Object.freeze({
     id:         "por_salir",
-    label:      "Por salir",
+    label:      "Lázaro",
     rowClass:   "row-status--por-salir",
     badgeClass: "badge-status--por-salir",
     color:      "#c7b0d4",

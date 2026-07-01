@@ -1,0 +1,239 @@
+.cpm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.cpm-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 700px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+
+.cpm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.cpm-titulo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text, #1f2937);
+  margin: 0;
+}
+.cpm-cerrar {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-light, #6b7280);
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+}
+.cpm-cerrar:hover { background: #f3f4f6; }
+
+.cpm-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cpm-seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 16px;
+}
+.cpm-seccion:last-of-type { border-bottom: none; }
+
+.cpm-seccion-titulo {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary, #2563eb);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.cpm-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cpm-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text, #1f2937);
+}
+.cpm-req { color: #dc2626; }
+
+.cpm-fila-dos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.cpm-fila-tres {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+.cpm-grid-cuatro {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.cpm-input {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--text, #1f2937);
+  width: 100%;
+  box-sizing: border-box;
+}
+.cpm-input:focus {
+  outline: none;
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+.cpm-input--readonly {
+  background: #f9fafb;
+  color: var(--text-light, #6b7280);
+  cursor: default;
+}
+
+.cpm-textarea {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--text, #1f2937);
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: inherit;
+}
+.cpm-textarea:focus {
+  outline: none;
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.cpm-cliente-info {
+  background: #f8faff;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cpm-cliente-dato {
+  font-size: 0.8rem;
+  color: var(--text, #1f2937);
+  margin: 0;
+}
+
+.cpm-hint {
+  font-size: 0.75rem;
+  color: var(--text-light, #6b7280);
+  margin: 0;
+}
+.cpm-hint code {
+  font-family: monospace;
+  background: #f3f4f6;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.cpm-error {
+  color: #dc2626;
+  font-size: 0.82rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 0;
+}
+.cpm-exito {
+  color: #16a34a;
+  font-size: 0.82rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 0;
+}
+
+.cpm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 24px 18px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.cpm-btn-cancelar {
+  padding: 8px 20px;
+  border: 1px solid #ef4444;
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #ef4444;
+}
+.cpm-btn-cancelar:hover { background: #ef4444; color: #fff; }
+
+.cpm-btn-generar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border: none;
+  border-radius: 7px;
+  background: var(--primary, #2563eb);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.cpm-btn-generar:hover:not(:disabled) { background: #1d4ed8; }
+.cpm-btn-generar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes cpm-spin {
+  to { transform: rotate(360deg); }
+}
+.cpm-spin {
+  animation: cpm-spin 0.8s linear infinite;
+}
+
+/* Input numérico para Total de Gastos */
+.cpm-input--money {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #16a34a;
+}
+.cpm-input--money:focus {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.15);
+}

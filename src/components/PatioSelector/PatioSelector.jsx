@@ -44,7 +44,7 @@ export default function PatioSelector({ currentValue, onSelect, disabled }) {
 
   const handleSelect = (nombre) => {
     setOpen(false);
-    onSelect(nombre);
+    onSelect(nombre === currentValue ? "" : nombre);   // reelegir = deseleccionar
   };
 
   return (

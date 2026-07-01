@@ -1,0 +1,36 @@
+.av-card {
+  background: #fde8e8;
+  border: 1px solid #f5c2c2;
+  border-left: 4px solid #dc2626;
+  border-radius: 10px;
+  padding: 14px 20px;
+  min-width: 220px;
+  max-width: 320px;
+  text-align: left;
+  flex-shrink: 0;
+}
+
+.av-urgente {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0 0 6px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  animation: av-parpadeo 0.7s steps(1, end) infinite;
+}
+
+@keyframes av-parpadeo {
+  0%, 100% { opacity: 1;   }
+  50%      { opacity: 0.1; }
+}
+
+.av-mensaje {
+  color: #111827;
+  font-size: 0.82rem;
+  margin: 0;
+  line-height: 1.5;
+}

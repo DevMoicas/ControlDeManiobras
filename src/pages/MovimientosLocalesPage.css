@@ -1,0 +1,410 @@
+/* ── Movimientos Locales — tablero de bitácora local ─────────────────────────
+   Mismo lenguaje visual que Documentos de Viaje: shell azul del app, Oswald
+   display, IBM Plex Mono para etiquetas, Inter cuerpo. Panel blanco con borde
+   suave y lomo azul como firma. */
+
+.ml-page {
+  min-height: calc(100vh - 40px);
+  background:
+    radial-gradient(900px 420px at 100% -8%, #e8f0ff 0%, transparent 58%),
+    var(--bg, #f4f7fb);
+}
+
+.ml-wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 52px 28px 64px;
+}
+
+/* ── Intro ─────────────────────────────────────────────────────────────────── */
+.ml-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--primary, #2563eb);
+  margin: 0 0 12px;
+}
+.ml-title {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  font-size: 2.45rem;
+  line-height: 1.02;
+  color: var(--text, #1f2937);
+  margin: 0;
+}
+.ml-lead {
+  margin: 12px 0 0;
+  color: var(--text-light, #6b7280);
+  font-size: 1rem;
+  line-height: 1.5;
+  max-width: 56ch;
+}
+
+/* ── Controles ─────────────────────────────────────────────────────────────── */
+.ml-controls {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* SearchBar compartido, ajustado al tema sin tocar las otras páginas */
+.ml-search > div { margin-bottom: 0 !important; }
+.ml-search input {
+  font-family: 'Inter', sans-serif !important;
+  background: #fff !important;
+  border: 1px solid #e6ecf5 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04) !important;
+  color: var(--text, #1f2937) !important;
+}
+.ml-search input:focus {
+  outline: none !important;
+  border-color: var(--primary, #2563eb) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16) !important;
+}
+
+.ml-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Filtros — control segmentado con colores del app */
+.ml-filtros {
+  display: inline-flex;
+  background: #fff;
+  border: 1px solid #e6ecf5;
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+}
+.ml-filtro-btn {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-light, #6b7280);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.ml-filtro-btn:hover { background: var(--primary-light, #eaf1ff); color: var(--primary, #2563eb); }
+.ml-filtro-btn--activo {
+  background: var(--primary, #2563eb);
+  color: #fff;
+}
+.ml-filtro-btn--activo:hover { background: var(--primary, #2563eb); color: #fff; }
+
+/* Botón registrar — primario del app */
+.ml-btn-agregar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 9px;
+  background: var(--primary, #2563eb);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.ml-btn-agregar:hover:not(:disabled) { background: #1d4ed8; transform: none; }
+.ml-btn-agregar:disabled { opacity: 0.5; cursor: not-allowed; }
+.ml-btn-agregar:focus-visible { outline: 2px solid var(--primary, #2563eb); outline-offset: 2px; }
+
+/* ── Notificación ──────────────────────────────────────────────────────────── */
+.ml-notif {
+  margin-top: 18px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  border: 1px solid;
+}
+.ml-notif--exito { background: #ecfdf3; color: #15803d; border-color: #bbf7d0; }
+.ml-notif--error { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+
+/* ── Panel / tabla ─────────────────────────────────────────────────────────── */
+.ml-panel {
+  margin-top: 22px;
+  background: #fff;
+  border: 1px solid #e6ecf5;
+  border-radius: 16px;
+  /* hidden: recorta las esquinas limpias y pinta las filas hasta el borde.
+     El desplegable de estado se renderiza en portal, así que no se recorta. */
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
+  animation: ml-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ml-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+}
+
+.ml-th {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+  padding: 14px 16px;
+  background: #f7f9fc;
+  color: var(--text-light, #6b7280);
+  border-bottom: 1px solid #e6ecf5;
+}
+
+.ml-td {
+  padding: 11px 16px;
+  border-bottom: 1px solid #eef2f7;
+  vertical-align: middle;
+  color: var(--text, #1f2937);
+}
+.ml-tabla tbody tr:last-child .ml-td { border-bottom: none; }
+
+.ml-fila { transition: background 0.12s; }
+.ml-fila:hover td { background: #f9fbfe; }
+
+/* Fila pagada — verde vivo + lomo verde a la izquierda */
+.ml-fila--pagada td { background: #b7f0ca; }
+.ml-fila--pagada td:first-child { box-shadow: inset 4px 0 0 #15803d; }
+.ml-fila--pagada:hover td { background: #a3e9bb; }
+
+/* Fila nueva — resaltado azul de borrador */
+.ml-fila--nueva td { background: var(--primary-light, #eaf1ff); }
+.ml-fila--nueva td:first-child { box-shadow: inset 4px 0 0 var(--primary, #2563eb); }
+
+/* ── Inputs ────────────────────────────────────────────────────────────────── */
+.ml-input {
+  font-family: 'Inter', sans-serif;
+  padding: 7px 10px;
+  border: 1px solid #e6ecf5;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  color: var(--text, #1f2937);
+}
+.ml-input:focus {
+  outline: none;
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+.ml-input--inline {
+  border-color: transparent;
+  background: transparent;
+}
+.ml-input--inline:hover,
+.ml-input--inline:focus {
+  border-color: #e6ecf5;
+  background: #fff;
+}
+.ml-input--inline-edit { background: #fff; }
+
+/* Celda de texto inline editable */
+.ml-celda-texto {
+  cursor: text;
+  display: block;
+  min-width: 80px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+.ml-celda-texto:hover { background: var(--primary-light, #eaf1ff); }
+.ml-placeholder { color: var(--text-light, #6b7280); font-style: normal; }
+
+/* ── Acciones ──────────────────────────────────────────────────────────────── */
+/* Celda de tabla normal (NO flex) para que se estire a la altura de la fila
+   y se pinte completa; los botones se alinean en línea. */
+.ml-td--acciones { white-space: nowrap; }
+.ml-td--acciones > button { vertical-align: middle; }
+.ml-td--acciones > button + button { margin-left: 6px; }
+.ml-btn-accion {
+  padding: 6px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  transition: background 0.15s, color 0.15s;
+}
+.ml-btn-editar    { color: var(--primary, #2563eb); }
+.ml-btn-editar:hover { background: var(--primary-light, #eaf1ff); }
+.ml-btn-eliminar  { color: #dc2626; }
+.ml-btn-eliminar:hover { background: #fef2f2; }
+
+.ml-btn-guardar {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary, #2563eb);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.ml-btn-guardar:hover:not(:disabled) { background: #1d4ed8; transform: none; }
+.ml-btn-guardar:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.ml-btn-cancelar {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border: 1px solid #e6ecf5;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text, #1f2937);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ml-btn-cancelar:hover { background: #f7f9fc; transform: none; }
+
+/* ── Estados de carga / vacío ──────────────────────────────────────────────── */
+.ml-cargando,
+.ml-vacio {
+  text-align: center;
+  color: var(--text-light, #6b7280);
+  font-size: 0.92rem;
+}
+.ml-cargando { padding: 40px 32px; }
+/* estado vacío más alto, para que el contorno crezca hacia abajo */
+.ml-vacio {
+  padding: 72px 32px 96px;
+}
+
+/* ── Modal ─────────────────────────────────────────────────────────────────── */
+.ml-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.ml-modal {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e6ecf5;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(16, 40, 80, 0.24);
+}
+/* Lomo izquierdo azul, como las tarjetas de Documentos de Viaje */
+.ml-modal::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--primary, #2563eb);
+}
+
+.ml-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid #eef2f7;
+}
+.ml-modal-titulo {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 1.3rem;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--text, #1f2937);
+}
+.ml-modal-cerrar {
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--text-light, #6b7280);
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.ml-modal-cerrar:hover { background: #f7f9fc; }
+
+.ml-modal-body {
+  padding: 18px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ml-modal-campo { display: flex; flex-direction: column; gap: 6px; }
+.ml-modal-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-light, #6b7280);
+}
+
+.ml-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid #eef2f7;
+}
+
+/* ── Animación ─────────────────────────────────────────────────────────────── */
+@keyframes ml-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .ml-wrap { padding: 40px 20px 52px; }
+  .ml-title { font-size: 2rem; }
+  .ml-toolbar { flex-direction: column; align-items: stretch; }
+  .ml-filtros { width: 100%; justify-content: center; }
+  .ml-filtro-btn { flex: 1; text-align: center; }
+  .ml-btn-agregar { width: 100%; justify-content: center; }
+  .ml-panel { overflow-x: auto; }
+}
+
+/* ── Movimiento reducido ───────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ml-panel { animation: none; }
+  .ml-fila, .ml-btn-agregar, .ml-btn-guardar, .ml-celda-texto { transition: none; }
+}
