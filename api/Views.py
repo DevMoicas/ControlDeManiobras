@@ -1,11 +1,402 @@
+import base64
+import re
+import django_filters
 from rest_framework import viewsets
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado
-from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero
+from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .Serializers import CustomTokenObtainPairSerializer
-from rest_framework.filters import OrderingFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.response import Response
+from rest_framework import status
+import os
+import subprocess
+import tempfile
+import logging
+from datetime import date
+from django.conf import settings
+from django.http import FileResponse, HttpResponse
+from openpyxl import load_workbook
+from rest_framework.views import APIView
+
+logger = logging.getLogger(__name__)
+
+
+# ── Documentos de viaje ──────────────────────────────────────────────────────
+_TEMPLATE_PATH = (
+    settings.BASE_DIR / 'api' / 'documentos' / 'templates' / 'CTA_PTE_FORMATO.xlsx'
+)
+_TEMPLATE_PATH_TERCEROS = (
+    settings.BASE_DIR / 'api' / 'documentos' / 'templates' / 'FORMATO_CTA_PTE_TERCEROS.xlsx'
+)
+# NOTA: el template ya trae su logo. openpyxl SOLO conserva las imágenes al guardar
+# si Pillow está instalado — por eso Pillow es dependencia obligatoria aquí.
+
+_MESES_ES = {
+    1:  'ENERO',
+    2:  'FEBRERO',
+    3:  'MARZO',
+    4:  'ABRIL',
+    5:  'MAYO',
+    6:  'JUNIO',
+    7:  'JULIO',
+    8:  'AGOSTO',
+    9:  'SEPTIEMBRE',
+    10: 'OCTUBRE',
+    11: 'NOVIEMBRE',
+    12: 'DICIEMBRE',
+}
+
+# ponytail: el binario varía por SO/PATH — se prueban en orden hasta encontrar uno.
+# libreoffice/soffice cubren Linux y Windows-con-PATH; la ruta completa cubre la
+# instalación estándar de Windows cuando no está en el PATH. Si en prod (Linux) el
+# binario tiene otra ruta, agregarla aquí.
+_LIBREOFFICE_BINS = [
+    'libreoffice',
+    'soffice',
+    r'C:\Program Files\LibreOffice\program\soffice.exe',
+]
+
+
+def _mayus(valor):
+    """Todo lo que se escribe al Excel va en MAYÚSCULAS. Números/None se dejan igual."""
+    return valor.upper() if isinstance(valor, str) else valor
+
+
+def _xlsx_a_pdf(xlsx_path: str, output_dir: str) -> str:
+    """
+    Convierte un archivo .xlsx a PDF usando LibreOffice headless.
+    Devuelve la ruta al PDF generado.
+    Lanza Exception si LibreOffice retorna error.
+    """
+    env = os.environ.copy()
+    env['HOME'] = output_dir   # LibreOffice necesita HOME para su perfil temporal
+
+    result = None
+    for binario in _LIBREOFFICE_BINS:
+        try:
+            result = subprocess.run(
+                [
+                    binario,
+                    '--headless',
+                    '--norestore',
+                    '--convert-to', 'pdf',
+                    '--outdir', output_dir,
+                    xlsx_path,
+                ],
+                capture_output=True,
+                timeout=60,
+                env=env,
+            )
+            break
+        except FileNotFoundError:
+            continue
+
+    if result is None:
+        raise Exception(
+            "LibreOffice no está instalado en el servidor (se buscó: "
+            f"{', '.join(_LIBREOFFICE_BINS)})."
+        )
+
+    if result.returncode != 0:
+        raise Exception(
+            f"LibreOffice falló (código {result.returncode}): "
+            f"{result.stderr.decode('utf-8', errors='replace')}"
+        )
+
+    pdf_name = os.path.splitext(os.path.basename(xlsx_path))[0] + '.pdf'
+    pdf_path = os.path.join(output_dir, pdf_name)
+
+    if not os.path.exists(pdf_path):
+        raise Exception("LibreOffice no generó el archivo PDF esperado.")
+
+    return pdf_path
+
+
+_XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+
+def _responder_documento(wb, tmp_dir: str, basename: str, formato: str):
+    """
+    Guarda el workbook y devuelve un HttpResponse.
+    formato == 'excel' → devuelve el .xlsx directo (sin convertir).
+    cualquier otro valor → convierte a PDF con LibreOffice y lo devuelve.
+    """
+    xlsx_tmp = os.path.join(tmp_dir, f'{basename}.xlsx')
+    wb.save(xlsx_tmp)
+
+    if formato == 'excel':
+        with open(xlsx_tmp, 'rb') as f:
+            data = f.read()
+        resp = HttpResponse(data, content_type=_XLSX_MIME)
+        resp['Content-Disposition'] = f'attachment; filename="{basename}.xlsx"'
+        return resp
+
+    pdf_path = _xlsx_a_pdf(xlsx_tmp, tmp_dir)
+    with open(pdf_path, 'rb') as f:
+        pdf_bytes = f.read()
+    resp = HttpResponse(pdf_bytes, content_type='application/pdf')
+    resp['Content-Disposition'] = f'attachment; filename="{basename}.pdf"'
+    return resp
+
+
+def _concat_placas_remolques(placas: str, remolque_1: str, remolque_2: str) -> str:
+    """
+    Construye la cadena concatenada de placas y remolques.
+    Formato:
+      - Sin remolques:    "ABC-123"
+      - Un remolque:      "ABC-123 / DEF-456"
+      - Dos remolques:    "ABC-123 / DEF-456, GHI-789"
+    """
+    remolques = [r.strip() for r in [remolque_1, remolque_2] if r and r.strip()]
+    if remolques:
+        return f"{placas.strip()} / {', '.join(remolques)}"
+    return placas.strip()
+
+
+def _dividir_por_guion(segmento: str) -> tuple[str, str]:
+    """
+    Divide un segmento de texto en (parte_1, parte_2) usando '-' como separador.
+    Si no hay '-', parte_2 queda vacía.
+    Ej: "40 - 20" -> ("40", "20")   |   "40" -> ("40", "")
+    """
+    if '-' in segmento:
+        izquierda, derecha = segmento.split('-', 1)
+        return izquierda.strip(), derecha.strip()
+    return segmento.strip(), ''
+
+
+def _parsear_tipo(tipo_raw: str) -> tuple[str, str, str, str]:
+    """
+    Parsea el campo 'tipo' de Maniobra. El frontend garantiza el formato
+    'IZQUIERDA / DERECHA' para registros nuevos (la diagonal es obligatoria
+    y no editable en ManiobrasPage). Cada lado puede además tener un '-'
+    interno para representar dos valores (ej. viajes full con dos tipos
+    de contenedor distintos, o carga suelta con dos tipos de bulto).
+
+    Ejemplos:
+      "40 / HC"                      -> ("40", "",   "HC", "")
+      "40 - 20 / HC - DC"            -> ("40", "20", "HC", "DC")
+      "7 / PALLETS"                  -> ("7",  "",   "PALLETS", "")
+      "9 - 14 / PALLETS - CARTONES"  -> ("9",  "14", "PALLETS", "CARTONES")
+      "" o cualquier texto sin '/'   -> ("", "", "", "")  (registro viejo sin
+                                          migrar: se trata como vacío, no error)
+
+    Devuelve (numero_1, numero_2, letra_1, letra_2).
+    """
+    if not tipo_raw or '/' not in tipo_raw:
+        return '', '', '', ''
+    parte_izquierda, parte_derecha = tipo_raw.split('/', 1)
+    numero_1, numero_2 = _dividir_por_guion(parte_izquierda)
+    letra_1, letra_2   = _dividir_por_guion(parte_derecha)
+    return numero_1, numero_2, letra_1, letra_2
+
+
+def _es_carga_suelta(contenedor: str) -> bool:
+    """
+    True si la columna Contenedor de la maniobra contiene la palabra
+    'CARGA SUELTA' (comparación tipo 'contains', no exige coincidencia exacta).
+    """
+    return 'CARGA SUELTA' in (contenedor or '').upper()
+
+
+def _sumar_peso(peso_raw):
+    """
+    El campo peso puede traer dos cantidades separadas por '-' o '/', con o sin
+    espacios (ej. "23412 - 22000", "8376/12117", "8376 / 12117"; carga suelta o
+    full con dos pesos). Devuelve la suma numérica de las partes. Un solo valor
+    se devuelve como número; si nada es numérico devuelve '' (celda en blanco,
+    sin error).
+    """
+    partes = [p.strip() for p in re.split(r'[-/]', str(peso_raw)) if p.strip()]
+    total = 0.0
+    encontrado = False
+    for p in partes:
+        try:
+            total += float(p)
+            encontrado = True
+        except (ValueError, TypeError):
+            continue
+    return total if encontrado else ''
+
+
+def _validar_operador_vigente(nombre_operador):
+    """
+    Verifica que el operador (por nombre) no tenga licencia vencida.
+    Devuelve (es_valido: bool, mensaje_error: str | None).
+    Si el nombre no coincide con ningún chofer registrado, se permite
+    (solo se bloquea si SÍ se encuentra el chofer Y su licencia está vencida).
+    """
+    if not nombre_operador:
+        return True, None
+
+    chofer = Chofer.objects.filter(nombre=nombre_operador).first()
+    if not chofer:
+        return True, None
+
+    if chofer.fecha_vencimiento_licencia and chofer.fecha_vencimiento_licencia < date.today():
+        return False, (
+            f"No se puede asignar a {nombre_operador}: "
+            f"su licencia venció el {chofer.fecha_vencimiento_licencia.strftime('%d/%m/%Y')}."
+        )
+
+    return True, None
+
+
+def _generar_pdf_cta_port(request_data, template_path, nombre_archivo_pdf: str, formato: str = 'pdf'):
+    """
+    Lógica compartida para generar el PDF de la hoja 'CTA PORT FRABA CONTAINER'.
+    La usan tanto DocumentoCtaPortView (Fraba Container) como
+    DocumentoCtaPortTercerosView (Terceros) — ambos templates comparten
+    EXACTAMENTE el mismo mapeo de celdas para esta hoja, solo cambia el
+    archivo de template de origen y el nombre del PDF de salida.
+
+    Devuelve:
+      - HttpResponse con el PDF en caso de éxito.
+      - rest_framework Response con status de error en caso de fallo.
+    """
+    # ── Leer datos del body (en MAYÚSCULAS para el Excel) ──────────────────
+    folio       = request_data.get('folio', '').strip().upper()
+    ccp         = request_data.get('ccp', '').strip().upper()
+    origen      = request_data.get('origen', '').strip().upper()
+    destino     = request_data.get('destino', '').strip().upper()
+
+    # Datos del cliente
+    cliente_nombre    = request_data.get('cliente_nombre', '').strip().upper()
+    cliente_domicilio = request_data.get('cliente_domicilio', '').strip().upper()
+    cliente_colonia   = request_data.get('cliente_colonia', '').strip().upper()
+    cliente_ciudad    = request_data.get('cliente_ciudad', '').strip().upper()
+
+    # Datos de la carga (auto-llenados desde maniobra via folio)
+    tipo       = request_data.get('tipo', '').strip().upper()
+    peso_raw   = request_data.get('peso', '')
+    contenedor = request_data.get('contenedor', '').strip().upper()
+    pedimento  = request_data.get('pedimento', '').strip().upper()
+    referencia = request_data.get('referencia', '').strip().upper()
+
+    # Datos de texto libre
+    descripcion = request_data.get('descripcion', '').strip().upper()
+    clave_sat   = request_data.get('clave_sat', '').strip().upper()
+
+    # Fecha de expedición (manual, solo FRABA container; dd/MM/yyyy)
+    fecha_expedicion = request_data.get('fecha_expedicion', '').strip()
+
+    # Conductor y placas
+    operador   = request_data.get('operador', '').strip().upper()
+    placas     = request_data.get('placas', '').strip().upper()
+    remolque_1 = request_data.get('remolque_1', '').strip().upper()
+    remolque_2 = request_data.get('remolque_2', '').strip().upper()
+
+    # ── Validación mínima ──────────────────────────────────────────────────
+    if not folio:
+        return Response({'detail': 'El campo folio (Remisión) es requerido.'}, status=400)
+
+    # ── Cálculos derivados ─────────────────────────────────────────────────
+    remision_valor = f"{folio} / {ccp}" if ccp else folio
+
+    es_carga_suelta = _es_carga_suelta(contenedor)
+    es_full         = len(contenedor) > 12
+    cantidad_label  = 2 if es_full else 1
+    tipo_label      = 'CONTENEDORES' if es_full else 'CONTENEDOR'
+
+    numero_1, numero_2, letra_1, letra_2 = _parsear_tipo(tipo)
+
+    clave_sat_celda = f"CLAVE SAT:{clave_sat}" if clave_sat else ''
+
+    peso_valor = _sumar_peso(peso_raw)
+
+    concat_placas = _concat_placas_remolques(placas, remolque_1, remolque_2)
+
+    # ── Abrir template y trabajar en directorio temporal ──────────────────
+    try:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            wb = load_workbook(str(template_path))
+            ws = wb['CTA PORT FRABA CONTAINER']
+
+            # Remisión: J2 (celda superior del rango fusionado J2:J3)
+            ws['J2'] = remision_valor
+
+            # Fecha de expedición del documento: día numérico / mes en español / año
+            _hoy = date.today()
+            ws['H5'] = _hoy.day
+            ws['I5'] = _MESES_ES[_hoy.month]
+            ws['J5'] = _hoy.year
+
+            # Origen y Destino
+            ws['B6'] = origen
+            ws['G6'] = destino
+
+            # Datos del cliente
+            ws['G7']  = cliente_nombre
+            ws['G8']  = cliente_domicilio
+            ws['G9']  = cliente_colonia
+            ws['G10'] = cliente_ciudad
+
+            # Tabla de bultos — full/sencillo vs. carga suelta
+            if es_carga_suelta:
+                # No se escribe cantidad (A17) ni "CONTENEDOR/CONTENEDORES" (B17):
+                # esas celdas se reutilizan para la primera pareja número/letra.
+                ws['A17'] = numero_1
+                ws['B17'] = letra_1
+                if numero_2:
+                    ws['A18'] = numero_2
+                if letra_2:
+                    ws['B18'] = letra_2
+            else:
+                ws['A17'] = cantidad_label    # 1 o 2
+                ws['B17'] = tipo_label        # 'CONTENEDOR' o 'CONTENEDORES'
+                ws['A18'] = numero_1
+                ws['B18'] = letra_1
+                if numero_2:
+                    ws['A19'] = numero_2
+                if letra_2:
+                    ws['B19'] = letra_2
+
+            ws['C16'] = f'REFERENCIA: {referencia}' if referencia else ''   # Referencia
+            ws['C17'] = contenedor        # No. de contenedor (o "CARGA SUELTA")
+            ws['C18'] = f'PEDIMENTO: {pedimento}' if len(pedimento) >= 18 else pedimento  # 18+ chars: con etiqueta; incompleto: tal cual; vacío: vacío
+            ws['F17'] = peso_valor        # Peso numérico
+            if fecha_expedicion:
+                # Solo el día en H5; el mes y el año ya van en otras celdas de la plantilla
+                ws['H5'] = fecha_expedicion.split('/')[0].lstrip('0')   # día sin cero inicial
+
+            # Descripción y Clave SAT
+            ws['C20'] = descripcion
+            ws['C21'] = clave_sat_celda
+
+            # Conductor y Placas (valores directos para PDF autónomo)
+            ws['C23'] = operador
+            ws['F23'] = concat_placas
+
+            # Eliminar las otras hojas para exportar solo CTA PORT
+            for nombre_hoja in [n for n in wb.sheetnames if n != 'CTA PORT FRABA CONTAINER']:
+                del wb[nombre_hoja]
+
+            basename = os.path.splitext(nombre_archivo_pdf)[0]
+            return _responder_documento(wb, tmp_dir, basename, formato)
+
+    except FileNotFoundError:
+        return Response(
+            {'detail': 'No se encontró el template Excel. Contacte al administrador.'},
+            status=500,
+        )
+    except subprocess.TimeoutExpired:
+        return Response(
+            {'detail': 'La conversión a PDF tardó demasiado. Intente de nuevo.'},
+            status=500,
+        )
+    except Exception:
+        logger.exception("Error inesperado al generar documento CTA PORT")
+        return Response(
+            {'detail': 'No se pudo generar el documento. Contacte al administrador.'},
+            status=500,
+        )
 
 
 class TractoViewSet(viewsets.ModelViewSet):
@@ -13,15 +404,65 @@ class TractoViewSet(viewsets.ModelViewSet):
     serializer_class = TractoSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'No tienes permisos para eliminar registros.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
 class RemolqueViewSet(viewsets.ModelViewSet):
     queryset = Remolque.objects.all()
     serializer_class = RemolqueSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'No tienes permisos para eliminar registros.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
 class ChoferViewSet(viewsets.ModelViewSet):
     queryset = Chofer.objects.all()
     serializer_class = ChoferSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'No tienes permisos para eliminar registros.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+class ManiobraFilter(django_filters.FilterSet):
+    """El campo `status` guarda hasta 2 status separados por coma ("activo,quemada").
+
+    Con el filtro exacto de antes, ?status=activo dejaba fuera a esa maniobra. Aquí
+    se busca el valor como SEGMENTO completo del combo: las anclas (^|,) y (,|$)
+    cubren de una sola vez los tres casos (va solo, va primero, va segundo) y evitan
+    falsos positivos por coincidencia parcial si algún día un id fuera substring
+    de otro.
+    """
+    status = django_filters.CharFilter(method="filter_status")
+    # Bandera TERCERO (columna `tercero`): el front solo manda ?tercero=1 cuando
+    # quiere ver únicamente los registros marcados, así que la presencia del
+    # parámetro basta — devolvemos los que tienen la marca puesta (no NULL / no "").
+    tercero = django_filters.CharFilter(method="filter_tercero")
+
+    class Meta:
+        model = Maniobra
+        fields = ["status", "tercero"]
+
+    def filter_status(self, queryset, name, value):
+        return queryset.filter(status__regex=rf"(^|,){re.escape(value)}(,|$)")
+
+    def filter_tercero(self, queryset, name, value):
+        return queryset.exclude(tercero__isnull=True).exclude(tercero="")
+
 
 # --- NUEVA VISTA ---
 class ManiobraViewSet(viewsets.ModelViewSet):
@@ -29,17 +470,84 @@ class ManiobraViewSet(viewsets.ModelViewSet):
     serializer_class = ManiobraSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ["status"]
+    filterset_class = ManiobraFilter
     ordering_fields = ["id", "fecha_pis", "fecha_entrega_mercancia"]
     ordering = ["-id"]
 
-     
+    def create(self, request, *args, **kwargs):
+        es_valido, mensaje = _validar_operador_vigente(request.data.get('asignacion_operador_status', ''))
+        if not es_valido:
+            return Response({'detail': mensaje}, status=400)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        operador = request.data.get('asignacion_operador_status', None)
+        if operador is not None:
+            es_valido, mensaje = _validar_operador_vigente(operador)
+            if not es_valido:
+                return Response({'detail': mensaje}, status=400)
+        return super().update(request, *args, **kwargs)
+
+    @action(detail=False, methods=['get'], url_path='folios-recientes')
+    def folios_recientes(self, request):
+        """Devuelve los últimos 30 registros de maniobras con folio no vacío,
+        incluyendo unidad (placas/tipo/modelo del tracto) y remolques para
+        autollenar los documentos a partir del folio elegido."""
+        maniobras = (
+            Maniobra.objects
+            .filter(folio__isnull=False)
+            .exclude(folio='')
+            .order_by('-id')[:30]
+        )
+        # Mapa placas → tracto: resuelve Tipo de Unidad y Modelo sin N consultas.
+        placas_unidad = {m.unidad for m in maniobras if m.unidad}
+        tractos = {
+            t.placas: t
+            for t in Tracto.objects.filter(placas__in=placas_unidad)
+        } if placas_unidad else {}
+
+        data = []
+        for m in maniobras:
+            tracto = tractos.get(m.unidad)
+            data.append({
+                'id':          m.id,
+                'folio':       m.folio or '',
+                'origen':      m.origen or '',
+                'destino':     m.destino or '',
+                'contenedor':  m.contenedor or '',
+                'ccp':         m.ccp or '',
+                'pedimento':   m.pedimento or '',
+                'tipo':        m.tipo or '',
+                'peso':        str(m.peso) if m.peso is not None else '',
+                'referencia':  m.referencia or '',
+                # Operador, unidad y remolques del registro (autollenado de documentos)
+                'operador':    m.asignacion_operador_status or '',          # nombre del operador asignado
+                'placas':      m.unidad or '',                              # placas del tracto asignado
+                'tipo_unidad': (tracto.unidad if tracto else '') or '',     # Tipo de Unidad
+                'anio':        str(tracto.anio) if tracto and tracto.anio is not None else '',  # Modelo
+                'remolque_1':  m.remolque or '',
+                'remolque_2':  m.remolque_2 or '',
+            })
+        return Response(data)
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'No tienes permisos para eliminar registros.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+
 class CustomTokenObtainPairView(TokenObtainPairView):
-    
+
     # Devuelve access + refresh con 'role' y 'username' en el payload.
     serializer_class = CustomTokenObtainPairSerializer
 class GastoViewSet(viewsets.ModelViewSet):
-    queryset = Gasto.objects.all()
+    # select_related evita el N+1 que dispara GastoSerializer.folio
+    # (source='maniobra.folio') al serializar cada fila. order_by hace
+    # determinístico el orden entre páginas (antes indefinido).
+    queryset = Gasto.objects.select_related('maniobra').all().order_by('-id')
     serializer_class = GastoSerializer
 
     def perform_create(self, serializer):
@@ -52,11 +560,19 @@ class GastoViewSet(viewsets.ModelViewSet):
         except Maniobra.DoesNotExist:
             from rest_framework.exceptions import ValidationError
             raise ValidationError({'maniobra': f'No existe una maniobra con id {maniobra_id}.'})
-        serializer.save(maniobra=maniobra)  
+        serializer.save(maniobra=maniobra)
 
     def perform_update(self, serializer):
         # En update no tocamos la maniobra, solo los campos del gasto
         serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'No tienes permisos para eliminar registros.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
 
 class VacioViewSet(viewsets.ModelViewSet):
     queryset = Vacio.objects.all().order_by("-id")
@@ -66,6 +582,28 @@ class VacioViewSet(viewsets.ModelViewSet):
     ordering_fields = ["id"]
     ordering = ["-id"]
 
+    def create(self, request, *args, **kwargs):
+        es_valido, mensaje = _validar_operador_vigente(request.data.get('operador', ''))
+        if not es_valido:
+            return Response({'detail': mensaje}, status=400)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        operador = request.data.get('operador', None)
+        if operador is not None:
+            es_valido, mensaje = _validar_operador_vigente(operador)
+            if not es_valido:
+                return Response({'detail': mensaje}, status=400)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'No tienes permisos para eliminar registros.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
 class EmpleadoViewSet(viewsets.ModelViewSet):
     queryset = Empleado.objects.all().order_by("-id")
     serializer_class = EmpleadoSerializer
@@ -73,3 +611,628 @@ class EmpleadoViewSet(viewsets.ModelViewSet):
     filter_backends = [OrderingFilter]
     ordering_fields = ["id"]
     ordering = ["id"]
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'No tienes permisos para eliminar registros.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+class PatioViewSet(viewsets.ModelViewSet):
+    queryset = Patio.objects.all()
+    serializer_class = PatioSerializer
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    filter_backends = [OrderingFilter]
+    ordering = ["nombre"]
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'No tienes permisos para eliminar registros.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+
+class ClienteViewSet(viewsets.ModelViewSet):
+    queryset = Cliente.objects.all()
+    serializer_class = ClienteSerializer
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    filter_backends = [OrderingFilter]
+    ordering = ['nombre_cliente']
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'No tienes permisos para eliminar registros.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+
+class OrigenViewSet(viewsets.ModelViewSet):
+    queryset = Origen.objects.all()
+    serializer_class = OrigenSerializer
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    filter_backends = [OrderingFilter]
+    ordering = ['ciudad']
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'No tienes permisos para eliminar registros.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+
+class DestinoViewSet(viewsets.ModelViewSet):
+    queryset = Destino.objects.all()
+    serializer_class = DestinoSerializer
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    filter_backends = [OrderingFilter]
+    ordering = ['ciudad']
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'No tienes permisos para eliminar registros.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+
+class MovimientoLocalViewSet(viewsets.ModelViewSet):
+    queryset               = MovimientoLocal.objects.all()
+    serializer_class       = MovimientoLocalSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+    filter_backends        = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields       = ['status']
+    search_fields          = ['operador', 'movimiento', 'unidad', 'contenedor']
+    ordering_fields        = ['fecha', 'id']
+    ordering               = ['-id']
+
+    def create(self, request, *args, **kwargs):
+        es_valido, mensaje = _validar_operador_vigente(request.data.get('operador', ''))
+        if not es_valido:
+            return Response({'detail': mensaje}, status=400)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        operador = request.data.get('operador', None)
+        if operador is not None:
+            es_valido, mensaje = _validar_operador_vigente(operador)
+            if not es_valido:
+                return Response({'detail': mensaje}, status=400)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'No tienes permisos para eliminar registros.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+
+class TransportistaViewSet(viewsets.ModelViewSet):
+    queryset               = Transportista.objects.all()
+    serializer_class       = TransportistaSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response({'detail': 'No tienes permisos para eliminar registros.'}, status=403)
+        return super().destroy(request, *args, **kwargs)
+
+
+class CargoViewSet(viewsets.ModelViewSet):
+    queryset               = Cargo.objects.all()
+    serializer_class       = CargoSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response({'detail': 'No tienes permisos para eliminar registros.'}, status=403)
+        return super().destroy(request, *args, **kwargs)
+
+
+class UnidadTerceroViewSet(viewsets.ModelViewSet):
+    queryset               = UnidadTercero.objects.all()
+    serializer_class       = UnidadTerceroSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    def get_queryset(self):
+        t = self.request.query_params.get('transportista')
+        return super().get_queryset().filter(transportista=t) if t else super().get_queryset()
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response({'detail': 'No tienes permisos para eliminar registros.'}, status=403)
+        return super().destroy(request, *args, **kwargs)
+
+
+class OperadorTerceroViewSet(viewsets.ModelViewSet):
+    queryset               = OperadorTercero.objects.all()
+    serializer_class       = OperadorTerceroSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    def get_queryset(self):
+        t = self.request.query_params.get('transportista')
+        return super().get_queryset().filter(transportista=t) if t else super().get_queryset()
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response({'detail': 'No tienes permisos para eliminar registros.'}, status=403)
+        return super().destroy(request, *args, **kwargs)
+
+
+class FotoRegistroViewSet(viewsets.ViewSet):
+    """
+    ViewSet para subir, ver y eliminar fotos de maniobras y vacíos.
+    Las fotos se almacenan como bytes en PostgreSQL (BinaryField).
+    Responde con base64 data URIs para que el frontend las renderice directamente.
+
+    Endpoints:
+      GET  /api/fotos/?tipo=maniobra&registro_id=123    → foto_1 y foto_2 en base64
+      POST /api/fotos/subir/   multipart                → sube foto al slot 1 o 2
+      DELETE /api/fotos/eliminar/?tipo=...&registro_id=...&slot=1  → elimina foto
+    """
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    ALLOWED_MIMES = {'image/jpeg', 'image/png', 'image/webp'}
+    MAX_SIZE      = 2 * 1024 * 1024  # 2 MB
+
+    # ── Validadores de parámetros comunes ────────────────────────────────────
+
+    def _validar_params(self, tipo, registro_id_raw, slot_raw=None):
+        """
+        Valida y convierte los parámetros comunes.
+        Retorna (registro_id, slot, error_response) donde error_response es None si OK.
+        """
+        if tipo not in ('maniobra', 'vacio'):
+            return None, None, Response(
+                {'detail': 'tipo inválido. Use maniobra o vacio.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            registro_id = int(registro_id_raw)
+        except (TypeError, ValueError):
+            return None, None, Response(
+                {'detail': 'registro_id debe ser un número entero.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        slot = None
+        if slot_raw is not None:
+            try:
+                slot = int(slot_raw)
+                if slot not in (1, 2):
+                    raise ValueError
+            except (TypeError, ValueError):
+                return None, None, Response(
+                    {'detail': 'slot debe ser 1 o 2.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        return registro_id, slot, None
+
+    # ── GET /api/fotos/?tipo=maniobra&registro_id=123 ────────────────────────
+
+    def list(self, request):
+        tipo            = request.query_params.get('tipo', '')
+        registro_id_raw = request.query_params.get('registro_id', '')
+
+        registro_id, _, err = self._validar_params(tipo, registro_id_raw)
+        if err:
+            return err
+
+        try:
+            foto = FotoRegistro.objects.get(tipo=tipo, registro_id=registro_id)
+        except FotoRegistro.DoesNotExist:
+            return Response({'foto_1': None, 'foto_2': None})
+
+        def a_base64(data, mime):
+            if not data:
+                return None
+            b64 = base64.b64encode(bytes(data)).decode('utf-8')
+            return f'data:{mime};base64,{b64}'
+
+        return Response({
+            'foto_1': a_base64(foto.foto_1, foto.foto_1_mime),
+            'foto_2': a_base64(foto.foto_2, foto.foto_2_mime),
+        })
+
+    # ── POST /api/fotos/subir/ ───────────────────────────────────────────────
+
+    @action(
+        detail=False,
+        methods=['post'],
+        url_path='subir',
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def subir(self, request):
+        tipo            = request.data.get('tipo', '')
+        registro_id_raw = request.data.get('registro_id', '')
+        slot_raw        = request.data.get('slot', '')
+        foto_file       = request.FILES.get('foto')
+
+        registro_id, slot, err = self._validar_params(tipo, registro_id_raw, slot_raw)
+        if err:
+            return err
+
+        if not foto_file:
+            return Response(
+                {'detail': 'No se envió ningún archivo. Campo requerido: foto.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if foto_file.content_type not in self.ALLOWED_MIMES:
+            return Response(
+                {'detail': 'Formato no permitido. Use JPG, PNG o WEBP.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if foto_file.size > self.MAX_SIZE:
+            return Response(
+                {'detail': 'La imagen no puede superar 2 MB.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        foto_bytes = foto_file.read()
+        mime       = foto_file.content_type
+
+        registro, _ = FotoRegistro.objects.get_or_create(
+            tipo=tipo,
+            registro_id=registro_id,
+        )
+
+        if slot == 1:
+            registro.foto_1      = foto_bytes
+            registro.foto_1_mime = mime
+        else:
+            registro.foto_2      = foto_bytes
+            registro.foto_2_mime = mime
+
+        registro.save()
+
+        return Response(
+            {'detail': f'Foto {slot} guardada correctamente.'},
+            status=status.HTTP_200_OK,
+        )
+
+    # ── DELETE /api/fotos/eliminar/?tipo=...&registro_id=...&slot=1 ──────────
+
+    @action(
+        detail=False,
+        methods=['delete'],
+        url_path='eliminar',
+    )
+    def eliminar(self, request):
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'No tienes permisos para eliminar fotos.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        tipo            = request.query_params.get('tipo', '')
+        registro_id_raw = request.query_params.get('registro_id', '')
+        slot_raw        = request.query_params.get('slot', '')
+
+        registro_id, slot, err = self._validar_params(tipo, registro_id_raw, slot_raw)
+        if err:
+            return err
+
+        try:
+            registro = FotoRegistro.objects.get(tipo=tipo, registro_id=registro_id)
+        except FotoRegistro.DoesNotExist:
+            return Response(
+                {'detail': 'No hay fotos para este registro.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if slot == 1:
+            registro.foto_1      = None
+            registro.foto_1_mime = None
+        else:
+            registro.foto_2      = None
+            registro.foto_2_mime = None
+
+        # Si ambas fotos quedaron vacías, eliminar la fila completa
+        if not registro.foto_1 and not registro.foto_2:
+            registro.delete()
+        else:
+            registro.save()
+
+        return Response({'detail': f'Foto {slot} eliminada correctamente.'})
+
+
+class DocumentoBitacoraSuenoView(APIView):
+    """
+    POST /api/documentos/bitacora-sueno/
+    Recibe datos del formulario, llena la hoja 'BITACORA DE SUEÑO'
+    del template Excel y devuelve el PDF generado.
+    Requiere autenticación JWT.
+    Todos los valores de texto se escriben en MAYÚSCULAS.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    def post(self, request):
+        # ── Leer datos del body (en MAYÚSCULAS para el Excel) ──────────────────
+        operador    = request.data.get('operador', '').strip().upper()
+        placas      = request.data.get('placas', '').strip().upper()
+        remolque_1  = request.data.get('remolque_1', '').strip().upper()
+        remolque_2  = request.data.get('remolque_2', '').strip().upper()
+        folio       = request.data.get('folio', '').strip().upper()
+        unidad      = request.data.get('unidad', '').strip().upper()    # tracto.unidad (Tipo de Unidad)
+        anio        = request.data.get('anio', '').strip().upper()      # tracto.anio   (Modelo)
+        origen      = request.data.get('origen', '').strip().upper()
+        destino     = request.data.get('destino', '').strip().upper()
+        fecha_salida  = request.data.get('fecha_salida', '').strip().upper()   # DD/MM/YYYY
+        fecha_llegada = request.data.get('fecha_llegada', '').strip().upper()  # DD/MM/YYYY
+        formato       = request.data.get('formato', 'pdf')
+
+        # ── Validación mínima ──────────────────────────────────────────────────
+        if not placas:
+            return Response({'detail': 'El campo placas es requerido.'}, status=400)
+
+        # ── Construir valor concatenado (D9 y B11) ────────────────────────────
+        concat_valor = _concat_placas_remolques(placas, remolque_1, remolque_2)
+
+        # ── Abrir template y trabajar en directorio temporal ──────────────────
+        try:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                wb = load_workbook(str(_TEMPLATE_PATH))  # data_only=False → preserva fórmulas
+                ws = wb['BITACORA DE SUEÑO']
+
+                # Escribir valores en las celdas objetivo
+                ws['L7']  = operador       # Nombre del operador
+                ws['D9']  = concat_valor   # Vehículo / remolques (concatenado)
+                ws['U9']  = folio          # CTA Porte (folio)
+                ws['B11'] = concat_valor   # Placas (mismo concatenado — vinculado a CTA PORT via fórmula existente)
+                ws['O11'] = unidad         # Tipo de Unidad
+                ws['X11'] = anio           # Modelo (año)
+                ws['E13'] = origen         # Origen del viaje
+                ws['P13'] = destino        # Destino del viaje
+                ws['E15'] = fecha_salida   # Fecha de salida (DD/MM/YYYY)
+                ws['O15'] = fecha_llegada  # Fecha de llegada (DD/MM/YYYY)
+                # NOTA: D33 tiene la fórmula '=L7' — se deja intacta.
+
+                # Eliminar las otras hojas para exportar solo BITÁCORA DE SUEÑO
+                for nombre_hoja in [n for n in wb.sheetnames if n != 'BITACORA DE SUEÑO']:
+                    del wb[nombre_hoja]
+
+                return _responder_documento(wb, tmp_dir, 'bitacora_sueno', formato)
+
+        except FileNotFoundError:
+            return Response(
+                {'detail': 'No se encontró el template Excel. Contacte al administrador.'},
+                status=500,
+            )
+        except subprocess.TimeoutExpired:
+            return Response(
+                {'detail': 'La conversión a PDF tardó demasiado. Intente de nuevo.'},
+                status=500,
+            )
+        except Exception:
+            logger.exception("Error inesperado al generar Bitácora de Sueño")
+            return Response(
+                {'detail': 'No se pudo generar el documento. Contacte al administrador.'},
+                status=500,
+            )
+
+
+class DocumentoCtaPortView(APIView):
+    """
+    POST /api/documentos/cta-port/
+    Recibe datos del formulario, llena la hoja 'CTA PORT FRABA CONTAINER'
+    del template Excel y devuelve el PDF generado.
+    Requiere autenticación JWT.
+    Todos los valores de texto se escriben en MAYÚSCULAS.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    def post(self, request):
+        return _generar_pdf_cta_port(
+            request.data, _TEMPLATE_PATH, 'cta_port.pdf',
+            request.data.get('formato', 'pdf'),
+        )
+
+
+class DocumentoCtaPortTercerosView(APIView):
+    """
+    POST /api/documentos/cta-port-terceros/
+    Genera el PDF de Carta Porte para transportistas Terceros, usando el
+    template CTA_PTE_TERCEROS_FORMATO.xlsx. Comparte exactamente el mismo
+    mapeo de celdas y la misma lógica de negocio que DocumentoCtaPortView
+    (ver _generar_pdf_cta_port). No genera Bitácora de Gastos.
+    Requiere autenticación JWT.
+    Todos los valores de texto se escriben en MAYÚSCULAS.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    def post(self, request):
+        return _generar_pdf_cta_port(
+            request.data, _TEMPLATE_PATH_TERCEROS, 'cta_port_terceros.pdf',
+            request.data.get('formato', 'pdf'),
+        )
+
+
+class DocumentoBitacoraGastosView(APIView):
+    """
+    POST /api/documentos/bitacora-gastos/
+    Recibe los mismos datos que DocumentoCtaPortView más `total_gastos`.
+    Llena la hoja 'BITACORA GASTOS' del template con valores directos
+    (anulando las fórmulas cruzadas que apuntan a CTA PORT FRABA CONTAINER).
+    Devuelve el PDF de BITACORA GASTOS.
+    Requiere autenticación JWT.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    def post(self, request):
+        # ── Leer datos del body ────────────────────────────────────────────────
+        # Datos compartidos con CTA PORT (vienen del mismo formulario)
+        operador   = request.data.get('operador',   '').strip()
+        placas     = request.data.get('placas',     '').strip()
+        remolque_1 = request.data.get('remolque_1', '').strip()
+        remolque_2 = request.data.get('remolque_2', '').strip()
+        peso_raw   = request.data.get('peso',       '')
+        destino    = request.data.get('destino',    '').strip()
+
+        # Campo exclusivo de BITACORA GASTOS
+        total_gastos_raw = request.data.get('total_gastos', '')
+        formato          = request.data.get('formato', 'pdf')
+
+        # ── Validación ────────────────────────────────────────────────────────
+        if not total_gastos_raw and total_gastos_raw != 0:
+            return Response(
+                {'detail': 'El campo Total de Gastos es requerido.'},
+                status=400,
+            )
+
+        try:
+            total_gastos = float(str(total_gastos_raw).replace(',', ''))
+        except (ValueError, TypeError):
+            return Response(
+                {'detail': 'Total de Gastos debe ser un número válido.'},
+                status=400,
+            )
+
+        # ── Valores derivados ──────────────────────────────────────────────────
+        # I2: mismo concatenado de placas/remolques que va en F23 de CTA PORT
+        concat_placas = _concat_placas_remolques(placas, remolque_1, remolque_2)
+
+        # I3: peso numérico (suma las cantidades separadas por '-', igual que
+        # la celda F17 de CTA PORT). '' cuando no hay valor numérico → se
+        # normaliza a 0.0 para la lógica de escritura de abajo.
+        peso_valor = _sumar_peso(peso_raw) or 0.0
+
+        # ── Abrir template y trabajar en directorio temporal ──────────────────
+        try:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                wb = load_workbook(str(_TEMPLATE_PATH))  # preserva fórmulas y formatos
+                ws = wb['BITACORA GASTOS']
+
+                # B2 (=TODAY()) — NO SE TOCA. LibreOffice resuelve la fórmula.
+
+                # I2 (merged I2:L2): Unidad / Placas
+                # Anula la fórmula ='CTA PORT FRABA CONTAINER'!F23
+                ws['I2'] = concat_placas
+
+                # B3 (merged B3:G3): Nombre del conductor
+                # Anula la fórmula ='CTA PORT FRABA CONTAINER'!C23
+                ws['B3'] = operador
+
+                # I3 (merged I3:L3): Peso
+                # Anula la fórmula =SUM('CTA PORT FRABA CONTAINER'!F17:F19)
+                ws['I3'] = peso_valor if peso_valor != 0.0 else ''
+
+                # B4 (merged B4:G4): Destino
+                # Anula la fórmula ='CTA PORT FRABA CONTAINER'!G6
+                ws['B4'] = destino
+
+                # I4 (merged I4:L4): Total de Gastos
+                # La celda ya tiene formato de dinero "$"#,##0 en el template.
+                # openpyxl preserva el formato al cargar; solo se escribe el número.
+                ws['I4'] = total_gastos
+
+                # Eliminar las otras hojas para exportar solo BITACORA GASTOS
+                for nombre_hoja in [n for n in wb.sheetnames if n != 'BITACORA GASTOS']:
+                    del wb[nombre_hoja]
+
+                return _responder_documento(wb, tmp_dir, 'bitacora_gastos', formato)
+
+        except FileNotFoundError:
+            return Response(
+                {'detail': 'No se encontró el template Excel. Contacte al administrador.'},
+                status=500,
+            )
+        except subprocess.TimeoutExpired:
+            return Response(
+                {'detail': 'La conversión a PDF tardó demasiado. Intente de nuevo.'},
+                status=500,
+            )
+        except Exception:
+            logger.exception("Error inesperado al generar Bitácora de Gastos")
+            return Response(
+                {'detail': 'No se pudo generar el documento. Contacte al administrador.'},
+                status=500,
+            )
+
+
+class AlertasVencimientoView(APIView):
+    """
+    GET /api/alertas-vencimiento/
+    Devuelve licencias de choferes y pólizas de tractos que vencen en los
+    próximos 30 días, ordenadas por fecha ascendente. Visible para todos los
+    usuarios autenticados sin distinción de rol.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    def get(self, request):
+        from datetime import timedelta
+        hoy = date.today()
+        limite_licencia = hoy + timedelta(days=30)   # licencias: 1 mes
+        limite_poliza   = hoy + timedelta(days=14)   # pólizas: 2 semanas
+
+        choferes_por_vencer = Chofer.objects.filter(
+            fecha_vencimiento_licencia__isnull=False,
+            fecha_vencimiento_licencia__gte=hoy,
+            fecha_vencimiento_licencia__lte=limite_licencia,
+        ).values('nombre', 'fecha_vencimiento_licencia')
+
+        tractos_por_vencer = Tracto.objects.filter(
+            fecha_vencimiento_poliza__isnull=False,
+            fecha_vencimiento_poliza__gte=hoy,
+            fecha_vencimiento_poliza__lte=limite_poliza,
+        ).values('unidad', 'anio', 'placas', 'fecha_vencimiento_poliza')
+
+        alertas = []
+
+        for c in choferes_por_vencer:
+            alertas.append({
+                'tipo':      'licencia',
+                'nombre':    c['nombre'] or '(sin nombre)',
+                'fecha':     c['fecha_vencimiento_licencia'].strftime('%d/%m/%Y'),
+                'fecha_raw': c['fecha_vencimiento_licencia'].isoformat(),
+            })
+
+        for t in tractos_por_vencer:
+            nombre_tracto = ' '.join(
+                str(v) for v in (t['unidad'], t['anio'], t['placas']) if v
+            ).strip()
+            alertas.append({
+                'tipo':      'poliza',
+                'nombre':    nombre_tracto or '(sin datos)',
+                'fecha':     t['fecha_vencimiento_poliza'].strftime('%d/%m/%Y'),
+                'fecha_raw': t['fecha_vencimiento_poliza'].isoformat(),
+            })
+
+        alertas.sort(key=lambda a: a['fecha_raw'])
+
+        return Response(alertas)

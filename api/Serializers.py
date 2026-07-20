@@ -1,13 +1,27 @@
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
-import re
+from django.core.validators import RegexValidator, MinLengthValidator, MaxLengthValidator
 
 class TractoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tracto
         fields = '__all__'
+
+    def validate_no_eco(self, value):
+        MinLengthValidator(1)(value)
+        MaxLengthValidator(20)(value)
+        return value
+
+    def validate_placas(self, value):
+        MinLengthValidator(6)(value)
+        MaxLengthValidator(8)(value)
+        RegexValidator(
+            regex=r'^[A-Z0-9\-]+$',
+            message='Las placas solo pueden contener letras mayúsculas, números y guiones.'
+        )(value)
+        return value
 
 class RemolqueSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,21 +33,38 @@ class ChoferSerializer(serializers.ModelSerializer):
         model = Chofer
         fields = '__all__'
 
+    def validate_rfc(self, value):
+        if not value:   # opcional: '' o None pasan sin validar formato
+            return value
+        MinLengthValidator(13)(value)
+        MaxLengthValidator(13)(value)
+        RegexValidator(
+            regex=r'^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$',
+            message='El RFC no tiene un formato válido.'
+        )(value)
+        return value
+
+    def validate_licencia(self, value):
+        if not value:   # opcional: '' o None pasan sin validar longitud
+            return value
+        MinLengthValidator(6)(value)
+        MaxLengthValidator(20)(value)
+        return value
+
 class EmpleadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Empleado
         fields = '__all__'
 
 class ManiobraSerializer(serializers.ModelSerializer):
+    # Único campo obligatorio para registrar una maniobra.
+    solicita = serializers.CharField(required=True, allow_blank=False, allow_null=False, max_length=30)
+
     class Meta:
         model = Maniobra
         fields = '__all__'
 
-    def validate_codigo_pis(self, value):
-        # Solo permite alfanuméricos y guiones
-        if not re.match(r'^[a-zA-Z0-9\-]+$', value):
-            raise serializers.ValidationError("Código PIS inválido.")
-        return value
+    # ponytail: codigo_pis acepta cualquier texto; el max_length=100 del modelo evita error de columna.
 
     def validate(self, data):
         # Longitud máxima por campo para evitar payloads enormes
@@ -87,4 +118,57 @@ class GastoSerializer(serializers.ModelSerializer):
 class VacioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vacio
+        fields = '__all__'
+
+class PatioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Patio
+        fields = '__all__'
+
+
+class ClienteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cliente
+        fields = '__all__'
+
+
+class OrigenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Origen
+        fields = '__all__'
+
+
+class DestinoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Destino
+        fields = '__all__'
+
+
+class MovimientoLocalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = MovimientoLocal
+        fields = '__all__'
+
+
+class TransportistaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = Transportista
+        fields = '__all__'
+
+
+class CargoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = Cargo
+        fields = '__all__'
+
+
+class UnidadTerceroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = UnidadTercero
+        fields = '__all__'
+
+
+class OperadorTerceroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = OperadorTercero
         fields = '__all__'

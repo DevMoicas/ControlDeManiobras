@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 import os
 from dotenv import load_dotenv
 
@@ -24,10 +25,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-xzj&b*qj)6ly$$1$!9zq1d_v1k$d4yfxflp7@73j&14uy=y5ap'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError(
+        "La variable de entorno DJANGO_SECRET_KEY debe estar definida. "
+        "Genera una con: python -c \"from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())\""
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,::1').split(',')
 
@@ -45,36 +51,108 @@ INSTALLED_APPS = [
     'api.Apps.ApiConfig',
     'corsheaders',
     'django_filters',
+    'axes',
 ]
 
 MIDDLEWARE = [
-    'api.middleware.IPRateLimitMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'api.middleware.IPRateLimitMiddleware',
+    'api.middleware.RoleRoutingMiddleware',
+    'api.middleware.SecurityHeadersMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'axes.middleware.AxesMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 
 
-# Headers de seguridad
-SECURE_CONTENT_TYPE_NOSNIFF = True   # X-Content-Type-Options: nosniff
-X_FRAME_OPTIONS = "DENY"             # X-Frame-Options: DENY
-SECURE_BROWSER_XSS_FILTER = True     # X-XSS-Protection
+# ── Security settings ───────────────────────────────────────────────────────
 
-# CORS - permite peticiones desde tu frontend
+# Django agrega X-Content-Type-Options: nosniff de forma nativa
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Django agrega X-Frame-Options: DENY de forma nativa
+X_FRAME_OPTIONS = 'DENY'
+
+# En Django 4+, SECURE_BROWSER_XSS_FILTER es obsoleto y False es correcto
+SECURE_BROWSER_XSS_FILTER = False
+
+# ── Configuración de producción — se ACTIVA sola con DEBUG=False ────────────
+# En desarrollo (DEBUG=True) quedan inactivas para no romper http://localhost.
+# En producción (DEBUG=False) Django las aplica todas. El redirect a HTTPS y la
+# emisión de HSTS los hace django.middleware.security.SecurityMiddleware.
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000            # 1 año
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # Azure Container Apps termina TLS en su ingress y reenvía X-Forwarded-Proto.
+    # Sin esta línea, SECURE_SSL_REDIRECT entra en bucle de redirección infinito.
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# CORS — Origins permitidos leídos desde variable de entorno
+# Formato en .env: CORS_ALLOWED_ORIGINS=http://localhost:3000,https://tudominio.com
+_cors_origins_raw = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000')
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    origin.strip()
+    for origin in _cors_origins_raw.split(',')
+    if origin.strip()
 ]
+
+# Reutiliza los mismos orígenes para la protección CSRF de Django
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()
+
+# NUNCA usar CORS_ALLOW_ALL_ORIGINS = True
+
+# JWT viaja en header Authorization, no en cookies → credentials False
+CORS_ALLOW_CREDENTIALS = False
+
+# Solo los métodos que usa la API
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Headers mínimos necesarios para el frontend React + JWT
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Tiempo que el navegador cachea la respuesta preflight OPTIONS
+CORS_PREFLIGHT_MAX_AGE = 86400  # 24 horas
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    # Cerrado por defecto. Sin esta línea DRF usa AllowAny, y 11 viewsets que no
+    # declaraban permission_classes servían datos a peticiones anónimas (maniobras,
+    # gastos, vacios, choferes, tractos, remolques, empleados, patios, clientes,
+    # origenes, destinos) — lectura Y escritura, al ser ModelViewSet.
+    # Ahora hay que abrir a propósito, no cerrar por acordarse.
+    # Login y refresh siguen siendo públicos sin tocarlos: SimpleJWT los declara
+    # con permission_classes = () en TokenViewBase, que gana a este valor por defecto.
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
     ),
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",   # usuarios sin login
@@ -86,8 +164,16 @@ REST_FRAMEWORK = {
     },
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 60,  # cambiado de 30 a 60
-    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],  
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "EXCEPTION_HANDLER": "api.utils.custom_exception_handler",
+}
+
+# JWT: sessionStorage borra los tokens al cerrar el navegador y el timer de
+# inactividad cierra la sesión a los 20 min, así que 12h evita que el token
+# expire de forma inesperada durante una jornada normal de uso activo.
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME':  timedelta(hours=12),
+    'REFRESH_TOKEN_LIFETIME': timedelta(hours=12),
 }
 
 
@@ -116,14 +202,31 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
+        # Conexión de superuser: usada por admin y por migraciones
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'fraba_erp'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'elastaxd'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-    }
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_ADMIN_USER'),
+        'PASSWORD': os.environ.get('DB_ADMIN_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
+        # Reutiliza la conexión hasta 60s en vez de cerrarla al final de cada
+        # request — evita el costo de reconectar+autenticar contra Postgres
+        # en cada petición. No afecta RoleBasedRouter ni las políticas RLS.
+        'CONN_MAX_AGE': 60,
+    },
+    'standard': {
+        # Conexión de rol estándar: usada por usuarios no-admin
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_STANDARD_USER'),
+        'PASSWORD': os.environ.get('DB_STANDARD_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
+        'CONN_MAX_AGE': 60,
+    },
 }
+
+DATABASE_ROUTERS = ['api.routers.RoleBasedRouter']
 
 
 # Password validation
@@ -161,7 +264,20 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
-CORS_ALLOW_ALL_ORIGINS = True
+
+# ── Autenticación (django-axes) ─────────────────────────────────────────────
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# ── django-axes (brute force protection) ───────────────────────────────────
+AXES_FAILURE_LIMIT = 5          # Bloqueo después de 5 intentos fallidos
+AXES_COOLOFF_TIME = 1           # Tiempo de bloqueo: 1 hora
+AXES_RESET_ON_SUCCESS = True    # Resetea contador al login exitoso
+AXES_LOCKOUT_PARAMETERS = [['username', 'ip_address']]  # Bloquea por user+IP
+AXES_ENABLE_ADMIN = True        # Visible en el panel admin de Django
+AXES_VERBOSE = False            # No loguear cada intento en consola
 
 # Configuración de Logs físicos para errores del sistema (Jira Task)
 LOGGING = {
