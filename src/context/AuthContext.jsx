@@ -94,7 +94,13 @@ export function AuthProvider({ children }) {
     return decoded;
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    const refresh = tokenStore.getRefresh();
+    if (refresh) {
+      // Best-effort: invalida el refresh en el servidor (blacklist). Un fallo aquí
+      // (p.ej. refresh ya expirado) no debe impedir cerrar sesión localmente.
+      try { await apiClient.post("/logout/", { refresh }); } catch { /* no-op */ }
+    }
     tokenStore.clearTokens();
     setUser(null);
   }, []);
@@ -124,7 +130,7 @@ export function AuthProvider({ children }) {
             return;
           }
 
-          tokenStore.setTokens(data.access, refresh);
+          tokenStore.setTokens(data.access, data.refresh ?? refresh);
           const decoded = decodeJwtPayload(data.access);
           if (decoded) {
             setUser(decoded);

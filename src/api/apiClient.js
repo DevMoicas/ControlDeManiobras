@@ -7,7 +7,33 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000/api
 
 const METODOS_ESCRITURA = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
-async function request(endpoint, options = {}) {
+// Renueva el access token con el refresh. Single-flight: si varias peticiones
+// fallan con 401 a la vez, todas esperan al MISMO refresh en vez de disparar N.
+let refreshEnVuelo = null;
+async function refrescarAccessToken() {
+  const refresh = sessionStorage.getItem("refreshToken");
+  if (!refresh) return null;
+  if (!refreshEnVuelo) {
+    refreshEnVuelo = fetch(`${BASE_URL}/token/refresh/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data?.access) return null;
+        sessionStorage.setItem("accessToken", data.access);
+        // Si algún día se activa la rotación de refresh, guardar el nuevo.
+        if (data.refresh) sessionStorage.setItem("refreshToken", data.refresh);
+        return data.access;
+      })
+      .catch(() => null);
+    refreshEnVuelo.finally(() => { refreshEnVuelo = null; });
+  }
+  return refreshEnVuelo;
+}
+
+async function request(endpoint, options = {}, _reintento = false) {
   // Leer el access token en cada petición (puede actualizarse entre llamadas)
   const token = sessionStorage.getItem("accessToken");
 
@@ -22,6 +48,14 @@ async function request(endpoint, options = {}) {
       ...fetchOptions.headers,
     },
   });
+
+  // 401: el access expiró → refrescar UNA vez y reintentar la misma petición.
+  if (response.status === 401 && !_reintento) {
+    const nuevoToken = await refrescarAccessToken();
+    if (nuevoToken) return request(endpoint, options, true);
+    window.dispatchEvent(new Event("auth:expired"));
+    throw new Error("Sesión expirada.");
+  }
 
   if (response.status === 429) {
     const retryAfter = response.headers.get("Retry-After") ?? "unos segundos";
@@ -87,16 +121,22 @@ patch: (endpoint, body) => request(endpoint, { method: "PATCH", body: JSON.strin
   upload: (endpoint, formData) => request(endpoint, { method: "POST", body: formData, isUpload: true }),
   // POST que devuelve un Blob (descarga de archivos binarios como PDFs)
   download: async (endpoint, body) => {
-    const token = sessionStorage.getItem("accessToken");
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const hacerFetch = (tok) => fetch(`${BASE_URL}${endpoint}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(tok ? { Authorization: `Bearer ${tok}` } : {}),
       },
       body: JSON.stringify(body),
     });
 
+    let response = await hacerFetch(sessionStorage.getItem("accessToken"));
+
+    // 401: refrescar el access una vez y reintentar la descarga.
+    if (response.status === 401) {
+      const nuevoToken = await refrescarAccessToken();
+      if (nuevoToken) response = await hacerFetch(nuevoToken);
+    }
     if (response.status === 401) {
       window.dispatchEvent(new Event("auth:expired"));
       throw new Error("Sesión expirada.");
