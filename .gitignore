@@ -1,4 +1,8 @@
 node_modules
 
+# Artefactos de compilación (no se versionan)
+/dist/
+/build/
+
 # Variables de entorno — nunca subir al repositorio
 .env 

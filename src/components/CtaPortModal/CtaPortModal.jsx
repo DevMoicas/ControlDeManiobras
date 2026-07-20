@@ -1,4 +1,9 @@
 import { useState, useEffect } from "react";
+import { motion } from "motion/react";
+import { overlayMotion, contentMotion } from "../../animations/modalMotion";
+import DatePicker, { registerLocale } from "react-datepicker";
+import es from "date-fns/locale/es";
+import { format } from "date-fns";
 import { X, Download, Loader } from "lucide-react";
 import { apiClient } from "../../api/apiClient";
 import OperadorSelector from "../OperadorSelector/OperadorSelector";
@@ -6,12 +11,16 @@ import PlacasSelector from "../PlacasSelector/PlacasSelector";
 import RemolqueSelector from "../RemolqueSelector/RemolqueSelector";
 import FolioSelector from "../FolioSelector/FolioSelector";
 import ClienteSelector from "../ClienteSelector/ClienteSelector";
+import "react-datepicker/dist/react-datepicker.css";
 import "./CtaPortModal.css";
+
+registerLocale("es", es);
 
 const ESTADO_INICIAL = {
   // Remisión
   folio:       "",
   ccp:         "",   // editable, auto desde folio
+  fecha_expedicion: null,  // Date object — selección manual (H5)
 
   // Origen / Destino — editables, auto desde folio
   origen:      "",
@@ -144,15 +153,21 @@ export default function CtaPortModal({ onCerrar }) {
     window.URL.revokeObjectURL(url);
   };
 
-  const handleGenerar = async () => {
+  const handleGenerar = async (formato = "pdf") => {
     setError(null);
     setGenerando(true);
+
+    const ext = formato === "excel" ? "xlsx" : "pdf";
 
     try {
       // Payload compartido para ambos endpoints
       const payload = {
+        formato,
         folio:             datos.folio,
         ccp:               datos.ccp,
+        fecha_expedicion:  datos.fecha_expedicion
+          ? format(datos.fecha_expedicion, "dd/MM/yyyy")
+          : "",
         origen:            datos.origen,
         destino:           datos.destino,
         cliente_nombre:    datos.cliente_nombre,
@@ -175,14 +190,14 @@ export default function CtaPortModal({ onCerrar }) {
 
       // ── 1. Generar y descargar CTA PORT ────────────────────────────────────
       const blobCtaPort = await apiClient.download("/documentos/cta-port/", payload);
-      triggerDownload(blobCtaPort, "cta_port.pdf");
+      triggerDownload(blobCtaPort, `CTA PTE ${datos.folio}.${ext}`);
 
       // ── Pausa de 600ms para evitar que el navegador bloquee la 2ª descarga ─
       await new Promise((resolve) => setTimeout(resolve, 600));
 
       // ── 2. Generar y descargar BITACORA GASTOS ─────────────────────────────
       const blobGastos = await apiClient.download("/documentos/bitacora-gastos/", payload);
-      triggerDownload(blobGastos, "bitacora_gastos.pdf");
+      triggerDownload(blobGastos, `BITACORA GASTOS ${datos.folio}.${ext}`);
 
       setExito(true);
     } catch (err) {
@@ -195,8 +210,8 @@ export default function CtaPortModal({ onCerrar }) {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="cpm-overlay">
-      <div className="cpm-modal">
+    <motion.div className="cpm-overlay" {...overlayMotion}>
+      <motion.div className="cpm-modal" {...contentMotion}>
         {/* Header */}
         <div className="cpm-header">
           <h2 className="cpm-titulo">CTA Port Fraba Container</h2>
@@ -230,6 +245,18 @@ export default function CtaPortModal({ onCerrar }) {
                   placeholder="Auto desde folio"
                 />
               </div>
+            </div>
+            <div className="cpm-campo" style={{ marginTop: 8 }}>
+              <label className="cpm-label">Fecha de expedición</label>
+              <DatePicker
+                selected={datos.fecha_expedicion}
+                onChange={(date) => setDatos((p) => ({ ...p, fecha_expedicion: date }))}
+                locale="es"
+                dateFormat="dd/MM/yyyy"
+                placeholderText="dd/MM/yyyy"
+                className="cpm-input"
+                isClearable
+              />
             </div>
           </div>
 
@@ -400,7 +427,7 @@ export default function CtaPortModal({ onCerrar }) {
 
           {/* Mensajes */}
           {error && <p className="cpm-error">{error}</p>}
-          {exito && <p className="cpm-exito">PDF generado y descargado correctamente.</p>}
+          {exito && <p className="cpm-exito">Documento generado y descargado correctamente.</p>}
         </div>
 
         {/* Footer */}
@@ -410,8 +437,16 @@ export default function CtaPortModal({ onCerrar }) {
           </button>
           <button
             type="button"
+            className="cpm-btn-excel"
+            onClick={() => handleGenerar("excel")}
+            disabled={generando || !datos.folio || !datos.total_gastos}
+          >
+            <Download size={16} /> Descargar Excel
+          </button>
+          <button
+            type="button"
             className="cpm-btn-generar"
-            onClick={handleGenerar}
+            onClick={() => handleGenerar("pdf")}
             disabled={generando || !datos.folio || !datos.total_gastos}
           >
             {generando
@@ -419,7 +454,7 @@ export default function CtaPortModal({ onCerrar }) {
               : <><Download size={16} /> Generar CTA Port + Bitácora de Gastos</>}
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

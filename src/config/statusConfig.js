@@ -8,10 +8,28 @@
  *   import { STATUS_MAP, MANIOBRA_STATUSES_LIST, getStatusConfig } from './statusConfig';
  *
  * Nunca uses strings literales de status fuera de este archivo.
+ *
+ * ── Multi-status ────────────────────────────────────────────────────────────
+ * Una maniobra puede tener HASTA 2 status a la vez. El backend los guarda en un
+ * solo campo separados por coma ("activo,quemada"), siempre en orden de PRIORIDAD
+ * descendente — nunca en el orden en que el usuario los eligió.
+ *
+ * Ese orden canónico es lo que hace que todo lo demás sea trivial:
+ *   · El primer segmento es SIEMPRE el color que gana en la fila.
+ *   · El backend rechaza un combo mal ordenado por sí solo (no es un choice válido),
+ *     sin que nadie tenga que validar el orden a mano.
+ *
+ * Por eso `joinStatusIds` ordena antes de unir: es la única puerta de salida hacia
+ * el backend, y garantiza la forma canónica venga como venga la selección.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 /** @typedef {'activo' | 'pendiente' | 'quemada' | 'por_salir'} ManiobraStatus */
+
+/**
+ * Valor tal y como viaja//se guarda: un id, dos ids separados por coma, o null.
+ * @typedef {string | null} StatusValue
+ */
 
 /**
  * @typedef {Object} StatusConfig
@@ -65,25 +83,138 @@ export const STATUS_MAP = Object.freeze({
  */
 export const MANIOBRA_STATUSES_LIST = Object.freeze(Object.values(STATUS_MAP));
 
+/** Máximo de status simultáneos por maniobra. */
+export const MAX_STATUSES = 2;
+
 /**
- * Devuelve la config de un status dado.
- * Si el id no existe, retorna `null` sin lanzar excepción.
- *
- * @param {string | null | undefined} statusId
- * @returns {StatusConfig | null}
+ * Jerarquía de color: cuando hay 2 status, el de más arriba es el que pinta la fila.
+ * Lázaro (por_salir) siempre domina; si no está, domina Activo.
+ * Debe coincidir con el orden de los combos en STATUS_CHOICES del backend (models.py).
+ * @type {ReadonlyArray<ManiobraStatus>}
  */
-export function getStatusConfig(statusId) {
-  if (!statusId || typeof statusId !== "string") return null;
-  return STATUS_MAP[statusId] ?? null;
+export const PRIORITY_ORDER = Object.freeze([
+  "por_salir",  // Lázaro — gana siempre
+  "activo",
+  "quemada",
+  "pendiente",
+]);
+
+/**
+ * Convierte el valor crudo del backend en una lista de ids válidos.
+ * Tolerante a basura: descarta ids desconocidos y recorta a MAX_STATUSES.
+ *
+ * @param {StatusValue | undefined} raw  - "activo" | "activo,quemada" | null
+ * @returns {ManiobraStatus[]} 0, 1 o 2 ids válidos
+ */
+export function parseStatusValue(raw) {
+  if (!raw || typeof raw !== "string") return [];
+  return raw
+    .split(",")
+    .map((id) => id.trim())
+    .filter((id) => isValidStatus(id))
+    .slice(0, MAX_STATUSES);
 }
 
 /**
- * Valida que un string sea un status conocido.
- * Útil antes de enviar al backend.
+ * Convierte una lista de ids en el valor canónico que espera el backend:
+ * ordenado por prioridad y unido por coma. Es la ÚNICA puerta de salida.
+ *
+ * @param {ManiobraStatus[]} ids
+ * @returns {StatusValue} "por_salir,activo" | "activo" | null (si va vacío)
+ */
+export function joinStatusIds(ids) {
+  const limpios = [...new Set(ids)].filter((id) => isValidStatus(id));
+  if (limpios.length === 0) return null;
+  return limpios
+    .sort((a, b) => PRIORITY_ORDER.indexOf(a) - PRIORITY_ORDER.indexOf(b))
+    .slice(0, MAX_STATUSES)
+    .join(",");
+}
+
+/**
+ * El status que manda visualmente: el de mayor prioridad de los seleccionados.
+ *
+ * @param {StatusValue | undefined} raw
+ * @returns {ManiobraStatus | null}
+ */
+export function getPredominantStatusId(raw) {
+  const ids = parseStatusValue(raw);
+  if (ids.length === 0) return null;
+  // No asumimos que venga ordenado: lo resolvemos por prioridad igualmente.
+  return ids.reduce((mejor, id) =>
+    PRIORITY_ORDER.indexOf(id) < PRIORITY_ORDER.indexOf(mejor) ? id : mejor
+  );
+}
+
+/**
+ * Devuelve la config del status PREDOMINANTE de un valor (simple o combo).
+ * Si el id no existe, retorna `null` sin lanzar excepción.
+ *
+ * Acepta tanto "activo" como "por_salir,activo" — de ahí que las filas de la tabla
+ * (que hacen getStatusConfig(m.status)?.rowClass) sigan pintando un único color,
+ * el del status de mayor prioridad, sin que ellas sepan nada de combos.
+ *
+ * @param {StatusValue | undefined} raw
+ * @returns {StatusConfig | null}
+ */
+export function getStatusConfig(raw) {
+  const id = getPredominantStatusId(raw);
+  return id ? STATUS_MAP[id] : null;
+}
+
+/**
+ * Valida que un string sea UN status conocido (un solo id, sin combos).
+ * Útil para validar cada pieza suelta.
  *
  * @param {string} statusId
  * @returns {boolean}
  */
 export function isValidStatus(statusId) {
   return Object.prototype.hasOwnProperty.call(STATUS_MAP, statusId);
+}
+
+/**
+ * ¿Este valor tiene al menos un status?
+ *
+ * Cuidado: NO uses isValidStatus() para esto. Un combo como "activo,quemada" no es
+ * una key de STATUS_MAP, así que isValidStatus() lo daría por falso y lo trataría
+ * como "sin status" — que es justo lo contrario de la verdad.
+ *
+ * @param {StatusValue | undefined} raw
+ * @returns {boolean}
+ */
+export function hasAnyStatus(raw) {
+  return parseStatusValue(raw).length > 0;
+}
+
+/**
+ * Valida el valor COMPLETO que se va a mandar al backend en el PATCH.
+ * Acepta null (limpiar), un id, o dos ids válidos y distintos.
+ *
+ * @param {StatusValue | undefined} raw
+ * @returns {boolean}
+ */
+export function isValidStatusValue(raw) {
+  if (raw == null) return true; // limpiar el status es válido
+  if (typeof raw !== "string") return false;
+
+  const piezas = raw.split(",").map((id) => id.trim());
+  if (piezas.length === 0 || piezas.length > MAX_STATUSES) return false;
+  if (new Set(piezas).size !== piezas.length) return false; // sin duplicados
+  return piezas.every((id) => isValidStatus(id));
+}
+
+/**
+ * Texto del selector: "Activo / En viaje" o "Lázaro + Quemada".
+ *
+ * @param {StatusValue | undefined} raw
+ * @returns {string}
+ */
+export function formatStatusLabel(raw) {
+  const ids = parseStatusValue(raw);
+  if (ids.length === 0) return "Sin status";
+  return ids
+    .sort((a, b) => PRIORITY_ORDER.indexOf(a) - PRIORITY_ORDER.indexOf(b))
+    .map((id) => STATUS_MAP[id].label)
+    .join(" + ");
 }

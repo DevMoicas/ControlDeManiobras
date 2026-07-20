@@ -1,15 +1,32 @@
+/* Fotos — mismo diseño de modal que Movimientos Locales y Catálogos: tarjeta con
+   borde suave y radio 16, lomo azul, título en Oswald y etiquetas en IBM Plex
+   Mono. El TAMAÑO no se toca: 560px de ancho y la rejilla de dos slots se
+   conservan. El visor a pantalla completa sigue en negro, que es lo correcto
+   para mirar una foto. */
+
 /* ── Modal container ───────────────────────────────────────────────────────── */
 .fm-content {
+  position: relative;
   background: #ffffff;
+  border: 1px solid #e6ecf5;
   border-radius: 16px;
   padding: 28px;
   width: 90%;
   max-width: 560px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(16, 40, 80, 0.24);
   display: flex;
   flex-direction: column;
   gap: 18px;
   animation: fm-slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+/* Lomo izquierdo azul — la firma de Movimientos Locales y Documentos de Viaje */
+.fm-content::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--primary, #2563eb);
 }
 
 @keyframes fm-slideUp {
@@ -22,15 +39,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid #eef2f7;
   padding-bottom: 14px;
 }
 
 .fm-titulo {
   margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #1f2937;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+  color: var(--text, #1f2937);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -40,28 +60,33 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  color: #6b7280;
-  padding: 4px;
-  border-radius: 6px;
+  color: var(--text-light, #6b7280);
+  padding: 4px 8px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  transition: color 0.15s ease;
+  transition: background 0.15s, color 0.15s;
 }
 
 .fm-btn-cerrar:hover {
-  color: #111827;
-  background: #f3f4f6;
+  color: var(--text, #1f2937);
+  background: #f7f9fc;
   transform: none;
+}
+.fm-btn-cerrar:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
 }
 
 /* ── Error ─────────────────────────────────────────────────────────────────── */
 .fm-error {
-  background: #fee2e2;
-  color: #991b1b;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
   padding: 10px 14px;
   border-radius: 8px;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 /* ── Loading ───────────────────────────────────────────────────────────────── */
@@ -80,7 +105,7 @@
 }
 
 .fm-slot {
-  border: 2px dashed #e5e7eb;
+  border: 2px dashed #e6ecf5;
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -91,11 +116,12 @@
 }
 
 .fm-slot-label {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #6b7280;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-light, #6b7280);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.12em;
   margin: 0;
   align-self: flex-start;
 }

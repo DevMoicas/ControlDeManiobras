@@ -32,17 +32,63 @@
   justify-content: center;
 }
 
-/* Hereda colores de los badge-status--* definidos en StatusBadge.css */
-/* ya que compartimos las mismas clases badgeClass */
+/* ── Colores del trigger y de las opciones, por status ────────────────────────
+   Antes estos colores vivían en StatusBadge.css y se heredaban. Pero StatusBadge
+   es un componente que no usa NADIE, así que su CSS nunca entraba al bundle: el
+   trigger llevaba todo este tiempo sin color de fondo. Se definen aquí para que
+   el selector sea autosuficiente y no dependa de una hoja que no se carga.
+   (De paso: el texto de 'activo' era #c6e5b1 sobre fondo #dcfce7 — verde claro
+   sobre verde claro, ilegible. Ahora usa un verde oscuro con contraste real.) */
+.badge-status--activo {
+  background-color: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+.badge-status--pendiente {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+.badge-status--quemada {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+.badge-status--por-salir {
+  background-color: #ede9fe;
+  color: #6d28d9;
+  border-color: #c4b5fd;
+}
 
-/* ── Dot de color ─────────────────────────────────────────────────────────── */
+/* ── Dots de color ────────────────────────────────────────────────────────────
+   Con 2 status se muestran 2 puntos en el trigger: el fondo ya dice cuál domina,
+   los puntos revelan cuál es el otro. */
+.status-selector__dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
 .status-selector__dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background-color: currentColor;
-  opacity: 0.7;
   flex-shrink: 0;
+  /* borde blanco: los puntos se leen aunque el fondo del trigger sea del mismo tono */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85);
+}
+
+/* Color explícito por status — antes dependían de la clase badge-status--* del
+   padre, lo que no servía al haber 2 puntos de status distintos en el mismo botón. */
+.status-selector__dot--activo    { background-color: #c6e5b1; }
+.status-selector__dot--pendiente { background-color: #96c6e0; }
+.status-selector__dot--quemada   { background-color: #ff6961; }
+.status-selector__dot--por_salir { background-color: #c7b0d4; }
+.status-selector__dot--vacio {
+  background-color: transparent;
+  box-shadow: 0 0 0 1px #9ca3af;
 }
 
 .status-selector__label {
@@ -114,14 +160,27 @@
   outline-offset: -2px;
 }
 
+/* Tope de 2 alcanzado: las opciones restantes se atenúan en vez de ignorar el clic
+   en silencio. El usuario ve que existen, y que para elegirlas debe quitar una.
+   useDropdownNav ya salta las opciones aria-disabled al navegar con flechas. */
+.status-selector__option--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+.status-selector__option--disabled:hover,
+.status-selector__option--disabled:focus {
+  filter: grayscale(0.6);  /* anula el brightness del hover normal */
+}
+
 .status-selector__check {
   margin-left: auto;
   font-size: 0.75rem;
   opacity: 0.8;
 }
 
-/* ── Dots con color del background de la fila correspondiente ── */
-.badge-status--activo    .status-selector__dot { background-color: #c6e5b1; }
-.badge-status--pendiente .status-selector__dot { background-color: #96c6e0; }
-.badge-status--quemada   .status-selector__dot { background-color: #ff6961; }
-.badge-status--por-salir .status-selector__dot { background-color: #c7b0d4; }
+/* Trigger sin ningún status asignado */
+.status-selector__trigger--vacio {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}

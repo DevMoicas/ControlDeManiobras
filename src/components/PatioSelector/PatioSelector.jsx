@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { apiClient } from "../../api/apiClient";
+import useDropdownNav from "../../hooks/useDropdownNav";
 import "./PatioSelector.css";
 
 export default function PatioSelector({ currentValue, onSelect, disabled }) {
@@ -8,12 +9,14 @@ export default function PatioSelector({ currentValue, onSelect, disabled }) {
   const [loadingList, setLoadingList] = useState(false);
   const [errorList, setErrorList] = useState(null);
   const containerRef = useRef(null);
+  const dropRef = useRef(null);
+  useDropdownNav({ abierto: open, setAbierto: setOpen, wrapperRef: containerRef, dropdownRef: dropRef });
 
   useEffect(() => {
     if (!open) return;
     setLoadingList(true);
     setErrorList(null);
-    apiClient.get("/patios/")
+    apiClient.getCatalogo("/patios/")
       .then((res) => {
         const lista = Array.isArray(res) ? res : (res?.results ?? []);
         setPatios(lista);
@@ -62,7 +65,7 @@ export default function PatioSelector({ currentValue, onSelect, disabled }) {
       </button>
 
       {open && (
-        <ul className="ps-dropdown" role="listbox">
+        <ul className="ps-dropdown" role="listbox" ref={dropRef}>
           {loadingList && (
             <li className="ps-state">Cargando…</li>
           )}

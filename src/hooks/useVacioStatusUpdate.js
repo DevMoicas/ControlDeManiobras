@@ -1,39 +1,54 @@
 import { useState, useCallback } from "react";
 import { apiClient } from "../api/apiClient";
 
-export function useVacioStatusUpdate(setVacios) {
+/**
+ * Actualiza por PATCH el status de vacío de un registro, con update optimista y
+ * rollback si el servidor falla. El loading es por fila (id), no global.
+ *
+ * Sirve para dos casos porque solo cambian el recurso y el campo:
+ *   - Vacíos:    useVacioStatusUpdate(setVacios)                       → PATCH /vacios/{id}/    { status }
+ *   - Maniobras: useVacioStatusUpdate(setManiobras, { recurso: "maniobras", campo: "status_vacio" })
+ *                                                                      → PATCH /maniobras/{id}/ { status_vacio }
+ *
+ * @param {Function} setItems - setState del array del componente padre
+ * @param {{recurso?: string, campo?: string}} [opciones]
+ */
+export function useVacioStatusUpdate(setItems, { recurso = "vacios", campo = "status" } = {}) {
   const [updatingId, setUpdatingId] = useState(null);
 
-  const updateStatus = useCallback(async (vacio, nuevoStatus) => {
-    if (vacio.status === nuevoStatus) return;
-    if (typeof vacio.id === "undefined") return;
+  const updateStatus = useCallback(async (item, nuevoStatus) => {
+    if (item[campo] === nuevoStatus) return;          // noop
+    if (typeof item.id === "undefined") return;
 
-    const previousStatus = vacio.status;
+    const statusPrevio = item[campo];
 
-    setVacios((prev) =>
-      prev.map((v) => (v.id === vacio.id ? { ...v, status: nuevoStatus } : v))
+    // Optimista: la fila refleja el cambio antes de que responda el servidor.
+    setItems((prev) =>
+      prev.map((x) => (x.id === item.id ? { ...x, [campo]: nuevoStatus } : x))
     );
-    setUpdatingId(vacio.id);
+    setUpdatingId(item.id);
 
     try {
       const updated = await apiClient.patch(
-        `/vacios/${encodeURIComponent(vacio.id)}/`,
-        { status: nuevoStatus }
+        `/${recurso}/${encodeURIComponent(item.id)}/`,
+        { [campo]: nuevoStatus }
       );
+      // Sincroniza con la respuesta canónica del servidor
       if (updated) {
-        setVacios((prev) =>
-          prev.map((v) => (v.id === updated.id ? { ...v, ...updated } : v))
+        setItems((prev) =>
+          prev.map((x) => (x.id === updated.id ? { ...x, ...updated } : x))
         );
       }
     } catch (err) {
-      setVacios((prev) =>
-        prev.map((v) => (v.id === vacio.id ? { ...v, status: previousStatus } : v))
+      // Rollback garantizado ante cualquier error
+      setItems((prev) =>
+        prev.map((x) => (x.id === item.id ? { ...x, [campo]: statusPrevio } : x))
       );
-      throw err;
+      throw err; // propaga para que la página muestre la notificación
     } finally {
       setUpdatingId(null);
     }
-  }, [setVacios]);
+  }, [setItems, recurso, campo]);
 
   return { updatingId, updateStatus };
 }

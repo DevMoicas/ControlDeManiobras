@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { apiClient } from "../../api/apiClient";
+import useDropdownNav from "../../hooks/useDropdownNav";
 import "./FolioSelector.css";
 
 /**
  * FolioSelector
- * Muestra los últimos 20 folios de maniobras (con folio no vacío).
+ * Muestra los últimos 30 folios de maniobras (con folio no vacío).
  * Al seleccionar, llama a onSelect(maniobraCompleta) con el objeto completo.
  *
  * Props:
@@ -18,17 +19,20 @@ export default function FolioSelector({ currentValue, onSelect, disabled }) {
   const [cargando, setCargando]   = useState(false);
   const [error,   setError]       = useState(null);
   const ref = useRef(null);
+  const dropRef = useRef(null);
+  useDropdownNav({ abierto, setAbierto, wrapperRef: ref, dropdownRef: dropRef });
 
-  // Cargar folios al montar
+  // Cargar folios al abrir el dropdown
   useEffect(() => {
+    if (!abierto) return;
     setCargando(true);
     setError(null);
     apiClient
-      .get("/maniobras/folios-recientes/")
+      .getCatalogo("/maniobras/folios-recientes/")
       .then((data) => setFolios(data || []))
       .catch(() => setError("Error al cargar folios"))
       .finally(() => setCargando(false));
-  }, []);
+  }, [abierto]);
 
   // Cerrar con Escape o clic fuera
   useEffect(() => {
@@ -64,7 +68,7 @@ export default function FolioSelector({ currentValue, onSelect, disabled }) {
       </button>
 
       {abierto && (
-        <div className="fsl-dropdown">
+        <div className="fsl-dropdown" ref={dropRef}>
           {cargando && <div className="fsl-msg">Cargando...</div>}
           {error && <div className="fsl-msg fsl-error">{error}</div>}
           {!cargando && !error && folios.length === 0 && (

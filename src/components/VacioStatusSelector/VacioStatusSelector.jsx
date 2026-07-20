@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import useDropdownNav from "../../hooks/useDropdownNav";
 import "./VacioStatusSelector.css";
 
 const VACIO_STATUSES = [
@@ -22,6 +23,8 @@ function getStatusLabel(status) {
 export default function VacioStatusSelector({ currentStatus, onSelect, loading }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
+  const dropRef = useRef(null);
+  useDropdownNav({ abierto: open, setAbierto: setOpen, wrapperRef: containerRef, dropdownRef: dropRef });
 
   useEffect(() => {
     if (!open) return;
@@ -67,7 +70,7 @@ export default function VacioStatusSelector({ currentStatus, onSelect, loading }
       </button>
 
       {open && (
-        <ul className="vss-dropdown" role="listbox">
+        <ul className="vss-dropdown" role="listbox" ref={dropRef}>
           {VACIO_STATUSES.map((s) => (
             <li
               key={s.id}

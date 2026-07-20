@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { motion } from "motion/react";
+import { overlayMotion, contentMotion } from "../../animations/modalMotion";
 import DatePicker from "react-datepicker";
 import { registerLocale } from "react-datepicker";
 import es from "date-fns/locale/es";
@@ -102,12 +104,15 @@ export default function BitacoraSuenoModal({ onCerrar }) {
 
   // ── Generar PDF ────────────────────────────────────────────────────────────
 
-  const handleGenerar = async () => {
+  const handleGenerar = async (formato = "pdf") => {
     setError(null);
     setGenerando(true);
 
+    const ext = formato === "excel" ? "xlsx" : "pdf";
+
     try {
       const payload = {
+        formato,
         operador:      datos.operador,
         placas:        datos.placas,
         remolque_1:    datos.remolque_1,
@@ -131,7 +136,7 @@ export default function BitacoraSuenoModal({ onCerrar }) {
       const url  = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href     = url;
-      link.download = "bitacora_sueno.pdf";
+      link.download = `BITACORA SUEÑO ${datos.folio}.${ext}`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -148,8 +153,8 @@ export default function BitacoraSuenoModal({ onCerrar }) {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="bsm-overlay">
-      <div className="bsm-modal">
+    <motion.div className="bsm-overlay" {...overlayMotion}>
+      <motion.div className="bsm-modal" {...contentMotion}>
         {/* Header */}
         <div className="bsm-header">
           <h2 className="bsm-titulo">Bitácora de Sueño</h2>
@@ -293,7 +298,7 @@ export default function BitacoraSuenoModal({ onCerrar }) {
 
           {/* Mensajes de error / éxito */}
           {error && <p className="bsm-error">{error}</p>}
-          {exito && <p className="bsm-exito">PDF generado y descargado correctamente.</p>}
+          {exito && <p className="bsm-exito">Documento generado y descargado correctamente.</p>}
         </div>
 
         {/* Footer */}
@@ -303,8 +308,16 @@ export default function BitacoraSuenoModal({ onCerrar }) {
           </button>
           <button
             type="button"
+            className="bsm-btn-excel"
+            onClick={() => handleGenerar("excel")}
+            disabled={generando || !datos.placas}
+          >
+            <Download size={16} /> Descargar Excel
+          </button>
+          <button
+            type="button"
             className="bsm-btn-generar"
-            onClick={handleGenerar}
+            onClick={() => handleGenerar("pdf")}
             disabled={generando || !datos.placas}
           >
             {generando
@@ -312,7 +325,7 @@ export default function BitacoraSuenoModal({ onCerrar }) {
               : <><Download size={16} /> Generar PDF</>}
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

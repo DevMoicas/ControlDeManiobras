@@ -1,5 +1,5 @@
 // src/context/AuthContext.jsx
-import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { apiClient } from "../api/apiClient";
 
 const AuthContext = createContext(null);
@@ -63,6 +63,15 @@ const tokenStore = {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => decodeJwtPayload(tokenStore.getAccess()));
 
+  // ¿Hay que esperar antes de poder afirmar que NO hay sesión? Solo en un caso:
+  // el access token ya no sirve, pero queda un refresh con el que recuperarla
+  // (el flujo asíncrono de abajo). Sin este estado, el guardián de rutas vería
+  // user=null durante ese instante y echaría al login a alguien que sí tiene
+  // sesión válida, con solo pulsar F5.
+  const [rehidratando, setRehidratando] = useState(
+    () => !decodeJwtPayload(tokenStore.getAccess()) && Boolean(tokenStore.getRefresh())
+  );
+
   const login = useCallback(async (username, password) => {
     const safeUsername = String(username ?? "").trim().slice(0, 150);
     const safePassword = String(password ?? "").slice(0, 128);
@@ -93,36 +102,43 @@ export function AuthProvider({ children }) {
   // Refresca el access token al montar si está expirado pero el refresh sigue vigente
   useEffect(() => {
     const refreshOnMount = async () => {
-      const access = tokenStore.getAccess();
-      const refresh = tokenStore.getRefresh();
-
-      // Si el access token es válido, no hay nada que hacer
-      if (decodeJwtPayload(access)) return;
-
-      // Si no hay refresh token, el usuario no está autenticado
-      if (!refresh) return;
-
+      // finally: pase lo que pase, se deja de rehidratar. Si esto no se
+      // cumpliera en algún camino, el guardián se quedaría esperando para
+      // siempre y la app no pintaría nada.
       try {
-        const data = await apiClient.post("/token/refresh/", { refresh });
+        const access = tokenStore.getAccess();
+        const refresh = tokenStore.getRefresh();
 
-        if (!data?.access) {
+        // Si el access token es válido, no hay nada que hacer
+        if (decodeJwtPayload(access)) return;
+
+        // Si no hay refresh token, el usuario no está autenticado
+        if (!refresh) return;
+
+        try {
+          const data = await apiClient.post("/token/refresh/", { refresh });
+
+          if (!data?.access) {
+            tokenStore.clearTokens();
+            setUser(null);
+            return;
+          }
+
+          tokenStore.setTokens(data.access, refresh);
+          const decoded = decodeJwtPayload(data.access);
+          if (decoded) {
+            setUser(decoded);
+          } else {
+            tokenStore.clearTokens();
+            setUser(null);
+          }
+        } catch {
+          // El refresh token también expiró — limpiar sesión completamente
           tokenStore.clearTokens();
           setUser(null);
-          return;
         }
-
-        tokenStore.setTokens(data.access, refresh);
-        const decoded = decodeJwtPayload(data.access);
-        if (decoded) {
-          setUser(decoded);
-        } else {
-          tokenStore.clearTokens();
-          setUser(null);
-        }
-      } catch {
-        // El refresh token también expiró — limpiar sesión completamente
-        tokenStore.clearTokens();
-        setUser(null);
+      } finally {
+        setRehidratando(false);
       }
     };
 
@@ -136,13 +152,17 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener("auth:expired", handler);
   }, [logout]);
 
-  const value = {
+  // Memoizado: evita que el objeto cambie de identidad en cada render del
+  // Provider (login/logout ya son estables vía useCallback), lo que forzaría
+  // re-render de todos los consumidores de useAuthContext() sin necesidad.
+  const value = useMemo(() => ({
     user,
     isAuthenticated: Boolean(user),
     isAdmin: user?.role === "admin",
+    rehidratando,
     login,
     logout,
-  };
+  }), [user, rehidratando, login, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -10,6 +10,16 @@
   flex-shrink: 0;
 }
 
+/* Fallo al consultar las alertas: no es un vencimiento, es que no sabemos si lo
+   hay. Tono neutro a propósito — el rojo intermitente se reserva para un
+   vencimiento real, y gastarlo aquí le quitaría fuerza. */
+.av-card--fallo {
+  background: #f7f9fc;
+  border: 1px solid #e6ecf5;
+  border-left: 4px solid #6b7280;
+  max-width: 380px;
+}
+
 .av-urgente {
   display: flex;
   align-items: center;

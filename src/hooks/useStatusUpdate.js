@@ -14,7 +14,7 @@
 
 import { useState, useCallback } from "react";
 import { apiClient } from "../api/apiClient";
-import { isValidStatus } from "../config/statusConfig";
+import { isValidStatusValue } from "../config/statusConfig";
 
 /**
  * @param {Function} setManiobras  - setState del array de maniobras del componente padre
@@ -31,7 +31,10 @@ export function useStatusUpdate(setManiobras) {
 
   const updateStatus = useCallback(async (maniobra, newStatus) => {
     // ── Validaciones ──────────────────────────────────────────────────────────
-    if (!isValidStatus(newStatus)) {
+    // newStatus == null significa "quitar el status" (toggle off).
+    // Puede venir como combo ("por_salir,activo"), así que se valida el valor
+    // COMPLETO — isValidStatus() solo conoce ids sueltos y rechazaría un combo.
+    if (!isValidStatusValue(newStatus)) {
       console.error(`[useStatusUpdate] Status inválido: "${newStatus}"`);
       return;
     }

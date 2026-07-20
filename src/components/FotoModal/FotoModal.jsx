@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { motion } from "motion/react";
+import { overlayMotion } from "../../animations/modalMotion";
 import { Camera, X, Upload, Trash2, Eye } from "lucide-react";
 import { apiClient } from "../../api/apiClient";
 import "./FotoModal.css";
@@ -177,12 +179,13 @@ export default function FotoModal({ tipo, registroId, onCerrar, isAdmin }) {
   return (
     <>
       {/* Modal principal */}
-      <div
+      <motion.div
         className="modal-overlay"
         role="dialog"
         aria-modal="true"
         aria-labelledby="fm-titulo"
         onClick={onCerrar}
+        {...overlayMotion}
       >
         <div className="fm-content" onClick={(e) => e.stopPropagation()}>
 
@@ -223,7 +226,7 @@ export default function FotoModal({ tipo, registroId, onCerrar, isAdmin }) {
             Formatos: JPG, PNG, WEBP · Máximo 2 MB por foto
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Lightbox — vista completa */}
       {vistaCompleta && (

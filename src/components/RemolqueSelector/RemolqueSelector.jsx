@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { apiClient } from "../../api/apiClient";
+import useDropdownNav from "../../hooks/useDropdownNav";
 import "./RemolqueSelector.css";
 
 export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
@@ -8,12 +9,14 @@ export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
   const [loadingList, setLoadingList] = useState(false);
   const [errorList, setErrorList] = useState(null);
   const containerRef = useRef(null);
+  const dropRef = useRef(null);
+  useDropdownNav({ abierto: open, setAbierto: setOpen, wrapperRef: containerRef, dropdownRef: dropRef });
 
   useEffect(() => {
     if (!open) return;
     setLoadingList(true);
     setErrorList(null);
-    apiClient.get("/remolques/")
+    apiClient.getCatalogo("/remolques/")
       .then((res) => {
         const lista = Array.isArray(res) ? res : (res?.results ?? []);
         setRemolques(lista);
@@ -78,7 +81,7 @@ export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
       )}
 
       {open && (
-        <ul className="rs-dropdown" role="listbox">
+        <ul className="rs-dropdown" role="listbox" ref={dropRef}>
           {loadingList && <li className="rs-state">Cargando...</li>}
           {errorList && <li className="rs-state rs-state--error">{errorList}</li>}
           {!loadingList && !errorList && remolques.length === 0 && (

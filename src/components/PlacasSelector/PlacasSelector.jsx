@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { apiClient } from "../../api/apiClient";
+import useDropdownNav from "../../hooks/useDropdownNav";
 import "./PlacasSelector.css";
 
 export default function PlacasSelector({ currentValue, onSelect, disabled, transportista, todas }) {
@@ -15,6 +16,7 @@ export default function PlacasSelector({ currentValue, onSelect, disabled, trans
   const [coords, setCoords] = useState(null);
   const containerRef = useRef(null);
   const dropRef = useRef(null);
+  useDropdownNav({ abierto: open, setAbierto: setOpen, wrapperRef: containerRef, dropdownRef: dropRef });
 
   // Portal con position: fixed para que el overflow de la tabla no recorte la
   // lista (mismo patrón que PendientePagadoSelector).
@@ -34,9 +36,9 @@ export default function PlacasSelector({ currentValue, onSelect, disabled, trans
     setErrorList(null);
     const arr = (res) => (Array.isArray(res) ? res : (res?.results ?? []));
     const peticion = todas
-      ? Promise.all([apiClient.get("/tractos/"), apiClient.get("/unidades-terceros/")])
+      ? Promise.all([apiClient.getCatalogo("/tractos/"), apiClient.getCatalogo("/unidades-terceros/")])
           .then(([t, u]) => [...arr(t), ...arr(u).map((x) => ({ id: x.id, placas: x.placas, transportista: x.transportista }))])
-      : apiClient.get(esTercero
+      : apiClient.getCatalogo(esTercero
             ? `/unidades-terceros/?transportista=${encodeURIComponent(transportista)}`
             : "/tractos/")
           .then((res) => (esTercero ? arr(res).map((x) => ({ id: x.id, placas: x.placas, transportista: x.transportista })) : arr(res)));

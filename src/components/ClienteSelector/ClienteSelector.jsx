@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { apiClient } from "../../api/apiClient";
+import useDropdownNav from "../../hooks/useDropdownNav";
 import "./ClienteSelector.css";
 
 /**
@@ -17,16 +18,19 @@ export default function ClienteSelector({ currentValue, onSelect, disabled }) {
   const [cargando, setCargando] = useState(false);
   const [error,    setError]    = useState(null);
   const ref = useRef(null);
+  const dropRef = useRef(null);
+  useDropdownNav({ abierto, setAbierto, wrapperRef: ref, dropdownRef: dropRef });
 
   useEffect(() => {
+    if (!abierto) return;
     setCargando(true);
     setError(null);
     apiClient
-      .get("/clientes/")
+      .getCatalogo("/clientes/")
       .then((data) => setClientes(Array.isArray(data) ? data : (data?.results || [])))
       .catch(() => setError("Error al cargar clientes"))
       .finally(() => setCargando(false));
-  }, []);
+  }, [abierto]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -63,7 +67,7 @@ export default function ClienteSelector({ currentValue, onSelect, disabled }) {
       </button>
 
       {abierto && (
-        <div className="csl-dropdown">
+        <div className="csl-dropdown" ref={dropRef}>
           {cargando && <div className="csl-msg">Cargando...</div>}
           {error && <div className="csl-msg csl-error">{error}</div>}
           {!cargando && !error && clientes.length === 0 && (

@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { overlayMotion, contentMotion } from "../animations/modalMotion";
 import { useAuthContext } from "../context/AuthContext";
 import { useNavigate } from 'react-router-dom';
-import { Receipt, Trash2, SquarePen, CircleDollarSign } from "lucide-react";
+import { Trash2, SquarePen, Settings, X } from "lucide-react";
 import { useGastos } from "../hooks/useGastos";
+import FolioSelector from "../components/FolioSelector/FolioSelector";
 import SearchBar from "../components/SearchBar/SearchBar";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -36,17 +39,6 @@ function dateAFechaBackend(dateObject) {
 }
 
 
-//Hook para cargar maniobras disponibles
-function useManiobras() {
-  const [maniobras, setManiobras] = useState([]);
-  useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/maniobras/")
-    .then(r => r.json())
-    .then(data => setManiobras(Array.isArray(data) ? data : data.results || []))
-    .catch(() => {});
-  }, []);
-  return maniobras;
-}
 // ── Definición de Columnas según tu DB ────────────────────────────────────────
 
 const COLUMNAS = [
@@ -67,7 +59,8 @@ const COLUMNAS = [
 ];
 
 const GASTO_VACIO = {
-  maniobra: "",  // el usuario escribe el ID de la maniobra
+  maniobra: "",  // id de la maniobra elegida en el FolioSelector
+  folio: "",     // folio visible; useGastos.agregar lo excluye del POST
   fecha_entrega_mercancia: "", casetas_ida: 0, casetas_regreso: 0,
   gastos_adicionales: 0, entregado: 0, gasto_tag: 0, gasto_diesel: 0,
   comision_operador: 0, reparaciones: 0, facturado: "", descripcion_gastos: ""
@@ -78,23 +71,19 @@ const MODAL_CERRADO = { abierto: false, datos: null };
 
 // ── Sub-componente: fila de inputs para nuevo gasto ──────────────────────────
 
-function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting, maniobras }) {
+function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
   return (
     <tr>
-      {/* Dropdown para carta porte */}
+      {/* Selector de carta porte: últimos folios de maniobras */}
       <td>
-        <select
-        value= {datos.maniobra}
-        onChange={(e) => onChange("maniobra", e.target.value)}
-        aria-label="Carta Porte"
-        >
-          <option value="">Seleccionar...</option>
-          {maniobras.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.folio || `ID ${m.id}`}
-            </option>
-          ))}
-        </select>
+        <FolioSelector
+          currentValue={datos.folio}
+          disabled={isSubmitting}
+          onSelect={(m) => {
+            onChange("maniobra", m.id);
+            onChange("folio", m.folio);
+          }}
+        />
       </td>
 
       {/*Resto de columnas sin maniobra */}
@@ -151,7 +140,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting, manio
 
 // ── Sub-componente: modal de edición ──────────────────────────────────────────
 
-function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting, maniobras }) {
+function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onCerrar(); };
     window.addEventListener("keydown", onKey);
@@ -159,14 +148,20 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting, manio
   }, [onCerrar]);
 
   return (
-    <div
+    <motion.div
       className="modal-overlay"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-titulo"
+      {...overlayMotion}
     >
-      <div className="modal-content">
-        <h2 id="modal-titulo" className="modal-titulo">Editar Gasto</h2>
+      <motion.div className="modal-content" {...contentMotion}>
+        <div className="modal-header">
+          <h2 id="modal-titulo" className="modal-titulo">Editar Gasto</h2>
+          <button type="button" className="modal-cerrar" onClick={onCerrar} aria-label="Cerrar">
+            <X size={20} />
+          </button>
+        </div>
         <form onSubmit={onGuardar} className="modal-form">
           <div className="modal-grid">
             {COLUMNAS.map((col) => (
@@ -215,8 +210,23 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting, manio
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ── Encabezado ────────────────────────────────────────────────────────────────
+// Mismo patrón que Movimientos Locales y Documentos de Viaje: antetítulo, título
+// y entradilla. Se reutiliza en los tres estados de la página (carga, error, tabla).
+function Intro() {
+  return (
+    <header className="gp-intro">
+      <p className="gp-eyebrow">Control de costos</p>
+      <h1 className="gastos-title">Gastos</h1>
+      <p className="gp-lead">
+        Registra los gastos de cada servicio y compara lo facturado con lo gastado.
+      </p>
+    </header>
   );
 }
 
@@ -225,7 +235,10 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting, manio
 export default function GastosPage() {
   const navigate = useNavigate();
   const { isAdmin } = useAuthContext();
-  const { gastos, loading, error, eliminar, actualizar, agregar } = useGastos();
+  const {
+    gastos, loading, loadingMore, hasMore, error,
+    loadMore, eliminar, actualizar, agregar,
+  } = useGastos();
 
   const [modoAgregar, setModoAgregar] = useState(false);
   const [nuevoGasto, setNuevoGasto] = useState(GASTO_VACIO);
@@ -233,7 +246,26 @@ export default function GastosPage() {
   const [notif, setNotif]                 = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const maniobras = useManiobras();
+
+  // ── Scroll listener en window (mismo patrón que Maniobras/Vacíos) ──────────
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+
+      requestAnimationFrame(() => {
+        const scrolled  = window.scrollY + window.innerHeight;
+        const threshold = document.documentElement.scrollHeight - 300;
+        if (scrolled >= threshold && hasMore && !loadingMore) loadMore();
+        ticking = false;
+      });
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [hasMore, loadingMore, loadMore]);
 
   // ── Formateador de moneda ───────────────────────────────────────────────────
   const formatMoneda = (valor) => {
@@ -326,17 +358,17 @@ export default function GastosPage() {
 
   if (loading) return (
     <div className="gastos-container">
-      <h1 className="gastos-title"><Receipt size={36} className="title-icon" /> Gastos</h1>
+      <Intro />
       <div className="loading-box"><p className="loading-text">Cargando datos…</p></div>
     </div>
   );
 
   if (error) return (
     <div className="gastos-container">
-      <h1 className="gastos-title"><Receipt size={36} className="title-icon" /> Gastos</h1>
+      <Intro />
       <div className="error-box">
-        <h2 className="error-title">¡Ups!</h2>
-        <p className="error-text">Error al conectar con el servidor: {error}</p>
+        <h2 className="error-title">No se pudo cargar</h2>
+        <p className="error-text">No hay conexión con el servidor: {error}</p>
       </div>
     </div>
   );
@@ -356,17 +388,17 @@ export default function GastosPage() {
     <div className="gastos-container">
       {isAdmin && (
         <button className="gastos-admin-btn" onClick={() => navigate('../admin-gastos')}>
-          ⚙ Admin Gastos
+          <Settings size={16} /> Admin Gastos
         </button>
       )}
 
-      <h1 className="gastos-title">
-        <CircleDollarSign size={45} className="title-icon" /> GASTOS
-      </h1>
-      
+      <Intro />
+
       {/* BARRA DE BÚSQUEDA */}
-      <SearchBar value={busqueda} onChange={setBusqueda} />
-      
+      <div className="gp-search">
+        <SearchBar value={busqueda} onChange={setBusqueda} />
+      </div>
+
       {notif && (
         <div className={`notif notif-${notif.tipo}`} role="alert" aria-live="polite">
           {notif.msg}
@@ -402,7 +434,6 @@ export default function GastosPage() {
                 onGuardar={handleGuardarNueva}
                 onCancelar={handleCancelarNueva}
                 isSubmitting={isSubmitting}
-                maniobras={maniobras}
               />
             )}
 
@@ -420,7 +451,9 @@ export default function GastosPage() {
                 <tr key={gasto.id}>
                   {COLUMNAS.map((col) => (
                     <td key={col.key} style={col.style ?? {}}>
-                      {col.isComputed
+                      {col.key === "maniobra"
+                        ? (gasto.folio || gasto.maniobra) /* folio del servicio; fallback al id para registros viejos */
+                        : col.isComputed
                         ? formatMoneda(Number(gasto.facturado || 0) - Number(gasto.gastos_totales || 0))
                         : col.isFecha
                         ? fechaParaMostrar(gasto[col.key])
@@ -468,15 +501,28 @@ export default function GastosPage() {
         </table>
       </div>
 
-      {modal.abierto && modal.datos && (
-        <ModalEditar
-          datos={modal.datos}
-          onChange={handleCambioModal}
-          onGuardar={handleGuardarEdicion}
-          onCerrar={() => setModal(MODAL_CERRADO)}
-          isSubmitting={isSubmitting}
-        />
+      {loadingMore && (
+        <div className="loading-more" aria-live="polite">
+          <span className="loading-more-spinner" />
+          Cargando más registros…
+        </div>
       )}
+
+      {!hasMore && gastos.length > 0 && !loadingMore && (
+        <p className="end-of-list">— Todos los registros cargados —</p>
+      )}
+
+      <AnimatePresence>
+        {modal.abierto && modal.datos && (
+          <ModalEditar
+            datos={modal.datos}
+            onChange={handleCambioModal}
+            onGuardar={handleGuardarEdicion}
+            onCerrar={() => setModal(MODAL_CERRADO)}
+            isSubmitting={isSubmitting}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

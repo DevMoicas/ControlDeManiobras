@@ -1,8 +1,11 @@
 // Centraliza todas las llamadas al backend.
 // Cambia VITE_API_BASE_URL en tu .env para apuntar a staging/producción.
 
+import { getFresh, setFresh, getInflightOrNull, setInflight, invalidateByEndpoint } from "./catalogCache";
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000/api";
 
+const METODOS_ESCRITURA = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 async function request(endpoint, options = {}) {
   // Leer el access token en cada petición (puede actualizarse entre llamadas)
@@ -30,6 +33,13 @@ async function request(endpoint, options = {}) {
     throw new Error(errorBody?.detail ?? `HTTP ${response.status}`);
   }
 
+  // Escritura exitosa: invalida el caché de catálogos de ese mismo recurso para
+  // que el próximo getCatalogo() traiga el dato fresco en vez de uno obsoleto.
+  // Defensivo: un fallo aquí nunca debe poder tumbar un guardado ya exitoso.
+  if (METODOS_ESCRITURA.has(fetchOptions.method)) {
+    try { invalidateByEndpoint(endpoint); } catch { /* no-op */ }
+  }
+
   // DELETE devuelve 204 sin body
   if (response.status === 204) return null;
   return response.json();
@@ -51,6 +61,24 @@ function sanitizarPayload(body) {
 
 export const apiClient = {
   get:    (endpoint)        => request(endpoint),
+  // GET cacheado (TTL 45s) + deduplicado para catálogos de baja mutación
+  // (choferes, tractos, remolques, patios, clientes, origenes/destinos,
+  // transportistas, cargos, unidades/operadores-terceros, folios-recientes).
+  // Se invalida automáticamente al escribir en request() (ver arriba).
+  getCatalogo: (endpoint) => {
+    const cached = getFresh(endpoint);
+    if (cached !== undefined) return Promise.resolve(cached);
+
+    const enVuelo = getInflightOrNull(endpoint);
+    if (enVuelo) return enVuelo;
+
+    const promesa = request(endpoint).then((data) => {
+      setFresh(endpoint, data);
+      return data;
+    });
+    setInflight(endpoint, promesa);
+    return promesa;
+  },
   post:  (endpoint, body) => request(endpoint, { method: "POST",  body: JSON.stringify(sanitizarPayload(body)) }),
 put:   (endpoint, body) => request(endpoint, { method: "PUT",   body: JSON.stringify(sanitizarPayload(body)) }),
 patch: (endpoint, body) => request(endpoint, { method: "PATCH", body: JSON.stringify(sanitizarPayload(body)) }),

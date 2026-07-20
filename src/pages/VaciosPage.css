@@ -1,274 +1,618 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+/* ── Vacíos — control de contenedores vacíos ─────────────────────────────────
+   Mismo lenguaje visual que Movimientos Locales y Documentos de Viaje: shell
+   azul del app, Oswald display, IBM Plex Mono para etiquetas, Inter cuerpo.
 
-:root {
-  --primary-blue: #007bff;
-  --primary-hover: #005ce6;
-  --bg-body: #f4f7f6;
-  --card-bg: #ffffff;
-  --text-main: #2b3440;
-  --text-muted: #6b7280;
-  --border-color: #e5e7eb;
-}
+   Todo cuelga de .vacios-container a propósito. Las clases de esta página
+   (.modal-content, .btn-agregar, .notif…) tienen nombres genéricos que Maniobras,
+   Gastos y Catálogos también declaran como globales; al scopearlas aquí ganan por
+   especificidad (0,2,0 vs 0,1,0) sin importar el orden del bundle, y esta hoja
+   deja de filtrarse a las otras páginas.
 
+   AdminVaciosPage.jsx reutiliza .vacios-container y .vacios-title, así que hereda
+   este mismo estilo sin cambios.
+
+   Las fuentes ya vienen de index.html — sin @import, que bloquea el render. */
+
+/* ── Tokens (locales: no ensucian :root) ──────────────────────────────────── */
 .vacios-container {
-  padding: 40px;
+  --primary-blue:  var(--primary, #2563eb);
+  --primary-hover: #1d4ed8;
+  --primary-soft:  var(--primary-light, #eaf1ff);
+  --card-bg:       #fff;
+  --text-main:     var(--text, #1f2937);
+  --text-muted:    var(--text-light, #6b7280);
+  --border-color:  #e6ecf5;
+  --border-soft:   #eef2f7;
+  --danger:        #dc2626;
+  --danger-soft:   #fef2f2;
+
+  position: relative; /* ancla del botón de Admin Vacíos */
+  min-height: calc(100vh - 40px);
+  padding: 52px 28px 64px;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: var(--bg-body);
-  min-height: 100vh;
   color: var(--text-main);
-  position: relative;
+  background:
+    radial-gradient(900px 420px at 100% -8%, #e8f0ff 0%, transparent 58%),
+    var(--bg, #f4f7fb);
 }
 
-.vacios-title {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 28px;
-  font-weight: 700;
+/* ── Intro (centrada) ─────────────────────────────────────────────────────── */
+.vacios-container .vp-intro { text-align: center; }
+.vacios-container .vp-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #000000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
+  color: var(--primary-blue);
+  margin: 0 0 12px;
+}
+.vacios-container .vacios-title {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  font-size: 2.45rem;
+  line-height: 1.02;
+  color: var(--text-main);
+  margin: 0;
+  display: block;
+  /* también centra el título de AdminVaciosPage, que va suelto sin .vp-intro */
   text-align: center;
-  margin-bottom: 30px;
-  gap: 12px;
+}
+.vacios-container .vp-lead {
+  margin: 12px auto 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.5;
+  max-width: 56ch;
 }
 
-.title-icon {
-  color: #2563EB;
-}
-
-.vacios-admin-btn {
+/* ── Botón de Admin Vacíos ────────────────────────────────────────────────── */
+.vacios-container .vacios-admin-btn {
   position: absolute;
   top: 40px;
-  right: 40px;
-  padding: 8px 16px;
-  background-color: #111827;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  right: 28px;
   z-index: 10;
-}
-
-.vacios-admin-btn:hover {
-  background-color: #1f2937;
-  transform: scale(1.05);
-}
-
-/* Contenedor de Tabla */
-.table-responsive {
-  background: var(--card-bg);
-  border-radius: 16px;
-  padding: 30px;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 16px;
   border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.vacios-container .vacios-admin-btn:hover {
+  background: #f7f9fc;
+  border-color: #c7d9f7;
+  color: var(--primary-blue);
+  transform: none; /* anula el scale(1.05) del button global de App.css */
+}
+.vacios-container .vacios-admin-btn:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── Búsqueda (SearchBar compartida: se ajusta sin tocar las otras páginas) ── */
+.vacios-container .vp-search { margin-top: 32px; }
+.vacios-container .vp-search > div { margin-bottom: 0 !important; }
+.vacios-container .vp-search input {
+  font-family: 'Inter', sans-serif !important;
+  background: #fff !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04) !important;
+  color: var(--text-main) !important;
+}
+.vacios-container .vp-search input:focus {
+  outline: none !important;
+  border-color: var(--primary-blue) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16) !important;
+}
+
+/* ── Notificación ─────────────────────────────────────────────────────────── */
+.vacios-container .notif {
+  margin-top: 18px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid;
+}
+.vacios-container .notif-ok    { background: #ecfdf3; color: #15803d; border-color: #bbf7d0; }
+.vacios-container .notif-error { background: var(--danger-soft); color: var(--danger); border-color: #fecaca; }
+
+/* ── Toolbar ──────────────────────────────────────────────────────────────── */
+/* .filtros-status es un espaciador vacío: empuja el botón a la derecha. */
+.vacios-container .toolbar {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.vacios-container .btn-agregar {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 9px;
+  background: var(--primary-blue);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.vacios-container .btn-agregar:not(:disabled):hover {
+  background: var(--primary-hover);
+  color: #fff;
+  transform: none;
+}
+.vacios-container .btn-agregar:disabled { opacity: 0.5; cursor: not-allowed; }
+.vacios-container .btn-agregar:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── Panel + tabla ────────────────────────────────────────────────────────── */
+.vacios-container .table-responsive {
+  margin-top: 22px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  animation: vp-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Tabla de Vacios */
-.vacios-table {
+.vacios-container .vacios-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-}
-
-.vacios-table th {
-  background-color: #f9fafb;
-  text-align: left;
-  padding: 10px 16px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  letter-spacing: 0.05em;
-  border-bottom: 2px solid var(--border-color);
-  min-width: 120px;
-}
-
-.vacios-table td {
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-main);
-  vertical-align: middle;
-  font-weight: 500;
-  min-width: 120px;
-}
-
-.vacios-table tr:last-child td {
-  border-bottom: none;
-}
-
-.vacios-table tr {
-  transition: background-color 0.2s ease;
-}
-
-.vacios-table tr:hover {
-  background-color: #f8fafc;
-}
-
-/* Inputs en Fila Nueva */
-.vacios-table input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-family: inherit;
+  font-family: 'Inter', sans-serif;
   font-size: 0.9rem;
 }
 
-.btn-accion {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+.vacios-container .vacios-table th {
+  font-family: 'Oswald', sans-serif;
   font-weight: 600;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
   white-space: nowrap;
-  font-size: 0.85rem;
-  transition: all 0.3s ease;
+  padding: 14px 16px;
+  background: #2b3e50;
+  color: #fff;
+  border-bottom: 1px solid #1e2b38;
+  min-width: 120px;
 }
 
-.btn-guardar-fila { background-color: #2563eb; color: white; }
-.btn-guardar-fila:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+.vacios-container .vacios-table td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text-main);
+  vertical-align: middle;
+  min-width: 120px;
+}
+.vacios-container .vacios-table tbody tr:last-child td { border-bottom: none; }
+.vacios-container .vacios-table tbody tr { transition: background 0.12s; }
+.vacios-container .vacios-table tbody tr:hover td { background: #f9fbfe; }
 
-.btn-cancelar-fila { background-color: transparent; color: #ef4444; border: 1px solid #ef4444; }
-.btn-cancelar-fila:hover { background-color: #ef4444; transform: scale(1.05); color: white; }
+/* ── Inputs ───────────────────────────────────────────────────────────────── */
+.vacios-container .vacios-table input,
+.vacios-container .date-picker-input {
+  font-family: 'Inter', sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  background: #fff;
+  color: var(--text-main);
+}
+.vacios-container .vacios-table input:focus,
+.vacios-container .date-picker-input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
 
-/* Estados de carga y error */
-.loading-box,
-.error-box {
+/* ── Fila nueva: guardar / cancelar ───────────────────────────────────────── */
+.vacios-container .btn-accion {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s ease;
+}
+.vacios-container .btn-guardar-fila {
+  background: var(--primary-blue);
+  color: #fff;
+}
+.vacios-container .btn-guardar-fila:hover {
+  background: var(--primary-hover);
+  color: #fff;
+  transform: none;
+}
+.vacios-container .btn-cancelar-fila {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+.vacios-container .btn-cancelar-fila:hover {
+  background: #dc2626;
+  color: #fff;
+  transform: none;
+}
+
+/* ── Botones de icono ─────────────────────────────────────────────────────── */
+.vacios-container .btn-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+.vacios-container .btn-icon:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+.vacios-container .btn-editar { color: var(--primary-blue); }
+.vacios-container .btn-editar:hover {
+  background: var(--primary-soft);
+  color: var(--primary-blue);
+  transform: none;
+}
+.vacios-container .btn-foto { color: #7c3aed; }
+.vacios-container .btn-foto:hover {
+  background: #f3e8ff;
+  color: #7c3aed;
+  transform: none;
+}
+/* Eliminar conserva el rojo en hover: el button:hover global de App.css lo
+   pintaba de azul, borrando la señal de acción destructiva. */
+.vacios-container .btn-eliminar { color: var(--danger); }
+.vacios-container .btn-eliminar:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+  transform: none;
+}
+
+/* ── Estados de carga / error ─────────────────────────────────────────────── */
+.vacios-container .loading-box,
+.vacios-container .error-box {
+  margin-top: 22px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 250px;
   background: var(--card-bg);
-  border-radius: 16px;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
   border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
 }
-
-.loading-text {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--primary-blue);
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.error-title {
-  font-size: 2rem;
-  font-weight: 800;
-  color: #ef4444;
-  margin-bottom: 8px;
-  margin-top: 0;
-}
-
-.error-text {
+.vacios-container .loading-text {
+  font-family: 'Oswald', sans-serif;
   font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  animation: vp-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.vacios-container .error-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.6rem;
   font-weight: 600;
-  color: #b91c1c;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--danger);
+  margin: 0 0 8px;
+}
+.vacios-container .error-text {
+  font-size: 0.95rem;
+  color: var(--text-muted);
   margin: 0;
+  max-width: 46ch;
+  text-align: center;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .5; }
-}
-
-/* Notificación */
-.notif { padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; font-weight: 600; }
-.notif-ok { background: #d1fae5; color: #065f46; }
-.notif-error { background: #fee2e2; color: #991b1b; }
-
-/* Toolbar & Filtros */
-.toolbar { 
-  display: flex; 
-  justify-content: space-between; 
+/* ── Scroll infinito ──────────────────────────────────────────────────────────
+   Estas tres clases NO estaban declaradas en esta hoja: el JSX las usaba y se
+   apoyaba en la de Maniobras/Gastos. Ahora son propias. */
+.vacios-container .loading-more {
+  display: flex;
   align-items: center;
-  margin-bottom: 15px; 
-}
-
-.filtros-status {
-  display: flex;
+  justify-content: center;
   gap: 10px;
+  padding: 16px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
-
-.btn-agregar { background: #2563eb; color: white; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-.btn-agregar:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-agregar:not(:disabled):hover { background-color: #2563EB; transform: scale(1.05); color: white; }
-
-/* Botones icono */
-.btn-icon { background: transparent; border: none; cursor: pointer; padding: 6px; border-radius: 50%; transition: all 0.3s ease; }
-.btn-editar { color: #2563eb; }
-.btn-editar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
-.btn-eliminar { color: #ef4444; }
-.btn-eliminar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
-.btn-foto { color: #7c3aed; }
-.btn-foto:hover { background-color: #7c3aed; transform: scale(1.05); color: white; }
-
-/* Modal */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-  color: #333;
-}
-.modal-titulo { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; flex-shrink: 0; }
-.modal-form { display: flex; flex-direction: column; gap: 15px; flex: 1; overflow: hidden; margin-top: 15px; }
-.modal-grid { display: grid; grid-template-columns: 1fr; gap: 15px; overflow-y: auto; padding-right: 10px; }
-.modal-campo { display: flex; flex-direction: column; gap: 4px; }
-.modal-campo label { font-size: 12px; font-weight: bold; color: #666; }
-.modal-campo input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 0.95rem; }
-.modal-acciones { 
-  display: flex; 
-  justify-content: flex-end; 
-  gap: 10px; 
-  margin-top: 10px; 
-  padding-top: 15px;
-  border-top: 1px solid #eee;
+.vacios-container .loading-more-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--primary-blue);
+  border-radius: 50%;
+  animation: vp-spin 0.7s linear infinite;
   flex-shrink: 0;
 }
-.btn-cancelar { padding: 8px 15px; border-radius: 6px; border: 1px solid #ef4444; background: transparent; color: #ef4444; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
-.btn-cancelar:hover { background-color: #ef4444; transform: scale(1.05); color: white; }
-.btn-guardar { padding: 8px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
-.btn-guardar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+.vacios-container .end-of-list {
+  text-align: center;
+  padding: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
 
-.date-picker-input {
+/* ── Modal ───────────────────────────────────────────────────────────────────
+   Mismo diseño que los modales de Movimientos Locales y Catálogos: tarjeta con
+   borde suave y radio 16, lomo azul a la izquierda, título en Oswald, etiquetas
+   en IBM Plex Mono.
+
+   El TAMAÑO y la disposición no se tocan: 1100px de ancho, 92vh de alto y la
+   rejilla auto-fit se conservan porque ya son los adecuados para este formulario. */
+.vacios-container .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.vacios-container .modal-content {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 1100px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(16, 40, 80, 0.24);
+  color: var(--text-main);
+  /* sin padding: vive en cabecera, cuerpo y pie */
+  padding: 0;
+}
+/* Lomo izquierdo azul — la firma de Movimientos Locales y Documentos de Viaje */
+.vacios-container .modal-content::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--primary-blue);
+}
+
+/* ── Cabecera ─────────────────────────────────────────────────────────────── */
+.vacios-container .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  flex-shrink: 0;
+}
+.vacios-container .modal-titulo {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+.vacios-container .modal-cerrar {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.vacios-container .modal-cerrar:hover {
+  background: #f7f9fc;
+  color: var(--text-main);
+  transform: none; /* anula el scale(1.05) del button global de App.css */
+}
+.vacios-container .modal-cerrar:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── Cuerpo ───────────────────────────────────────────────────────────────── */
+/* min-height:0 es imprescindible: sin él, un hijo flex no se encoge por debajo
+   de su contenido y el cuerpo no puede hacer scroll dentro de la tarjeta. */
+.vacios-container .modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+}
+.vacios-container .modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  padding: 18px 22px;
+  overflow-y: auto;
+  flex: 1;
+  min-width: 0;
+}
+.vacios-container .modal-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.vacios-container .modal-campo label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.vacios-container .modal-campo input {
+  font-family: 'Inter', sans-serif;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: var(--text-main);
+  background: #fff;
   width: 100%;
   box-sizing: border-box;
-  padding: 8px;
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 6px;
-  font-family: inherit;
-  font-size: 0.9rem;
 }
+.vacios-container .modal-campo input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+/* ── Pie ──────────────────────────────────────────────────────────────────── */
+.vacios-container .modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid var(--border-soft);
+  margin: 0;
+  flex-shrink: 0;
+}
+/* Cancelar en rojo, igual que en toda la app: es el color con el que el equipo
+   ya identifica la acción de descartar. */
+.vacios-container .btn-cancelar {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.vacios-container .btn-cancelar:hover:not(:disabled) {
+  background: #dc2626;
+  color: #fff;
+  transform: none;
+}
+.vacios-container .btn-guardar {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-blue);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.vacios-container .btn-guardar:hover:not(:disabled) {
+  background: var(--primary-hover);
+  color: #fff;
+  transform: none;
+}
+.vacios-container .btn-cancelar:disabled,
+.vacios-container .btn-guardar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── DatePicker (clases de la librería: se dejan globales a propósito, el popper
+      se renderiza fuera del contenedor) ─────────────────────────────────────── */
 .react-datepicker-wrapper { width: 100%; }
 .react-datepicker-popper  { z-index: 9999; }
 
-/* Media Queries para Responsividad */
-@media (min-width: 768px) {
-  .modal-grid { grid-template-columns: 1fr 1fr; }
+/* ── Animaciones ──────────────────────────────────────────────────────────── */
+@keyframes vp-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes vp-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes vp-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
 }
 
+/* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .vacios-container { padding: 15px; }
-  .table-responsive { padding: 30px 15px; }
-  .vacios-title { font-size: 1.6rem; margin-bottom: 20px; }
-  .vacios-table th, .vacios-table td { min-width: 100px; padding: 10px 8px; }
-  .modal-content { padding: 20px; width: 95%; }
-  .vacios-admin-btn { position: static; display: block; width: 100%; margin-bottom: 20px; }
+  .vacios-container { padding: 40px 20px 52px; }
+  .vacios-container .vacios-title { font-size: 2rem; }
+  .vacios-container .vacios-admin-btn {
+    position: static;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  .vacios-container .toolbar { flex-direction: column; align-items: stretch; }
+  .vacios-container .btn-agregar { width: 100%; }
+  .vacios-container .vacios-table th,
+  .vacios-container .vacios-table td { min-width: 100px; padding: 10px 8px; }
+}
+
+/* ── Movimiento reducido ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .vacios-container .table-responsive { animation: none; }
+  .vacios-container .loading-text { animation: none; }
+  .vacios-container .vacios-table tbody tr,
+  .vacios-container .btn-agregar,
+  .vacios-container .vacios-admin-btn,
+  .vacios-container .btn-icon,
+  .vacios-container .btn-accion,
+  .vacios-container .btn-guardar,
+  .vacios-container .btn-cancelar { transition: none; }
 }

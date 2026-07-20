@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
+import useDropdownNav from "../../hooks/useDropdownNav";
 import "./PendientePagadoSelector.css";
 
 const OPCIONES = [
@@ -23,6 +24,7 @@ export default function PendientePagadoSelector({ currentStatus, onSelect, loadi
   const [coords, setCoords]   = useState(null);
   const btnRef  = useRef(null);
   const dropRef = useRef(null);
+  useDropdownNav({ abierto, setAbierto, wrapperRef: btnRef, dropdownRef: dropRef });
 
   const actualizarCoords = () => {
     if (!btnRef.current) return;

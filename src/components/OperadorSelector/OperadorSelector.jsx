@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { apiClient } from "../../api/apiClient";
+import useDropdownNav from "../../hooks/useDropdownNav";
 import "./OperadorSelector.css";
 
 export default function OperadorSelector({ currentValue, onSelect, disabled, transportista }) {
@@ -14,6 +15,7 @@ export default function OperadorSelector({ currentValue, onSelect, disabled, tra
   const [coords, setCoords] = useState(null);
   const containerRef = useRef(null);
   const dropRef = useRef(null);
+  useDropdownNav({ abierto: open, setAbierto: setOpen, wrapperRef: containerRef, dropdownRef: dropRef });
 
   // El desplegable se renderiza en un portal con position: fixed para que no lo
   // recorte el overflow de la tabla (mismo patrón que PendientePagadoSelector).
@@ -34,7 +36,7 @@ export default function OperadorSelector({ currentValue, onSelect, disabled, tra
     const url = esTercero
       ? `/operadores-terceros/?transportista=${encodeURIComponent(transportista)}`
       : "/choferes/";
-    apiClient.get(url)
+    apiClient.getCatalogo(url)
       .then((res) => {
         const lista = Array.isArray(res) ? res : (res?.results ?? []);
         if (esTercero) {

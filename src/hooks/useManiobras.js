@@ -3,8 +3,8 @@ import { apiClient } from "../api/apiClient";
 
 const PAGE_SIZE = 60;
 
-// status === "todos" o "vacio" se resuelven en cliente porque "vacio"
-// no es un valor real de BD — solo significa status NULL o inválido.
+// "todos" no filtra. "tercero" no es un status: filtra por la columna `tercero`
+// vía ?tercero=1 (ver buildUrl), no por ?status. Solo estos cuatro van como ?status.
 const STATUS_BACKEND = ["activo", "pendiente", "quemada", "por_salir"];
 
 export function useManiobras(filtroStatus = "todos", ordenFecha = "desc") {
@@ -19,16 +19,20 @@ export function useManiobras(filtroStatus = "todos", ordenFecha = "desc") {
 
   // Construye la query string según el filtro activo
   const buildUrl = useCallback((page) => {
-  const ordenCampo = ordenFecha === "asc" ? "fecha_pis" : "-fecha_pis";
+  // Orden por id (= orden de creación). El status no influye. desc = más reciente primero.
+  const ordenCampo = ordenFecha === "asc" ? "id" : "-id";
   const params = new URLSearchParams({
     page,
     page_size: PAGE_SIZE,
     ordering: ordenCampo,
   });
 
-    // Solo los status reales van al backend; "todos" y "vacio" no
+    // Solo los status reales van como ?status; "todos" no filtra.
+    // "tercero" filtra por la bandera de tercero (?tercero=1), no por status.
     if (STATUS_BACKEND.includes(filtroStatus)) {
       params.set("status", filtroStatus);
+    } else if (filtroStatus === "tercero") {
+      params.set("tercero", "1");
     }
 
     return `/maniobras/?${params.toString()}`;

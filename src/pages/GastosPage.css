@@ -1,267 +1,609 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+/* ── Gastos — tablero de gastos de viaje ─────────────────────────────────────
+   Mismo lenguaje visual que Movimientos Locales y Documentos de Viaje: shell
+   azul del app, Oswald display, IBM Plex Mono para etiquetas, Inter cuerpo.
 
-:root {
-  --primary-blue: #007bff;
-  --primary-hover: #005ce6;
-  --bg-body: #f4f7f6;
-  --card-bg: #ffffff;
-  --text-main: #2b3440;
-  --text-muted: #6b7280;
-  --border-color: #e5e7eb;
-}
+   Todo cuelga de .gastos-container a propósito. Las clases de esta página
+   (.modal-content, .btn-agregar, .notif…) tienen nombres genéricos que Maniobras,
+   Vacíos y Catálogos también declaran como globales; al scopearlas aquí ganan por
+   especificidad (0,2,0 vs 0,1,0) sin importar el orden del bundle, y esta hoja
+   deja de filtrarse a las otras páginas.
 
+   AdministracionGastos.jsx reutiliza .gastos-container y .gastos-title, así que
+   hereda este mismo estilo sin cambios.
+
+   Las fuentes ya vienen de index.html — sin @import, que bloquea el render. */
+
+/* ── Tokens (locales: no ensucian :root) ──────────────────────────────────── */
 .gastos-container {
-  padding: 40px;
+  --primary-blue:  var(--primary, #2563eb);
+  --primary-hover: #1d4ed8;
+  --primary-soft:  var(--primary-light, #eaf1ff);
+  --card-bg:       #fff;
+  --text-main:     var(--text, #1f2937);
+  --text-muted:    var(--text-light, #6b7280);
+  --border-color:  #e6ecf5;
+  --border-soft:   #eef2f7;
+  /* --danger vivía en el :root de Catálogos: .error-title dependía de que esa
+     hoja estuviera cargada. Ahora es propio. */
+  --danger:        #dc2626;
+  --danger-soft:   #fef2f2;
+
+  position: relative; /* ancla del botón de Admin Gastos */
+  min-height: calc(100vh - 40px);
+  padding: 52px 28px 64px;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: var(--bg-body);
-  min-height: 100vh;
   color: var(--text-main);
-  position: relative; /* Para poder posicionar el botón de Admin Gastos */
+  background:
+    radial-gradient(900px 420px at 100% -8%, #e8f0ff 0%, transparent 58%),
+    var(--bg, #f4f7fb);
 }
 
-/* Título */
-.gastos-title {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 28px;
-  font-weight: 700;
+/* ── Intro (centrada) ─────────────────────────────────────────────────────── */
+.gastos-container .gp-intro { text-align: center; }
+.gastos-container .gp-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  margin-bottom: 15px;
-  color: #000000;
+  color: var(--primary-blue);
+  margin: 0 0 12px;
+}
+.gastos-container .gastos-title {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  font-size: 2.45rem;
+  line-height: 1.02;
+  color: var(--text-main);
+  margin: 0;
+  display: block;
+  /* también centra el título de AdministracionGastos, que va suelto sin .gp-intro */
+  text-align: center;
+}
+.gastos-container .gp-lead {
+  margin: 12px auto 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.5;
+  max-width: 56ch;
+}
+
+/* ── Botón de Admin Gastos ────────────────────────────────────────────────── */
+.gastos-container .gastos-admin-btn {
+  position: absolute;
+  top: 40px;
+  right: 28px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.gastos-container .gastos-admin-btn:hover {
+  background: #f7f9fc;
+  border-color: #c7d9f7;
+  color: var(--primary-blue);
+  transform: none; /* anula el scale(1.05) del button global de App.css */
+}
+.gastos-container .gastos-admin-btn:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── Búsqueda (SearchBar compartida: se ajusta sin tocar las otras páginas) ── */
+.gastos-container .gp-search { margin-top: 32px; }
+.gastos-container .gp-search > div { margin-bottom: 0 !important; }
+.gastos-container .gp-search input {
+  font-family: 'Inter', sans-serif !important;
+  background: #fff !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04) !important;
+  color: var(--text-main) !important;
+}
+.gastos-container .gp-search input:focus {
+  outline: none !important;
+  border-color: var(--primary-blue) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16) !important;
+}
+
+/* ── Notificación ─────────────────────────────────────────────────────────── */
+.gastos-container .notif {
+  margin-top: 18px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid;
+}
+.gastos-container .notif-ok    { background: #ecfdf3; color: #15803d; border-color: #bbf7d0; }
+.gastos-container .notif-error { background: var(--danger-soft); color: var(--danger); border-color: #fecaca; }
+
+/* ── Toolbar ──────────────────────────────────────────────────────────────── */
+/* .filtros-status es un espaciador vacío: empuja el botón a la derecha. */
+.gastos-container .toolbar {
+  margin-top: 16px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 100%;
-  text-align: center;
+  justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
-.title-icon {
-  color: var(--primary-blue);
+.gastos-container .btn-agregar {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 9px;
+  background: var(--primary-blue);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.gastos-container .btn-agregar:not(:disabled):hover {
+  background: var(--primary-hover);
+  color: #fff;
+  transform: none;
+}
+.gastos-container .btn-agregar:disabled { opacity: 0.5; cursor: not-allowed; }
+.gastos-container .btn-agregar:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
 }
 
-/* Contenedor de Tabla */
-.table-responsive {
+/* ── Panel + tabla ────────────────────────────────────────────────────────── */
+.gastos-container .table-responsive {
+  margin-top: 22px;
   background: var(--card-bg);
-  border-radius: 16px;
-  padding: 30px;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
   border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  animation: gp-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Tabla de Gastos */
-.gastos-table {
+.gastos-container .gastos-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-}
-
-.gastos-table th {
-  background-color: #f9fafb;
-  text-align: left;
-  padding: 10px 16px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  letter-spacing: 0.05em;
-  border-bottom: 2px solid var(--border-color);
-  min-width: 120px;
-}
-
-.gastos-table td {
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-main);
-  vertical-align: middle;
-  font-weight: 500;
-  min-width: 120px;
-}
-
-.gastos-table tr:last-child td {
-  border-bottom: none;
-}
-
-.gastos-table tr {
-  transition: background-color 0.2s ease;
-}
-
-.gastos-table tr:hover {
-  background-color: #f8fafc;
-}
-
-/* Inputs en Fila Nueva */
-.gastos-table input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-family: inherit;
+  font-family: 'Inter', sans-serif;
   font-size: 0.9rem;
 }
 
-.btn-accion {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+.gastos-container .gastos-table th {
+  font-family: 'Oswald', sans-serif;
   font-weight: 600;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
   white-space: nowrap;
-  font-size: 0.85rem;
-  transition: all 0.3s ease;
+  padding: 14px 16px;
+  background: #2b3e50;
+  color: #fff;
+  border-bottom: 1px solid #1e2b38;
+  min-width: 120px;
 }
 
-.btn-guardar-fila { background-color: #2563eb; color: white; }
-.btn-guardar-fila:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+.gastos-container .gastos-table td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text-main);
+  vertical-align: middle;
+  min-width: 120px;
+}
+.gastos-container .gastos-table tbody tr:last-child td { border-bottom: none; }
+.gastos-container .gastos-table tbody tr { transition: background 0.12s; }
+.gastos-container .gastos-table tbody tr:hover td { background: #f9fbfe; }
 
-.btn-cancelar-fila { background-color: transparent; color: #ef4444; border: 1px solid #ef4444; }
-.btn-cancelar-fila:hover { background-color: #ef4444; transform: scale(1.05); color: white; }
+/* ── Inputs ───────────────────────────────────────────────────────────────── */
+/* .date-picker-input no estaba declarado aquí: se apoyaba en la hoja de otra
+   página. Ahora es propio. */
+.gastos-container .gastos-table input,
+.gastos-container .date-picker-input {
+  font-family: 'Inter', sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  background: #fff;
+  color: var(--text-main);
+}
+.gastos-container .gastos-table input:focus,
+.gastos-container .date-picker-input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
 
-/* Estados de carga y error */
-.loading-box,
-.error-box {
+/* ── Fila nueva: guardar / cancelar ───────────────────────────────────────── */
+.gastos-container .btn-accion {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s ease;
+}
+.gastos-container .btn-guardar-fila {
+  background: var(--primary-blue);
+  color: #fff;
+}
+.gastos-container .btn-guardar-fila:hover {
+  background: var(--primary-hover);
+  color: #fff;
+  transform: none;
+}
+.gastos-container .btn-cancelar-fila {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+.gastos-container .btn-cancelar-fila:hover {
+  background: #dc2626;
+  color: #fff;
+  transform: none;
+}
+
+/* ── Botones de icono ─────────────────────────────────────────────────────── */
+.gastos-container .btn-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+.gastos-container .btn-icon:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+.gastos-container .btn-editar { color: var(--primary-blue); }
+.gastos-container .btn-editar:hover {
+  background: var(--primary-soft);
+  color: var(--primary-blue);
+  transform: none;
+}
+/* Eliminar conserva el rojo en hover: el button:hover global de App.css lo
+   pintaba de azul, borrando la señal de acción destructiva. */
+.gastos-container .btn-eliminar { color: var(--danger); }
+.gastos-container .btn-eliminar:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+  transform: none;
+}
+
+/* ── Estados de carga / error ─────────────────────────────────────────────── */
+.gastos-container .loading-box,
+.gastos-container .error-box {
+  margin-top: 22px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 250px;
   background: var(--card-bg);
-  border-radius: 16px;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
   border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
 }
-
-.loading-text {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--primary-blue);
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.error-title {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--danger);
-  margin-bottom: 8px;
-  margin-top: 0;
-}
-
-.error-text {
+.gastos-container .loading-text {
+  font-family: 'Oswald', sans-serif;
   font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  animation: gp-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.gastos-container .error-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.6rem;
   font-weight: 600;
-  color: var(--danger-hover);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--danger);
+  margin: 0 0 8px;
+}
+.gastos-container .error-text {
+  font-size: 0.95rem;
+  color: var(--text-muted);
   margin: 0;
+  max-width: 46ch;
+  text-align: center;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .5; }
-}
-
-/* Notificación */
-.notif           { padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; font-weight: 600; }
-.notif-ok        { background: #d1fae5; color: #065f46; }
-.notif-error     { background: #fee2e2; color: #991b1b; }
-
-/* Toolbar & Filtros */
-.toolbar { 
-  display: flex; 
-  justify-content: space-between; 
+/* ── Scroll infinito ──────────────────────────────────────────────────────── */
+.gastos-container .loading-more {
+  display: flex;
   align-items: center;
-  margin-bottom: 15px; 
-}
-
-.filtros-status {
-  display: flex;
+  justify-content: center;
   gap: 10px;
+  padding: 16px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
-
-.btn-agregar     { background: #2563eb; color: white; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-.btn-agregar:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-agregar:not(:disabled):hover { background-color: #2563EB; transform: scale(1.05); color: white; }
-
-/* Botones icono */
-.btn-icon        { background: transparent; border: none; cursor: pointer; padding: 6px; border-radius: 50%; transition: all 0.3s ease; }
-.btn-editar      { color: #2563eb; }
-.btn-editar:hover  { background-color: #2563EB; transform: scale(1.05); color: white; }
-.btn-eliminar    { color: #ef4444; }
-.btn-eliminar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
-
-/* Modal */
-.modal-overlay   { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-.modal-content   {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-  color: #333;
-}
-.modal-titulo    { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; flex-shrink: 0; }
-.modal-form      { display: flex; flex-direction: column; gap: 15px; flex: 1; overflow: hidden; margin-top: 15px; }
-.modal-grid      { display: grid; grid-template-columns: 1fr; gap: 15px; overflow-y: auto; padding-right: 10px; }
-.modal-campo     { display: flex; flex-direction: column; gap: 4px; }
-.modal-campo label { font-size: 12px; font-weight: bold; color: #666; }
-.modal-campo input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 0.95rem; }
-.modal-acciones  { 
-  display: flex; 
-  justify-content: flex-end; 
-  gap: 10px; 
-  margin-top: 10px; 
-  padding-top: 15px;
-  border-top: 1px solid #eee;
+.gastos-container .loading-more-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--primary-blue);
+  border-radius: 50%;
+  animation: gp-spin 0.7s linear infinite;
   flex-shrink: 0;
 }
-.btn-cancelar    { padding: 8px 15px; border-radius: 6px; border: 1px solid #ef4444; background: transparent; color: #ef4444; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
-.btn-cancelar:hover { background-color: #ef4444; transform: scale(1.05); color: white; }
-.btn-guardar     { padding: 8px 15px; border-radius: 6px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
-.btn-guardar:hover { background-color: #2563EB; transform: scale(1.05); color: white; }
+.gastos-container .end-of-list {
+  text-align: center;
+  padding: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
 
-/* Botón de Admin Gastos */
-.gastos-admin-btn {
+/* ── Modal ───────────────────────────────────────────────────────────────────
+   Mismo diseño que los modales de Movimientos Locales y Catálogos: tarjeta con
+   borde suave y radio 16, lomo azul a la izquierda, título en Oswald, etiquetas
+   en IBM Plex Mono.
+
+   El TAMAÑO y la disposición no se tocan: 1100px de ancho, 92vh de alto y la
+   rejilla auto-fit se conservan porque ya son los adecuados para este formulario. */
+.gastos-container .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.gastos-container .modal-content {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 1100px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(16, 40, 80, 0.24);
+  color: var(--text-main);
+  /* sin padding: vive en cabecera, cuerpo y pie */
+  padding: 0;
+}
+/* Lomo izquierdo azul — la firma de Movimientos Locales y Documentos de Viaje */
+.gastos-container .modal-content::before {
+  content: "";
   position: absolute;
-  top: 40px;
-  right: 40px;
-  padding: 8px 16px;
-  background-color: #f1f5f9;
-  color: #334155;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--primary-blue);
+}
+
+/* ── Cabecera ─────────────────────────────────────────────────────────────── */
+.gastos-container .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  flex-shrink: 0;
+}
+.gastos-container .modal-titulo {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.3rem;
   font-weight: 600;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+.gastos-container .modal-cerrar {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 10;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
 }
-.gastos-admin-btn:hover {
-  background-color: #e2e8f0;
-  color: #0f172a;
+.gastos-container .modal-cerrar:hover {
+  background: #f7f9fc;
+  color: var(--text-main);
+  transform: none; /* anula el scale(1.05) del button global de App.css */
+}
+.gastos-container .modal-cerrar:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
 }
 
-/* Media Queries para Responsividad */
-@media (min-width: 768px) {
-  .modal-grid { grid-template-columns: 1fr 1fr; }
+/* ── Cuerpo ───────────────────────────────────────────────────────────────── */
+/* min-height:0 es imprescindible: sin él, un hijo flex no se encoge por debajo
+   de su contenido y el cuerpo no puede hacer scroll dentro de la tarjeta. */
+.gastos-container .modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+}
+.gastos-container .modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  padding: 18px 22px;
+  overflow-y: auto;
+  flex: 1;
+  min-width: 0;
+}
+.gastos-container .modal-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.gastos-container .modal-campo label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.gastos-container .modal-campo input {
+  font-family: 'Inter', sans-serif;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: var(--text-main);
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+.gastos-container .modal-campo input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
 }
 
+/* ── Pie ──────────────────────────────────────────────────────────────────── */
+.gastos-container .modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid var(--border-soft);
+  margin: 0;
+  flex-shrink: 0;
+}
+/* Cancelar en rojo, igual que en toda la app: es el color con el que el equipo
+   ya identifica la acción de descartar. */
+.gastos-container .btn-cancelar {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.gastos-container .btn-cancelar:hover:not(:disabled) {
+  background: #dc2626;
+  color: #fff;
+  transform: none;
+}
+.gastos-container .btn-guardar {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-blue);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.gastos-container .btn-guardar:hover:not(:disabled) {
+  background: var(--primary-hover);
+  color: #fff;
+  transform: none;
+}
+.gastos-container .btn-cancelar:disabled,
+.gastos-container .btn-guardar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Animaciones ──────────────────────────────────────────────────────────── */
+@keyframes gp-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes gp-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes gp-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .gastos-container { padding: 15px; }
-  .table-responsive { padding: 30px 15px; }
-  .gastos-title { font-size: 1.6rem; margin-bottom: 20px; }
-  .gastos-table th, .gastos-table td { min-width: 100px; padding: 10px 8px; }
-  .modal-content { padding: 20px; width: 95%; }
-  
-  .gastos-admin-btn {
+  .gastos-container { padding: 40px 20px 52px; }
+  .gastos-container .gastos-title { font-size: 2rem; }
+  .gastos-container .gastos-admin-btn {
     position: static;
-    display: block;
+    display: flex;
+    justify-content: center;
     width: 100%;
     margin-bottom: 20px;
   }
+  .gastos-container .toolbar { flex-direction: column; align-items: stretch; }
+  .gastos-container .btn-agregar { width: 100%; }
+  .gastos-container .gastos-table th,
+  .gastos-container .gastos-table td { min-width: 100px; padding: 10px 8px; }
+}
+
+/* ── Movimiento reducido ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .gastos-container .table-responsive { animation: none; }
+  .gastos-container .loading-text { animation: none; }
+  .gastos-container .gastos-table tbody tr,
+  .gastos-container .btn-agregar,
+  .gastos-container .gastos-admin-btn,
+  .gastos-container .btn-icon,
+  .gastos-container .btn-accion,
+  .gastos-container .btn-guardar,
+  .gastos-container .btn-cancelar { transition: none; }
 }

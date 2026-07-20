@@ -1,4 +1,9 @@
 import { useState, useEffect } from "react";
+import { motion } from "motion/react";
+import { overlayMotion, contentMotion } from "../../animations/modalMotion";
+import DatePicker, { registerLocale } from "react-datepicker";
+import es from "date-fns/locale/es";
+import { format } from "date-fns";
 import { X, Download, Loader } from "lucide-react";
 import { apiClient } from "../../api/apiClient";
 import OperadorSelector from "../OperadorSelector/OperadorSelector";
@@ -6,12 +11,16 @@ import PlacasSelector from "../PlacasSelector/PlacasSelector";
 import RemolqueSelector from "../RemolqueSelector/RemolqueSelector";
 import FolioSelector from "../FolioSelector/FolioSelector";
 import ClienteSelector from "../ClienteSelector/ClienteSelector";
+import "react-datepicker/dist/react-datepicker.css";
 import "./CtaPorteTercerosModal.css";
+
+registerLocale("es", es);
 
 const ESTADO_INICIAL = {
   // Remisión
   folio:       "",
   ccp:         "",   // editable, auto desde folio
+  fecha_expedicion: null,  // Date object — selección manual
 
   // Origen / Destino — editables, auto desde folio
   origen:      "",
@@ -144,14 +153,20 @@ export default function CtaPorteTercerosModal({ onCerrar }) {
     window.URL.revokeObjectURL(url);
   };
 
-  const handleGenerar = async () => {
+  const handleGenerar = async (formato = "pdf") => {
     setError(null);
     setGenerando(true);
 
+    const ext = formato === "excel" ? "xlsx" : "pdf";
+
     try {
       const payload = {
+        formato,
         folio:             datos.folio,
         ccp:               datos.ccp,
+        fecha_expedicion:  datos.fecha_expedicion
+          ? format(datos.fecha_expedicion, "dd/MM/yyyy")
+          : "",
         origen:            datos.origen,
         destino:           datos.destino,
         cliente_nombre:    datos.cliente_nombre,
@@ -172,7 +187,7 @@ export default function CtaPorteTercerosModal({ onCerrar }) {
       };
 
       const blob = await apiClient.download("/documentos/cta-port-terceros/", payload);
-      triggerDownload(blob, "cta_port_terceros.pdf");
+      triggerDownload(blob, `CTA PTE ${datos.folio}.${ext}`);
 
       setExito(true);
     } catch (err) {
@@ -185,8 +200,8 @@ export default function CtaPorteTercerosModal({ onCerrar }) {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="cpm-overlay">
-      <div className="cpm-modal">
+    <motion.div className="cpm-overlay" {...overlayMotion}>
+      <motion.div className="cpm-modal" {...contentMotion}>
         {/* Header */}
         <div className="cpm-header">
           <h2 className="cpm-titulo">CTA Porte Terceros</h2>
@@ -220,6 +235,18 @@ export default function CtaPorteTercerosModal({ onCerrar }) {
                   placeholder="Auto desde folio"
                 />
               </div>
+            </div>
+            <div className="cpm-campo" style={{ marginTop: 8 }}>
+              <label className="cpm-label">Fecha de expedición</label>
+              <DatePicker
+                selected={datos.fecha_expedicion}
+                onChange={(date) => setDatos((p) => ({ ...p, fecha_expedicion: date }))}
+                locale="es"
+                dateFormat="dd/MM/yyyy"
+                placeholderText="dd/MM/yyyy"
+                className="cpm-input"
+                isClearable
+              />
             </div>
           </div>
 
@@ -371,7 +398,7 @@ export default function CtaPorteTercerosModal({ onCerrar }) {
 
           {/* Mensajes */}
           {error && <p className="cpm-error">{error}</p>}
-          {exito && <p className="cpm-exito">PDF generado y descargado correctamente.</p>}
+          {exito && <p className="cpm-exito">Documento generado y descargado correctamente.</p>}
         </div>
 
         {/* Footer */}
@@ -381,8 +408,16 @@ export default function CtaPorteTercerosModal({ onCerrar }) {
           </button>
           <button
             type="button"
+            className="cpm-btn-excel"
+            onClick={() => handleGenerar("excel")}
+            disabled={generando || !datos.folio}
+          >
+            <Download size={16} /> Descargar Excel
+          </button>
+          <button
+            type="button"
             className="cpm-btn-generar"
-            onClick={handleGenerar}
+            onClick={() => handleGenerar("pdf")}
             disabled={generando || !datos.folio}
           >
             {generando
@@ -390,7 +425,7 @@ export default function CtaPorteTercerosModal({ onCerrar }) {
               : <><Download size={16} /> Generar CTA Porte Terceros</>}
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

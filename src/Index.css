@@ -7,6 +7,17 @@ body {
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
+/* Con cualquier modal abierto, congelar el scroll del fondo (el scroller real es el body).
+   ponytail: scroll-lock por CSS :has(); si hay que soportar navegadores sin :has(), pasar a un hook que ponga overflow:hidden en body */
+body:has(.modal-overlay, .cpm-overlay, .bsm-overlay, .im-overlay, .ml-overlay, .fm-lightbox) {
+  overflow: hidden;
+}
+
+/* Evita que el scroll interno del modal se encadene al fondo al llegar al tope */
+.modal-grid, .cpm-body, .bsm-body, .ml-modal-body {
+  overscroll-behavior: contain;
+}
+
 /* Entrada suave de tarjetas del home */
 @keyframes rise-in {
   from { opacity: 0; transform: translateY(10px); }

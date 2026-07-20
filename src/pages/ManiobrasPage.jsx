@@ -1,8 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
-import { Trash2, SquarePen, Truck, Camera } from "lucide-react";
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { overlayMotion, contentMotion } from "../animations/modalMotion";
+import { Trash2, SquarePen, Camera, X } from "lucide-react";
 import { useManiobras } from "../hooks/useManiobras";
 import { useStatusUpdate } from "../hooks/useStatusUpdate";
-import { getStatusConfig, isValidStatus } from "../config/statusConfig";
+import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
+import { getStatusConfig } from "../config/statusConfig";
 import StatusSelector from "../components/StatusSelector/StatusSelector";
 import PlacasSelector from "../components/PlacasSelector/PlacasSelector";
 import RemolqueSelector from "../components/RemolqueSelector/RemolqueSelector";
@@ -12,6 +15,7 @@ import PatioSelector from "../components/PatioSelector/PatioSelector";
 import ClienteSelector from "../components/ClienteSelector/ClienteSelector";
 import CiudadSelector from "../components/CiudadSelector/CiudadSelector";
 import VacioStatusSelector from "../components/VacioStatusSelector/VacioStatusSelector";
+import TerceroSelector from "../components/TerceroSelector/TerceroSelector";
 import "./ManiobrasPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
 import { useAuthContext } from "../context/AuthContext";
@@ -50,6 +54,7 @@ function TipoSplitInput({ value, onChange, disabled, idPrefix }) {
         disabled={disabled}
         aria-label="Tipo (izquierda)"
         className="tipo-split-campo"
+        size={Math.max(6, izquierda.length + 2)}
       />
       <span className="tipo-split-separador">/</span>
       <input
@@ -61,6 +66,7 @@ function TipoSplitInput({ value, onChange, disabled, idPrefix }) {
         disabled={disabled}
         aria-label="Tipo (derecha)"
         className="tipo-split-campo"
+        size={Math.max(6, derecha.length + 2)}
       />
     </div>
   );
@@ -86,6 +92,7 @@ const COLUMNAS = [
   { key: "origen", label: "Origen", isOrigen: true },
   { key: "destino", label: "Destino", isDestino: true },
   { key: "transportista", label: "Transportista", isTransportista: true },
+  { key: "tercero", label: "Tercero", isTercero: true },
   { key: "asignacion_operador_status", label: "Operador", isOperador: true },
   { key: "unidad", label: "Unidad", isPlacas: true },
   { key: "remolque",   label: "Remolque 1", isRemolque: true },
@@ -103,7 +110,7 @@ const COLUMNAS = [
 const MANIOBRA_VACIA = {
   solicita: "", agencia: "", codigo_pis: "", terminal: "", placas_pis: "",
   fecha_pis: "", horario: "", tipo: "", peso: "", contenedor: "", referencia: "", pedimento: "",
-  cliente: "", origen: "", destino: "", transportista: "", asignacion_operador_status: "",
+  cliente: "", origen: "", destino: "", transportista: "", tercero: "", asignacion_operador_status: "",
   unidad: "", remolque: "", remolque_2: "", folio: "", vacio_patio: "", status_vacio: "",
   fecha_entrega_mercancia: "", no_factura: "", ccp: "", ruta_inicio: "", ruta_fin: "",
 };
@@ -172,25 +179,13 @@ function dateAFechaBackend(dateObject) {
   return `${y}-${m}-${d}`;
 }
 
-function vacioStatusStyle(status) {
-  if (status === "pendiente") return { background: "#fef9c3", color: "#854d0e" };
-  if (status === "entregado") return { background: "#dcfce7", color: "#166534" };
-  return { background: "#f3f4f6", color: "#6b7280" };
-}
-
-function vacioStatusLabel(status) {
-  if (status === "pendiente") return "Pendiente";
-  if (status === "entregado") return "Entregado";
-  return status || "—";
-}
-
 const FILTROS = [
   { id: "todos",     label: "Todos" },
   { id: "activo",    label: "Activos" },
   { id: "pendiente", label: "Pendientes" },
   { id: "quemada",   label: "Quemados" },
   { id: "por_salir", label: "Lázaro" },
-  { id: "vacio",     label: "Vacíos" },
+  { id: "tercero",   label: "Terceros" },
 ];
 
 // Columnas del header — reutilizadas en ambas tablas
@@ -257,6 +252,12 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               currentValue={datos[col.key]}
               onSelect={(val) => onChange(col.key, val)}
               disabled={isSubmitting}
+            />
+          ) : col.isTercero ? (
+            <TerceroSelector
+              currentValue={datos[col.key]}
+              onSelect={(val) => onChange(col.key, val)}
+              loading={false}
             />
           ) : col.isFechaHora ? (
             <DatePicker
@@ -343,6 +344,9 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               onChange={(e) => onChange(col.key, e.target.value)}
               placeholder={col.label}
               aria-label={col.label}
+              autoFocus={col.key === "solicita"}
+              className={col.key === "peso" ? "campo-expandible" : undefined}
+              size={col.key === "peso" ? Math.max(14, String(datos[col.key] || "").length + 2) : undefined}
             />
           )}
         </td>
@@ -368,14 +372,20 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
   }, [onCerrar]);
 
   return (
-    <div
+    <motion.div
       className="modal-overlay"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-titulo"
+      {...overlayMotion}
     >
-      <div className="modal-content">
-        <h2 id="modal-titulo" className="modal-titulo">Editar Maniobra</h2>
+      <motion.div className="modal-content" {...contentMotion}>
+        <div className="modal-header">
+          <h2 id="modal-titulo" className="modal-titulo">Editar Maniobra</h2>
+          <button type="button" className="modal-cerrar" onClick={onCerrar} aria-label="Cerrar">
+            <X size={20} />
+          </button>
+        </div>
         <form onSubmit={onGuardar} className="modal-form">
           <div className="modal-grid">
             {COLUMNAS.map((col) => (
@@ -412,6 +422,12 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     currentValue={datos[col.key] ?? ""}
                     onSelect={(val) => onChange(col.key, val)}
                     disabled={isSubmitting}
+                  />
+                ) : col.isTercero ? (
+                  <TerceroSelector
+                    currentValue={datos[col.key] ?? ""}
+                    onSelect={(val) => onChange(col.key, val)}
+                    loading={false}
                   />
                 ) : col.isFechaHora ? (
                   <DatePicker
@@ -510,8 +526,106 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
             <button type="submit" className="btn-guardar" disabled={isSubmitting}>{isSubmitting ? 'Guardando...' : 'Guardar Cambios'}</button>
           </div>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ── Sub-componente: fila de la tabla (memoizada) ──────────────────────────────
+// isUpdating e isUpdatingVacio se pasan ya resueltos (booleanos) en vez del
+// updatingId crudo: así solo la fila que cambia recibe una prop nueva; las demás
+// mantienen `false` entre renders y React.memo las salta, evitando re-renderizar
+// ~2000 filas por cada cambio de status de una sola.
+const FilaManiobra = memo(function FilaManiobra({
+  maniobra, isUpdating, isUpdatingVacio, isUpdatingTercero, isAdmin, isSubmitting,
+  onStatusChange, onVacioStatusChange, onTerceroChange, onEditar, onVerFotos, onEliminar,
+}) {
+  const statusConfig = getStatusConfig(maniobra.status);
+  return (
+    <tr className={statusConfig?.rowClass ?? ""}>
+      {COLUMNAS.map((col) => (
+        <td key={col.key} style={col.style ?? {}}>
+          {col.sortable ? (
+            fechaParaMostrar(maniobra[col.key])
+          ) : col.isFechaHora ? (
+            fechaHoraParaMostrar(maniobra[col.key])
+          ) : col.isStatusVacio ? (
+            /* Editable en la propia tabla, igual que en Vacíos: no hace falta
+               abrir el modal para cambiar el status del vacío. */
+            <VacioStatusSelector
+              currentStatus={maniobra[col.key]}
+              onSelect={(nuevoStatus) => onVacioStatusChange(maniobra, nuevoStatus)}
+              loading={isUpdatingVacio}
+            />
+          ) : col.isTercero ? (
+            /* Editable en la propia tabla, igual que el status de vacío. */
+            <TerceroSelector
+              currentValue={maniobra[col.key]}
+              onSelect={(nuevoValor) => onTerceroChange(maniobra, nuevoValor)}
+              loading={isUpdatingTercero}
+            />
+          ) : (
+            maniobra[col.key]
+          )}
+        </td>
+      ))}
+      <td style={{ whiteSpace: "nowrap" }}>
+        <StatusSelector
+          currentStatus={maniobra.status}
+          onSelect={(newStatus) => onStatusChange(maniobra, newStatus)}
+          loading={isUpdating}
+        />
+      </td>
+      <td>
+        <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
+          <button
+            className="btn-icon btn-editar"
+            onClick={() => onEditar(maniobra)}
+            aria-label="Editar maniobra"
+            title="Editar"
+            disabled={isSubmitting}
+          >
+            <SquarePen size={18} />
+          </button>
+          <button
+            type="button"
+            className="btn-icon btn-foto"
+            onClick={() => onVerFotos(maniobra.id)}
+            aria-label="Ver fotos de la maniobra"
+            title="Fotos"
+            disabled={isSubmitting}
+          >
+            <Camera size={18} />
+          </button>
+          {isAdmin && (
+            <button
+              className="btn-icon btn-eliminar"
+              onClick={() => onEliminar(maniobra.id)}
+              aria-label="Eliminar maniobra"
+              title="Eliminar"
+              disabled={isSubmitting}
+            >
+              <Trash2 size={18} />
+            </button>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+});
+
+// ── Encabezado ────────────────────────────────────────────────────────────────
+// Mismo patrón que Movimientos Locales y Documentos de Viaje: antetítulo, título
+// y entradilla. Se reutiliza en los tres estados de la página (carga, error, tabla).
+function Intro() {
+  return (
+    <header className="mp-intro">
+      <p className="mp-eyebrow">Tablero operativo</p>
+      <h1 className="maniobras-title">Control de Maniobras</h1>
+      <p className="mp-lead">
+        Registra y sigue el estado de cada maniobra en curso.
+      </p>
+    </header>
   );
 }
 
@@ -519,7 +633,16 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
 
 export default function ManiobrasPage() {
   const [filtroStatus, setFiltroStatus] = useState("todos");
-  const [busqueda,     setBusqueda]     = useState("");
+  // busquedaInput: feedback inmediato en el input. busqueda (debounced 350ms):
+  // la que realmente alimenta el filtro memoizado, para no recalcular sobre
+  // todas las filas cargadas en cada tecla — mismo patrón ya probado en
+  // MovimientosLocalesPage.jsx.
+  const [busquedaInput, setBusquedaInput] = useState("");
+  const [busqueda,      setBusqueda]      = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setBusqueda(busquedaInput), 350);
+    return () => clearTimeout(t);
+  }, [busquedaInput]);
   const [ordenFecha, setOrdenFecha] = useState("desc");
   const handleOrdenar = useCallback((campo) => {
   setOrdenFecha((prev) => {
@@ -535,10 +658,25 @@ export default function ManiobrasPage() {
   } = useManiobras(filtroStatus, ordenFecha);
 
   const { updatingId, updateStatus } = useStatusUpdate(setManiobras);
+
+  // Status de vacío editable desde la tabla. Mismo hook que usa Vacíos; aquí
+  // apunta al propio registro de maniobra (PATCH /maniobras/{id}/ { status_vacio }).
+  const {
+    updatingId: updatingVacioId,
+    updateStatus: updateVacioStatus,
+  } = useVacioStatusUpdate(setManiobras, { recurso: "maniobras", campo: "status_vacio" });
+
+  // Marca TERCERO editable desde la tabla. Mismo hook genérico que status_vacio,
+  // apuntando al campo `tercero` del propio registro (PATCH /maniobras/{id}/ { tercero }).
+  const {
+    updatingId: updatingTerceroId,
+    updateStatus: updateTercero,
+  } = useVacioStatusUpdate(setManiobras, { recurso: "maniobras", campo: "tercero" });
   const { isAdmin } = useAuthContext();
 
   const [modoAgregar,   setModoAgregar]   = useState(false);
   const [nuevaManiobra, setNuevaManiobra] = useState(MANIOBRA_VACIA);
+  const scrollRef = useRef(null);
   const [modal,         setModal]         = useState(MODAL_CERRADO);
   const [notif,         setNotif]         = useState(null);
   const [isSubmitting,  setIsSubmitting]  = useState(false);
@@ -639,31 +777,54 @@ export default function ManiobrasPage() {
     }
   }, [updateStatus]);
 
-  // ── Filtrado ──────────────────────────────────────────────────────────────
-  const maniobrasFiltradas = filtroStatus === "vacio"
-    ? maniobras.filter((m) => !isValidStatus(m.status))
-    : maniobras.filter((m) =>
-        !busqueda ||
-        Object.values(m).some((v) =>
-          String(v).toLowerCase().includes(busqueda.toLowerCase())
-        )
-      );
+  const handleVacioStatusChange = useCallback(async (maniobra, nuevoStatus) => {
+    try {
+      await updateVacioStatus(maniobra, nuevoStatus);
+      setNotif({ tipo: "ok", msg: "Status de vacío actualizado." });
+    } catch (err) {
+      setNotif({ tipo: "error", msg: `Error al cambiar status de vacío: ${err.message}` });
+    }
+  }, [updateVacioStatus]);
+
+  const handleTerceroChange = useCallback(async (maniobra, nuevoValor) => {
+    try {
+      await updateTercero(maniobra, nuevoValor);
+      setNotif({ tipo: "ok", msg: "Tercero actualizado." });
+    } catch (err) {
+      setNotif({ tipo: "error", msg: `Error al actualizar tercero: ${err.message}` });
+    }
+  }, [updateTercero]);
+
+  // ── Filtrado (memoizado: solo recalcula si cambian datos/búsqueda) ──
+  // Los filtros de status y el de "Terceros" se resuelven en el backend (ver
+  // useManiobras.buildUrl), así que aquí solo queda el filtro de búsqueda local
+  // sobre lo ya cargado.
+  const maniobrasFiltradas = useMemo(() => (
+    maniobras.filter((m) =>
+      !busqueda ||
+      Object.values(m).some((v) =>
+        String(v).toLowerCase().includes(busqueda.toLowerCase())
+      )
+    )
+  ), [maniobras, busqueda]);
+
+  const handleVerFotos = useCallback((id) => setFotoModal({ registroId: id }), []);
 
   // ── Estados de carga / error ──────────────────────────────────────────────
 
   if (loading) return (
     <div className="maniobras-container">
-      <h1 className="maniobras-title"><Truck size={36} className="title-icon" /> Control de Maniobras</h1>
+      <Intro />
       <div className="loading-box"><p className="loading-text">Cargando datos…</p></div>
     </div>
   );
 
   if (error) return (
     <div className="maniobras-container">
-      <h1 className="maniobras-title"><Truck size={36} className="title-icon" /> Control de Maniobras</h1>
+      <Intro />
       <div className="error-box">
-        <h2 className="error-title">¡Ups!</h2>
-        <p className="error-text">Error al conectar con el servidor: {error}</p>
+        <h2 className="error-title">No se pudo cargar</h2>
+        <p className="error-text">No hay conexión con el servidor: {error}</p>
       </div>
     </div>
   );
@@ -672,11 +833,11 @@ export default function ManiobrasPage() {
 
   return (
     <div className="maniobras-container">
-      <h1 className="maniobras-title">
-        <Truck size={45} className="title-icon" /> Control de Maniobras
-      </h1>
+      <Intro />
 
-      <SearchBar value={busqueda} onChange={setBusqueda} />
+      <div className="mp-search">
+        <SearchBar value={busquedaInput} onChange={setBusquedaInput} />
+      </div>
 
       {notif && (
         <div className={`notif notif-${notif.tipo}`} role="alert" aria-live="polite">
@@ -696,19 +857,40 @@ export default function ManiobrasPage() {
             </button>
           ))}
         </div>
-        <button
-          className="btn-agregar"
-          onClick={() => setModoAgregar(true)}
-          disabled={modoAgregar || isSubmitting}
-        >
-          + Agregar Registro
-        </button>
+        <div className="toolbar-acciones">
+          <button
+            className="btn-salto"
+            onClick={() => scrollRef.current?.scrollTo({ left: 0, behavior: "smooth" })}
+            title="Ir al inicio de la tabla"
+          >
+            ⇤ Inicio
+          </button>
+          <button
+            className="btn-salto"
+            onClick={() => scrollRef.current?.scrollTo({ left: scrollRef.current.scrollWidth, behavior: "smooth" })}
+            title="Ir al final de la tabla"
+          >
+            Fin ⇥
+          </button>
+          <button
+            className="btn-agregar"
+            onClick={() => {
+              setModoAgregar(true);
+              // La fila nueva se monta al inicio: llevar la vista al principio de la tabla
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              scrollRef.current?.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+            }}
+            disabled={modoAgregar || isSubmitting}
+          >
+            + Agregar Registro
+          </button>
+        </div>
       </div>
 
       <div className="table-responsive">
 
         {/* ── BODY — scroll horizontal + vertical ── */}
-        <div className="table-scroll-wrapper">
+        <div className="table-scroll-wrapper" ref={scrollRef}>
           <table className="maniobras-table">
             {/* thead fantasma para sincronizar anchos de columna */}
             <thead className="thead-ghost">
@@ -735,69 +917,23 @@ export default function ManiobrasPage() {
                   </td>
                 </tr>
               ) : (
-                maniobrasFiltradas.map((maniobra) => {
-                  const statusConfig = getStatusConfig(maniobra.status);
-                  return (
-                    <tr key={maniobra.id} className={statusConfig?.rowClass ?? ""}>
-                      {COLUMNAS.map((col) => (
-                        <td key={col.key} style={col.style ?? {}}>
-                          {col.sortable ? (
-                            fechaParaMostrar(maniobra[col.key])
-                          ) : col.isFechaHora ? (
-                            fechaHoraParaMostrar(maniobra[col.key])
-                          ) : col.isStatusVacio ? (
-                            <span style={{ ...vacioStatusStyle(maniobra[col.key]), padding: "3px 10px", borderRadius: "6px", fontSize: "0.82rem", fontWeight: "600", display: "inline-block" }}>
-                              {vacioStatusLabel(maniobra[col.key])}
-                            </span>
-                          ) : (
-                            maniobra[col.key]
-                          )}
-                        </td>
-                      ))}
-                      <td style={{ whiteSpace: "nowrap" }}>
-                        <StatusSelector
-                          currentStatus={maniobra.status}
-                          onSelect={(newStatus) => handleStatusChange(maniobra, newStatus)}
-                          loading={updatingId === maniobra.id}
-                        />
-                      </td>
-                      <td>
-                        <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-                          <button
-                            className="btn-icon btn-editar"
-                            onClick={() => handleAbrirEdicion(maniobra)}
-                            aria-label="Editar maniobra"
-                            title="Editar"
-                            disabled={isSubmitting}
-                          >
-                            <SquarePen size={18} />
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-icon btn-foto"
-                            onClick={() => setFotoModal({ registroId: maniobra.id })}
-                            aria-label="Ver fotos de la maniobra"
-                            title="Fotos"
-                            disabled={isSubmitting}
-                          >
-                            <Camera size={18} />
-                          </button>
-                          {isAdmin && (
-                            <button
-                              className="btn-icon btn-eliminar"
-                              onClick={() => handleEliminar(maniobra.id)}
-                              aria-label="Eliminar maniobra"
-                              title="Eliminar"
-                              disabled={isSubmitting}
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                maniobrasFiltradas.map((maniobra) => (
+                  <FilaManiobra
+                    key={maniobra.id}
+                    maniobra={maniobra}
+                    isUpdating={updatingId === maniobra.id}
+                    isUpdatingVacio={updatingVacioId === maniobra.id}
+                    isUpdatingTercero={updatingTerceroId === maniobra.id}
+                    isAdmin={isAdmin}
+                    isSubmitting={isSubmitting}
+                    onStatusChange={handleStatusChange}
+                    onVacioStatusChange={handleVacioStatusChange}
+                    onTerceroChange={handleTerceroChange}
+                    onEditar={handleAbrirEdicion}
+                    onVerFotos={handleVerFotos}
+                    onEliminar={handleEliminar}
+                  />
+                ))
               )}
             </tbody>
           </table>
@@ -816,24 +952,28 @@ export default function ManiobrasPage() {
         <p className="end-of-list">— Todos los registros cargados —</p>
       )}
 
-      {modal.abierto && modal.datos && (
-        <ModalEditar
-          datos={modal.datos}
-          onChange={handleCambioModal}
-          onGuardar={handleGuardarEdicion}
-          onCerrar={() => setModal(MODAL_CERRADO)}
-          isSubmitting={isSubmitting}
-        />
-      )}
+      <AnimatePresence>
+        {modal.abierto && modal.datos && (
+          <ModalEditar
+            datos={modal.datos}
+            onChange={handleCambioModal}
+            onGuardar={handleGuardarEdicion}
+            onCerrar={() => setModal(MODAL_CERRADO)}
+            isSubmitting={isSubmitting}
+          />
+        )}
+      </AnimatePresence>
 
-      {fotoModal && (
-        <FotoModal
-          tipo="maniobra"
-          registroId={fotoModal.registroId}
-          onCerrar={() => setFotoModal(null)}
-          isAdmin={isAdmin}
-        />
-      )}
+      <AnimatePresence>
+        {fotoModal && (
+          <FotoModal
+            tipo="maniobra"
+            registroId={fotoModal.registroId}
+            onCerrar={() => setFotoModal(null)}
+            isAdmin={isAdmin}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

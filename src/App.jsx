@@ -30,7 +30,7 @@ const HOME_MODULES = [
 
 function Home() {
   const navigate = useNavigate();
-  const { alertas } = useAlertasVencimiento();
+  const { alertas, error: errorAlertas } = useAlertasVencimiento();
 
   return (
     <div className="home-page">
@@ -46,12 +46,23 @@ function Home() {
       </header>
 
       <main className="home-main">
-        {/* Alertas de vencimiento — solo visibles en Home */}
-        {alertas.length > 0 && (
+        {/* Alertas de vencimiento — visibles para cualquier usuario con sesión.
+            Si la consulta falla se avisa, en vez de dejar el hueco vacío: una
+            alerta que no llega no puede parecerse a que no haya ninguna. */}
+        {(alertas.length > 0 || errorAlertas) && (
           <div className="home-alertas-container">
-            {alertas.map((alerta, index) => (
-              <AlertaVencimiento key={`${alerta.tipo}-${index}`} alerta={alerta} />
-            ))}
+            {errorAlertas ? (
+              <div className="av-card av-card--fallo" role="alert">
+                <p className="av-mensaje">
+                  No se pudieron cargar las alertas de licencias y pólizas.
+                  Recarga la página; si sigue igual, vuelve a iniciar sesión.
+                </p>
+              </div>
+            ) : (
+              alertas.map((alerta, index) => (
+                <AlertaVencimiento key={`${alerta.tipo}-${index}`} alerta={alerta} />
+              ))
+            )}
           </div>
         )}
 
@@ -133,23 +144,11 @@ function AppRoutes() {
         {showBackButton && (
           <button
             onClick={() => navigate('/home')}
-            style={{
-              position: 'absolute',
-              top: '5px',
-              left: '20px',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'black',
-              zIndex: 1000,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '5px'
-            }}
-            title="Regresar al Home"
+            className="home-back"
+            title="Regresar al inicio"
           >
-            <HomeIcon size={32} />
+            <span className="home-back-icon"><HomeIcon size={24} /></span>
+            <span className="home-back-label">Inicio</span>
           </button>
         )}
 

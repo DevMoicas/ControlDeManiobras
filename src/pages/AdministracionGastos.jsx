@@ -4,15 +4,15 @@ import {
   XAxis, YAxis, Tooltip, Legend,
   CartesianGrid, ResponsiveContainer
 } from "recharts";
-import axios from "axios";
+import { apiClient } from "../api/apiClient";
 import "./AdministracionGastos.css";
 
 export default function DashboardGastos() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    axios.get("http://127.0.0.1:8000/api/gastos/")
-      .then(res => setData(res.data.results || []))
+    apiClient.get("/gastos/")
+      .then(res => setData(res.results || []))
       .catch(err => console.error(err));
   }, []);
 

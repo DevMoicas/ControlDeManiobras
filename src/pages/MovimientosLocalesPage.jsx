@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { overlayMotion, contentMotion } from "../animations/modalMotion";
 import DatePicker, { registerLocale } from "react-datepicker";
 import { es } from "date-fns/locale";
 import { format, parseISO } from "date-fns";
@@ -489,14 +491,19 @@ export default function MovimientosLocalesPage() {
       </div>
 
       {/* Modal Editar */}
-      {modal.abierto && (
-        <div
+      <AnimatePresence>
+        {modal.abierto && (
+        <motion.div
           className="ml-overlay"
           onClick={(e) => { if (e.target === e.currentTarget) cerrarModal(); }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ml-modal-titulo"
+          {...overlayMotion}
         >
-          <div className="ml-modal">
+          <motion.div className="ml-modal" {...contentMotion}>
             <div className="ml-modal-header">
-              <h2 className="ml-modal-titulo">Editar Movimiento</h2>
+              <h2 id="ml-modal-titulo" className="ml-modal-titulo">Editar Movimiento</h2>
               <button type="button" className="ml-modal-cerrar" onClick={cerrarModal}>✕</button>
             </div>
             <div className="ml-modal-body">
@@ -520,9 +527,10 @@ export default function MovimientosLocalesPage() {
                 {guardando ? "Guardando..." : "Guardar"}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { apiClient } from "../../api/apiClient";
+import useDropdownNav from "../../hooks/useDropdownNav";
 import "./CargoSelector.css";
 
 export default function CargoSelector({ currentValue, onSelect, disabled }) {
@@ -8,16 +9,19 @@ export default function CargoSelector({ currentValue, onSelect, disabled }) {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
   const ref = useRef(null);
+  const dropRef = useRef(null);
+  useDropdownNav({ abierto, setAbierto, wrapperRef: ref, dropdownRef: dropRef });
 
   useEffect(() => {
+    if (!abierto) return;
     setCargando(true);
     setError(null);
     apiClient
-      .get("/cargos/")
+      .getCatalogo("/cargos/")
       .then((data) => setCargos(Array.isArray(data) ? data : (data?.results || [])))
       .catch(() => setError("Error al cargar cargos"))
       .finally(() => setCargando(false));
-  }, []);
+  }, [abierto]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -42,7 +46,7 @@ export default function CargoSelector({ currentValue, onSelect, disabled }) {
         {currentValue || "— Seleccionar cargo —"}
       </button>
       {abierto && (
-        <div className="cgs-dropdown">
+        <div className="cgs-dropdown" ref={dropRef}>
           {cargando && <div className="cgs-msg">Cargando...</div>}
           {error && <div className="cgs-msg cgs-error">{error}</div>}
           {!cargando && !error && cargos.length === 0 && (

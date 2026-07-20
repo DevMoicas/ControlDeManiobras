@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AnimatePresence } from "motion/react";
 import { FileText, ScrollText, ArrowRight } from "lucide-react";
 import BitacoraSuenoModal from "../components/BitacoraSuenoModal/BitacoraSuenoModal";
 import CtaPortModal from "../components/CtaPortModal/CtaPortModal";
@@ -85,15 +86,17 @@ export default function DocumentosViajePage() {
       </div>
 
       {/* Modales */}
-      {modalAbierto === "bitacora" && (
-        <BitacoraSuenoModal onCerrar={() => setModalAbierto(null)} />
-      )}
-      {modalAbierto === "ctaport" && (
-        <CtaPortModal onCerrar={() => setModalAbierto(null)} />
-      )}
-      {modalAbierto === "ctaporte-terceros" && (
-        <CtaPorteTercerosModal onCerrar={() => setModalAbierto(null)} />
-      )}
+      <AnimatePresence>
+        {modalAbierto === "bitacora" && (
+          <BitacoraSuenoModal onCerrar={() => setModalAbierto(null)} />
+        )}
+        {modalAbierto === "ctaport" && (
+          <CtaPortModal onCerrar={() => setModalAbierto(null)} />
+        )}
+        {modalAbierto === "ctaporte-terceros" && (
+          <CtaPorteTercerosModal onCerrar={() => setModalAbierto(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { overlayMotion, contentMotion } from "../animations/modalMotion";
 import { apiClient } from "../api/apiClient";
-import { Library, SquarePen, Trash2 } from "lucide-react";
+import { SquarePen, Trash2, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import "./CatalogosPage.css";
@@ -68,8 +70,8 @@ export default function NoEcoPage() {
     ],
     choferes: [
       { name: "nombre", label: "Nombre Completo", type: "text" },
-      { name: "rfc", label: "RFC del operador", type: "text" },
-      { name: "licencia", label: "Número de Licencia", type: "text" },
+      { name: "rfc", label: "RFC del operador", type: "text", required: false },
+      { name: "licencia", label: "Número de Licencia", type: "text", required: false },
       { name: "fecha_vencimiento_licencia", label: "Fecha Vencimiento Licencia", type: "date", required: false }
     ],
     empleados: [
@@ -381,10 +383,14 @@ export default function NoEcoPage() {
     <div className="noeco-container">
 
       {/* ── Header con título y botón admin ── */}
-      <div className="noeco-header">
-        <h1 className="noeco-title">
-          <Library size={45} color="var(--primary-blue)" /> CATÁLOGOS
-        </h1>
+      {/* Mismo patrón que Movimientos Locales y Documentos de Viaje:
+          antetítulo, título y entradilla. */}
+      <header className="noeco-header">
+        <p className="cp-eyebrow">Registros</p>
+        <h1 className="noeco-title">Catálogos</h1>
+        <p className="cp-lead">
+          Da de alta operadores, unidades, clientes, rutas, patios, etc.
+        </p>
 
         {/* Solo visible para administradores */}
         {isAdmin && (
@@ -393,12 +399,15 @@ export default function NoEcoPage() {
             onClick={() => navigate("../admin-no-eco")}
             type="button"
           >
-            ⚙ ADMIN CATÁLOGOS
+            <Settings size={16} /> Admin Catálogos
           </button>
         )}
-      </div>
+      </header>
+
       {/* BARRA DE BÚSQUEDA */}
-      <SearchBar value={busqueda} onChange={setBusqueda} />
+      <div className="cp-search">
+        <SearchBar value={busqueda} onChange={setBusqueda} />
+      </div>
       {/* Tabs */}
       <div className="tabs">
         <button
@@ -798,9 +807,10 @@ export default function NoEcoPage() {
       )}
 
       {/* Modal */}
-      {modalAbierto && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+      <AnimatePresence>
+        {modalAbierto && (
+          <motion.div className="modal-overlay" {...overlayMotion}>
+          <motion.div className="modal-content" {...contentMotion}>
             <h2 className="modal-title">
               {editando ? "Editar" : "Agregar"} {nombresSingulares[subVista || vista]}
             </h2>
@@ -853,9 +863,10 @@ export default function NoEcoPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

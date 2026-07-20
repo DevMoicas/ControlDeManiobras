@@ -16,7 +16,8 @@
   padding: 52px 28px 64px;
 }
 
-/* ── Intro ─────────────────────────────────────────────────────────────────── */
+/* ── Intro (centrada, como el resto de páginas de la app) ──────────────────── */
+.dvp-intro { text-align: center; }
 .dvp-eyebrow {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.72rem;
@@ -37,7 +38,7 @@
   margin: 0;
 }
 .dvp-lead {
-  margin: 12px 0 0;
+  margin: 12px auto 0;
   color: var(--text-light, #6b7280);
   font-size: 1rem;
   line-height: 1.5;

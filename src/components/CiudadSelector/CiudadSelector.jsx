@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { apiClient } from "../../api/apiClient";
+import useDropdownNav from "../../hooks/useDropdownNav";
 import "./CiudadSelector.css";
 
 // Selector genérico de ciudades para catálogos cuyo registro tiene { id, ciudad }.
@@ -10,12 +11,14 @@ export default function CiudadSelector({ endpoint, currentValue, onSelect, disab
   const [loadingList, setLoadingList] = useState(false);
   const [errorList, setErrorList] = useState(null);
   const containerRef = useRef(null);
+  const dropRef = useRef(null);
+  useDropdownNav({ abierto: open, setAbierto: setOpen, wrapperRef: containerRef, dropdownRef: dropRef });
 
   useEffect(() => {
     if (!open) return;
     setLoadingList(true);
     setErrorList(null);
-    apiClient.get(endpoint)
+    apiClient.getCatalogo(endpoint)
       .then((res) => {
         const lista = Array.isArray(res) ? res : (res?.results ?? []);
         setCiudades(lista);
@@ -64,7 +67,7 @@ export default function CiudadSelector({ endpoint, currentValue, onSelect, disab
       </button>
 
       {open && (
-        <ul className="cds-dropdown" role="listbox">
+        <ul className="cds-dropdown" role="listbox" ref={dropRef}>
           {loadingList && <li className="cds-state">Cargando…</li>}
           {errorList && <li className="cds-state cds-state--error">{errorList}</li>}
           {!loadingList && !errorList && ciudades.length === 0 && (

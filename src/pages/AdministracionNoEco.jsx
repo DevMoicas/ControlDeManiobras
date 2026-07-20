@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef} from "react";
 import { useNavigate } from "react-router-dom"; // 👈 AGREGADO
+import { apiClient } from "../api/apiClient";
 
 import {
   Chart as ChartJS,
@@ -37,22 +38,20 @@ export default function AdministracionNoEco() {
     return;
   }
 
-  const fetchSafe = async (url) => {
-    const res = await fetch(url);
-
-    if (!res.ok) {
-      if (res.status === 429) return [];
-      throw new Error("Error");
+  const fetchSafe = async (endpoint) => {
+    try {
+      const data = await apiClient.get(endpoint);
+      return Array.isArray(data) ? data : data.results || [];
+    } catch {
+      // Dashboard no crítico: ante error (429, red, etc.) se deja el conteo en 0.
+      return [];
     }
-
-    const data = await res.json();
-    return Array.isArray(data) ? data : data.results || [];
   };
 
   const fetchData = async () => {
-    const tractos = await fetchSafe("http://127.0.0.1:8000/api/tractos/");
-    const remolques = await fetchSafe("http://127.0.0.1:8000/api/remolques/");
-    const choferes = await fetchSafe("http://127.0.0.1:8000/api/choferes/");
+    const tractos = await fetchSafe("/tractos/");
+    const remolques = await fetchSafe("/remolques/");
+    const choferes = await fetchSafe("/choferes/");
 
     const nuevoConteo = {
       tractos: tractos.length,

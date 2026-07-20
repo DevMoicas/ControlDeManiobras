@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { apiClient } from "../../api/apiClient";
+import useDropdownNav from "../../hooks/useDropdownNav";
 import "./TransportistaSelector.css";
 
 export default function TransportistaSelector({ currentValue, onSelect, disabled }) {
@@ -8,16 +9,19 @@ export default function TransportistaSelector({ currentValue, onSelect, disabled
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
   const ref = useRef(null);
+  const dropRef = useRef(null);
+  useDropdownNav({ abierto, setAbierto, wrapperRef: ref, dropdownRef: dropRef });
 
   useEffect(() => {
+    if (!abierto) return;
     setCargando(true);
     setError(null);
     apiClient
-      .get("/transportistas/")
+      .getCatalogo("/transportistas/")
       .then((data) => setTransportistas(Array.isArray(data) ? data : (data?.results || [])))
       .catch(() => setError("Error al cargar transportistas"))
       .finally(() => setCargando(false));
-  }, []);
+  }, [abierto]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -42,7 +46,7 @@ export default function TransportistaSelector({ currentValue, onSelect, disabled
         {currentValue || "— Seleccionar transportista —"}
       </button>
       {abierto && (
-        <div className="tsl-dropdown">
+        <div className="tsl-dropdown" ref={dropRef}>
           {cargando && <div className="tsl-msg">Cargando...</div>}
           {error && <div className="tsl-msg tsl-error">{error}</div>}
           {!cargando && !error && transportistas.length === 0 && (

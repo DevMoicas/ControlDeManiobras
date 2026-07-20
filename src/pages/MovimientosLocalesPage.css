@@ -16,7 +16,8 @@
   padding: 52px 28px 64px;
 }
 
-/* ── Intro ─────────────────────────────────────────────────────────────────── */
+/* ── Intro (centrada, como el resto de páginas de la app) ──────────────────── */
+.ml-intro { text-align: center; }
 .ml-eyebrow {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.72rem;
@@ -37,7 +38,7 @@
   margin: 0;
 }
 .ml-lead {
-  margin: 12px 0 0;
+  margin: 12px auto 0;
   color: var(--text-light, #6b7280);
   font-size: 1rem;
   line-height: 1.5;
@@ -168,9 +169,9 @@
   text-align: left;
   white-space: nowrap;
   padding: 14px 16px;
-  background: #f7f9fc;
-  color: var(--text-light, #6b7280);
-  border-bottom: 1px solid #e6ecf5;
+  background: #2b3e50;
+  color: #fff;
+  border-bottom: 1px solid #1e2b38;
 }
 
 .ml-td {
@@ -278,14 +279,14 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   padding: 7px 16px;
-  border: 1px solid #e6ecf5;
+  border: 1px solid #ef4444;
   border-radius: 8px;
-  background: #fff;
-  color: var(--text, #1f2937);
+  background: transparent;
+  color: #ef4444;
   cursor: pointer;
   transition: background 0.15s;
 }
-.ml-btn-cancelar:hover { background: #f7f9fc; transform: none; }
+.ml-btn-cancelar:hover { background: #dc2626; transform: none; }
 
 /* ── Estados de carga / vacío ──────────────────────────────────────────────── */
 .ml-cargando,

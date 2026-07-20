@@ -192,6 +192,66 @@
   }
 }
 
+/* Botón "Regresar al inicio" — píldora vidrio presente en cada subpágina.
+   Reusa el lenguaje de la Home: glass de la topbar + azul del brand-mark + Oswald. */
+.home-back {
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px 11px 15px;
+  border: 1px solid #dbe4f3;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(6px);
+  color: var(--primary);
+  cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(16, 40, 80, 0.08);
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease,
+              box-shadow 0.18s ease, transform 0.18s ease;
+}
+.home-back:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+  transform: translateY(-1px);
+}
+.home-back:active {
+  transform: translateY(0);
+}
+.home-back:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.home-back-icon {
+  display: grid;
+  place-items: center;
+}
+.home-back-label {
+  line-height: 1;
+  padding-top: 1px;
+}
+
+/* En pantallas angostas solo el ícono, para no encimar el título de la página */
+@media (max-width: 480px) {
+  .home-back-label { display: none; }
+  .home-back { padding: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-back { transition: none; }
+  .home-back:hover { transform: none; }
+}
+
 
 /*  CSS YA EXISTENTE*/
 

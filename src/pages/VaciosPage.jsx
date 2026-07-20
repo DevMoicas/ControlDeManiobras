@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { Trash2, SquarePen, Package, Container, Camera } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { overlayMotion, contentMotion } from "../animations/modalMotion";
+import { Trash2, SquarePen, Camera, Settings, X } from "lucide-react";
 import { useVacios } from "../hooks/useVacios";
 import { useAuthContext } from "../context/AuthContext";
 import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
@@ -127,14 +129,20 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
   }, [onCerrar]);
 
   return (
-    <div
+    <motion.div
       className="modal-overlay"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-titulo"
+      {...overlayMotion}
     >
-      <div className="modal-content">
-        <h2 id="modal-titulo" className="modal-titulo">Editar Vacío</h2>
+      <motion.div className="modal-content" {...contentMotion}>
+        <div className="modal-header">
+          <h2 id="modal-titulo" className="modal-titulo">Editar Vacío</h2>
+          <button type="button" className="modal-cerrar" onClick={onCerrar} aria-label="Cerrar">
+            <X size={20} />
+          </button>
+        </div>
         <form onSubmit={onGuardar} className="modal-form">
           <div className="modal-grid">
             {COLUMNAS.map((col) => (
@@ -184,8 +192,23 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
             <button type="submit" className="btn-guardar" disabled={isSubmitting}>{isSubmitting ? 'Guardando...' : 'Guardar Cambios'}</button>
           </div>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ── Encabezado ────────────────────────────────────────────────────────────────
+// Mismo patrón que Movimientos Locales y Documentos de Viaje: antetítulo, título
+// y entradilla. Se reutiliza en los tres estados de la página (carga, error, tabla).
+function Intro() {
+  return (
+    <header className="vp-intro">
+      <p className="vp-eyebrow">Patio de contenedores</p>
+      <h1 className="vacios-title">Vacíos</h1>
+      <p className="vp-lead">
+        Controla la entrada y salida de contenedores vacíos y su estado en patio.
+      </p>
+    </header>
   );
 }
 
@@ -351,17 +374,17 @@ export default function VaciosPage() {
 
   if (loading) return (
     <div className="vacios-container">
-      <h1 className="vacios-title"><Package size={36} className="title-icon" /> Vacíos</h1>
+      <Intro />
       <div className="loading-box"><p className="loading-text">Cargando datos…</p></div>
     </div>
   );
 
   if (error) return (
     <div className="vacios-container">
-      <h1 className="vacios-title"><Package size={36} className="title-icon" /> Vacíos</h1>
+      <Intro />
       <div className="error-box">
-        <h2 className="error-title">¡Ups!</h2>
-        <p className="error-text">Error al conectar con el servidor: {error}</p>
+        <h2 className="error-title">No se pudo cargar</h2>
+        <p className="error-text">No hay conexión con el servidor: {error}</p>
       </div>
     </div>
   );
@@ -375,15 +398,15 @@ export default function VaciosPage() {
           className="vacios-admin-btn"
           onClick={() => navigate("../admin-vacios")}
         >
-          ⚙ Admin Vacíos
+          <Settings size={16} /> Admin Vacíos
         </button>
       )}
 
-      <h1 className="vacios-title">
-        <Container size={45} className="title-icon" /> Vacíos
-      </h1>
+      <Intro />
 
-      <SearchBar value={busqueda} onChange={setBusqueda} />
+      <div className="vp-search">
+        <SearchBar value={busqueda} onChange={setBusqueda} />
+      </div>
 
       {notif && (
         <div className={`notif notif-${notif.tipo}`} role="alert" aria-live="polite">
@@ -510,24 +533,28 @@ export default function VaciosPage() {
         <p className="end-of-list">— Todos los registros cargados —</p>
       )}
 
-      {modal.abierto && modal.datos && (
-        <ModalEditar
-          datos={modal.datos}
-          onChange={handleCambioModal}
-          onGuardar={handleGuardarEdicion}
-          onCerrar={() => setModal(MODAL_CERRADO)}
-          isSubmitting={isSubmitting}
-        />
-      )}
+      <AnimatePresence>
+        {modal.abierto && modal.datos && (
+          <ModalEditar
+            datos={modal.datos}
+            onChange={handleCambioModal}
+            onGuardar={handleGuardarEdicion}
+            onCerrar={() => setModal(MODAL_CERRADO)}
+            isSubmitting={isSubmitting}
+          />
+        )}
+      </AnimatePresence>
 
-      {fotoModal && (
-        <FotoModal
-          tipo="vacio"
-          registroId={fotoModal.registroId}
-          onCerrar={() => setFotoModal(null)}
-          isAdmin={isAdmin}
-        />
-      )}
+      <AnimatePresence>
+        {fotoModal && (
+          <FotoModal
+            tipo="vacio"
+            registroId={fotoModal.registroId}
+            onCerrar={() => setFotoModal(null)}
+            isAdmin={isAdmin}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
