@@ -19,10 +19,12 @@ import os
 import subprocess
 import tempfile
 import logging
+import io
 from datetime import date
 from django.conf import settings
 from django.http import FileResponse, HttpResponse
 from openpyxl import load_workbook
+from PIL import Image
 from rest_framework.views import APIView
 
 logger = logging.getLogger(__name__)
@@ -67,6 +69,20 @@ _LIBREOFFICE_BINS = [
 def _mayus(valor):
     """Todo lo que se escribe al Excel va en MAYÚSCULAS. Números/None se dejan igual."""
     return valor.upper() if isinstance(valor, str) else valor
+
+
+_CHARS_FORMULA = ('=', '+', '-', '@')
+
+
+def _sin_formula(valor):
+    """Anti-inyección de fórmulas en Excel (CWE-1236): si un texto empieza por
+    = + - o @, Excel/LibreOffice lo interpretaría como fórmula. Se antepone una
+    comilla (') para forzar que sea texto. Es no-op en números/None y en textos
+    que no empiezan por esos caracteres, así que un documento con datos legítimos
+    queda idéntico; solo cambia el input malicioso."""
+    if isinstance(valor, str) and valor[:1] in _CHARS_FORMULA:
+        return "'" + valor
+    return valor
 
 
 def _xlsx_a_pdf(xlsx_path: str, output_dir: str) -> str:
@@ -293,6 +309,16 @@ def _generar_pdf_cta_port(request_data, template_path, nombre_archivo_pdf: str, 
     remolque_1 = request_data.get('remolque_1', '').strip().upper()
     remolque_2 = request_data.get('remolque_2', '').strip().upper()
 
+    # Anti-inyección de fórmulas (CWE-1236) en los textos que van a celdas.
+    # Se excluyen tipo/peso/fecha_expedicion: se parsean como número o tokens.
+    (folio, ccp, origen, destino, cliente_nombre, cliente_domicilio,
+     cliente_colonia, cliente_ciudad, contenedor, pedimento, referencia,
+     descripcion, clave_sat, operador, placas, remolque_1, remolque_2) = map(
+        _sin_formula,
+        (folio, ccp, origen, destino, cliente_nombre, cliente_domicilio,
+         cliente_colonia, cliente_ciudad, contenedor, pedimento, referencia,
+         descripcion, clave_sat, operador, placas, remolque_1, remolque_2))
+
     # ── Validación mínima ──────────────────────────────────────────────────
     if not folio:
         return Response({'detail': 'El campo folio (Remisión) es requerido.'}, status=400)
@@ -400,7 +426,7 @@ def _generar_pdf_cta_port(request_data, template_path, nombre_archivo_pdf: str, 
 
 
 class TractoViewSet(viewsets.ModelViewSet):
-    queryset = Tracto.objects.all()
+    queryset = Tracto.objects.all().order_by('id')
     serializer_class = TractoSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
@@ -413,7 +439,7 @@ class TractoViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 class RemolqueViewSet(viewsets.ModelViewSet):
-    queryset = Remolque.objects.all()
+    queryset = Remolque.objects.all().order_by('id')
     serializer_class = RemolqueSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
@@ -426,7 +452,7 @@ class RemolqueViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 class ChoferViewSet(viewsets.ModelViewSet):
-    queryset = Chofer.objects.all()
+    queryset = Chofer.objects.all().order_by('id')
     serializer_class = ChoferSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
@@ -876,15 +902,17 @@ class FotoRegistroViewSet(viewsets.ViewSet):
         if err:
             return err
 
+        # Evita fotos huérfanas: el registro (maniobra/vacío) debe existir.
+        modelo = Maniobra if tipo == 'maniobra' else Vacio
+        if not modelo.objects.filter(pk=registro_id).exists():
+            return Response(
+                {'detail': 'El registro indicado no existe.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
         if not foto_file:
             return Response(
                 {'detail': 'No se envió ningún archivo. Campo requerido: foto.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if foto_file.content_type not in self.ALLOWED_MIMES:
-            return Response(
-                {'detail': 'Formato no permitido. Use JPG, PNG o WEBP.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -895,7 +923,24 @@ class FotoRegistroViewSet(viewsets.ViewSet):
             )
 
         foto_bytes = foto_file.read()
-        mime       = foto_file.content_type
+
+        # No confiar en content_type (lo fija el cliente): validar los bytes reales.
+        try:
+            imagen = Image.open(io.BytesIO(foto_bytes))
+            formato_real = (imagen.format or '').upper()
+            imagen.verify()
+        except Exception:
+            return Response(
+                {'detail': 'El archivo no es una imagen válida.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        _FORMATO_A_MIME = {'JPEG': 'image/jpeg', 'PNG': 'image/png', 'WEBP': 'image/webp'}
+        if formato_real not in _FORMATO_A_MIME:
+            return Response(
+                {'detail': 'Formato no permitido. Use JPG, PNG o WEBP.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        mime = _FORMATO_A_MIME[formato_real]
 
         registro, _ = FotoRegistro.objects.get_or_create(
             tipo=tipo,
@@ -988,6 +1033,12 @@ class DocumentoBitacoraSuenoView(APIView):
         fecha_salida  = request.data.get('fecha_salida', '').strip().upper()   # DD/MM/YYYY
         fecha_llegada = request.data.get('fecha_llegada', '').strip().upper()  # DD/MM/YYYY
         formato       = request.data.get('formato', 'pdf')
+
+        # Anti-inyección de fórmulas (CWE-1236) en los textos que van a celdas.
+        (operador, placas, remolque_1, remolque_2, folio, unidad, anio,
+         origen, destino, fecha_salida, fecha_llegada) = map(_sin_formula, (
+            operador, placas, remolque_1, remolque_2, folio, unidad, anio,
+            origen, destino, fecha_salida, fecha_llegada))
 
         # ── Validación mínima ──────────────────────────────────────────────────
         if not placas:
@@ -1105,6 +1156,10 @@ class DocumentoBitacoraGastosView(APIView):
         # Campo exclusivo de BITACORA GASTOS
         total_gastos_raw = request.data.get('total_gastos', '')
         formato          = request.data.get('formato', 'pdf')
+
+        # Anti-inyección de fórmulas (CWE-1236). peso/total_gastos se parsean como número.
+        operador, placas, remolque_1, remolque_2, destino = map(
+            _sin_formula, (operador, placas, remolque_1, remolque_2, destino))
 
         # ── Validación ────────────────────────────────────────────────────────
         if not total_gastos_raw and total_gastos_raw != 0:

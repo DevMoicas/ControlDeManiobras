@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView, TokenBlacklistView
 
 
 from .views import (
@@ -65,4 +65,7 @@ urlpatterns = [
  
     # Refresh → el frontend lo llama automáticamente cuando expira el access
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # Logout → invalida el refresh token en el servidor (blacklist)
+    path('logout/', TokenBlacklistView.as_view(), name='logout'),
 ]

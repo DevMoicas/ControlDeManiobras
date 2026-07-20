@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'api.Apps.ApiConfig',
     'corsheaders',
     'django_filters',
@@ -169,10 +170,12 @@ REST_FRAMEWORK = {
 }
 
 # JWT: sessionStorage borra los tokens al cerrar el navegador y el timer de
-# inactividad cierra la sesión a los 20 min, así que 12h evita que el token
-# expire de forma inesperada durante una jornada normal de uso activo.
+# inactividad cierra la sesión a los 20 min. El access dura poco (limita el daño
+# de un token robado); el refresh dura la jornada y el interceptor 401 del
+# frontend renueva el access sin interrumpir al usuario. El logout invalida el
+# refresh vía blacklist (rest_framework_simplejwt.token_blacklist).
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME':  timedelta(hours=12),
+    'ACCESS_TOKEN_LIFETIME':  timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(hours=12),
 }
 

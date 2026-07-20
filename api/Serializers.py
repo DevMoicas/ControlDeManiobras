@@ -103,6 +103,10 @@ class GastoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gasto
         fields = '__all__'
+        # gastos_totales es calculado en Gasto.save() (suma de los campos). Se marca
+        # read_only para que el valor del cliente nunca lo sobrescriba: el servidor es
+        # la única fuente de verdad. Se sigue devolviendo en la respuesta (solo lectura).
+        read_only_fields = ('gastos_totales',)
         extra_kwargs = {
             'maniobra': {'required': False}  # para que PUT no lo exija
         }
