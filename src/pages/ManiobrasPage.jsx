@@ -16,6 +16,7 @@ import ClienteSelector from "../components/ClienteSelector/ClienteSelector";
 import CiudadSelector from "../components/CiudadSelector/CiudadSelector";
 import VacioStatusSelector from "../components/VacioStatusSelector/VacioStatusSelector";
 import TerceroSelector from "../components/TerceroSelector/TerceroSelector";
+import TipoServicioSelector, { getTipoServicioLabel, esServicioFull } from "../components/TipoServicioSelector/TipoServicioSelector";
 import "./ManiobrasPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
 import { useAuthContext } from "../context/AuthContext";
@@ -72,6 +73,117 @@ function TipoSplitInput({ value, onChange, disabled, idPrefix }) {
   );
 }
 
+// ── Servicio Full: dos valores en una sola columna ────────────────────────────
+// Los pares del Full se guardan en las MISMAS columnas (tipo/peso/contenedor)
+// separados por " - ", que es el separador que el backend ya parsea
+// (_parsear_tipo, _sumar_peso) y el texto exacto que espera la celda C17.
+// Así el Full no necesita columnas nuevas en la base de datos.
+
+// "20 - 40" → ["20", "40"].  Corta en el PRIMER guion: los valores reales
+// (contenedores, pesos) no llevan guiones internos.
+function partirDoble(valor) {
+  const s = String(valor || "");
+  const i = s.indexOf("-");
+  if (i === -1) return [s.trim(), ""];
+  return [s.slice(0, i).trim(), s.slice(i + 1).trim()];
+}
+
+// ["20", "40"] → "20 - 40".  Sin segundo valor devuelve solo el primero.
+function unirDoble(a, b) {
+  const izq = (a || "").trim();
+  const der = (b || "").trim();
+  return der ? `${izq} - ${der}` : izq;
+}
+
+// "20 / DC" → ["20", "DC"]  (el formato que emite TipoSplitInput)
+function partesDelPar(par) {
+  const p = String(par || "").split("/");
+  return [(p[0] || "").trim(), (p[1] || "").trim()];
+}
+
+// "20 - 40 / DC - HC" → ["20 / DC", "40 / HC"]
+function partirTipoFull(tipo) {
+  const [izquierda, derecha] = partesDelPar(tipo);
+  const [n1, n2] = partirDoble(izquierda);
+  const [l1, l2] = partirDoble(derecha);
+  return [
+    n1 || l1 ? `${n1} / ${l1}` : "",
+    n2 || l2 ? `${n2} / ${l2}` : "",
+  ];
+}
+
+// ["20 / DC", "40 / HC"] → "20 - 40 / DC - HC"
+function unirTipoFull(par1, par2) {
+  const [n1, l1] = partesDelPar(par1);
+  const [n2, l2] = partesDelPar(par2);
+  const numeros = unirDoble(n1, n2);
+  const letras  = unirDoble(l1, l2);
+  return numeros || letras ? `${numeros} / ${letras}` : "";
+}
+
+// Cambiar el tipo de servicio colapsa los campos que dejan de tener dos inputs,
+// para no arrastrar el segundo valor de un Full a un servicio que ya no lo usa.
+// Carga suelta conserva los dos pares de TIPO DE CARGA (dos tipos de bulto).
+function aplicarCambioTipoServicio(datos, onChange, nuevo) {
+  onChange("tipo_servicio", nuevo);
+  if (nuevo === "full") return;
+  onChange("peso",       partirDoble(datos.peso)[0]);
+  onChange("contenedor", partirDoble(datos.contenedor)[0]);
+  if (nuevo === "sencillo") onChange("tipo", partirTipoFull(datos.tipo)[0]);
+}
+
+// Full: dos inputs "TIPO DE CARGA" apilados, uno por contenedor.
+function TipoFullInput({ value, onChange, disabled, idPrefix }) {
+  const [par1, par2] = partirTipoFull(value);
+  return (
+    <div className="tipo-full-input">
+      <TipoSplitInput
+        value={par1}
+        onChange={(v) => onChange(unirTipoFull(v, par2))}
+        disabled={disabled}
+        idPrefix={idPrefix ? `${idPrefix}-1` : undefined}
+      />
+      <TipoSplitInput
+        value={par2}
+        onChange={(v) => onChange(unirTipoFull(par1, v))}
+        disabled={disabled}
+        idPrefix={idPrefix ? `${idPrefix}-2` : undefined}
+      />
+    </div>
+  );
+}
+
+// Full: dos inputs en una celda (peso y contenedor), guardados como "A - B".
+function DobleInput({ value, onChange, disabled, etiqueta, idPrefix }) {
+  const [a, b] = partirDoble(value);
+  return (
+    <div className="tipo-split-input">
+      <input
+        id={idPrefix ? `${idPrefix}-1` : undefined}
+        type="text"
+        value={a}
+        onChange={(e) => onChange(unirDoble(e.target.value, b))}
+        placeholder={`${etiqueta} 1`}
+        aria-label={`${etiqueta} 1`}
+        disabled={disabled}
+        className="tipo-split-campo"
+        size={Math.max(10, a.length + 2)}
+      />
+      <input
+        id={idPrefix ? `${idPrefix}-2` : undefined}
+        type="text"
+        value={b}
+        onChange={(e) => onChange(unirDoble(a, e.target.value))}
+        placeholder={`${etiqueta} 2`}
+        aria-label={`${etiqueta} 2`}
+        disabled={disabled}
+        className="tipo-split-campo"
+        size={Math.max(10, b.length + 2)}
+      />
+    </div>
+  );
+}
+
 const COLUMNAS = [
   { key: "solicita", label: "Solicita" },
   { key: "agencia", label: "Agencia" },
@@ -83,9 +195,10 @@ const COLUMNAS = [
   { key: "placas_pis", label: "Placas PIS", isPlacas: true },
   { key: "fecha_pis", label: "Fecha PIS", sortable: true },
   { key: "horario", label: "Horario", isHora: true },
-  { key: "tipo",  label: "Tipo", isTipo: true },
-  { key: "peso",  label: "Peso" },
-  { key: "contenedor", label: "Contenedor" },
+  { key: "tipo_servicio", label: "TIPO DE SERVICIO", isTipoServicio: true },
+  { key: "tipo",  label: "TIPO DE CARGA", isTipo: true },
+  { key: "peso",  label: "Peso", isDoble: true },
+  { key: "contenedor", label: "Contenedor", isDoble: true },
   { key: "referencia", label: "Referencia" },
   { key: "pedimento", label: "Pedimento" },
   { key: "cliente", label: "Cliente", isCliente: true },
@@ -109,7 +222,7 @@ const COLUMNAS = [
 
 const MANIOBRA_VACIA = {
   solicita: "", agencia: "", codigo_pis: "", terminal: "", placas_pis: "",
-  fecha_pis: "", horario: "", tipo: "", peso: "", contenedor: "", referencia: "", pedimento: "",
+  fecha_pis: "", horario: "", tipo_servicio: "sencillo", tipo: "", peso: "", contenedor: "", referencia: "", pedimento: "",
   cliente: "", origen: "", destino: "", transportista: "", tercero: "", asignacion_operador_status: "",
   unidad: "", remolque: "", remolque_2: "", folio: "", vacio_patio: "", status_vacio: "",
   fecha_entrega_mercancia: "", no_factura: "", ccp: "", ruta_inicio: "", ruta_fin: "",
@@ -218,6 +331,7 @@ function HeaderRow({ ordenFecha, onOrdenar }) {
 // ── Sub-componente: fila nueva ────────────────────────────────────────────────
 
 function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
+  const esFull = esServicioFull(datos);
   return (
     <tr>
       {COLUMNAS.map((col) => (
@@ -330,13 +444,34 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
             <RemolqueSelector
               currentValue={datos[col.key]}
               onSelect={(val) => onChange(col.key, val)}
-              disabled={isSubmitting || (datos.contenedor || "").length <= 12}
+              disabled={isSubmitting || !esFull}
+            />
+          ) : col.isTipoServicio ? (
+            <TipoServicioSelector
+              currentValue={datos[col.key]}
+              onSelect={(val) => aplicarCambioTipoServicio(datos, onChange, val)}
+              disabled={isSubmitting}
             />
           ) : col.isTipo ? (
-            <TipoSplitInput
+            esFull ? (
+              <TipoFullInput
+                value={datos[col.key]}
+                onChange={(val) => onChange(col.key, val)}
+                disabled={isSubmitting}
+              />
+            ) : (
+              <TipoSplitInput
+                value={datos[col.key]}
+                onChange={(val) => onChange(col.key, val)}
+                disabled={isSubmitting}
+              />
+            )
+          ) : col.isDoble && esFull ? (
+            <DobleInput
               value={datos[col.key]}
               onChange={(val) => onChange(col.key, val)}
               disabled={isSubmitting}
+              etiqueta={col.label}
             />
           ) : (
             <input
@@ -370,6 +505,8 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onCerrar]);
+
+  const esFull = esServicioFull(datos);
 
   return (
     <motion.div
@@ -502,14 +639,37 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                   <RemolqueSelector
                     currentValue={datos[col.key] ?? ""}
                     onSelect={(val) => onChange(col.key, val)}
-                    disabled={isSubmitting || (datos.contenedor || "").length <= 12}
+                    disabled={isSubmitting || !esFull}
+                  />
+                ) : col.isTipoServicio ? (
+                  <TipoServicioSelector
+                    currentValue={datos[col.key] ?? ""}
+                    onSelect={(val) => aplicarCambioTipoServicio(datos, onChange, val)}
+                    disabled={isSubmitting}
                   />
                 ) : col.isTipo ? (
-                  <TipoSplitInput
+                  esFull ? (
+                    <TipoFullInput
+                      idPrefix={`edit-${col.key}`}
+                      value={datos[col.key] ?? ""}
+                      onChange={(val) => onChange(col.key, val)}
+                      disabled={isSubmitting}
+                    />
+                  ) : (
+                    <TipoSplitInput
+                      idPrefix={`edit-${col.key}`}
+                      value={datos[col.key] ?? ""}
+                      onChange={(val) => onChange(col.key, val)}
+                      disabled={isSubmitting}
+                    />
+                  )
+                ) : col.isDoble && esFull ? (
+                  <DobleInput
                     idPrefix={`edit-${col.key}`}
                     value={datos[col.key] ?? ""}
                     onChange={(val) => onChange(col.key, val)}
                     disabled={isSubmitting}
+                    etiqueta={col.label}
                   />
                 ) : (
                   <input
@@ -549,6 +709,10 @@ const FilaManiobra = memo(function FilaManiobra({
             fechaParaMostrar(maniobra[col.key])
           ) : col.isFechaHora ? (
             fechaHoraParaMostrar(maniobra[col.key])
+          ) : col.isTipoServicio ? (
+            /* Solo lectura en la tabla: se edita desde el modal, porque cambiarlo
+               reajusta también los campos de tipo/peso/contenedor. */
+            getTipoServicioLabel(maniobra[col.key])
           ) : col.isStatusVacio ? (
             /* Editable en la propia tabla, igual que en Vacíos: no hace falta
                abrir el modal para cambiar el status del vacío. */

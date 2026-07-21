@@ -11,6 +11,7 @@ import OperadorSelector from "../OperadorSelector/OperadorSelector";
 import PlacasSelector from "../PlacasSelector/PlacasSelector";
 import RemolqueSelector from "../RemolqueSelector/RemolqueSelector";
 import FolioSelector from "../FolioSelector/FolioSelector";
+import { esServicioFull } from "../TipoServicioSelector/TipoServicioSelector";
 import "react-datepicker/dist/react-datepicker.css";
 import "./BitacoraSuenoModal.css";
 
@@ -26,7 +27,8 @@ const ESTADO_INICIAL = {
   anio:         "",   // auto desde tracto.anio al elegir placas
   origen:       "",   // auto al elegir folio
   destino:      "",   // auto al elegir folio
-  contenedor:   "",   // auto al elegir folio (para lógica full/sencillo)
+  contenedor:   "",   // auto al elegir folio (fallback full/sencillo en registros viejos)
+  tipo_servicio: "",  // auto al elegir folio — dictamina si el viaje es full
   fecha_salida: null, // Date object
   fecha_llegada: null,
 };
@@ -89,6 +91,7 @@ export default function BitacoraSuenoModal({ onCerrar }) {
       origen:     maniobra.origen     || "",
       destino:    maniobra.destino    || "",
       contenedor: maniobra.contenedor || "",
+      tipo_servicio: maniobra.tipo_servicio || "",
       // Operador, unidad y remolques recuperados del folio elegido
       operador:   maniobra.operador    || "",
       placas:     maniobra.placas      || "",
@@ -99,8 +102,10 @@ export default function BitacoraSuenoModal({ onCerrar }) {
     }));
   };
 
-  // ── Lógica remolque 2: habilitado solo si hay folio Y contenedor > 12 chars ─
-  const remolque2Habilitado = (datos.contenedor || "").length > 12;
+  // ── Lógica remolque 2: habilitado solo en viajes full ──────────────────────
+  // Lo dictamina el tipo_servicio de la maniobra; los registros anteriores a ese
+  // campo caen a la heurística vieja (contenedor > 12 caracteres).
+  const remolque2Habilitado = esServicioFull(datos);
 
   // ── Generar PDF ────────────────────────────────────────────────────────────
 
@@ -216,7 +221,7 @@ export default function BitacoraSuenoModal({ onCerrar }) {
               </div>
             </div>
             {datos.folio && !remolque2Habilitado && (
-              <p className="bsm-hint">Remolque 2 disponible solo para viajes full (contenedor &gt; 12 chars).</p>
+              <p className="bsm-hint">Remolque 2 disponible solo para viajes con tipo de servicio Full.</p>
             )}
           </div>
 

@@ -11,6 +11,7 @@ import PlacasSelector from "../PlacasSelector/PlacasSelector";
 import RemolqueSelector from "../RemolqueSelector/RemolqueSelector";
 import FolioSelector from "../FolioSelector/FolioSelector";
 import ClienteSelector from "../ClienteSelector/ClienteSelector";
+import { getTipoServicioLabel, esServicioFull } from "../TipoServicioSelector/TipoServicioSelector";
 import "react-datepicker/dist/react-datepicker.css";
 import "./CtaPorteTercerosModal.css";
 
@@ -33,6 +34,7 @@ const ESTADO_INICIAL = {
   cliente_ciudad:    "",
 
   // Carga — solo lectura, auto desde folio
+  tipo_servicio: "",
   tipo:        "",
   peso:        "",
   contenedor:  "",
@@ -78,20 +80,23 @@ export default function CtaPorteTercerosModal({ onCerrar }) {
     return () => clearTimeout(t);
   }, [exito]);
 
-  // ── Lógica full/sencillo ───────────────────────────────────────────────────
-  const esFullViaje         = (datos.contenedor || "").length > 12;
+  // ── Lógica full/sencillo/carga suelta ──────────────────────────────────────
+  // Lo dictamina el campo tipo_servicio de la maniobra. Los registros anteriores
+  // a ese campo no lo traen: ahí se conserva la heurística vieja (>12 caracteres).
+  const esFullViaje         = esServicioFull(datos);
   const remolque2Habilitado = esFullViaje;
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   const handleFolio = (maniobra) => {
-    const esFull = (maniobra.contenedor || "").length > 12;
+    const esFull = esServicioFull(maniobra);
     setDatos((p) => ({
       ...p,
       folio:      maniobra.folio      || "",
       ccp:        maniobra.ccp        || "",   // auto, editable
       origen:     maniobra.origen     || "",   // auto, editable
       destino:    maniobra.destino    || "",   // auto, editable
+      tipo_servicio: maniobra.tipo_servicio || "",
       tipo:       maniobra.tipo       || "",
       peso:       maniobra.peso       || "",
       contenedor: maniobra.contenedor || "",
@@ -173,6 +178,7 @@ export default function CtaPorteTercerosModal({ onCerrar }) {
         cliente_domicilio: datos.cliente_domicilio,
         cliente_colonia:   datos.cliente_colonia,
         cliente_ciudad:    datos.cliente_ciudad,
+        tipo_servicio:     datos.tipo_servicio,
         tipo:              datos.tipo,
         peso:              datos.peso,
         contenedor:        datos.contenedor,
@@ -325,7 +331,12 @@ export default function CtaPorteTercerosModal({ onCerrar }) {
             </div>
             {datos.contenedor && (
               <p className="cpm-hint">
-                Viaje: <strong>{esFullViaje ? "Full (2 contenedores)" : "Sencillo (1 contenedor)"}</strong>
+                Tipo de servicio:{" "}
+                <strong>
+                  {datos.tipo_servicio
+                    ? getTipoServicioLabel(datos.tipo_servicio)
+                    : (esFullViaje ? "Full" : "Sencillo")}
+                </strong>
               </p>
             )}
           </div>
