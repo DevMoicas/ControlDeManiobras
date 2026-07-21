@@ -293,22 +293,22 @@ LOGGING = {
         },
     },
     'handlers': {
-        'file': {
+        # stdout: en contenedor la plataforma captura la salida; un archivo local
+        # se perdería en cada deploy. En dev se ve en la consola de runserver.
+        'console': {
             'level': 'ERROR',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'errores_sistema.log',
+            'class': 'logging.StreamHandler',
             'formatter': 'clear_format',
-            'encoding': 'utf-8',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
+            'handlers': ['console'],
             'level': 'ERROR',
             'propagate': True,
         },
         'api': {
-            'handlers': ['file'],
+            'handlers': ['console'],
             'level': 'ERROR',
             'propagate': True,
         },

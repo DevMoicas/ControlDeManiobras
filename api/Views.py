@@ -425,6 +425,21 @@ def _generar_pdf_cta_port(request_data, template_path, nombre_archivo_pdf: str, 
         )
 
 
+class AuditoriaMixin:
+    """Rellena created_by/updated_by con el username autenticado en cada alta y
+    edición. Los timestamps los pone Django (auto_now_add/auto_now). Los 4 campos
+    son read_only en el serializer (editable=False), así que el cliente no puede
+    falsearlos; aquí se setean vía serializer.save(), que sí los permite."""
+
+    def perform_create(self, serializer):
+        usuario = getattr(self.request.user, 'username', '') or ''
+        serializer.save(created_by=usuario, updated_by=usuario)
+
+    def perform_update(self, serializer):
+        usuario = getattr(self.request.user, 'username', '') or ''
+        serializer.save(updated_by=usuario)
+
+
 class TractoViewSet(viewsets.ModelViewSet):
     queryset = Tracto.objects.all().order_by('id')
     serializer_class = TractoSerializer
@@ -491,7 +506,7 @@ class ManiobraFilter(django_filters.FilterSet):
 
 
 # --- NUEVA VISTA ---
-class ManiobraViewSet(viewsets.ModelViewSet):
+class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
     queryset = Maniobra.objects.all().order_by("-id")
     serializer_class = ManiobraSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
@@ -586,11 +601,13 @@ class GastoViewSet(viewsets.ModelViewSet):
         except Maniobra.DoesNotExist:
             from rest_framework.exceptions import ValidationError
             raise ValidationError({'maniobra': f'No existe una maniobra con id {maniobra_id}.'})
-        serializer.save(maniobra=maniobra)
+        usuario = getattr(self.request.user, 'username', '') or ''
+        serializer.save(maniobra=maniobra, created_by=usuario, updated_by=usuario)
 
     def perform_update(self, serializer):
         # En update no tocamos la maniobra, solo los campos del gasto
-        serializer.save()
+        usuario = getattr(self.request.user, 'username', '') or ''
+        serializer.save(updated_by=usuario)
 
     def destroy(self, request, *args, **kwargs):
         if not request.user.is_staff:
@@ -600,7 +617,7 @@ class GastoViewSet(viewsets.ModelViewSet):
             )
         return super().destroy(request, *args, **kwargs)
 
-class VacioViewSet(viewsets.ModelViewSet):
+class VacioViewSet(AuditoriaMixin, viewsets.ModelViewSet):
     queryset = Vacio.objects.all().order_by("-id")
     serializer_class = VacioSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
@@ -710,7 +727,7 @@ class DestinoViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
-class MovimientoLocalViewSet(viewsets.ModelViewSet):
+class MovimientoLocalViewSet(AuditoriaMixin, viewsets.ModelViewSet):
     queryset               = MovimientoLocal.objects.all()
     serializer_class       = MovimientoLocalSerializer
     authentication_classes = [JWTAuthentication]

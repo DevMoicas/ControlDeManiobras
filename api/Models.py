@@ -117,6 +117,13 @@ class Maniobra(models.Model):
     # 0017 vía RunSQL porque la tabla es managed=False (vive en pgAdmin).
     tercero = models.CharField(max_length=20, null=True, blank=True)
 
+    # ── Auditoría (quién/cuándo). editable=False / auto_now → read_only en el
+    # serializer; created_by/updated_by se rellenan en perform_create/update. ──
+    created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+
     def __str__(self):
         return f"{self.solicita} - {self.codigo_pis}"
 
@@ -138,6 +145,12 @@ class Gasto(models.Model):
     gastos_totales = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     facturado = models.CharField(max_length=50, null=True, blank=True)
     descripcion_gastos = models.TextField(null=True, blank=True)
+
+    # ── Auditoría (quién/cuándo) ──
+    created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         campos = [
@@ -169,6 +182,12 @@ class Vacio(models.Model):
     operador = models.CharField(max_length=255, null=True, blank=True)
     cita = models.CharField(max_length=255, null=True, blank=True)
     cd = models.CharField(max_length=255, null=True, blank=True)
+
+    # ── Auditoría (quién/cuándo) ──
+    created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return str(self.contenedor) if self.contenedor else "Vacio sin contenedor"
@@ -278,6 +297,12 @@ class MovimientoLocal(models.Model):
         default=PENDIENTE,
         db_index=True,
     )
+
+    # ── Auditoría (quién/cuándo) ──
+    created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     class Meta:
         managed  = True
