@@ -75,21 +75,37 @@ jobs:
             -e DJANGO_SECRET_KEY=solo-para-ci \
             -e ALLOWED_HOSTS=localhost,127.0.0.1 \
             controldemaniobras-api:ci
+          URL=http://127.0.0.1:8000/static/admin/css/base.css
+
+          # Con DEBUG=False se activa SECURE_SSL_REDIRECT, así que hay que
+          # mandar X-Forwarded-Proto: https igual que hará el ingress de Azure
+          # Container Apps. De paso esto valida SECURE_PROXY_SSL_HEADER: si
+          # estuviera mal, aquí saldría un bucle de redirecciones.
+          #
           # Se pide un estático del admin a propósito: lo sirve WhiteNoise sin
           # tocar la base de datos (en CI no hay Postgres), así que valida de
           # una vez que gunicorn levantó, que collectstatic corrió en el build
           # y que WhiteNoise encuentra el resultado.
           ok=0
           for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/static/admin/css/base.css || true)
+            code=$(curl -s -o /dev/null -w '%{http_code}' -H 'X-Forwarded-Proto: https' "$URL" || true)
             if [ "$code" = "200" ]; then echo "WhiteNoise sirve los estaticos (200)"; ok=1; break; fi
             sleep 2
           done
           if [ "$ok" != "1" ]; then
-            echo "El contenedor no respondio a tiempo (ultimo codigo: $code). Logs:"
+            echo "El contenedor no respondio 200 a tiempo (ultimo codigo: $code). Logs:"
             docker logs api-ci
             exit 1
           fi
+
+          # La otra cara: sin la cabecera del proxy tiene que redirigir a HTTPS.
+          # Es una propiedad de seguridad que conviene dejar fijada.
+          code_sin_tls=$(curl -s -o /dev/null -w '%{http_code}' "$URL" || true)
+          if [ "$code_sin_tls" != "301" ]; then
+            echo "Se esperaba un 301 a HTTPS sin X-Forwarded-Proto, y llego $code_sin_tls"
+            exit 1
+          fi
+          echo "Redireccion a HTTPS activa (301 sin la cabecera del proxy)"
 
       - name: Logs del contenedor (si algo falló)
         if: failure()
