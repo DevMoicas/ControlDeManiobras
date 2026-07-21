@@ -105,6 +105,34 @@ class LoggingSeguridadTests(SimpleTestCase):
 		self.assertIn('atacante', log.output[0])
 
 
+class CspPorRutaTests(SimpleTestCase):
+	"""La API va con default-src 'none' (solo devuelve JSON), pero /admin/ es HTML
+	de Django con su propio CSS/JS/imágenes: con 'none' el panel sale sin estilos
+	y el navegador bloquea el QR de alta del dispositivo TOTP."""
+
+	def _csp(self, path):
+		from django.test import RequestFactory
+		from django.http import HttpResponse
+		from .middleware import SecurityHeadersMiddleware
+
+		mw = SecurityHeadersMiddleware(lambda req: HttpResponse('x'))
+		return mw(RequestFactory().get(path))['Content-Security-Policy']
+
+	def test_la_api_no_puede_cargar_ningun_recurso(self):
+		csp = self._csp('/api/maniobras/')
+		self.assertIn("default-src 'none'", csp)
+
+	def test_admin_puede_cargar_sus_propios_recursos_y_el_qr(self):
+		csp = self._csp('/admin/otp_totp/totpdevice/1/config/')
+		self.assertIn("default-src 'self'", csp)
+		self.assertIn("img-src 'self' data:", csp)   # sin esto no carga el QR
+		self.assertNotIn("default-src 'none'", csp)
+
+	def test_ambas_rutas_siguen_prohibiendo_el_embebido(self):
+		for path in ('/api/maniobras/', '/admin/'):
+			self.assertIn("frame-ancestors 'none'", self._csp(path))
+
+
 class CtaPortTipoServicioTests(SimpleTestCase):
 	"""El tipo de servicio ya NO se adivina del texto: lo manda el botón
 	'Tipo de Servicio'. Estos casos cubren la resolución del tipo, el dedup del

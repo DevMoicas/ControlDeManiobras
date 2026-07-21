@@ -161,11 +161,24 @@ class SecurityHeadersMiddleware:
             'bluetooth=()'
         )
 
-        # CSP para la API: no debe cargar ningún recurso externo
-        response['Content-Security-Policy'] = (
-            "default-src 'none'; "
-            "frame-ancestors 'none';"
-        )
+        # CSP. La API devuelve JSON y no debe cargar ningún recurso: 'none'.
+        # /admin/ NO es la API: es HTML de Django con su propio CSS, JS e
+        # imágenes servidos del mismo origen. Con 'none' el panel se renderiza
+        # sin estilos y el navegador bloquea imágenes como el QR de alta del
+        # dispositivo TOTP (el fallback del template lo confunde con "falta el
+        # paquete qrcode"). Se le da la política mínima que lo deja funcionar.
+        if request.path.startswith('/admin/'):
+            response['Content-Security-Policy'] = (
+                "default-src 'self'; "
+                "img-src 'self' data:; "          # iconos del admin y el QR (SVG)
+                "style-src 'self' 'unsafe-inline'; "  # el admin usa atributos style=
+                "frame-ancestors 'none';"
+            )
+        else:
+            response['Content-Security-Policy'] = (
+                "default-src 'none'; "
+                "frame-ancestors 'none';"
+            )
 
         # Ocultar información del servidor
         response['Server'] = 'Server'
