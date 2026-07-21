@@ -20,12 +20,27 @@ class ErrorHandlingTests(SimpleTestCase):
 		self.assertEqual(response.status_code, 400)
 		self.assertEqual(response.data['detail']['codigo_pis'][0], 'Ya existe un registro con el valor "ABC123".')
 
-	def test_serializer_reports_specific_codigo_pis_error(self):
+	# El validador de formato de codigo_pis se eliminó a propósito (ver el
+	# comentario `ponytail:` en Serializers.py): ahora acepta texto libre y el
+	# max_length=100 del modelo es lo que evita el error de columna. Estos dos
+	# casos fijan lo que el serializer valida HOY.
+	def test_solicita_es_el_unico_campo_obligatorio(self):
 		serializer = ManiobraSerializer(data={'codigo_pis': 'ABC 123'})
 
 		self.assertFalse(serializer.is_valid())
-		self.assertIn('codigo_pis', serializer.errors)
-		self.assertEqual(str(serializer.errors['codigo_pis'][0]), 'Código PIS inválido.')
+		self.assertIn('solicita', serializer.errors)
+		self.assertNotIn('codigo_pis', serializer.errors)
+
+	def test_codigo_pis_acepta_texto_libre(self):
+		serializer = ManiobraSerializer(data={'solicita': 'JUAN', 'codigo_pis': 'ABC 123'})
+
+		self.assertTrue(serializer.is_valid(), serializer.errors)
+
+	def test_solicita_respeta_su_limite_de_longitud(self):
+		serializer = ManiobraSerializer(data={'solicita': 'X' * 31})
+
+		self.assertFalse(serializer.is_valid())
+		self.assertIn('solicita', serializer.errors)
 
 
 class LoggingSeguridadTests(SimpleTestCase):
