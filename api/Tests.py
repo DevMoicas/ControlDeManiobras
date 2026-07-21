@@ -105,6 +105,44 @@ class LoggingSeguridadTests(SimpleTestCase):
 		self.assertIn('atacante', log.output[0])
 
 
+class MfaAdminTests(SimpleTestCase):
+	"""3.3.5 — /admin exige un dispositivo OTP verificado, no solo is_staff.
+	Si alguien quita el intercambio de clase en config/urls.py, esto falla."""
+
+	class _UsuarioFalso:
+		is_active = True
+		is_staff = True
+
+		def __init__(self, verificado):
+			self._verificado = verificado
+
+		def is_verified(self):
+			return self._verificado
+
+	def _admin_site(self):
+		import config.urls  # noqa: F401  — importarlo es lo que hace el intercambio
+		from django.contrib import admin
+		return admin.site
+
+	def test_el_sitio_admin_es_un_otpadminsite(self):
+		from django_otp.admin import OTPAdminSite
+		self.assertIsInstance(self._admin_site(), OTPAdminSite)
+
+	def test_staff_sin_otp_verificado_no_entra(self):
+		from django.test import RequestFactory
+
+		req = RequestFactory().get('/admin/')
+		req.user = self._UsuarioFalso(verificado=False)
+		self.assertFalse(self._admin_site().has_permission(req))
+
+	def test_staff_con_otp_verificado_si_entra(self):
+		from django.test import RequestFactory
+
+		req = RequestFactory().get('/admin/')
+		req.user = self._UsuarioFalso(verificado=True)
+		self.assertTrue(self._admin_site().has_permission(req))
+
+
 class CspPorRutaTests(SimpleTestCase):
 	"""La API va con default-src 'none' (solo devuelve JSON), pero /admin/ es HTML
 	de Django con su propio CSS/JS/imágenes: con 'none' el panel sale sin estilos
