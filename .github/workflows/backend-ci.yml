@@ -114,3 +114,64 @@ jobs:
       - name: Limpiar
         if: always()
         run: docker rm -f api-ci || true
+
+  desplegar:
+    name: Publicar imagen y desplegar en Azure
+    runs-on: ubuntu-latest
+    needs: imagen
+    # Solo desde la rama del backend, nunca desde un pull request: un PR de un
+    # fork no debe poder desplegar a producción.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/backend/api'
+    # Necesarios para OIDC: GitHub firma un token por ejecución y Azure lo valida
+    # contra este repositorio y esta rama. No hay ninguna contraseña almacenada.
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Autenticar en Azure (OIDC, sin secretos)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Construir y publicar en el registry
+        run: |
+          az acr login --name acrcdmfraba
+          IMG=acrcdmfraba.azurecr.io/controldemaniobras-api
+          # Se etiqueta con el SHA del commit además de 'latest': así siempre se
+          # puede volver a una imagen concreta sin depender de un tag móvil.
+          docker build -t "$IMG:${{ github.sha }}" -t "$IMG:latest" .
+          docker push "$IMG:${{ github.sha }}"
+          docker push "$IMG:latest"
+
+      - name: Desplegar en la Web App
+        run: |
+          az webapp config container set \
+            --resource-group rg-cdm-prod \
+            --name app-cdm-fraba \
+            --container-image-name "acrcdmfraba.azurecr.io/controldemaniobras-api:${{ github.sha }}" \
+            --container-registry-url https://acrcdmfraba.azurecr.io
+          # La Web App baja la imagen con su identidad administrada (rol AcrPull),
+          # así que no hay usuario ni contraseña de registry en ninguna parte.
+          az webapp config set \
+            --resource-group rg-cdm-prod \
+            --name app-cdm-fraba \
+            --generic-configurations '{"acrUseManagedIdentityCreds": true}'
+          az webapp restart --resource-group rg-cdm-prod --name app-cdm-fraba
+
+      - name: Comprobar que producción responde
+        run: |
+          URL=https://app-cdm-fraba.azurewebsites.net/static/admin/css/base.css
+          for i in $(seq 1 40); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$URL" || true)
+            if [ "$code" = "200" ]; then echo "produccion responde 200"; exit 0; fi
+            echo "  intento $i: $code"
+            sleep 10
+          done
+          echo "produccion no respondio a tiempo (ultimo codigo: $code)"
+          az webapp log tail --resource-group rg-cdm-prod --name app-cdm-fraba --provider docker &
+          sleep 20
+          exit 1
