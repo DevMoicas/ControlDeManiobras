@@ -53,6 +53,12 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'axes',
+    # MFA para cuentas admin (decisión A4). otp_totp = códigos de 6 dígitos que
+    # rotan cada 30s; otp_static = códigos de respaldo de un solo uso para
+    # recuperar el acceso si se pierde el teléfono (manage.py addstatictoken).
+    'django_otp',
+    'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_static',
 ]
 
 MIDDLEWARE = [
@@ -65,6 +71,9 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Tiene que ir DESPUÉS de AuthenticationMiddleware: añade request.user.is_verified().
+    # Por sí solo no exige nada; el enforce sobre /admin se activa aparte (3.3.5).
+    'django_otp.middleware.OTPMiddleware',
     'axes.middleware.AxesMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
