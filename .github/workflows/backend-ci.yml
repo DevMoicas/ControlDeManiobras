@@ -18,10 +18,21 @@ jobs:
       # en los secretos de la plataforma (decisión F4).
       DJANGO_SECRET_KEY: solo-para-ci
       DJANGO_DEBUG: 'False'
+      # No hay Postgres en CI y no hace falta: los 19 tests son SimpleTestCase y
+      # ninguno se conecta. Pero Django calcula la firma de la base por defecto
+      # antes de correrlos, y si NAME es None revienta con un TypeError. En local
+      # estos valores salen del .env, que en CI no existe. Son de mentira a
+      # propósito: si algún test intentara conectarse, fallaría de inmediato en
+      # vez de tocar algo real.
+      DB_NAME: ci_sin_conexion
+      DB_ADMIN_USER: ci
+      DB_ADMIN_PASSWORD: ci
+      DB_STANDARD_USER: ci
+      DB_STANDARD_PASSWORD: ci
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.14'
           cache: pip
@@ -43,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: tests
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Construir la imagen
         run: docker build -t controldemaniobras-api:ci .
