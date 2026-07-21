@@ -1,0 +1,89 @@
+name: Backend CI
+
+# Corre en la rama del backend. El frontend vive en otra rama del mismo repo y
+# tiene (tendrá) su propio workflow.
+on:
+  push:
+    branches: [backend/api]
+  pull_request:
+    branches: [backend/api]
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Tests en Linux
+    runs-on: ubuntu-latest
+    env:
+      # settings.py aborta sin esta variable. Es de usar y tirar: la real vive
+      # en los secretos de la plataforma (decisión F4).
+      DJANGO_SECRET_KEY: solo-para-ci
+      DJANGO_DEBUG: 'False'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: manage.py check
+        run: python Manage.py check
+
+      # Sin argumento de módulo: así el descubrimiento tiene que encontrar los
+      # tests por sí solo. En Linux el patrón "test*.py" distingue mayúsculas,
+      # de modo que este paso también protege contra un "Ran 0 tests" en falso.
+      - name: Tests
+        run: python Manage.py test api --verbosity 2
+
+  imagen:
+    name: Imagen Docker + Carta Porte real
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Construir la imagen
+        run: docker build -t controldemaniobras-api:ci .
+
+      # El paso que de verdad importa: LibreOffice headless convirtiendo el
+      # .xlsx a PDF dentro del contenedor. Es lo más frágil del despliegue y no
+      # se puede comprobar en Windows.
+      - name: Generar una Carta Porte en PDF dentro del contenedor
+        run: |
+          docker run --rm \
+            -e DJANGO_SECRET_KEY=solo-para-ci \
+            controldemaniobras-api:ci \
+            python smoke_pdf.py
+
+      - name: Comprobar que gunicorn arranca y WhiteNoise sirve los estáticos
+        run: |
+          docker run -d --name api-ci -p 8000:8000 \
+            -e DJANGO_SECRET_KEY=solo-para-ci \
+            -e ALLOWED_HOSTS=localhost,127.0.0.1 \
+            controldemaniobras-api:ci
+          # Se pide un estático del admin a propósito: lo sirve WhiteNoise sin
+          # tocar la base de datos (en CI no hay Postgres), así que valida de
+          # una vez que gunicorn levantó, que collectstatic corrió en el build
+          # y que WhiteNoise encuentra el resultado.
+          ok=0
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/static/admin/css/base.css || true)
+            if [ "$code" = "200" ]; then echo "WhiteNoise sirve los estaticos (200)"; ok=1; break; fi
+            sleep 2
+          done
+          if [ "$ok" != "1" ]; then
+            echo "El contenedor no respondio a tiempo (ultimo codigo: $code). Logs:"
+            docker logs api-ci
+            exit 1
+          fi
+
+      - name: Logs del contenedor (si algo falló)
+        if: failure()
+        run: docker logs api-ci || true
+
+      - name: Limpiar
+        if: always()
+        run: docker rm -f api-ci || true
