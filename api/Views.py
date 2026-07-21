@@ -326,8 +326,17 @@ def _generar_pdf_cta_port(request_data, template_path, nombre_archivo_pdf: str, 
     # ── Cálculos derivados ─────────────────────────────────────────────────
     remision_valor = f"{folio} / {ccp}" if ccp else folio
 
-    es_carga_suelta = _es_carga_suelta(contenedor)
-    es_full         = len(contenedor) > 12
+    # El tipo de servicio lo dictamina el botón "Tipo de Servicio" de la maniobra.
+    # Los registros anteriores a ese campo llegan sin él: ahí se conserva la
+    # heurística vieja (>12 caracteres = full, texto "CARGA SUELTA") para que sus
+    # documentos salgan exactamente igual que antes del cambio.
+    tipo_servicio = (request_data.get('tipo_servicio') or '').strip().lower()
+    if tipo_servicio:
+        es_carga_suelta = tipo_servicio == 'carga_suelta'
+        es_full         = tipo_servicio == 'full'
+    else:
+        es_carga_suelta = _es_carga_suelta(contenedor)
+        es_full         = len(contenedor) > 12
     cantidad_label  = 2 if es_full else 1
     tipo_label      = 'CONTENEDORES' if es_full else 'CONTENEDOR'
 
@@ -375,13 +384,14 @@ def _generar_pdf_cta_port(request_data, template_path, nombre_archivo_pdf: str, 
                 if letra_2:
                     ws['B18'] = letra_2
             else:
-                ws['A17'] = cantidad_label    # 1 o 2
+                ws['A17'] = cantidad_label    # 1 (sencillo) o 2 (full)
                 ws['B17'] = tipo_label        # 'CONTENEDOR' o 'CONTENEDORES'
                 ws['A18'] = numero_1
                 ws['B18'] = letra_1
-                if numero_2:
+                # Segundo par (full) solo si aporta información distinta a la del
+                # primero: "20/DC" + "20/DC" es redundante → A19/B19 quedan vacías.
+                if (numero_2 or letra_2) and (numero_2, letra_2) != (numero_1, letra_1):
                     ws['A19'] = numero_2
-                if letra_2:
                     ws['B19'] = letra_2
 
             ws['C16'] = f'REFERENCIA: {referencia}' if referencia else ''   # Referencia
@@ -559,6 +569,7 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
                 'ccp':         m.ccp or '',
                 'pedimento':   m.pedimento or '',
                 'tipo':        m.tipo or '',
+                'tipo_servicio': m.tipo_servicio or '',
                 'peso':        str(m.peso) if m.peso is not None else '',
                 'referencia':  m.referencia or '',
                 # Operador, unidad y remolques del registro (autollenado de documentos)

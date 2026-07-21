@@ -52,6 +52,17 @@ class Maniobra(models.Model):
     
     # Nuevos campos agregados
     tipo_y_peso = models.CharField(max_length=255, null=True, blank=True)
+    # Tipo de servicio explícito (lo elige el usuario, ya no se infiere del texto).
+    # null/blank: los registros anteriores a este campo no lo tienen — los documentos
+    # caen a la heurística previa (ver _generar_pdf_cta_port en views.py).
+    TIPO_SERVICIO_CHOICES = [
+        ('sencillo', 'Sencillo'),
+        ('full', 'Full'),
+        ('carga_suelta', 'Carga suelta'),
+    ]
+    tipo_servicio = models.CharField(
+        max_length=20, choices=TIPO_SERVICIO_CHOICES, null=True, blank=True
+    )
     tipo = models.CharField(max_length=100, null=True, blank=True)
     # CharField (no DecimalField) para permitir dos pesos "23412 - 22000".
     # Los documentos los suman via _sumar_peso; no hay agregaciones numéricas en BD.
