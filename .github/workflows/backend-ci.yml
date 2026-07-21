@@ -163,15 +163,38 @@ jobs:
           az webapp restart --resource-group rg-cdm-prod --name app-cdm-fraba
 
       - name: Comprobar que producción responde
+        env:
+          SWA: https://happy-wave-025ee9c10.7.azurestaticapps.net
+          BACKEND: https://app-cdm-fraba.azurewebsites.net
         run: |
-          URL=https://app-cdm-fraba.azurewebsites.net/static/admin/css/base.css
+          # El backend NO es accesible directamente: al enlazarlo con la Static
+          # Web App, Azure le activa Easy Auth y responde 401 a todo lo que no
+          # venga de la SWA. Eso es lo que se quiere (decision E2), asi que un
+          # 401 aqui significa "vivo y protegido", no "roto".
+          ok=0
           for i in $(seq 1 40); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' "$URL" || true)
-            if [ "$code" = "200" ]; then echo "produccion responde 200"; exit 0; fi
-            echo "  intento $i: $code"
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$BACKEND/" || true)
+            if [ -n "$code" ] && [ "$code" != "000" ]; then
+              echo "backend en pie (HTTP $code)"; ok=1; break
+            fi
+            echo "  intento $i: sin respuesta"
             sleep 10
           done
-          echo "produccion no respondio a tiempo (ultimo codigo: $code)"
-          az webapp log tail --resource-group rg-cdm-prod --name app-cdm-fraba --provider docker &
-          sleep 20
-          exit 1
+          if [ "$ok" != "1" ]; then
+            echo "el backend no respondio a tiempo"
+            az webapp log tail --resource-group rg-cdm-prod --name app-cdm-fraba --provider docker &
+            sleep 20
+            exit 1
+          fi
+
+          # La prueba que de verdad importa: la cadena completa por mismo origen.
+          # Un POST vacio a /api/login/ debe devolver 400 (Django validando el
+          # cuerpo). Si diera 404, el enrutado /api/* estaria roto.
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$SWA/api/login/" \
+                   -H 'Content-Type: application/json' -d '{}' || true)
+          if [ "$code" = "400" ]; then
+            echo "la cadena SPA -> /api -> Django -> Postgres responde (HTTP $code)"
+          else
+            echo "el enrutado /api/* no responde como se espera (HTTP $code, se esperaba 400)"
+            exit 1
+          fi
