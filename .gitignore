@@ -69,6 +69,8 @@ cover/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+# Generado por collectstatic durante el build de la imagen, no se versiona.
+staticfiles/
 
 # Flask stuff:
 instance/

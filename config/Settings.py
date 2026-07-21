@@ -63,6 +63,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise va justo después de SecurityMiddleware y antes que todo lo
+    # demás: sirve los estáticos sin pasar por el resto de la cadena.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'api.middleware.IPRateLimitMiddleware',
     'api.middleware.RoleRoutingMiddleware',
     'api.middleware.SecurityHeadersMiddleware',
@@ -276,6 +279,23 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Estáticos servidos por WhiteNoise dentro del contenedor. Son SOLO los de
+# /admin y DRF: el SPA lo sirve Static Web Apps aparte (decisión E2), aquí no
+# se compila nada de React. collectstatic los junta en STATIC_ROOT durante el
+# build de la imagen.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# CompressedManifestStaticFilesStorage: comprime y añade hash al nombre, así los
+# estáticos del admin pueden cachearse para siempre sin servir versiones viejas.
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 # ── Autenticación (django-axes) ─────────────────────────────────────────────
 AUTHENTICATION_BACKENDS = [

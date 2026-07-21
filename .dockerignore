@@ -1,0 +1,44 @@
+# Lo que NO debe entrar en la imagen. Además de reducir tamaño, evita que
+# credenciales locales acaben horneadas en una capa (las capas quedan en el
+# registro aunque un paso posterior borre el archivo).
+
+# Secretos y entornos locales
+.env
+.env.*
+.venv/
+venv/
+ENV/
+
+# Control de versiones y herramientas
+.git/
+.gitignore
+.github/
+.vscode/
+.idea/
+
+# Dependencias y artefactos de Node: el SPA lo compila y sirve Static Web Apps
+# aparte (decisión E2), aquí no se necesita nada de él.
+node_modules/
+src/
+build/
+dist/
+
+# Python compilado y cachés
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Se regenera dentro del build con collectstatic
+staticfiles/
+
+# Logs locales
+*.log
+errores_sistema.log
+
+# Volcados y semillas de base de datos: son datos, no van en la imagen
+*.sql
+
+# Documentación y planes
+*.md
