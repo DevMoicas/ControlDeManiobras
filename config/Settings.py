@@ -300,6 +300,13 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'clear_format',
         },
+        # Handler propio a INFO: los eventos de seguridad son esperados, no
+        # fallos, y el handler de errores está en ERROR y se los tragaría.
+        'console_security': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'clear_format',
+        },
     },
     'loggers': {
         'django': {
@@ -311,6 +318,14 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'ERROR',
             'propagate': True,
+        },
+        # Eventos de seguridad (3.4.2): login OK/fallido, lockouts de axes y
+        # accesos denegados 401/403. propagate=False para que no se dupliquen
+        # a través del logger padre 'api'.
+        'api.security': {
+            'handlers': ['console_security'],
+            'level': 'INFO',
+            'propagate': False,
         },
     },
 }

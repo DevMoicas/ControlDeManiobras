@@ -9,6 +9,36 @@ import re
 
 logger = logging.getLogger(__name__)
 
+# Canal aparte para eventos de seguridad (login, lockouts, accesos denegados).
+# Va a INFO mientras que 'api' se queda en ERROR: son eventos esperados, no fallos.
+security_logger = logging.getLogger('api.security')
+
+
+def client_ip(request):
+    """IP del cliente resuelta igual que la resuelve django-axes, para que el log
+    de seguridad y el lockout hablen siempre de la misma IP.
+
+    ponytail: hereda la confianza en X-Forwarded-For que tenga configurada axes;
+    endurecerla depende de cuántos proxies mete Azure delante (Fase 5 del plan
+    de despliegue, tareas 3.1.5/3.1.6).
+    """
+    if request is None:
+        return '-'
+    from axes.helpers import get_client_ip_address
+    return get_client_ip_address(request) or '-'
+
+
+def usuario_de(request):
+    """Username autenticado, o 'anonimo'. Nunca lanza."""
+    return getattr(getattr(request, 'user', None), 'username', '') or 'anonimo'
+
+
+def _es_login(context):
+    """True si la petición es al endpoint de login (url_name='login' en api/urls.py).
+    Se compara por nombre de ruta, no por path, para que mover la URL no lo rompa."""
+    match = getattr(context.get('request'), 'resolver_match', None)
+    return getattr(match, 'url_name', None) == 'login'
+
 
 def _build_validation_response(detail):
     return Response(
@@ -53,6 +83,20 @@ def _parse_integrity_error(exc):
 def custom_exception_handler(exc, context):
     # Llama primero al gestor de excepciones por defecto de DRF para obtener la respuesta estándar.
     response = exception_handler(exc, context)
+
+    # 401/403: único punto por el que pasan todos los accesos denegados de DRF.
+    # El login se excluye: su fallo ya lo registra la señal user_login_failed con
+    # el usuario que se intentó, y aquí saldría siempre "anonimo POST /api/login/".
+    if response is not None and response.status_code in (401, 403) and not _es_login(context):
+        request = context.get('request')
+        security_logger.warning(
+            "acceso denegado %s user=%s ip=%s %s %s",
+            response.status_code,
+            usuario_de(request),
+            client_ip(request),
+            getattr(request, 'method', '-'),
+            getattr(request, 'path', '-'),
+        )
 
     if response is None and isinstance(exc, DjangoValidationError):
         if hasattr(exc, 'message_dict'):

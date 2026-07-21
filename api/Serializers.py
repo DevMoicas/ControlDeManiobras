@@ -94,9 +94,23 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Solo claims no sensibles
         token["username"] = user.username
         token["role"] = "admin" if user.is_staff else "standard"
- 
-        return token 
-    
+
+        return token
+
+    def validate(self, attrs):
+        # El login por JWT no pasa por django.contrib.auth.login(), así que la
+        # señal user_logged_in nunca se dispara: este es el único punto que se
+        # ejecuta solo cuando las credenciales fueron correctas.
+        data = super().validate(attrs)
+        from .utils import client_ip, security_logger
+        security_logger.info(
+            "login OK user=%s rol=%s ip=%s",
+            self.user.username,
+            "admin" if self.user.is_staff else "standard",
+            client_ip(self.context.get('request')),
+        )
+        return data
+
 class GastoSerializer(serializers.ModelSerializer):
     folio = serializers.CharField(source='maniobra.folio', read_only=True)
 

@@ -1,7 +1,9 @@
 import io
+import logging
 
 from django.test import SimpleTestCase
 from django.db import IntegrityError
+from django.contrib.auth.models import AnonymousUser
 from openpyxl import load_workbook
 
 from .utils import custom_exception_handler
@@ -24,6 +26,68 @@ class ErrorHandlingTests(SimpleTestCase):
 		self.assertFalse(serializer.is_valid())
 		self.assertIn('codigo_pis', serializer.errors)
 		self.assertEqual(str(serializer.errors['codigo_pis'][0]), 'Código PIS inválido.')
+
+
+class LoggingSeguridadTests(SimpleTestCase):
+	"""3.4.2 — los eventos de seguridad tienen que llegar al logger 'api.security'.
+	Si alguien desconecta una señal o sube el nivel del handler, esto falla."""
+
+	def test_acceso_denegado_403_se_loguea(self):
+		from rest_framework.exceptions import PermissionDenied
+		from django.test import RequestFactory
+
+		request = RequestFactory().delete('/api/maniobras/7/')
+		request.user = AnonymousUser()
+
+		with self.assertLogs('api.security', level='WARNING') as log:
+			custom_exception_handler(PermissionDenied(), {'request': request})
+		self.assertIn('acceso denegado 403', log.output[0])
+		self.assertIn('/api/maniobras/7/', log.output[0])
+
+	def test_error_400_no_ensucia_el_log_de_seguridad(self):
+		from rest_framework.exceptions import ValidationError as DRFValidationError
+		from django.test import RequestFactory
+
+		request = RequestFactory().post('/api/maniobras/')
+		request.user = AnonymousUser()
+
+		with self.assertNoLogs('api.security', level='WARNING'):
+			custom_exception_handler(DRFValidationError({'solicita': ['requerido']}),
+			                         {'request': request})
+
+	# Emitir las señales de verdad arrastraría a los receptores propios de axes,
+	# que consultan la BD. Se comprueba en dos pasos: que el nuestro está
+	# registrado (por dispatch_uid) y que hace lo suyo al ejecutarse.
+	def _uids_conectados(self, signal):
+		return [entrada[0][0] for entrada in signal.receivers]
+
+	def test_senal_de_login_fallido_esta_conectada(self):
+		from django.contrib.auth.signals import user_login_failed
+		from django.test import RequestFactory
+		from .Apps import _log_login_fallido
+
+		self.assertIn('api_login_fallido', self._uids_conectados(user_login_failed))
+
+		with self.assertLogs('api.security', level='WARNING') as log:
+			_log_login_fallido(sender=None,
+			                   credentials={'username': 'atacante'},
+			                   request=RequestFactory().post('/api/token/'))
+		self.assertIn('login FALLIDO', log.output[0])
+		self.assertIn('atacante', log.output[0])
+
+	def test_senal_de_lockout_esta_conectada(self):
+		from axes.signals import user_locked_out
+		from django.test import RequestFactory
+		from .Apps import _log_lockout
+
+		self.assertIn('api_lockout', self._uids_conectados(user_locked_out))
+
+		with self.assertLogs('api.security', level='WARNING') as log:
+			_log_lockout(sender=None,
+			             request=RequestFactory().post('/api/token/'),
+			             username='atacante')
+		self.assertIn('LOCKOUT', log.output[0])
+		self.assertIn('atacante', log.output[0])
 
 
 class CtaPortTipoServicioTests(SimpleTestCase):
