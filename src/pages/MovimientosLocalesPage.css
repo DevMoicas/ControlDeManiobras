@@ -248,6 +248,22 @@
     /* 16px exactos: por debajo, iOS hace zoom automático al enfocar el campo
        y descoloca la página entera (§5 readable-font-size). */
     font-size: 16px;
+    /* A 16px la fecha ocupa ~85px y solo había 82px de hueco, así que el año
+       quedaba debajo del aspa. 152 − 10 − 34 − 2 = 106px: cabe con margen.
+       Solo en móvil: en escritorio la fuente es menor y la columna más ancha. */
+    min-width: 152px;
+    padding-right: 34px;
+  }
+
+  /* El aspa de limpiar trae 6px de padding derecho que la metían hacia dentro,
+     justo encima del año. Pegada al borde libera ese espacio.
+     El padding IZQUIERDO no la mueve —el círculo se ancla a la derecha— y sube
+     el área táctil de ~20px a ~44px, el mínimo exigido. No pisa el texto: la
+     fecha termina sobre los 95px y esta zona empieza en los 108px. */
+  .ml-tabla .react-datepicker__close-icon,
+  .ml-modal .react-datepicker__close-icon {
+    padding-right: 2px;
+    padding-left: 18px;
   }
 }
 
