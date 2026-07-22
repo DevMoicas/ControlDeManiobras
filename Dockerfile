@@ -57,9 +57,18 @@ EXPOSE 8000
 # 3 workers para 1 vCPU y ~6 usuarios concurrentes (decisión A2). El timeout
 # alto es deliberado: una conversión de LibreOffice puede tardar varios
 # segundos y la aplicación ya la corta a los 60 s por su cuenta.
+#
+# gthread + 4 hilos: los workers 'sync' (el defecto) atienden UNA petición cada
+# uno, así que la API entera soportaba 3 peticiones a la vez. Con la Carta Porte
+# tardando ~9 s, tres a la vez dejaban la aplicación bloqueada para todos.
+# La carga es de espera, no de cálculo —consultas a la BD y el subproceso de
+# LibreOffice—, que es justo donde los hilos rinden: 3x4 = 12 concurrentes sin
+# gastar un peso ni tocar la arquitectura.
 CMD ["gunicorn", "config.wsgi:application", \
      "--bind", "0.0.0.0:8000", \
      "--workers", "3", \
+     "--worker-class", "gthread", \
+     "--threads", "4", \
      "--timeout", "120", \
      "--access-logfile", "-", \
      "--error-logfile", "-"]

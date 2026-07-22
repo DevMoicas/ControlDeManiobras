@@ -66,7 +66,8 @@ MIDDLEWARE = [
     # WhiteNoise va justo después de SecurityMiddleware y antes que todo lo
     # demás: sirve los estáticos sin pasar por el resto de la cadena.
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'api.middleware.IPRateLimitMiddleware',
+    # IPRateLimitMiddleware eliminado (3.1.5): leía la posición del XFF que
+    # escribe el cliente y su diccionario crecía sin límite. Ver api/middleware.py.
     'api.middleware.RoleRoutingMiddleware',
     'api.middleware.SecurityHeadersMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -167,9 +168,12 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    # Los de DRF sin tocar usan la cadena X-Forwarded-For ENTERA como clave, así
+    # que cualquier valor distinto abría un cubo nuevo y el límite no existía.
+    # Estos identifican por la IP real medida. Ver api/throttling.py.
     "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.AnonRateThrottle",   # usuarios sin login
-        "rest_framework.throttling.UserRateThrottle",   # usuarios autenticados
+        "api.throttling.AnonIpRealThrottle",   # usuarios sin login
+        "api.throttling.UserIpRealThrottle",   # usuarios autenticados
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "30/minute",   # máximo 30 peticiones por minuto sin login
@@ -304,6 +308,16 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # ── django-axes (brute force protection) ───────────────────────────────────
+# Sin esto axes usa REMOTE_ADDR, que detrás de App Service es SIEMPRE la IP
+# interna del front-end (169.254.x.x): la misma para todo el mundo. Con
+# AXES_LOCKOUT_PARAMETERS = [['username','ip_address']] eso degeneraba en
+# bloquear solo por usuario, y CUALQUIERA podía dejar fuera a cualquiera
+# fallando 5 veces con su nombre. Con la IP real, el atacante solo se bloquea
+# a sí mismo y el usuario legítimo entra sin enterarse.
+# Se usa el callable en vez de AXES_IPWARE_*: ipware NO está instalado, así que
+# esos ajustes no habrían tenido ningún efecto (verificado en vivo).
+AXES_CLIENT_IP_CALLABLE = 'api.client_ip.client_ip'
+
 AXES_FAILURE_LIMIT = 5          # Bloqueo después de 5 intentos fallidos
 AXES_COOLOFF_TIME = 1           # Tiempo de bloqueo: 1 hora
 AXES_RESET_ON_SUCCESS = True    # Resetea contador al login exitoso
