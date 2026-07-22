@@ -222,6 +222,51 @@
 }
 .ml-input--inline-edit { background: #fff; }
 
+/* ── Campo de fecha ────────────────────────────────────────────────────────── */
+/* react-datepicker envuelve el input en un .react-datepicker-wrapper que es
+   inline-block SIN ancho, así que encoge al contenido: el width:100% del input
+   era 100% de ese hueco encogido y la fecha salía cortada. Estirar el envoltorio
+   es lo que hace que el input llene de verdad su celda. */
+.ml-tabla .react-datepicker-wrapper,
+.ml-modal .react-datepicker-wrapper {
+  width: 100%;
+}
+
+.ml-input--fecha {
+  /* "dd/MM/yyyy" + el aspa de limpiar necesitan este hueco. min-width y no
+     width: donde la columna ya es más ancha —escritorio— no cambia nada. */
+  min-width: 124px;
+  /* El aspa de isClearable va en position:absolute pegada a la derecha; sin
+     este hueco el año quedaba por debajo. */
+  padding-right: 30px;
+}
+
+@media (max-width: 720px) {
+  .ml-input--fecha {
+    /* 44px = mínimo de área táctil (§2 touch-target-size). Antes ~31px. */
+    min-height: 44px;
+    /* 16px exactos: por debajo, iOS hace zoom automático al enfocar el campo
+       y descoloca la página entera (§5 readable-font-size). */
+    font-size: 16px;
+    /* A 16px la fecha ocupa ~85px y solo había 82px de hueco, así que el año
+       quedaba debajo del aspa. 152 − 10 − 34 − 2 = 106px: cabe con margen.
+       Solo en móvil: en escritorio la fuente es menor y la columna más ancha. */
+    min-width: 152px;
+    padding-right: 34px;
+  }
+
+  /* El aspa de limpiar trae 6px de padding derecho que la metían hacia dentro,
+     justo encima del año. Pegada al borde libera ese espacio.
+     El padding IZQUIERDO no la mueve —el círculo se ancla a la derecha— y sube
+     el área táctil de ~20px a ~44px, el mínimo exigido. No pisa el texto: la
+     fecha termina sobre los 95px y esta zona empieza en los 108px. */
+  .ml-tabla .react-datepicker__close-icon,
+  .ml-modal .react-datepicker__close-icon {
+    padding-right: 2px;
+    padding-left: 18px;
+  }
+}
+
 /* Celda de texto inline editable */
 .ml-celda-texto {
   cursor: text;
@@ -302,6 +347,16 @@
 }
 
 /* ── Modal ─────────────────────────────────────────────────────────────────── */
+/* Calendario de fecha en portal (ver FECHA_PORTAL_ID en el JSX). Al colgar del
+   <body> escapa del overflow del panel, pero hereda z-index:1 de la hoja de
+   react-datepicker y quedaría DEBAJO del overlay del modal (z-index:1000 aquí
+   abajo). 9999 = misma escala que los selectores en portal de operador/unidad.
+   El contenedor se deja sin position a propósito: al posicionarlo se convierte
+   en el ancestro de referencia del popper y el calendario aparece descolocado. */
+#ml-fecha-portal .react-datepicker-popper {
+  z-index: 9999;
+}
+
 .ml-overlay {
   position: fixed;
   inset: 0;

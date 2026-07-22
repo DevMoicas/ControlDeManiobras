@@ -11,12 +11,30 @@ import SearchBar from "../components/SearchBar/SearchBar";
 import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
 import PlacasSelector from "../components/PlacasSelector/PlacasSelector";
 import PendientePagadoSelector from "../components/PendientePagadoSelector/PendientePagadoSelector";
+import { shift } from "@floating-ui/react";
 import "react-datepicker/dist/react-datepicker.css";
 import "./MovimientosLocalesPage.css";
 
 registerLocale("es", es);
 
 // ── Constantes ───────────────────────────────────────────────────────────────
+
+// El calendario se saca del árbol a un portal colgado del <body>. Si no, el
+// `overflow: hidden` del panel de la tabla —que es deliberado, redondea las
+// esquinas— lo recorta, y con una sola fila apenas se veía nada. Es el mismo
+// truco que ya usan los selectores de operador y unidad (createPortal).
+// react-datepicker crea el nodo solo si no existe.
+// Acotado a esta página a propósito: DatePicker se usa en 7 sitios más y no
+// se toca ninguno.
+const FECHA_PORTAL_ID = "ml-fecha-portal";
+
+// react-datepicker aplica flip() y offset(), pero NO shift(). flip solo voltea
+// arriba/abajo: no corrige el eje horizontal, así que en pantallas estrechas el
+// calendario se salía por la izquierda y lunes y martes quedaban fuera de la
+// pantalla, irrecuperables. shift() lo desliza para mantenerlo dentro del
+// viewport con 8px de margen. Se pasa por popperModifiers, que la librería
+// añade a su propia lista de middleware de floating-ui.
+const FECHA_MIDDLEWARE = [shift({ padding: 8 })];
 
 const COLUMNAS = [
   { key: "fecha",      label: "Fecha",             isFecha:        true },
@@ -181,8 +199,10 @@ export default function MovimientosLocalesPage() {
           locale="es"
           dateFormat="dd/MM/yyyy"
           placeholderText="dd/MM/yyyy"
-          className="ml-input"
+          className="ml-input ml-input--fecha"
           isClearable
+          portalId={FECHA_PORTAL_ID}
+          popperModifiers={FECHA_MIDDLEWARE}
         />
       );
     }
@@ -241,8 +261,10 @@ export default function MovimientosLocalesPage() {
           locale="es"
           dateFormat="dd/MM/yyyy"
           placeholderText="—"
-          className="ml-input ml-input--inline"
+          className="ml-input ml-input--inline ml-input--fecha"
           isClearable
+          portalId={FECHA_PORTAL_ID}
+          popperModifiers={FECHA_MIDDLEWARE}
         />
       );
     }
@@ -319,8 +341,10 @@ export default function MovimientosLocalesPage() {
           locale="es"
           dateFormat="dd/MM/yyyy"
           placeholderText="dd/MM/yyyy"
-          className="ml-input"
+          className="ml-input ml-input--fecha"
           isClearable
+          portalId={FECHA_PORTAL_ID}
+          popperModifiers={FECHA_MIDDLEWARE}
         />
       );
     }

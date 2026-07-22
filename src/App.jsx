@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, ChevronRight } from 'lucide-react';
 import './App.css';
@@ -106,6 +106,16 @@ function AppRoutes() {
   const { user, logout } = useAuthContext();
 
   const showBackButton = location.pathname !== '/home' && location.pathname !== '/home/';
+
+  // Al cambiar de página, volver arriba. React Router NO reposiciona el scroll:
+  // se conserva el de la página anterior, así que entrar a una página desde una
+  // ya scrolleada la abría por la mitad. <ScrollRestoration/> no sirve aquí,
+  // solo existe en los data routers y esta app usa <BrowserRouter>.
+  // El scroller es la ventana — las páginas leen window.scrollY para su scroll
+  // infinito—, por eso se mueve window y no un contenedor.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   // ── Aviso de inactividad ────────────────────────────────────────────────────
   const [showWarnModal, setShowWarnModal] = useState(false);
