@@ -302,6 +302,16 @@
 }
 
 /* ── Modal ─────────────────────────────────────────────────────────────────── */
+/* Calendario de fecha en portal (ver FECHA_PORTAL_ID en el JSX). Al colgar del
+   <body> escapa del overflow del panel, pero hereda z-index:1 de la hoja de
+   react-datepicker y quedaría DEBAJO del overlay del modal (z-index:1000 aquí
+   abajo). 9999 = misma escala que los selectores en portal de operador/unidad.
+   El contenedor se deja sin position a propósito: al posicionarlo se convierte
+   en el ancestro de referencia del popper y el calendario aparece descolocado. */
+#ml-fecha-portal .react-datepicker-popper {
+  z-index: 9999;
+}
+
 .ml-overlay {
   position: fixed;
   inset: 0;

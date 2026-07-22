@@ -24,7 +24,11 @@
   --danger:        #dc2626;
   --danger-soft:   #fef2f2;
 
-  min-height: calc(100vh - 40px);
+  /* dvh y no vh: en móvil, 100vh es el viewport GRANDE (como si la barra de URL
+     estuviera oculta), así que reservaba ~60-100px de más y dejaba un hueco
+     blanco antes del footer. En escritorio dvh ≡ vh: valor idéntico, cero
+     cambio. Regla §5 viewport-units de ui-ux-pro-max. */
+  min-height: calc(100dvh - 40px);
   /* El tope de ancho vive en el padding, no en max-width: así este elemento —que
      es el que pinta el fondo— llena la pantalla como en el resto de las páginas,
      mientras el contenido sigue centrado y limitado a 1320px. Con max-width el
@@ -173,6 +177,13 @@
   padding: 22px;
   box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
   animation: cp-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* Una tabla no encoge por debajo del ancho mínimo de su contenido. Sin esto
+     se desbordaba de la tarjeta —se veía el fondo de la página por detrás— y
+     ensanchaba el documento entero, obligando a arrastrar la pantalla en móvil.
+     El scroll se queda DENTRO de la tarjeta, como ya hacen Vacíos y Movimientos
+     Locales. En escritorio la tabla cabe, así que no se activa: cero cambio. */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .noeco-container .subtable-title {

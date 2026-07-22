@@ -18,6 +18,15 @@ registerLocale("es", es);
 
 // ── Constantes ───────────────────────────────────────────────────────────────
 
+// El calendario se saca del árbol a un portal colgado del <body>. Si no, el
+// `overflow: hidden` del panel de la tabla —que es deliberado, redondea las
+// esquinas— lo recorta, y con una sola fila apenas se veía nada. Es el mismo
+// truco que ya usan los selectores de operador y unidad (createPortal).
+// react-datepicker crea el nodo solo si no existe.
+// Acotado a esta página a propósito: DatePicker se usa en 7 sitios más y no
+// se toca ninguno.
+const FECHA_PORTAL_ID = "ml-fecha-portal";
+
 const COLUMNAS = [
   { key: "fecha",      label: "Fecha",             isFecha:        true },
   { key: "operador",   label: "Operador",          isOperador:     true },
@@ -183,6 +192,7 @@ export default function MovimientosLocalesPage() {
           placeholderText="dd/MM/yyyy"
           className="ml-input"
           isClearable
+          portalId={FECHA_PORTAL_ID}
         />
       );
     }
@@ -243,6 +253,7 @@ export default function MovimientosLocalesPage() {
           placeholderText="—"
           className="ml-input ml-input--inline"
           isClearable
+          portalId={FECHA_PORTAL_ID}
         />
       );
     }
@@ -321,6 +332,7 @@ export default function MovimientosLocalesPage() {
           placeholderText="dd/MM/yyyy"
           className="ml-input"
           isClearable
+          portalId={FECHA_PORTAL_ID}
         />
       );
     }
