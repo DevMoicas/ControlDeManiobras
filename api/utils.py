@@ -97,6 +97,20 @@ def custom_exception_handler(exc, context):
             getattr(request, 'method', '-'),
             getattr(request, 'path', '-'),
         )
+        # ── SONDA TEMPORAL — QUITAR TRAS MEDIR (tareas 3.1.5/3.1.6) ──────────
+        # Mide cuántos proxies mete Azure delante y si alguno aporta una
+        # cabecera de IP propia que el cliente no pueda falsificar. Sin este
+        # dato, elegir el índice del X-Forwarded-For es adivinar: quedarse
+        # corto significa leer el valor del atacante y pasarse significa
+        # bloquear por la IP del proxy, o sea a todos a la vez.
+        # Se excluye cualquier cabecera con pinta de credencial.
+        if request is not None:
+            sonda = {
+                k: v for k, v in request.META.items()
+                if (k.startswith('HTTP_X_') or k in ('REMOTE_ADDR', 'HTTP_HOST'))
+                and not any(s in k for s in ('PRINCIPAL', 'TOKEN', 'KEY', 'SECRET', 'AUTH'))
+            }
+            security_logger.warning("SONDA-PROXY %r", sonda)
 
     if response is None and isinstance(exc, DjangoValidationError):
         if hasattr(exc, 'message_dict'):
