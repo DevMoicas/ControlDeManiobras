@@ -1,63 +1,19 @@
-import time
-from collections import deque
-from threading import Lock
-from django.http import HttpResponse
-
-# ── Configuración ─────────────────────────────────────────────────────────────
-MAX_REQUESTS   = 200          # máximo de requests permitidos
-WINDOW_SECONDS = 60           # ventana de tiempo en segundos
-BLOCK_SECONDS  = 3600         # duración del bloqueo (1 hora)
-
-# ── Estado en memoria ─────────────────────────────────────────────────────────
-_lock      = Lock()
-_hits      = {}    # { ip: deque([timestamp, ...]) }
-_bloqueadas = {}   # { ip: timestamp_de_bloqueo }
-
-
-def _get_ip(request):
-    forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR", "")
-
-
-class IPRateLimitMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        ip  = _get_ip(request)
-        now = time.time()
-
-        with _lock:
-            # ── Verificar si la IP está bloqueada ─────────────────────────
-            if ip in _bloqueadas:
-                if now - _bloqueadas[ip] < BLOCK_SECONDS:
-                    return HttpResponse(status=503)
-                else:
-                    # Bloqueo expirado — limpiar
-                    del _bloqueadas[ip]
-                    _hits.pop(ip, None)
-
-            # ── Registrar hit y limpiar hits fuera de la ventana ──────────
-            if ip not in _hits:
-                _hits[ip] = deque()
-
-            ventana = _hits[ip]
-            while ventana and now - ventana[0] > WINDOW_SECONDS:
-                ventana.popleft()
-
-            ventana.append(now)
-
-            # ── Verificar si supera el límite ─────────────────────────────
-            if len(ventana) > MAX_REQUESTS:
-                _bloqueadas[ip] = now
-                _hits.pop(ip, None)
-                return HttpResponse(status=503)
-
-        return self.get_response(request)
-
-
+# IPRateLimitMiddleware ELIMINADO (tarea 3.1.5 del plan de despliegue).
+#
+# Tenía tres defectos y ninguno se arreglaba configurándolo:
+#
+# 1. Leía X-Forwarded-For[0], que es la posición que ESCRIBE EL CLIENTE. Los
+#    proxies añaden por la derecha, así que ese índice es siempre el valor del
+#    atacante. Se saltaba rotando una cabecera.
+# 2. Su diccionario _hits usaba esa cadena arbitraria como clave y NUNCA
+#    borraba entradas. Con el límite de cabecera de gunicorn en 8 KB, unas
+#    130.000 peticiones bastaban para agotar 1 GB en una máquina de 1,75 GB:
+#    el middleware anti-DoS era, él mismo, el vector de DoS más practicable.
+# 3. Estado en memoria por proceso: con 3 workers el límite real era el triple
+#    y dependía de qué worker atendiera cada petición.
+#
+# Lo sustituye el throttle de DRF, que ya estaba activo (30/min anónimo,
+# 200/min autenticado) y ahora identifica bien al cliente vía api/client_ip.py.
 import jwt
 from django.conf import settings
 from api.db_context import set_db_alias
