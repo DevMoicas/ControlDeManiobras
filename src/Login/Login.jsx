@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
+import InactivityModal from '../components/InactivityModal/InactivityModal';
 
 const ERROR_USUARIO  = 'El campo de usuario está vacío, ingresa tu nombre de usuario';
 const ERROR_PASSWORD = 'El campo de contraseña está vacío, ingresa tu contraseña';
@@ -19,7 +20,16 @@ const fieldError = 'mt-1.5 text-[11px] font-semibold tracking-wide text-[#dc2626
 
 const LoginPage = () => {
   const navigate    = useNavigate();
+  const location    = useLocation();
   const { login }   = useAuthContext();
+
+  // El timer de inactividad cierra la sesión y redirige aquí con este flag.
+  // ponytail: se lee una sola vez al montar; un F5 sobre el login volvería a
+  // mostrarlo porque el state sigue en el historial. Es cosmético — si molesta,
+  // limpiarlo con navigate(location.pathname, { replace: true, state: null }).
+  const [sesionCaducada, setSesionCaducada] = useState(
+    () => Boolean(location.state?.sesionCaducada)
+  );
 
   const [username, setUsuario]       = useState('');
   const [password, setPassword]      = useState('');
@@ -118,6 +128,11 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen w-full bg-[#f4f7fb] lg:grid lg:grid-cols-[1.05fr_1fr]">
+
+      {/* Sesión cerrada por inactividad — llega desde el timer de /home */}
+      {sesionCaducada && (
+        <InactivityModal tipo="expired" onAceptar={() => setSesionCaducada(false)} />
+      )}
 
       {/* Alert Modal — bloqueo por intentos */}
       {alertConfig?.visible && (

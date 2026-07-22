@@ -3,8 +3,10 @@ import "./InactivityModal.css";
 /**
  * InactivityModal
  * Muestra dos variantes según el tipo:
- *   - 'warn':    aviso de inactividad próxima (10 min). Aceptar solo cierra.
- *   - 'expired': sesión expirada (20 min). Aceptar redirige al login.
+ *   - 'warn':    aviso de inactividad próxima (10 min), dentro de la app.
+ *                Aceptar cierra el modal y reanuda la escucha de actividad.
+ *   - 'expired': sesión ya cerrada por inactividad (20 min). Se muestra en el
+ *                login, adonde el timer redirige tras hacer el logout.
  *
  * Props:
  *   tipo       'warn' | 'expired'
@@ -20,7 +22,7 @@ export default function InactivityModal({ tipo, onAceptar }) {
         <p className="im-mensaje">
           {esAviso
             ? "Tu sesión se cerrará si sigues inactivo"
-            : "Tu sesión se cerrará por inactividad"}
+            : "Tu sesión caducó por inactividad"}
         </p>
         <button
           type="button"

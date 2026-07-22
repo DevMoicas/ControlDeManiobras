@@ -107,33 +107,35 @@ function AppRoutes() {
 
   const showBackButton = location.pathname !== '/home' && location.pathname !== '/home/';
 
-  // ── Modales de inactividad ──────────────────────────────────────────────────
-  const [showWarnModal,    setShowWarnModal]    = useState(false);
-  const [showExpiredModal, setShowExpiredModal] = useState(false);
+  // ── Aviso de inactividad ────────────────────────────────────────────────────
+  const [showWarnModal, setShowWarnModal] = useState(false);
 
-  // Al expirar: mostrar el modal SIN hacer logout todavía. El logout ocurre al
-  // hacer click en Aceptar para garantizar que el modal sea visible antes de salir.
+  // A los 20 min la sesión se cierra de verdad: logout (que invalida el refresh
+  // en el servidor) y salida al login, que muestra el aviso. Antes solo se
+  // pintaba un modal y los tokens seguían vivos hasta que alguien pulsara
+  // Aceptar: si el usuario se marchaba, la pantalla decía "expirada" pero la
+  // sesión no lo estaba. No se espera al logout para no dejar al usuario dentro
+  // si la red va lenta; limpia los tokens igual, falle o no la petición.
   const handleExpire = useCallback(() => {
     setShowWarnModal(false);
-    setShowExpiredModal(true);
-  }, []);
+    logout();
+    navigate('/', { replace: true, state: { sesionCaducada: true } });
+  }, [logout, navigate]);
 
   // Timer activo solo con sesión iniciada
-  useInactivityTimer({
+  const { confirmarAviso } = useInactivityTimer({
     enabled: !!user,
     onWarn: setShowWarnModal,
     onExpire: handleExpire,
   });
 
-  // Aceptar del aviso (10 min): solo cierra el modal. El timer NO se reinicia (Option B).
-  const handleWarnAceptar = () => setShowWarnModal(false);
-
-  // Aceptar de expiración (20 min): logout completo + redirección al login ("/").
-  const handleExpiredAceptar = useCallback(() => {
-    setShowExpiredModal(false);
-    logout();
-    navigate('/');
-  }, [logout, navigate]);
+  // Aceptar del aviso (10 min): cierra el modal y devuelve el mando a la
+  // actividad. NO reinicia el contador por sí solo — eso lo hará la primera
+  // interacción que llegue después. Si el usuario acepta y se marcha, expira.
+  const handleWarnAceptar = useCallback(() => {
+    setShowWarnModal(false);
+    confirmarAviso();
+  }, [confirmarAviso]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -206,14 +208,10 @@ function AppRoutes() {
         </span>
       </footer>
 
-      {/* Modal de aviso de inactividad (10 min) */}
+      {/* Modal de aviso de inactividad (10 min). El de expiración vive ahora en
+          el login: a los 20 min ya no hay sesión que avisar desde aquí. */}
       {showWarnModal && (
         <InactivityModal tipo="warn" onAceptar={handleWarnAceptar} />
-      )}
-
-      {/* Modal de sesión expirada (20 min) */}
-      {showExpiredModal && (
-        <InactivityModal tipo="expired" onAceptar={handleExpiredAceptar} />
       )}
 
     </div>

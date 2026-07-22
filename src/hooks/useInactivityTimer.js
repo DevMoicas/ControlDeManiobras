@@ -1,66 +1,58 @@
 import { useEffect, useRef, useCallback } from "react";
+import { estadoInicial, conActividad, conAceptar, conTick } from "./inactividad.mjs";
 
-const WARN_MS    = 10 * 60 * 1000;  // 10 minutos
-const EXPIRE_MS  = 20 * 60 * 1000;  // 20 minutos
-const TICK_MS    = 10_000;          // verificar cada 10 segundos
+const TICK_MS = 10_000;  // verificar cada 10 segundos
 
 // Eventos que cuentan como actividad del usuario.
-// Deliberadamente NO incluye 'click' ni 'mousedown' para que
-// hacer click en "Aceptar" del modal de aviso NO reinicie el timer (Option B).
 const ACTIVITY_EVENTS = ["mousemove", "keydown", "scroll", "touchstart"];
 
 /**
  * useInactivityTimer
  *
- * Detecta inactividad del usuario y llama callbacks al llegar a los umbrales.
+ * Avisa a los 10 min de inactividad y expira a los 20. La lógica vive en
+ * ./inactividad.mjs (pura y con pruebas); aquí solo están los listeners,
+ * el intervalo y el puente con React.
+ *
+ * Mientras el aviso está en pantalla la actividad NO cuenta: el contador sigue
+ * corriendo hacia los 20 min hasta que el usuario pulsa Aceptar. Aceptar
+ * tampoco reinicia por sí solo — hace falta interactuar después.
  *
  * Props:
- *   enabled   boolean  — activa/desactiva el timer (solo cuando hay sesión)
- *   onWarn    function(boolean) — llamado con true al llegar a 10 min,
- *                                 con false cuando el usuario se vuelve activo
- *   onExpire  function() — llamado al llegar a 20 min de inactividad
+ *   enabled   boolean         — activa el timer (solo cuando hay sesión)
+ *   onWarn    function(true)  — al llegar a 10 min. Ocultar el aviso es de
+ *                               quien llama, vía confirmarAviso()
+ *   onExpire  function()      — al llegar a 20 min
+ *
+ * Devuelve:
+ *   confirmarAviso  function() — el usuario aceptó: la actividad vuelve a contar
  */
 export function useInactivityTimer({ enabled, onWarn, onExpire }) {
-  const lastActivityRef = useRef(Date.now());
-  const warnedRef       = useRef(false);
-  const expiredRef      = useRef(false);
+  const estadoRef = useRef(estadoInicial(Date.now()));
 
   const resetActivity = useCallback(() => {
-    lastActivityRef.current = Date.now();
-    if (warnedRef.current) {
-      // Si había aviso visible, ocultarlo al detectar actividad real
-      warnedRef.current = false;
-      onWarn(false);
-    }
-  }, [onWarn]);
+    estadoRef.current = conActividad(estadoRef.current, Date.now());
+  }, []);
+
+  const confirmarAviso = useCallback(() => {
+    estadoRef.current = conAceptar(estadoRef.current);
+  }, []);
 
   useEffect(() => {
     if (!enabled) {
-      // Resetear estado interno si el timer se desactiva (logout)
-      lastActivityRef.current = Date.now();
-      warnedRef.current       = false;
-      expiredRef.current      = false;
+      estadoRef.current = estadoInicial(Date.now());  // limpiar tras el logout
       return;
     }
 
-    // Registrar listeners de actividad
     ACTIVITY_EVENTS.forEach((evt) =>
       window.addEventListener(evt, resetActivity, { passive: true })
     );
 
-    // Tick periódico para verificar inactividad
     const tick = setInterval(() => {
-      if (expiredRef.current) return; // ya expiró, no seguir verificando
+      const { estado, accion } = conTick(estadoRef.current, Date.now());
+      estadoRef.current = estado;
 
-      const elapsed = Date.now() - lastActivityRef.current;
-
-      if (elapsed >= EXPIRE_MS) {
-        expiredRef.current = true;
-        onExpire();
-      } else if (elapsed >= WARN_MS && !warnedRef.current) {
-        warnedRef.current = true;
-        onWarn(true);
-      }
+      if (accion === "expirar") onExpire();
+      else if (accion === "avisar") onWarn(true);
     }, TICK_MS);
 
     return () => {
@@ -70,4 +62,6 @@ export function useInactivityTimer({ enabled, onWarn, onExpire }) {
       clearInterval(tick);
     };
   }, [enabled, resetActivity, onWarn, onExpire]);
+
+  return { confirmarAviso };
 }
