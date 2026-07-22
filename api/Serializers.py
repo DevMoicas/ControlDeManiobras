@@ -1,10 +1,8 @@
 from rest_framework import serializers
 from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero
-from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
 from django.core.validators import RegexValidator, MinLengthValidator, MaxLengthValidator
-from django_otp import devices_for_user, match_token
 
 class TractoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -84,29 +82,9 @@ class ManiobraSerializer(serializers.ModelSerializer):
                 )
         return data
     
-class MFARequerida(AuthenticationFailed):
-    """Credenciales correctas, falta el código. El front lo distingue por `codigo`
-    para pasar al segundo paso en vez de decir 'usuario o contraseña incorrectos'."""
-    def __init__(self):
-        super().__init__({
-            'detail': 'Introduce el código de verificación.',
-            'codigo': 'mfa_requerida',
-        })
-
-
-class MFAInvalida(AuthenticationFailed):
-    """Código incorrecto, caducado o ya usado."""
-    def __init__(self):
-        super().__init__({
-            'detail': 'El código de verificación no es válido.',
-            'codigo': 'mfa_invalida',
-        })
-
-
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
-    Inyecta el rol del usuario dentro del payload del JWT y exige el segundo
-    factor a los usuarios que tengan un dispositivo TOTP confirmado.
+    Inyecta el rol del usuario dentro del payload del JWT.
     """
  
     @classmethod
@@ -125,35 +103,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # ejecuta solo cuando las credenciales fueron correctas.
         data = super().validate(attrs)
         from .utils import client_ip, security_logger
-
-        ip = client_ip(self.context.get('request'))
-
-        # ── Segundo factor (9.1, fase 1) ────────────────────────────────────
-        # Solo se exige a quien YA tiene un dispositivo confirmado. Quien no lo
-        # tenga entra como hasta ahora: así esto se puede desplegar sin dejar a
-        # nadie fuera y dar de alta al equipo poco a poco. El interruptor que
-        # lo hace obligatorio para todos es la fase 5, y no está aquí.
-        if list(devices_for_user(self.user, confirmed=True)):
-            codigo = str(self.initial_data.get('otp_token') or '').strip()
-
-            if not codigo:
-                raise MFARequerida()
-
-            if match_token(self.user, codigo) is None:
-                # Contraseña correcta + código incorrecto es la señal MÁS valiosa
-                # de todo el log: dice exactamente qué cuenta tiene la contraseña
-                # comprometida, mientras el atacante sigue fuera.
-                security_logger.warning(
-                    "login MFA FALLIDO (contrasena correcta) user=%s ip=%s",
-                    self.user.username, ip,
-                )
-                raise MFAInvalida()
-
         security_logger.info(
             "login OK user=%s rol=%s ip=%s",
             self.user.username,
             "admin" if self.user.is_staff else "standard",
-            ip,
+            client_ip(self.context.get('request')),
         )
         return data
 
