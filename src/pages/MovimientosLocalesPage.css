@@ -222,6 +222,35 @@
 }
 .ml-input--inline-edit { background: #fff; }
 
+/* ── Campo de fecha ────────────────────────────────────────────────────────── */
+/* react-datepicker envuelve el input en un .react-datepicker-wrapper que es
+   inline-block SIN ancho, así que encoge al contenido: el width:100% del input
+   era 100% de ese hueco encogido y la fecha salía cortada. Estirar el envoltorio
+   es lo que hace que el input llene de verdad su celda. */
+.ml-tabla .react-datepicker-wrapper,
+.ml-modal .react-datepicker-wrapper {
+  width: 100%;
+}
+
+.ml-input--fecha {
+  /* "dd/MM/yyyy" + el aspa de limpiar necesitan este hueco. min-width y no
+     width: donde la columna ya es más ancha —escritorio— no cambia nada. */
+  min-width: 124px;
+  /* El aspa de isClearable va en position:absolute pegada a la derecha; sin
+     este hueco el año quedaba por debajo. */
+  padding-right: 30px;
+}
+
+@media (max-width: 720px) {
+  .ml-input--fecha {
+    /* 44px = mínimo de área táctil (§2 touch-target-size). Antes ~31px. */
+    min-height: 44px;
+    /* 16px exactos: por debajo, iOS hace zoom automático al enfocar el campo
+       y descoloca la página entera (§5 readable-font-size). */
+    font-size: 16px;
+  }
+}
+
 /* Celda de texto inline editable */
 .ml-celda-texto {
   cursor: text;
