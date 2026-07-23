@@ -27,6 +27,12 @@ from .settings import *  # noqa: F401,F403
 
 MIGRATION_MODULES = {'api': None}
 
+# El test client habla http; con DEBUG=False el proyecto activa SECURE_SSL_REDIRECT
+# y toda petición se va en un 301 a https antes de llegar a la vista (rompe
+# cualquier prueba con APIClient contra un endpoint). Aquí no se prueba el
+# redirect, así que se apaga. En CI DJANGO_DEBUG=False, de ahí que solo salte allí.
+SECURE_SSL_REDIRECT = False
+
 # 'standard' es el MISMO servidor y la misma base que 'default'. Sin MIRROR,
 # Django intentaría crear dos bases de test con el mismo nombre.
 DATABASES['standard']['TEST'] = {'MIRROR': 'default'}  # noqa: F405
