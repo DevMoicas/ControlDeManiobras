@@ -1,5 +1,9 @@
-from django.db import models
+from datetime import timedelta
+
+from django.conf import settings
 from django.core.validators import MinLengthValidator
+from django.db import models
+from django.utils import timezone
 
 class Tracto(models.Model):
     no_eco = models.CharField(max_length=255, unique=True)
@@ -371,3 +375,79 @@ class OperadorTercero(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+# ── 9.1 fase 3: dispositivo de confianza ────────────────────────────────────
+DIAS_CONFIANZA = 14  # decisión 5: ventana ABSOLUTA, no desliza.
+
+
+def _caducidad_por_defecto():
+    # Encapsulado aquí para que ningún sitio que cree un dispositivo pueda
+    # equivocarse con la ventana. Se fija al ALTA y no se toca después.
+    return timezone.now() + timedelta(days=DIAS_CONFIANZA)
+
+
+class DispositivoConfianza(models.Model):
+    """Equipo marcado como de confianza: salta el segundo factor (no la
+    contraseña) durante 14 días absolutos desde el alta.
+
+    La cookie lleva el token EN CLARO; aquí solo vive su hash SHA-256. Un
+    vistazo a esta tabla —o un backup filtrado— no permite entrar en ningún
+    sitio, porque del hash no se recupera el token. Es la misma razón por la
+    que la cookie es httpOnly: esta credencial salta el MFA y no puede quedar
+    al alcance de un XSS (ver tarea 9.3).
+
+    Revocar es un UPDATE de `revocado_en`, no un DELETE: el proyecto reserva el
+    DELETE para el admin (decisión A1) y esto encaja en los permisos que el rol
+    estándar ya tiene, dejando además rastro de auditoría.
+    """
+    usuario         = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='dispositivos_confianza',
+        # Sin constraint de FK a nivel de BD. `api` corre sin migraciones en la
+        # base de test (las managed=False no se pueden crear ahí), y entonces sus
+        # tablas se crean por syncdb ANTES que auth_user, así que un constraint a
+        # auth_user rompería la creación de la BD de test. El cascade del ORM
+        # sigue actuando en los borrados por Django; un huérfano solo sería
+        # posible por un DELETE en SQL crudo, y sería inerte (buscar_vigente
+        # exige que el usuario coincida). Ver config/settings_test.py.
+        db_constraint=False,
+    )
+    token_hash      = models.CharField(max_length=64, unique=True)  # SHA-256 hex
+    etiqueta        = models.CharField(max_length=120, blank=True, default='')
+    ip_alta         = models.GenericIPAddressField(null=True, blank=True)
+    user_agent_alta = models.CharField(max_length=400, blank=True, default='')
+    creado_en       = models.DateTimeField(auto_now_add=True)
+    expira_en       = models.DateTimeField(default=_caducidad_por_defecto)
+    revocado_en     = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        managed  = True
+        ordering = ['-creado_en']
+
+    def __str__(self):
+        cad = self.expira_en.strftime('%Y-%m-%d') if self.expira_en else '?'
+        return f"{self.usuario} · {self.etiqueta or 'equipo'} (expira {cad})"
+
+    @property
+    def vigente(self):
+        return self.revocado_en is None and self.expira_en > timezone.now()
+
+    @classmethod
+    def buscar_vigente(cls, usuario, token_hash):
+        """Ruta crítica: el dispositivo que permite saltar el MFA. Tiene que
+        ser del usuario, no estar revocado y no haber caducado. Devuelve None
+        si falla cualquiera — nunca lanza."""
+        if not token_hash:
+            return None
+        return (
+            cls.objects
+            .filter(
+                usuario=usuario,
+                token_hash=token_hash,
+                revocado_en__isnull=True,
+                expira_en__gt=timezone.now(),
+            )
+            .first()
+        )
