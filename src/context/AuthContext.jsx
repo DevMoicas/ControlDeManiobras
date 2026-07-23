@@ -72,7 +72,7 @@ export function AuthProvider({ children }) {
     () => !decodeJwtPayload(tokenStore.getAccess()) && Boolean(tokenStore.getRefresh())
   );
 
-  const login = useCallback(async (username, password, otpToken) => {
+  const login = useCallback(async (username, password, otpToken, recordarEquipo) => {
     const safeUsername = String(username ?? "").trim().slice(0, 150);
     const safePassword = String(password ?? "").slice(0, 128);
     // 6 dígitos el TOTP, 8 caracteres los códigos de respaldo de django-otp.
@@ -81,7 +81,11 @@ export function AuthProvider({ children }) {
 
     let data;
     try {
-      data = await apiClient.post("/login/", { username: safeUsername, password: safePassword, otp_token: safeOtp });
+      // recordar_equipo solo se manda cuando está marcada: el backend crea el
+      // equipo de confianza y emite la cookie httpOnly tras verificar el código.
+      const cuerpo = { username: safeUsername, password: safePassword, otp_token: safeOtp };
+      if (recordarEquipo) cuerpo.recordar_equipo = true;
+      data = await apiClient.post("/login/", cuerpo);
     } catch (e) {
       // Se conserva `codigo`: sin él, "falta el segundo factor" se pintaría como
       // "usuario o contraseña incorrectos" y no habría manera de entrar.

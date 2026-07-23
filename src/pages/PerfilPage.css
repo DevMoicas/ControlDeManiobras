@@ -65,6 +65,85 @@
   margin: 28px 0;
 }
 
+/* ── Equipos de confianza ── */
+.perfil-equipos {
+  width: 100%;
+  text-align: left;
+}
+
+.perfil-equipos-titulo {
+  font-family: "Segoe UI", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-light, #6b7280);
+  margin: 0 0 12px;
+}
+
+.perfil-equipos-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.perfil-equipo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.perfil-equipo-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.perfil-equipo-nombre {
+  font-family: "Segoe UI", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text, #1f2937);
+}
+
+.perfil-equipo-fecha {
+  font-family: "Segoe UI", sans-serif;
+  font-size: 0.75rem;
+  color: var(--text-light, #6b7280);
+}
+
+.perfil-equipo-revocar {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border: 1.5px solid #dc2626;
+  border-radius: 8px;
+  background: transparent;
+  color: #dc2626;
+  font-family: "Segoe UI", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.perfil-equipo-revocar:hover:not(:disabled) {
+  background: #dc2626;
+  color: #fff;
+  transform: none;
+}
+
+.perfil-equipo-revocar:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* ── Botón cerrar sesión ── */
 .perfil-logout-btn {
   width: 100%;

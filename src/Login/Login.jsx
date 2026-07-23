@@ -37,6 +37,10 @@ const LoginPage = () => {
   // únicamente a quien ya tiene un dispositivo TOTP dado de alta.
   const [otp, setOtp]                 = useState('');
   const [pedirCodigo, setPedirCodigo] = useState(false);
+  // Casilla del equipo de confianza. Desmarcada por defecto (decisión 4): los
+  // operadores entran desde equipos compartidos del patio y confiar por defecto
+  // le regalaría el salto de MFA al siguiente que se siente.
+  const [recordarEquipo, setRecordarEquipo] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({ username: '', password: '', otp: '' });
   const [apiError, setApiError]       = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -100,7 +104,7 @@ const LoginPage = () => {
     setIsSubmitting(true);
 
     try {
-      await login(username, password, otp);
+      await login(username, password, otp, recordarEquipo);
       setFailedAttempts(0);
       navigate('/home');
     } catch (err) {
@@ -326,6 +330,18 @@ const LoginPage = () => {
                     Introduce el código de 6 dígitos de tu app de autenticación.
                   </p>
                 )}
+
+                {/* Equipo de confianza — desmarcada por defecto */}
+                <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-[13px] leading-snug text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={recordarEquipo}
+                    disabled={locked}
+                    onChange={(e) => setRecordarEquipo(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/30 disabled:cursor-not-allowed"
+                  />
+                  <span>No volver a pedir el código en este equipo durante 14 días.</span>
+                </label>
               </div>
             )}
 
