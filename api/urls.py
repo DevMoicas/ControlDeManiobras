@@ -27,6 +27,7 @@ from .views import (
     CargoViewSet,
     UnidadTerceroViewSet,
     OperadorTerceroViewSet,
+    DispositivoConfianzaViewSet,
 )
  
 router = DefaultRouter()
@@ -47,6 +48,7 @@ router.register(r'transportistas', TransportistaViewSet, basename='transportista
 router.register(r'cargos',         CargoViewSet,         basename='cargos')
 router.register(r'unidades-terceros',  UnidadTerceroViewSet,   basename='unidades-terceros')
 router.register(r'operadores-terceros', OperadorTerceroViewSet, basename='operadores-terceros')
+router.register(r'dispositivos-confianza', DispositivoConfianzaViewSet, basename='dispositivos-confianza')
 
 urlpatterns = [
     path('', include(router.urls)),

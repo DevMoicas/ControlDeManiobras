@@ -2,7 +2,7 @@ import base64
 import re
 import django_filters
 from rest_framework import viewsets
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
@@ -10,7 +10,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .Serializers import CustomTokenObtainPairSerializer
+from .Serializers import CustomTokenObtainPairSerializer, DispositivoConfianzaSerializer
+from . import confianza
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
@@ -595,6 +596,77 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
     # Devuelve access + refresh con 'role' y 'username' en el payload.
     serializer_class = CustomTokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        # El serializer valida credenciales + MFA + equipo de confianza, y deja
+        # dicho en sus atributos qué hacer con la cookie. Aquí, que es donde se
+        # puede tocar la respuesta HTTP, se emite o se borra.
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)   # 401 si fallan credenciales/MFA
+        respuesta = Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+        token = getattr(serializer, 'cookie_confianza_a_emitir', None)
+        if token:
+            respuesta.set_cookie(
+                confianza.COOKIE_CONFIANZA, token,
+                max_age=DIAS_CONFIANZA * 24 * 60 * 60,   # ventana absoluta, = a la de BD
+                httponly=True,
+                secure=not settings.DEBUG,               # en dev sobre http se puede probar
+                samesite='Strict',                       # mismo origen (SWA + backend enlazado)
+                path='/api/login/',                      # solo viaja al login (decisión 15)
+            )
+
+        return respuesta
+
+
+def _cerrar_todas_las_sesiones(user):
+    """Mete en la blacklist todos los refresh vigentes del usuario. No se puede
+    apuntar solo a la sesión del equipo perdido —los refresh no están ligados al
+    dispositivo— así que se cierran todas (decisión 13). Corre bajo el rol
+    estándar: la 0018 le dio SELECT en outstanding + INSERT en blacklisted."""
+    from django.utils import timezone
+    from rest_framework_simplejwt.token_blacklist.models import (
+        OutstandingToken, BlacklistedToken,
+    )
+    for ot in OutstandingToken.objects.filter(user=user, expires_at__gt=timezone.now()):
+        BlacklistedToken.objects.get_or_create(token=ot)
+
+
+class DispositivoConfianzaViewSet(viewsets.ViewSet):
+    """Equipos de confianza del propio usuario: listar y revocar.
+
+    El queryset se ata a request.user, así que nadie ve ni revoca los de otro
+    (la restricción es aquí, no en RLS, igual que en toda la app — decisión A1).
+    El alta NO está aquí: un equipo se marca de confianza al iniciar sesión con
+    la casilla, nunca por este endpoint.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _propios_vigentes(self, request):
+        from django.utils import timezone
+        return DispositivoConfianza.objects.filter(
+            usuario=request.user,
+            revocado_en__isnull=True,
+            expira_en__gt=timezone.now(),
+        )
+
+    def list(self, request):
+        datos = DispositivoConfianzaSerializer(
+            self._propios_vigentes(request), many=True
+        ).data
+        return Response(datos)
+
+    @action(detail=True, methods=['post'])
+    def revocar(self, request, pk=None):
+        from django.utils import timezone
+        disp = self._propios_vigentes(request).filter(pk=pk).first()
+        if disp is None:
+            return Response({'detail': 'No encontrado.'},
+                            status=status.HTTP_404_NOT_FOUND)
+        disp.revocado_en = timezone.now()
+        disp.save(update_fields=['revocado_en'])
+        _cerrar_todas_las_sesiones(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 class GastoViewSet(viewsets.ModelViewSet):
     # select_related evita el N+1 que dispara GastoSerializer.folio
     # (source='maniobra.folio') al serializar cada fila. order_by hace

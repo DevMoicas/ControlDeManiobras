@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
@@ -7,6 +7,7 @@ from django.core.validators import RegexValidator, MinLengthValidator, MaxLength
 from django.db import transaction
 from django_otp import devices_for_user, match_token
 from .db_context import get_db_alias
+from . import confianza
 
 class TractoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -128,7 +129,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)
         from .utils import client_ip, security_logger
 
-        ip = client_ip(self.context.get('request'))
+        request = self.context.get('request')
+        ip = client_ip(request)
+
+        # Señal para la vista: el token en claro a emitir en la cookie, o None.
+        # La vista es quien puede tocar la respuesta HTTP; el serializer decide.
+        self.cookie_confianza_a_emitir = None
 
         # ── Segundo factor (9.1, fase 1) ────────────────────────────────────
         # Solo se exige a quien YA tiene un dispositivo confirmado. Quien no lo
@@ -136,6 +142,21 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # nadie fuera y dar de alta al equipo poco a poco. El interruptor que
         # lo hace obligatorio para todos es la fase 5, y no está aquí.
         if list(devices_for_user(self.user, confirmed=True)):
+            # ── Equipo de confianza (fase 3): salta el código, NUNCA la
+            # contraseña (que ya validó super().validate() arriba). ───────────
+            cookie = request.COOKIES.get(confianza.COOKIE_CONFIANZA) if request else None
+            if cookie and DispositivoConfianza.buscar_vigente(
+                self.user, confianza.hash_token(cookie)
+            ):
+                security_logger.info(
+                    "login OK (equipo de confianza) user=%s ip=%s",
+                    self.user.username, ip,
+                )
+                return data
+            # Una cookie caducada/revocada se ignora sin más: buscar_vigente ya la
+            # rechazó y es inerte. No se borra —exigiría atrapar el 401 en la
+            # vista— porque su Max-Age caduca sola a la par que el dispositivo.
+
             codigo = str(self.initial_data.get('otp_token') or '').strip()
 
             if not codigo:
@@ -160,6 +181,21 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 )
                 raise MFAInvalida()
 
+            # Código correcto. Si pidió recordar el equipo, se crea la confianza
+            # y la vista emitirá la cookie. Solo aquí, tras verificar el segundo
+            # factor: un atacante que solo tenga la contraseña nunca llega.
+            if confianza.quiere_recordar(self.initial_data.get('recordar_equipo')):
+                token = confianza.generar_token()
+                ua = (request.META.get('HTTP_USER_AGENT', '') if request else '')[:400]
+                DispositivoConfianza.objects.create(
+                    usuario=self.user,
+                    token_hash=confianza.hash_token(token),
+                    ip_alta=confianza.ip_valida(ip),
+                    user_agent_alta=ua,
+                    etiqueta=confianza.etiqueta_desde_ua(ua),
+                )
+                self.cookie_confianza_a_emitir = token
+
         security_logger.info(
             "login OK user=%s rol=%s ip=%s",
             self.user.username,
@@ -167,6 +203,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             ip,
         )
         return data
+
+
+class DispositivoConfianzaSerializer(serializers.ModelSerializer):
+    """Solo lectura para la lista del perfil. NUNCA expone token_hash ni ip."""
+    class Meta:
+        model = DispositivoConfianza
+        fields = ('id', 'etiqueta', 'creado_en', 'expira_en')
+        read_only_fields = fields
+
 
 class GastoSerializer(serializers.ModelSerializer):
     folio = serializers.CharField(source='maniobra.folio', read_only=True)

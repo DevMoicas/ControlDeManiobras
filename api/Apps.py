@@ -40,3 +40,8 @@ class ApiConfig(AppConfig):
 
         user_login_failed.connect(_log_login_fallido, dispatch_uid='api_login_fallido')
         user_locked_out.connect(_log_lockout, dispatch_uid='api_lockout')
+
+        # El fichero es Admin.py (mayúscula), que el autodescubrimiento de Django
+        # NO encuentra en Linux (busca admin.py). Sin este import explícito, el
+        # panel de DispositivoConfianza no aparecería en producción.
+        from . import Admin  # noqa: F401
