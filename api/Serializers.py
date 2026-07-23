@@ -4,7 +4,9 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
 from django.core.validators import RegexValidator, MinLengthValidator, MaxLengthValidator
+from django.db import transaction
 from django_otp import devices_for_user, match_token
+from .db_context import get_db_alias
 
 class TractoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -139,7 +141,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             if not codigo:
                 raise MFARequerida()
 
-            if match_token(self.user, codigo) is None:
+            # match_token bloquea las filas del dispositivo con select_for_update
+            # para que dos peticiones simultáneas no puedan gastar el mismo código.
+            # Ese bloqueo exige una transacción abierta y Django corre en
+            # autocommit: sin este `atomic` el login devuelve 500 (pasó en
+            # producción el 2026-07-23). El alias sale del router, no es 'default':
+            # una petición a /api/login/ va contra django_standard_role.
+            with transaction.atomic(using=get_db_alias()):
+                dispositivo = match_token(self.user, codigo)
+
+            if dispositivo is None:
                 # Contraseña correcta + código incorrecto es la señal MÁS valiosa
                 # de todo el log: dice exactamente qué cuenta tiene la contraseña
                 # comprometida, mientras el atacante sigue fuera.
