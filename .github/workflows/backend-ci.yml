@@ -18,17 +18,34 @@ jobs:
       # en los secretos de la plataforma (decisión F4).
       DJANGO_SECRET_KEY: solo-para-ci
       DJANGO_DEBUG: 'False'
-      # No hay Postgres en CI y no hace falta: los 19 tests son SimpleTestCase y
-      # ninguno se conecta. Pero Django calcula la firma de la base por defecto
-      # antes de correrlos, y si NAME es None revienta con un TypeError. En local
-      # estos valores salen del .env, que en CI no existe. Son de mentira a
-      # propósito: si algún test intentara conectarse, fallaría de inmediato en
-      # vez de tocar algo real.
-      DB_NAME: ci_sin_conexion
-      DB_ADMIN_USER: ci
-      DB_ADMIN_PASSWORD: ci
-      DB_STANDARD_USER: ci
-      DB_STANDARD_PASSWORD: ci
+      # Apuntan al servicio de Postgres de abajo. settings_test hace que los dos
+      # alias ('default' y 'standard') usen estas credenciales: en la base de
+      # test no existe django_standard_role, así que no hay separación de roles
+      # —eso solo se verifica contra la base real (ver config/settings_test.py).
+      DB_NAME: fraba_ci
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_ADMIN_USER: postgres
+      DB_ADMIN_PASSWORD: postgres
+      DB_STANDARD_USER: postgres
+      DB_STANDARD_PASSWORD: postgres
+    # Postgres real, no SQLite a propósito: la suite prueba select_for_update
+    # (el fallo que tiró el login el 2026-07-23), que SQLite no implementa. Con
+    # SQLite ese test daría verde justo en la clase de error que existe para cazar.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: fraba_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v5
 
@@ -43,11 +60,13 @@ jobs:
       - name: manage.py check
         run: python Manage.py check
 
-      # Sin argumento de módulo: así el descubrimiento tiene que encontrar los
-      # tests por sí solo. En Linux el patrón "test*.py" distingue mayúsculas,
-      # de modo que este paso también protege contra un "Ran 0 tests" en falso.
+      # Con settings_test: Postgres real, migraciones de `api` saltadas (sus
+      # modelos managed=False no se pueden crear en una base vacía) y las tablas
+      # construidas desde los modelos. Sin argumento de módulo: el descubrimiento
+      # tiene que encontrar los tests solo, lo que protege contra un "Ran 0 tests"
+      # en falso (en Linux "test*.py" distingue mayúsculas).
       - name: Tests
-        run: python Manage.py test api --verbosity 2
+        run: python Manage.py test api --settings=config.settings_test --verbosity 2
 
   imagen:
     name: Imagen Docker + Carta Porte real
