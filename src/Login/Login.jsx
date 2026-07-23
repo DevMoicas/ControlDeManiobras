@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
 import InactivityModal from '../components/InactivityModal/InactivityModal';
+import { pasoSiguiente, ERROR_CODIGO_VACIO } from './mfa.mjs';
 
 const ERROR_USUARIO  = 'El campo de usuario está vacío, ingresa tu nombre de usuario';
 const ERROR_PASSWORD = 'El campo de contraseña está vacío, ingresa tu contraseña';
-const ERROR_CREDS    = 'Usuario o contraseña incorrectos';
 
 // Panel de patio — rejilla de carriles sobre degradado azul
 const laneGrid = {
@@ -33,7 +33,11 @@ const LoginPage = () => {
 
   const [username, setUsuario]       = useState('');
   const [password, setPassword]      = useState('');
-  const [fieldErrors, setFieldErrors] = useState({ username: '', password: '' });
+  // Segundo factor: solo aparece cuando el backend lo pide (9.1 fase 1), es decir
+  // únicamente a quien ya tiene un dispositivo TOTP dado de alta.
+  const [otp, setOtp]                 = useState('');
+  const [pedirCodigo, setPedirCodigo] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({ username: '', password: '', otp: '' });
   const [apiError, setApiError]       = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -63,7 +67,7 @@ const LoginPage = () => {
 
   // Valida campos vacíos — devuelve true si todo está OK
   const validateFields = () => {
-    const errors = { username: '', password: '' };
+    const errors = { username: '', password: '', otp: '' };
     let valid = true;
 
     if (!username.trim()) {
@@ -72,6 +76,10 @@ const LoginPage = () => {
     }
     if (!password) {
       errors.password = ERROR_PASSWORD;
+      valid = false;
+    }
+    if (pedirCodigo && !otp.trim()) {
+      errors.otp = ERROR_CODIGO_VACIO;
       valid = false;
     }
 
@@ -84,7 +92,7 @@ const LoginPage = () => {
     if (remainingTime > 0) return;
 
     // Limpia errores previos
-    setFieldErrors({ username: '', password: '' });
+    setFieldErrors({ username: '', password: '', otp: '' });
     setApiError('');
 
     if (!validateFields()) return;
@@ -92,12 +100,16 @@ const LoginPage = () => {
     setIsSubmitting(true);
 
     try {
-      await login(username, password);
+      await login(username, password, otp);
       setFailedAttempts(0);
       navigate('/home');
-    } catch {
-      // Muestra error genérico bajo los campos inmediatamente
-      setApiError(ERROR_CREDS);
+    } catch (err) {
+      const paso = pasoSiguiente(err?.codigo);
+      setPedirCodigo(paso.pedirCodigo);
+      setApiError(paso.error);
+      // Pedir el código no es un fallo: contarlo bloquearía al usuario legítimo
+      // antes de darle ocasión de teclearlo.
+      if (!paso.cuentaIntento) return;
 
       const newAttempts = failedAttempts + 1;
       setFailedAttempts(newAttempts);
@@ -276,6 +288,47 @@ const LoginPage = () => {
               )}
             </div>
 
+            {/* ── Código de verificación (solo si el backend lo exige) ── */}
+            {pedirCodigo && (
+              <div>
+                <label
+                  htmlFor="login-otp"
+                  style={{ fontFamily: '"IBM Plex Mono", monospace' }}
+                  className="mb-2 block text-[15px] font-semibold uppercase tracking-[0.08em] text-slate-800"
+                >
+                  Código de verificación
+                </label>
+                <input
+                  id="login-otp"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={8}
+                  autoFocus
+                  required
+                  disabled={locked}
+                  value={otp}
+                  placeholder="000000"
+                  className="block w-full rounded-lg border-2 border-slate-200 bg-white px-4 py-3 text-center text-lg tracking-[0.35em] text-slate-800 transition-colors placeholder:tracking-[0.35em] placeholder:text-slate-300 focus:border-[#2563eb] focus:outline-none focus:ring-4 focus:ring-[#2563eb]/15 disabled:cursor-not-allowed disabled:bg-slate-100"
+                  onChange={(e) => {
+                    // ponytail: solo se quitan espacios, NO se filtra a dígitos: los
+                    // códigos de respaldo de django-otp son alfanuméricos y filtrarlos
+                    // dejaría fuera a quien perdió el móvil.
+                    setOtp(e.target.value.replace(/\s/g, ''));
+                    setApiError('');
+                    if (fieldErrors.otp) setFieldErrors((prev) => ({ ...prev, otp: '' }));
+                  }}
+                />
+                {fieldErrors.otp ? (
+                  <p className={fieldError} role="alert">{fieldErrors.otp}</p>
+                ) : (
+                  <p className="mt-1.5 text-[11px] text-slate-500">
+                    Introduce el código de 6 dígitos de tu app de autenticación.
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* ── Error de API (credenciales rechazadas por el servidor) ── */}
             {apiError && (
               <p className={`${fieldError} text-center`} role="alert">{apiError}</p>
@@ -291,7 +344,9 @@ const LoginPage = () => {
                   : 'bg-[#2563eb] shadow-[#2563eb]/25 hover:bg-[#1d4ed8] hover:-translate-y-px active:translate-y-0 active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563eb]'
               }`}
             >
-              {isSubmitting ? 'Iniciando sesión…' : 'Iniciar sesión'}
+              {isSubmitting
+                ? (pedirCodigo ? 'Verificando…' : 'Iniciando sesión…')
+                : (pedirCodigo ? 'Verificar código' : 'Iniciar sesión')}
             </button>
           </form>
         </div>

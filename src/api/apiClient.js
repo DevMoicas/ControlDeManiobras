@@ -50,7 +50,10 @@ async function request(endpoint, options = {}, _reintento = false) {
   });
 
   // 401: el access expiró → refrescar UNA vez y reintentar la misma petición.
-  if (response.status === 401 && !_reintento) {
+  // /login/ queda fuera: ahí un 401 no es un token caducado sino credenciales
+  // rechazadas, y entrar aquí se tragaría el cuerpo de la respuesta (que ahora
+  // trae `codigo` para distinguir el segundo factor).
+  if (response.status === 401 && !_reintento && endpoint !== "/login/") {
     const nuevoToken = await refrescarAccessToken();
     if (nuevoToken) return request(endpoint, options, true);
     window.dispatchEvent(new Event("auth:expired"));
@@ -64,7 +67,9 @@ async function request(endpoint, options = {}, _reintento = false) {
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody?.detail ?? `HTTP ${response.status}`);
+    const error = new Error(errorBody?.detail ?? `HTTP ${response.status}`);
+    error.codigo = errorBody?.codigo;   // p.ej. mfa_requerida / mfa_invalida
+    throw error;
   }
 
   // Escritura exitosa: invalida el caché de catálogos de ese mismo recurso para

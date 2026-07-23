@@ -72,16 +72,22 @@ export function AuthProvider({ children }) {
     () => !decodeJwtPayload(tokenStore.getAccess()) && Boolean(tokenStore.getRefresh())
   );
 
-  const login = useCallback(async (username, password) => {
+  const login = useCallback(async (username, password, otpToken) => {
     const safeUsername = String(username ?? "").trim().slice(0, 150);
     const safePassword = String(password ?? "").slice(0, 128);
+    // 6 dígitos el TOTP, 8 caracteres los códigos de respaldo de django-otp.
+    const safeOtp = String(otpToken ?? "").trim().slice(0, 8) || undefined;
     if (!safeUsername || !safePassword) throw new Error("Credenciales inválidas");
 
     let data;
     try {
-      data = await apiClient.post("/login/", { username: safeUsername, password: safePassword });
-    } catch {
-      throw new Error("Usuario o contraseña incorrectos");
+      data = await apiClient.post("/login/", { username: safeUsername, password: safePassword, otp_token: safeOtp });
+    } catch (e) {
+      // Se conserva `codigo`: sin él, "falta el segundo factor" se pintaría como
+      // "usuario o contraseña incorrectos" y no habría manera de entrar.
+      const error = new Error("Usuario o contraseña incorrectos");
+      error.codigo = e?.codigo;
+      throw error;
     }
 
     if (!data?.access || !data?.refresh) throw new Error("Respuesta inválida del servidor");
