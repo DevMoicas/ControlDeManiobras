@@ -68,6 +68,24 @@ jobs:
       - name: Tests
         run: python Manage.py test api --settings=config.settings_test --verbosity 2
 
+      # 7.3 (A06): rompe el build si alguna dependencia tiene una vulnerabilidad
+      # conocida. Va AL FINAL del job a propósito: `pip install pip-audit`
+      # arrastra sus propias dependencias y podría alterar el entorno con el que
+      # acaban de correr las pruebas.
+      #
+      # pip-audit consulta PyPI/OSV, que no siempre traen severidad, así que aquí
+      # no hay umbral: cualquier aviso conocido rompe. Es viable porque hoy el
+      # backend está a cero (verificado el 2026-07-24, tras subir django 6.0.7,
+      # pillow 12.3.0 y pyjwt 2.13.0).
+      #
+      # ¿Hace falta una excepción algún día? Se añade `--ignore-vuln <ID>` aquí
+      # con el motivo y la condición de retirada en un comentario, igual que en
+      # audit-excepciones.txt del frontend.
+      - name: Auditoría de dependencias (pip-audit)
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt --progress-spinner off
+
   imagen:
     name: Imagen Docker + Carta Porte real
     runs-on: ubuntu-latest
