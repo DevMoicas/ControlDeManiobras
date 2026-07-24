@@ -325,6 +325,17 @@ AXES_LOCKOUT_PARAMETERS = [['username', 'ip_address']]  # Bloquea por user+IP
 AXES_ENABLE_ADMIN = True        # Visible en el panel admin de Django
 AXES_VERBOSE = False            # No loguear cada intento en consola
 
+# ── MFA / TOTP (django-otp) ─────────────────────────────────────────────────
+# ponytail: django-otp reaprende y PERSISTE el `drift` (desfase móvil↔servidor)
+# en cada verificación correcta. Un contenedor con el reloj torcido fosiliza ese
+# drift en la BD y bloquea a TODOS en el siguiente redeploy (incidente 2026-07-23,
+# arreglado a mano con psql). Con SYNC=False el drift nunca se guarda: un reloj
+# malo, si acaso, causa un fallo temporal que se auto-cura al redesplegar, sin
+# tocar la BD. El anti-reuso lo sigue dando `last_t`, que se guarda igual.
+# El `tolerance` de cada dispositivo (piso de 2 = ±60s, ver api/Apps.py) absorbe
+# el desfase modesto entre contenedores de Azure.
+OTP_TOTP_SYNC = False
+
 # Configuración de Logs físicos para errores del sistema (Jira Task)
 LOGGING = {
     'version': 1,
