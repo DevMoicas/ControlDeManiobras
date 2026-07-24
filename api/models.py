@@ -195,6 +195,11 @@ class Vacio(models.Model):
     fecha_notificacion_cliente = models.CharField(max_length=50, null=True, blank=True)
     status = models.CharField(max_length=100, null=True, blank=True)
     operador = models.CharField(max_length=255, null=True, blank=True)
+    # Vacíos: transportista del vacío y segundo operador ("Entregó"), que se filtra
+    # por ese transportista (mismo patrón que Maniobra). Nullable → las filas
+    # existentes quedan en NULL. Columnas reales en la migración 0025 (managed=False).
+    transportista = models.CharField(max_length=255, null=True, blank=True)
+    operador_entrega = models.CharField(max_length=255, null=True, blank=True)
     cita = models.CharField(max_length=255, null=True, blank=True)
     cd = models.CharField(max_length=255, null=True, blank=True)
 

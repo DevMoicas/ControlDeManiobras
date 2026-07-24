@@ -704,7 +704,10 @@ class VacioViewSet(AuditoriaMixin, viewsets.ModelViewSet):
     queryset = Vacio.objects.all().order_by("-id")
     serializer_class = VacioSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
-    filter_backends = [OrderingFilter]
+    # ?status=pendiente|entregado filtra en el backend (la página de Vacíos tiene
+    # scroll infinito paginado: filtrar en cliente solo cubriría lo ya cargado).
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ["status"]
     ordering_fields = ["id"]
     ordering = ["-id"]
 
