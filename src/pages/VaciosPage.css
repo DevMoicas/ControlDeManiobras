@@ -166,6 +166,67 @@
   outline-offset: 2px;
 }
 
+/* ── Filtros de status (Pendientes / Todos / Entregados) ──────────────────────
+   Ocupan el lado izquierdo de la toolbar; el space-between empuja "Agregar" a la
+   derecha. La vista por defecto es Pendientes (ver VaciosPage.jsx). */
+.vacios-container .filtros-status {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.vacios-container .btn-filtro {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.vacios-container .btn-filtro:hover {
+  border-color: #c7d9f7;
+  color: var(--primary-blue);
+  transform: none;
+}
+.vacios-container .btn-filtro.active {
+  background: var(--primary-blue);
+  border-color: var(--primary-blue);
+  color: #fff;
+}
+.vacios-container .btn-filtro:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── Punto 10: el botón de Transportista con el mismo look que el de operador
+      ("OP del Viaje", .op-trigger). Scopeado a Vacíos para NO tocar el de
+      Maniobras. "Entregó" ya usa OperadorSelector, así que hereda ese estilo. */
+.vacios-container .tsl-wrapper { width: auto; }
+.vacios-container .tsl-btn {
+  width: auto;
+  max-width: 160px;
+  padding: 4px 10px;
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: filter 0.15s ease;
+}
+.vacios-container .tsl-btn:hover:not(:disabled) {
+  border-color: #bae6fd;
+  filter: brightness(0.96);
+}
+
 /* ── Panel + tabla ────────────────────────────────────────────────────────── */
 .vacios-container .table-responsive {
   margin-top: 22px;

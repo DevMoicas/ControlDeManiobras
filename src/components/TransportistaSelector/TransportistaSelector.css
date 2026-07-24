@@ -25,10 +25,10 @@
 }
 
 .tsl-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  z-index: 200;
+  /* position: fixed + coords (JSX) → se renderiza en un portal fuera de la tabla
+     para que el overflow no lo recorte. Mismo patrón que OperadorSelector. */
+  position: fixed;
+  z-index: 9999;
   min-width: 260px;
   max-height: 300px;
   overflow-y: auto;

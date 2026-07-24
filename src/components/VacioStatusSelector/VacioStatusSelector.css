@@ -47,9 +47,9 @@
 }
 
 .vss-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
+  /* position: fixed + coords (JSX) → se renderiza en un portal fuera de la tabla
+     para que el overflow no lo recorte. Mismo patrón que OperadorSelector. */
+  position: fixed;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -57,7 +57,7 @@
   list-style: none;
   margin: 0;
   padding: 4px;
-  z-index: 100;
+  z-index: 9999;
   min-width: 130px;
   animation: vss-fadeIn 0.12s ease;
 }

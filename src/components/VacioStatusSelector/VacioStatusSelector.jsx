@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import useDropdownNav from "../../hooks/useDropdownNav";
 import "./VacioStatusSelector.css";
 
@@ -22,14 +23,28 @@ function getStatusLabel(status) {
 
 export default function VacioStatusSelector({ currentStatus, onSelect, loading }) {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState(null);
   const containerRef = useRef(null);
   const dropRef = useRef(null);
   useDropdownNav({ abierto: open, setAbierto: setOpen, wrapperRef: containerRef, dropdownRef: dropRef });
+
+  // El desplegable se renderiza en un portal con position: fixed para que no lo
+  // recorte el overflow de la tabla (mismo patrón que OperadorSelector).
+  const actualizarCoords = () => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 4, left: r.left });
+  };
+
+  useLayoutEffect(() => {
+    if (open) actualizarCoords();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
       if (containerRef.current && containerRef.current.contains(e.target)) return;
+      if (dropRef.current && dropRef.current.contains(e.target)) return;
       setOpen(false);
     };
     const keyHandler = (e) => {
@@ -38,11 +53,16 @@ export default function VacioStatusSelector({ currentStatus, onSelect, loading }
         setOpen(false);
       }
     };
+    const reposicionar = () => actualizarCoords();
     document.addEventListener("mousedown", handler);
     document.addEventListener("keydown", keyHandler);
+    window.addEventListener("scroll", reposicionar, true);
+    window.addEventListener("resize", reposicionar);
     return () => {
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("keydown", keyHandler);
+      window.removeEventListener("scroll", reposicionar, true);
+      window.removeEventListener("resize", reposicionar);
     };
   }, [open]);
 
@@ -69,8 +89,13 @@ export default function VacioStatusSelector({ currentStatus, onSelect, loading }
         {!loading && <span className="vss-chevron">{open ? "▲" : "▼"}</span>}
       </button>
 
-      {open && (
-        <ul className="vss-dropdown" role="listbox" ref={dropRef}>
+      {open && coords && createPortal(
+        <ul
+          className="vss-dropdown"
+          role="listbox"
+          ref={dropRef}
+          style={{ top: coords.top, left: coords.left }}
+        >
           {VACIO_STATUSES.map((s) => (
             <li
               key={s.id}
@@ -84,7 +109,8 @@ export default function VacioStatusSelector({ currentStatus, onSelect, loading }
               {s.id === currentStatus && <span className="vss-check">✓</span>}
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );

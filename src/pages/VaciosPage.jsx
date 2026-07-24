@@ -9,6 +9,7 @@ import SearchBar from "../components/SearchBar/SearchBar";
 import { useNavigate } from "react-router-dom";
 import VacioStatusSelector from "../components/VacioStatusSelector/VacioStatusSelector";
 import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
+import TransportistaSelector from "../components/TransportistaSelector/TransportistaSelector";
 import PatioSelector from "../components/PatioSelector/PatioSelector";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -56,9 +57,19 @@ const COLUMNAS = [
   { key: "fecha_entrega",             label: "Fecha Entrega",   isFecha: true },
   { key: "fecha_notificacion_cliente",label: "Cometarios" },
   { key: "status",                    label: "Status",            isStatus: true },
-  { key: "operador",                  label: "Operador",          isOperador: true },
+  { key: "operador",                  label: "OP del Viaje",      isOperador: true },
+  { key: "transportista",             label: "Transportista",     isTransportista: true },
+  { key: "operador_entrega",          label: "Entregó",           isOperadorEntrega: true },
   { key: "cita",                      label: "Cita" },
   { key: "cd",                        label: "CD" },
+];
+
+// Vista por defecto: Pendientes (primero). El filtro se resuelve en backend
+// (useVacios → ?status=…). "todos" no filtra.
+const FILTROS = [
+  { id: "pendiente", label: "Pendientes" },
+  { id: "todos",     label: "Todos" },
+  { id: "entregado", label: "Entregados" },
 ];
 
 const MODAL_CERRADO = { abierto: false, datos: null };
@@ -92,6 +103,20 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               currentValue={datos[col.key] || ""}
               onSelect={(val) => onChange(col.key, val)}
               disabled={isSubmitting}
+              opcionesExtra={["Tercero"]}
+            />
+          ) : col.isTransportista ? (
+            <TransportistaSelector
+              currentValue={datos[col.key] || ""}
+              onSelect={(val) => onChange(col.key, val)}
+              disabled={isSubmitting}
+            />
+          ) : col.isOperadorEntrega ? (
+            <OperadorSelector
+              currentValue={datos[col.key] || ""}
+              onSelect={(val) => onChange(col.key, val)}
+              disabled={isSubmitting}
+              transportista={datos.transportista}
             />
           ) : col.isPatio ? (
             <PatioSelector
@@ -170,6 +195,20 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     currentValue={datos[col.key] || ""}
                     onSelect={(val) => onChange(col.key, val)}
                     disabled={isSubmitting}
+                    opcionesExtra={["Tercero"]}
+                  />
+                ) : col.isTransportista ? (
+                  <TransportistaSelector
+                    currentValue={datos[col.key] || ""}
+                    onSelect={(val) => onChange(col.key, val)}
+                    disabled={isSubmitting}
+                  />
+                ) : col.isOperadorEntrega ? (
+                  <OperadorSelector
+                    currentValue={datos[col.key] || ""}
+                    onSelect={(val) => onChange(col.key, val)}
+                    disabled={isSubmitting}
+                    transportista={datos.transportista}
                   />
                 ) : col.isPatio ? (
                   <PatioSelector
@@ -216,10 +255,11 @@ function Intro() {
 
 export default function VaciosPage() {
   const navigate = useNavigate();
+  const [filtroStatus, setFiltroStatus] = useState("pendiente");
   const {
     vacios, setVacios, loading, loadingMore, hasMore, error,
     loadMore, eliminar, actualizar, agregar, VACIO_VACIO,
-  } = useVacios();
+  } = useVacios(filtroStatus);
   const { isAdmin } = useAuthContext();
   const { updatingId, updateStatus } = useVacioStatusUpdate(setVacios);
 
@@ -361,6 +401,38 @@ export default function VaciosPage() {
     }
   }, [actualizar, setVacios]);
 
+  const handleTransportistaChange = useCallback(async (vacio, nombreSeleccionado) => {
+    const prevTransportista = vacio.transportista;
+    setVacios((prev) =>
+      prev.map((v) => (v.id === vacio.id ? { ...v, transportista: nombreSeleccionado } : v))
+    );
+    try {
+      await actualizar(vacio.id, { ...vacio, transportista: nombreSeleccionado });
+      setNotif({ tipo: "ok", msg: "Transportista actualizado." });
+    } catch (err) {
+      setVacios((prev) =>
+        prev.map((v) => (v.id === vacio.id ? { ...v, transportista: prevTransportista } : v))
+      );
+      setNotif({ tipo: "error", msg: `Error al cambiar transportista: ${err.message}` });
+    }
+  }, [actualizar, setVacios]);
+
+  const handleOperadorEntregaChange = useCallback(async (vacio, nombreSeleccionado) => {
+    const prevOperadorEntrega = vacio.operador_entrega;
+    setVacios((prev) =>
+      prev.map((v) => (v.id === vacio.id ? { ...v, operador_entrega: nombreSeleccionado } : v))
+    );
+    try {
+      await actualizar(vacio.id, { ...vacio, operador_entrega: nombreSeleccionado });
+      setNotif({ tipo: "ok", msg: "Operador de entrega actualizado." });
+    } catch (err) {
+      setVacios((prev) =>
+        prev.map((v) => (v.id === vacio.id ? { ...v, operador_entrega: prevOperadorEntrega } : v))
+      );
+      setNotif({ tipo: "error", msg: `Error al cambiar operador: ${err.message}` });
+    }
+  }, [actualizar, setVacios]);
+
   // ── Filtro por búsqueda — solo sobre datos ya cargados ────────────────────
   const vaciosFiltrados = busqueda
     ? vacios.filter((v) =>
@@ -415,7 +487,17 @@ export default function VaciosPage() {
       )}
 
       <div className="toolbar">
-        <div className="filtros-status" />
+        <div className="filtros-status">
+          {FILTROS.map(({ id, label }) => (
+            <button
+              key={id}
+              className={`btn-filtro ${filtroStatus === id ? "active" : ""}`}
+              onClick={() => setFiltroStatus(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <button
           className="btn-agregar"
           onClick={() => setModoAgregar(true)}
@@ -468,6 +550,18 @@ export default function VaciosPage() {
                         <OperadorSelector
                           currentValue={vacio.operador}
                           onSelect={(nombre) => handleOperadorChange(vacio, nombre)}
+                          opcionesExtra={["Tercero"]}
+                        />
+                      ) : col.isTransportista ? (
+                        <TransportistaSelector
+                          currentValue={vacio.transportista || ""}
+                          onSelect={(nombre) => handleTransportistaChange(vacio, nombre)}
+                        />
+                      ) : col.isOperadorEntrega ? (
+                        <OperadorSelector
+                          currentValue={vacio.operador_entrega || ""}
+                          onSelect={(nombre) => handleOperadorEntregaChange(vacio, nombre)}
+                          transportista={vacio.transportista}
                         />
                       ) : col.isPatio ? (
                         <PatioSelector

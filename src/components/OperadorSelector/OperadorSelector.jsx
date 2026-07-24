@@ -4,7 +4,7 @@ import { apiClient } from "../../api/apiClient";
 import useDropdownNav from "../../hooks/useDropdownNav";
 import "./OperadorSelector.css";
 
-export default function OperadorSelector({ currentValue, onSelect, disabled, transportista }) {
+export default function OperadorSelector({ currentValue, onSelect, disabled, transportista, opcionesExtra = [] }) {
   // Transportista tercero (≠ FRABA CONTAINER) → lista sus operadores registrados
   // en Terceros; propio/sin transportista → choferes internos.
   const esTercero = transportista && transportista.trim().toUpperCase() !== "FRABA CONTAINER";
@@ -112,6 +112,20 @@ export default function OperadorSelector({ currentValue, onSelect, disabled, tra
           style={{ top: coords.top, left: coords.left }}
           role="listbox"
         >
+          {/* Opciones fijas (p. ej. "Tercero" en OP del Viaje): van arriba y no
+              dependen de la carga de choferes. */}
+          {opcionesExtra.map((op) => (
+            <li
+              key={`extra-${op}`}
+              role="option"
+              aria-selected={op === currentValue}
+              className={`op-option ${op === currentValue ? "op-option--selected" : ""}`}
+              onClick={(e) => { e.stopPropagation(); handleSelect(op); }}
+            >
+              {op}
+              {op === currentValue && <span className="op-check">✓</span>}
+            </li>
+          ))}
           {loadingList && (
             <li className="op-state">Cargando…</li>
           )}

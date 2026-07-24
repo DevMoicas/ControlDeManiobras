@@ -11,11 +11,16 @@ export const VACIO_VACIO = {
   fecha_notificacion_cliente: "",
   status: "",
   operador: "",
+  transportista: "",
+  operador_entrega: "",
   cita: "",
   cd: "",
 };
 
-export function useVacios() {
+// filtroStatus: "pendiente" (default) | "entregado" | "todos". El filtro se
+// resuelve en el backend (?status=…): la página tiene scroll infinito paginado,
+// así que filtrar en cliente solo cubriría lo ya cargado. "todos" no filtra.
+export function useVacios(filtroStatus = "pendiente") {
   const [vacios,      setVacios]      = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -25,6 +30,16 @@ export function useVacios() {
   const pageRef     = useRef(1);
   const fetchingRef = useRef(false);
 
+  const buildUrl = useCallback((page) => {
+    const params = new URLSearchParams({
+      page,
+      page_size: PAGE_SIZE,
+      ordering: "-id",
+    });
+    if (filtroStatus && filtroStatus !== "todos") params.set("status", filtroStatus);
+    return `/vacios/?${params.toString()}`;
+  }, [filtroStatus]);
+
   const fetchPage = useCallback(async (page, isFirstPage = false) => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
@@ -33,9 +48,7 @@ export function useVacios() {
     setError(null);
 
     try {
-      const data    = await apiClient.get(
-        `/vacios/?page=${page}&page_size=${PAGE_SIZE}&ordering=-id`
-      );
+      const data    = await apiClient.get(buildUrl(page));
       const results = Array.isArray(data.results) ? data.results : data;
 
       setVacios((prev) => isFirstPage ? results : [...prev, ...results]);
@@ -46,11 +59,13 @@ export function useVacios() {
       isFirstPage ? setLoading(false) : setLoadingMore(false);
       fetchingRef.current = false;
     }
-  }, []);
+  }, [buildUrl]);
 
-  // Carga inicial
+  // Resetea y recarga desde página 1 cada vez que cambia el filtro
   useEffect(() => {
     pageRef.current = 1;
+    setVacios([]);
+    setHasMore(true);
     fetchPage(1, true);
   }, [fetchPage]);
 
