@@ -20,7 +20,8 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { useState, useEffect, useRef, useCallback, useId } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useId } from "react";
+import { createPortal } from "react-dom";
 import {
   MANIOBRA_STATUSES_LIST,
   MAX_STATUSES,
@@ -40,10 +41,24 @@ import "./StatusSelector.css";
  */
 export default function StatusSelector({ currentStatus, onSelect, loading = false }) {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState(null);
   const containerRef = useRef(null);
   const listRef = useRef(null);
   const listboxId = useId(); // id único, seguro para múltiples instancias en la misma tabla
   useDropdownNav({ abierto: open, setAbierto: setOpen, wrapperRef: containerRef, dropdownRef: listRef });
+
+  // El desplegable se renderiza en un portal con position: fixed para que no lo
+  // recorte el overflow de la tabla (mismo patrón que VacioStatusSelector).
+  // Sin esto, el status de las últimas filas se cortaba y no se podía cambiar.
+  const actualizarCoords = () => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 4, left: r.left });
+  };
+
+  useLayoutEffect(() => {
+    if (open) actualizarCoords();
+  }, [open]);
 
   const selectedIds = parseStatusValue(currentStatus);
   const isFull = selectedIds.length >= MAX_STATUSES;
@@ -52,16 +67,27 @@ export default function StatusSelector({ currentStatus, onSelect, loading = fals
   // que siempre; con 2, los puntos de color revelan cuál es el otro.
   const predominante = getStatusConfig(currentStatus);
 
-  // ── Cierre al click fuera ──────────────────────────────────────────────────
+  // ── Cierre al click fuera + reposicionado ──────────────────────────────────
+  // Ojo: con el portal, la lista YA NO está dentro de containerRef, así que hay
+  // que excluirla explícitamente. Si no, el mousedown sobre una opción cerraría
+  // el desplegable — y aquí eso importa el doble, porque por diseño NO se cierra
+  // al seleccionar (hay que poder elegir el segundo status).
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setOpen(false);
-      }
+      if (containerRef.current && containerRef.current.contains(e.target)) return;
+      if (listRef.current && listRef.current.contains(e.target)) return;
+      setOpen(false);
     };
+    const reposicionar = () => actualizarCoords();
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    window.addEventListener("scroll", reposicionar, true);
+    window.addEventListener("resize", reposicionar);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      window.removeEventListener("scroll", reposicionar, true);
+      window.removeEventListener("resize", reposicionar);
+    };
   }, [open]);
 
   // ── Cierre con Escape ──────────────────────────────────────────────────────
@@ -136,7 +162,7 @@ export default function StatusSelector({ currentStatus, onSelect, loading = fals
       </button>
 
       {/* ── Lista de opciones ────────────────────────────────────────────── */}
-      {open && (
+      {open && coords && createPortal(
         <ul
           id={listboxId}
           ref={listRef}
@@ -144,6 +170,7 @@ export default function StatusSelector({ currentStatus, onSelect, loading = fals
           aria-multiselectable="true"
           aria-label={`Seleccionar status (máximo ${MAX_STATUSES})`}
           className="status-selector__list"
+          style={{ top: coords.top, left: coords.left }}
         >
           {MANIOBRA_STATUSES_LIST.map((config) => {
             const isSelected = selectedIds.includes(config.id);
@@ -175,7 +202,8 @@ export default function StatusSelector({ currentStatus, onSelect, loading = fals
               </li>
             );
           })}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );
