@@ -1,16 +1,31 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { apiClient } from "../../api/apiClient";
 import useDropdownNav from "../../hooks/useDropdownNav";
 import "./PatioSelector.css";
 
 export default function PatioSelector({ currentValue, onSelect, disabled }) {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState(null);
   const [patios, setPatios] = useState([]);
   const [loadingList, setLoadingList] = useState(false);
   const [errorList, setErrorList] = useState(null);
   const containerRef = useRef(null);
   const dropRef = useRef(null);
   useDropdownNav({ abierto: open, setAbierto: setOpen, wrapperRef: containerRef, dropdownRef: dropRef });
+
+  // El desplegable se renderiza en un portal con position: fixed para que no lo
+  // recorte el overflow de la tabla (mismo patrón que VacioStatusSelector).
+  // Sin esto, el patio de las últimas filas se cortaba y no se podía asignar.
+  const actualizarCoords = () => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 4, left: r.left });
+  };
+
+  useLayoutEffect(() => {
+    if (open) actualizarCoords();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -29,6 +44,10 @@ export default function PatioSelector({ currentValue, onSelect, disabled }) {
     if (!open) return;
     const handler = (e) => {
       if (containerRef.current && containerRef.current.contains(e.target)) return;
+      // Con el portal la lista ya NO está dentro de containerRef: hay que
+      // excluirla a mano. Si no, el mousedown sobre una opción cerraría el
+      // desplegable antes de que llegara el click y la selección se perdería.
+      if (dropRef.current && dropRef.current.contains(e.target)) return;
       setOpen(false);
     };
     const keyHandler = (e) => {
@@ -37,11 +56,16 @@ export default function PatioSelector({ currentValue, onSelect, disabled }) {
         setOpen(false);
       }
     };
+    const reposicionar = () => actualizarCoords();
     document.addEventListener("mousedown", handler);
     document.addEventListener("keydown", keyHandler);
+    window.addEventListener("scroll", reposicionar, true);
+    window.addEventListener("resize", reposicionar);
     return () => {
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("keydown", keyHandler);
+      window.removeEventListener("scroll", reposicionar, true);
+      window.removeEventListener("resize", reposicionar);
     };
   }, [open]);
 
@@ -64,8 +88,13 @@ export default function PatioSelector({ currentValue, onSelect, disabled }) {
         <span className="ps-chevron">{open ? "▲" : "▼"}</span>
       </button>
 
-      {open && (
-        <ul className="ps-dropdown" role="listbox" ref={dropRef}>
+      {open && coords && createPortal(
+        <ul
+          className="ps-dropdown"
+          role="listbox"
+          ref={dropRef}
+          style={{ top: coords.top, left: coords.left }}
+        >
           {loadingList && (
             <li className="ps-state">Cargando…</li>
           )}
@@ -89,7 +118,8 @@ export default function PatioSelector({ currentValue, onSelect, disabled }) {
               {p.nombre === currentValue && <span className="ps-check">✓</span>}
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );

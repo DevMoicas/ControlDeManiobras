@@ -48,9 +48,10 @@
 }
 
 .ps-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
+  /* position: fixed + coords (JSX) → se renderiza en un portal fuera de la tabla
+     para que el overflow no lo recorte. Mismo patrón que VacioStatusSelector,
+     StatusSelector y OperadorSelector. `top`/`left` los pone el JSX. */
+  position: fixed;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
