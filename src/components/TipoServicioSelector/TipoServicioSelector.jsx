@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import useDropdownNav from "../../hooks/useDropdownNav";
 import "./TipoServicioSelector.css";
 
@@ -36,14 +37,29 @@ export function esServicioFull(registro) {
 
 export default function TipoServicioSelector({ currentValue, onSelect, loading, disabled }) {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState(null);
   const containerRef = useRef(null);
   const dropRef = useRef(null);
   useDropdownNav({ abierto: open, setAbierto: setOpen, wrapperRef: containerRef, dropdownRef: dropRef });
+
+  // Portal con position: fixed para que el overflow de la tabla no lo recorte.
+  const actualizarCoords = () => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 4, left: r.left });
+  };
+
+  useLayoutEffect(() => {
+    if (open) actualizarCoords();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
       if (containerRef.current && containerRef.current.contains(e.target)) return;
+      // Con el portal la lista ya no está dentro de containerRef: excluirla a
+      // mano o el mousedown la cerraría antes de que llegara el click.
+      if (dropRef.current && dropRef.current.contains(e.target)) return;
       setOpen(false);
     };
     const keyHandler = (e) => {
@@ -52,11 +68,16 @@ export default function TipoServicioSelector({ currentValue, onSelect, loading, 
         setOpen(false);
       }
     };
+    const reposicionar = () => actualizarCoords();
     document.addEventListener("mousedown", handler);
     document.addEventListener("keydown", keyHandler);
+    window.addEventListener("scroll", reposicionar, true);
+    window.addEventListener("resize", reposicionar);
     return () => {
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("keydown", keyHandler);
+      window.removeEventListener("scroll", reposicionar, true);
+      window.removeEventListener("resize", reposicionar);
     };
   }, [open]);
 
@@ -83,8 +104,13 @@ export default function TipoServicioSelector({ currentValue, onSelect, loading, 
         {!loading && <span className="tss-chevron">{open ? "▲" : "▼"}</span>}
       </button>
 
-      {open && (
-        <ul className="tss-dropdown" role="listbox" ref={dropRef}>
+      {open && coords && createPortal(
+        <ul
+          className="tss-dropdown"
+          role="listbox"
+          ref={dropRef}
+          style={{ top: coords.top, left: coords.left }}
+        >
           {TIPOS_SERVICIO.map((t) => (
             <li
               key={t.id}
@@ -98,7 +124,8 @@ export default function TipoServicioSelector({ currentValue, onSelect, loading, 
               {t.id === currentValue && <span className="tss-check">✓</span>}
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );

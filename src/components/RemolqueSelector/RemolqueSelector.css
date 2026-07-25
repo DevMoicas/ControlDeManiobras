@@ -68,9 +68,9 @@
 }
 
 .rs-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
+  /* position: fixed + coords (JSX) → portal fuera de la tabla para que el
+     overflow no lo recorte. `top`/`left` los pone el JSX. */
+  position: fixed;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;

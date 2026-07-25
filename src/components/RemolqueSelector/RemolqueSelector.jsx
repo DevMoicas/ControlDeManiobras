@@ -1,16 +1,29 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { apiClient } from "../../api/apiClient";
 import useDropdownNav from "../../hooks/useDropdownNav";
 import "./RemolqueSelector.css";
 
 export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState(null);
   const [remolques, setRemolques] = useState([]);
   const [loadingList, setLoadingList] = useState(false);
   const [errorList, setErrorList] = useState(null);
   const containerRef = useRef(null);
   const dropRef = useRef(null);
   useDropdownNav({ abierto: open, setAbierto: setOpen, wrapperRef: containerRef, dropdownRef: dropRef });
+
+  // Portal con position: fixed para que el overflow de la tabla no lo recorte.
+  const actualizarCoords = () => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 4, left: r.left });
+  };
+
+  useLayoutEffect(() => {
+    if (open) actualizarCoords();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -29,6 +42,9 @@ export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
     if (!open) return;
     const handler = (e) => {
       if (containerRef.current && containerRef.current.contains(e.target)) return;
+      // Con el portal la lista ya no está dentro de containerRef: excluirla a
+      // mano o el mousedown la cerraría antes de que llegara el click.
+      if (dropRef.current && dropRef.current.contains(e.target)) return;
       setOpen(false);
     };
     const keyHandler = (e) => {
@@ -37,11 +53,16 @@ export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
         setOpen(false);
       }
     };
+    const reposicionar = () => actualizarCoords();
     document.addEventListener("mousedown", handler);
     document.addEventListener("keydown", keyHandler);
+    window.addEventListener("scroll", reposicionar, true);
+    window.addEventListener("resize", reposicionar);
     return () => {
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("keydown", keyHandler);
+      window.removeEventListener("scroll", reposicionar, true);
+      window.removeEventListener("resize", reposicionar);
     };
   }, [open]);
 
@@ -80,8 +101,13 @@ export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
         </button>
       )}
 
-      {open && (
-        <ul className="rs-dropdown" role="listbox" ref={dropRef}>
+      {open && coords && createPortal(
+        <ul
+          className="rs-dropdown"
+          role="listbox"
+          ref={dropRef}
+          style={{ top: coords.top, left: coords.left }}
+        >
           {loadingList && <li className="rs-state">Cargando...</li>}
           {errorList && <li className="rs-state rs-state--error">{errorList}</li>}
           {!loadingList && !errorList && remolques.length === 0 && (
@@ -100,7 +126,8 @@ export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
               {r.placas === currentValue && <span className="rs-check">✓</span>}
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );

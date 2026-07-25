@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { apiClient } from "../../api/apiClient";
 import useDropdownNav from "../../hooks/useDropdownNav";
 import "./CiudadSelector.css";
@@ -7,12 +8,24 @@ import "./CiudadSelector.css";
 // Reutilizado para orígenes (/origenes/) y destinos (/destinos/) vía la prop endpoint.
 export default function CiudadSelector({ endpoint, currentValue, onSelect, disabled, placeholder = "— Asignar —" }) {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState(null);
   const [ciudades, setCiudades] = useState([]);
   const [loadingList, setLoadingList] = useState(false);
   const [errorList, setErrorList] = useState(null);
   const containerRef = useRef(null);
   const dropRef = useRef(null);
   useDropdownNav({ abierto: open, setAbierto: setOpen, wrapperRef: containerRef, dropdownRef: dropRef });
+
+  // Portal con position: fixed para que el overflow de la tabla no lo recorte.
+  const actualizarCoords = () => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 4, left: r.left });
+  };
+
+  useLayoutEffect(() => {
+    if (open) actualizarCoords();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -31,6 +44,9 @@ export default function CiudadSelector({ endpoint, currentValue, onSelect, disab
     if (!open) return;
     const handler = (e) => {
       if (containerRef.current && containerRef.current.contains(e.target)) return;
+      // Con el portal la lista ya no está dentro de containerRef: excluirla a
+      // mano o el mousedown la cerraría antes de que llegara el click.
+      if (dropRef.current && dropRef.current.contains(e.target)) return;
       setOpen(false);
     };
     const keyHandler = (e) => {
@@ -39,11 +55,16 @@ export default function CiudadSelector({ endpoint, currentValue, onSelect, disab
         setOpen(false);
       }
     };
+    const reposicionar = () => actualizarCoords();
     document.addEventListener("mousedown", handler);
     document.addEventListener("keydown", keyHandler);
+    window.addEventListener("scroll", reposicionar, true);
+    window.addEventListener("resize", reposicionar);
     return () => {
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("keydown", keyHandler);
+      window.removeEventListener("scroll", reposicionar, true);
+      window.removeEventListener("resize", reposicionar);
     };
   }, [open]);
 
@@ -66,8 +87,13 @@ export default function CiudadSelector({ endpoint, currentValue, onSelect, disab
         <span className="cds-chevron">{open ? "▲" : "▼"}</span>
       </button>
 
-      {open && (
-        <ul className="cds-dropdown" role="listbox" ref={dropRef}>
+      {open && coords && createPortal(
+        <ul
+          className="cds-dropdown"
+          role="listbox"
+          ref={dropRef}
+          style={{ top: coords.top, left: coords.left }}
+        >
           {loadingList && <li className="cds-state">Cargando…</li>}
           {errorList && <li className="cds-state cds-state--error">{errorList}</li>}
           {!loadingList && !errorList && ciudades.length === 0 && (
@@ -85,7 +111,8 @@ export default function CiudadSelector({ endpoint, currentValue, onSelect, disab
               {c.ciudad === currentValue && <span className="cds-check">✓</span>}
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );

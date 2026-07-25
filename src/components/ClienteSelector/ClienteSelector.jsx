@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { apiClient } from "../../api/apiClient";
 import useDropdownNav from "../../hooks/useDropdownNav";
 import "./ClienteSelector.css";
@@ -14,12 +15,24 @@ import "./ClienteSelector.css";
  */
 export default function ClienteSelector({ currentValue, onSelect, disabled }) {
   const [abierto,  setAbierto]  = useState(false);
+  const [coords,   setCoords]   = useState(null);
   const [clientes, setClientes] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [error,    setError]    = useState(null);
   const ref = useRef(null);
   const dropRef = useRef(null);
   useDropdownNav({ abierto, setAbierto, wrapperRef: ref, dropdownRef: dropRef });
+
+  // Portal con position: fixed para que el overflow de la tabla no lo recorte.
+  const actualizarCoords = () => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 4, left: r.left });
+  };
+
+  useLayoutEffect(() => {
+    if (abierto) actualizarCoords();
+  }, [abierto]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -38,13 +51,22 @@ export default function ClienteSelector({ currentValue, onSelect, disabled }) {
       if (e.key === "Escape") setAbierto(false);
     };
     const handleClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setAbierto(false);
+      if (ref.current && ref.current.contains(e.target)) return;
+      // Con el portal la lista ya no está dentro de ref: excluirla a mano o el
+      // mousedown la cerraría antes de que llegara el click.
+      if (dropRef.current && dropRef.current.contains(e.target)) return;
+      setAbierto(false);
     };
+    const reposicionar = () => actualizarCoords();
     document.addEventListener("keydown", handleKey);
     document.addEventListener("mousedown", handleClick);
+    window.addEventListener("scroll", reposicionar, true);
+    window.addEventListener("resize", reposicionar);
     return () => {
       document.removeEventListener("keydown", handleKey);
       document.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("scroll", reposicionar, true);
+      window.removeEventListener("resize", reposicionar);
     };
   }, [abierto]);
 
@@ -66,8 +88,12 @@ export default function ClienteSelector({ currentValue, onSelect, disabled }) {
         {currentValue || "— Seleccionar cliente —"}
       </button>
 
-      {abierto && (
-        <div className="csl-dropdown" ref={dropRef}>
+      {abierto && coords && createPortal(
+        <div
+          className="csl-dropdown"
+          ref={dropRef}
+          style={{ top: coords.top, left: coords.left }}
+        >
           {cargando && <div className="csl-msg">Cargando...</div>}
           {error && <div className="csl-msg csl-error">{error}</div>}
           {!cargando && !error && clientes.length === 0 && (
@@ -84,7 +110,8 @@ export default function ClienteSelector({ currentValue, onSelect, disabled }) {
               {c.ciudad && <span className="csl-ciudad">{c.ciudad}</span>}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
