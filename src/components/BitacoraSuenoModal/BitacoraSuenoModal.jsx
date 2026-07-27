@@ -42,6 +42,8 @@ const ESTADO_INICIAL = {
  */
 export default function BitacoraSuenoModal({ onCerrar }) {
   const [datos,      setDatos]      = useState(ESTADO_INICIAL);
+  const [empate,     setEmpate]     = useState(false);
+  const [folio2,     setFolio2]     = useState("");
   const [generando,  setGenerando]  = useState(false);
   const [error,      setError]      = useState(null);
   const [exito,      setExito]      = useState(false);
@@ -102,6 +104,17 @@ export default function BitacoraSuenoModal({ onCerrar }) {
     }));
   };
 
+  // El empate solo aporta su folio: se une al primero en la misma casilla (U9).
+  const handleFolio2 = (maniobra) => setFolio2(maniobra.folio || "");
+
+  const alternarEmpate = () => {
+    const siguiente = !empate;
+    setEmpate(siguiente);
+    if (!siguiente) setFolio2("");   // apagarlo descarta el segundo folio
+  };
+
+  const folioFinal = empate && folio2 ? `${datos.folio}, ${folio2}` : datos.folio;
+
   // ── Lógica remolque 2: habilitado solo en viajes full ──────────────────────
   // Lo dictamina el tipo_servicio de la maniobra; los registros anteriores a ese
   // campo caen a la heurística vieja (contenedor > 12 caracteres).
@@ -122,7 +135,7 @@ export default function BitacoraSuenoModal({ onCerrar }) {
         placas:        datos.placas,
         remolque_1:    datos.remolque_1,
         remolque_2:    datos.remolque_2,
-        folio:         datos.folio,
+        folio:         folioFinal,
         unidad:        datos.unidad,
         anio:          datos.anio,
         origen:        datos.origen,
@@ -141,7 +154,7 @@ export default function BitacoraSuenoModal({ onCerrar }) {
       const url  = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href     = url;
-      link.download = `BITACORA SUEÑO ${datos.folio}.${ext}`;
+      link.download = `BITACORA SUEÑO ${folioFinal}.${ext}`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -154,6 +167,10 @@ export default function BitacoraSuenoModal({ onCerrar }) {
       setGenerando(false);
     }
   };
+
+  // Con empate activo hace falta el segundo folio: si no, el documento saldría
+  // con uno solo y nadie se enteraría.
+  const puedeGenerar = !generando && Boolean(datos.placas) && (!empate || Boolean(folio2));
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -174,12 +191,40 @@ export default function BitacoraSuenoModal({ onCerrar }) {
           {/* CTA Porte (Folio) — primero: autollena unidad y remolques */}
           <div className="bsm-campo">
             <label className="bsm-label">CTA Porte (Folio)</label>
-            <FolioSelector
-              currentValue={datos.folio}
-              onSelect={handleFolio}
-              disabled={false}
-            />
+            <div className="bsm-folio-fila">
+              <div className="bsm-folio-selector">
+                <FolioSelector
+                  currentValue={datos.folio}
+                  onSelect={handleFolio}
+                  disabled={false}
+                />
+              </div>
+              <button
+                type="button"
+                className={`bsm-btn-empate${empate ? " bsm-btn-empate--activo" : ""}`}
+                onClick={alternarEmpate}
+                aria-pressed={empate}
+              >
+                Empate
+              </button>
+            </div>
           </div>
+
+          {empate && (
+            <div className="bsm-campo bsm-campo--empate">
+              <label className="bsm-label">
+                Folio del empate <span className="bsm-req">*</span>
+              </label>
+              <FolioSelector
+                currentValue={folio2}
+                onSelect={handleFolio2}
+                disabled={false}
+              />
+              <p className="bsm-hint">
+                Los dos folios salen juntos en la misma casilla: {folioFinal || "—"}
+              </p>
+            </div>
+          )}
 
           {/* Operador */}
           <div className="bsm-campo">
@@ -315,7 +360,7 @@ export default function BitacoraSuenoModal({ onCerrar }) {
             type="button"
             className="bsm-btn-excel"
             onClick={() => handleGenerar("excel")}
-            disabled={generando || !datos.placas}
+            disabled={!puedeGenerar}
           >
             <Download size={16} /> Descargar Excel
           </button>
@@ -323,7 +368,7 @@ export default function BitacoraSuenoModal({ onCerrar }) {
             type="button"
             className="bsm-btn-generar"
             onClick={() => handleGenerar("pdf")}
-            disabled={generando || !datos.placas}
+            disabled={!puedeGenerar}
           >
             {generando
               ? <><Loader size={16} className="bsm-spin" /> Generando...</>

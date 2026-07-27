@@ -159,6 +159,55 @@
   margin: 0;
 }
 
+/* ── Folio + Empate ───────────────────────────────────────────────────────── */
+/* Mismo patrón visual que la Bitácora de Gastos: el botón va pegado al selector
+   porque el empate es una propiedad de la elección de folio, no un campo más. */
+.bsm-folio-fila {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.bsm-folio-selector {
+  flex: 1;
+  min-width: 0;
+}
+
+.bsm-btn-empate {
+  flex-shrink: 0;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0 16px;
+  border: 1px dashed var(--primary, #2563eb);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--primary, #2563eb);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-style 0.15s;
+}
+.bsm-btn-empate:hover {
+  background: #eff6ff;
+}
+.bsm-btn-empate--activo {
+  border-style: solid;
+  background: var(--primary, #2563eb);
+  color: #fff;
+}
+.bsm-btn-empate--activo:hover {
+  background: #1d4ed8;
+}
+.bsm-btn-empate:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.bsm-campo--empate {
+  border-left: 3px solid var(--primary, #2563eb);
+  padding-left: 12px;
+}
+
 .bsm-error {
   color: #dc2626;
   font-size: 0.82rem;
@@ -283,6 +332,7 @@
 /* ── Movimiento reducido ──────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .bsm-cerrar,
+  .bsm-btn-empate,
   .bsm-btn-cancelar,
   .bsm-btn-generar,
   .bsm-btn-excel { transition: none; }
