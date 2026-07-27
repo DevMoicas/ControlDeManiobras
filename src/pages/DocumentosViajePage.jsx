@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { AnimatePresence } from "motion/react";
-import { FileText, ScrollText, ArrowRight } from "lucide-react";
+import { FileText, ScrollText, Receipt, ArrowRight } from "lucide-react";
 import BitacoraSuenoModal from "../components/BitacoraSuenoModal/BitacoraSuenoModal";
 import CtaPortModal from "../components/CtaPortModal/CtaPortModal";
 import CtaPorteTercerosModal from "../components/CtaPorteTercerosModal/CtaPorteTercerosModal";
+import BitacoraGastosModal from "../components/BitacoraGastosModal/BitacoraGastosModal";
 import "./DocumentosViajePage.css";
 
 // La "clase" es el tipo legal real del documento — no numeración decorativa.
@@ -18,10 +19,10 @@ const DOCUMENTOS = [
   },
   {
     id: "ctaport",
-    clase: "Carta porte + Bitácora de gastos",
+    clase: "Carta porte",
     titulo: "CTA Porte Fraba Container",
-    desc: "Genera dos documentos: la Carta Porte de la carga y la Bitácora de Gastos de viaje.",
-    campos: ["Cliente", "Carga", "Conductor", "Total de gastos"],
+    desc: "Genera la Carta Porte de la carga.",
+    campos: ["Cliente", "Carga", "Conductor"],
     Icon: FileText,
   },
   {
@@ -32,6 +33,14 @@ const DOCUMENTOS = [
     campos: ["Cliente", "Carga", "Conductor"],
     Icon: FileText,
   },
+  {
+    id: "bitacora-gastos",
+    clase: "Control de gastos",
+    titulo: "Bitácora de Gastos",
+    desc: "Gastos del viaje. Permite empatar dos folios y sumar sus pesos.",
+    campos: ["Folio", "Empate", "Conductor", "Total de gastos"],
+    Icon: Receipt,
+  },
 ];
 
 /**
@@ -40,7 +49,7 @@ const DOCUMENTOS = [
  * que se llena en su modal y se descarga como PDF.
  */
 export default function DocumentosViajePage() {
-  const [modalAbierto, setModalAbierto] = useState(null); // 'bitacora' | 'ctaport' | 'ctaporte-terceros' | null
+  const [modalAbierto, setModalAbierto] = useState(null); // 'bitacora' | 'ctaport' | 'ctaporte-terceros' | 'bitacora-gastos' | null
 
   return (
     <div className="dvp-page">
@@ -95,6 +104,9 @@ export default function DocumentosViajePage() {
         )}
         {modalAbierto === "ctaporte-terceros" && (
           <CtaPorteTercerosModal onCerrar={() => setModalAbierto(null)} />
+        )}
+        {modalAbierto === "bitacora-gastos" && (
+          <BitacoraGastosModal onCerrar={() => setModalAbierto(null)} />
         )}
       </AnimatePresence>
     </div>

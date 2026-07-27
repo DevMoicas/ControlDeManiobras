@@ -44,7 +44,6 @@ const ESTADO_INICIAL = {
   // Texto libre
   descripcion: "",
   clave_sat:   "",
-  total_gastos: "",
 
   // Conductor y placas — independientes
   operador:    "",
@@ -165,7 +164,6 @@ export default function CtaPortModal({ onCerrar }) {
     const ext = formato === "excel" ? "xlsx" : "pdf";
 
     try {
-      // Payload compartido para ambos endpoints
       const payload = {
         formato,
         folio:             datos.folio,
@@ -191,23 +189,14 @@ export default function CtaPortModal({ onCerrar }) {
         placas:            datos.placas,
         remolque_1:        datos.remolque_1,
         remolque_2:        datos.remolque_2,
-        total_gastos:      datos.total_gastos,   // usado solo por bitacora-gastos
       };
 
-      // ── 1. Generar y descargar CTA PORT ────────────────────────────────────
       const blobCtaPort = await apiClient.download("/documentos/cta-port/", payload);
       triggerDownload(blobCtaPort, `CTA PTE ${datos.folio}.${ext}`);
 
-      // ── Pausa de 600ms para evitar que el navegador bloquee la 2ª descarga ─
-      await new Promise((resolve) => setTimeout(resolve, 600));
-
-      // ── 2. Generar y descargar BITACORA GASTOS ─────────────────────────────
-      const blobGastos = await apiClient.download("/documentos/bitacora-gastos/", payload);
-      triggerDownload(blobGastos, `BITACORA GASTOS ${datos.folio}.${ext}`);
-
       setExito(true);
     } catch (err) {
-      setError(err.message || "Error al generar los documentos.");
+      setError(err.message || "Error al generar el documento.");
     } finally {
       setGenerando(false);
     }
@@ -376,25 +365,6 @@ export default function CtaPortModal({ onCerrar }) {
                 <p className="cpm-hint">En PDF: <code>CLAVE SAT:{datos.clave_sat}</code></p>
               )}
             </div>
-            <div className="cpm-campo">
-              <label className="cpm-label">
-                Total de Gastos <span className="cpm-req">*</span>
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                className="cpm-input cpm-input--money"
-                value={datos.total_gastos}
-                onChange={(e) => cambiarCampo("total_gastos", e.target.value)}
-                placeholder="Ej. 5000"
-              />
-              {datos.total_gastos && (
-                <p className="cpm-hint">
-                  Se incluirá como Total de Gastos en la Bitácora de Gastos.
-                </p>
-              )}
-            </div>
           </div>
 
           {/* Conductor y Placas */}
@@ -450,7 +420,7 @@ export default function CtaPortModal({ onCerrar }) {
             type="button"
             className="cpm-btn-excel"
             onClick={() => handleGenerar("excel")}
-            disabled={generando || !datos.folio || !datos.total_gastos}
+            disabled={generando || !datos.folio}
           >
             <Download size={16} /> Descargar Excel
           </button>
@@ -458,11 +428,11 @@ export default function CtaPortModal({ onCerrar }) {
             type="button"
             className="cpm-btn-generar"
             onClick={() => handleGenerar("pdf")}
-            disabled={generando || !datos.folio || !datos.total_gastos}
+            disabled={generando || !datos.folio}
           >
             {generando
-              ? <><Loader size={16} className="cpm-spin" /> Generando documentos...</>
-              : <><Download size={16} /> Generar CTA Port + Bitácora de Gastos</>}
+              ? <><Loader size={16} className="cpm-spin" /> Generando documento...</>
+              : <><Download size={16} /> Generar Carta Porte</>}
           </button>
         </div>
       </motion.div>
