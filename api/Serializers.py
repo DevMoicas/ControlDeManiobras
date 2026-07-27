@@ -77,7 +77,7 @@ class ManiobraSerializer(serializers.ModelSerializer):
             "solicita": 30, "agencia": 30,
             "terminal": 30, "placas_pis": 20,
             "horario": 50, "cliente": 30, 
-            "origen": 20, "destino": 20, 
+            "origen": 30, "destino": 30,
             "asignacion_operador": 20,
         }
         for campo, limite in limites.items():
