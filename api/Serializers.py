@@ -76,7 +76,7 @@ class ManiobraSerializer(serializers.ModelSerializer):
         limites = {
             "solicita": 30, "agencia": 30,
             "terminal": 30, "placas_pis": 20,
-            "horario": 50, "cliente": 30, 
+            "horario": 50, "cliente": 40,
             "origen": 30, "destino": 30,
             "asignacion_operador": 20,
         }
