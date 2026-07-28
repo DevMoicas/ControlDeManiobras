@@ -107,6 +107,13 @@ export default function CtaPortModal({ onCerrar }) {
       remolque_1: maniobra.remolque_1 || "",
       // Remolque 2 solo aplica en viajes full; si no, queda vacío
       remolque_2: esFull ? (maniobra.remolque_2 || "") : "",
+      // Cliente del folio, editable después con el ClienteSelector. Se pisa
+      // siempre —igual que origen/destino— para no mezclar el cliente de un
+      // folio con la carga de otro; si la maniobra no lo trae, queda vacío.
+      cliente_nombre:    maniobra.cliente_nombre    || "",
+      cliente_domicilio: maniobra.cliente_domicilio || "",
+      cliente_colonia:   maniobra.cliente_colonia   || "",
+      cliente_ciudad:    maniobra.cliente_ciudad    || "",
     }));
   };
 
