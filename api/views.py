@@ -557,10 +557,20 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
             t.placas: t
             for t in Tracto.objects.filter(placas__in=placas_unidad)
         } if placas_unidad else {}
+        # Mapa nombre → cliente, mismo patrón que tractos. Maniobra.cliente guarda
+        # el nombre (CharField, no FK), así que domicilio/colonia/ciudad se buscan
+        # por nombre en el catálogo. Un nombre que ya no exista allí devuelve la
+        # ficha vacía y el usuario la completa con el ClienteSelector.
+        nombres_cliente = {m.cliente for m in maniobras if m.cliente}
+        clientes = {
+            c.nombre_cliente: c
+            for c in Cliente.objects.filter(nombre_cliente__in=nombres_cliente)
+        } if nombres_cliente else {}
 
         data = []
         for m in maniobras:
             tracto = tractos.get(m.unidad)
+            cliente = clientes.get(m.cliente)
             data.append({
                 'id':          m.id,
                 'folio':       m.folio or '',
@@ -580,6 +590,11 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
                 'anio':        str(tracto.anio) if tracto and tracto.anio is not None else '',  # Modelo
                 'remolque_1':  m.remolque or '',
                 'remolque_2':  m.remolque_2 or '',
+                # Cliente del registro (autollenado de la Carta Porte)
+                'cliente_nombre':    m.cliente or '',
+                'cliente_domicilio': (cliente.domicilio if cliente else '') or '',
+                'cliente_colonia':   (cliente.colonia   if cliente else '') or '',
+                'cliente_ciudad':    (cliente.ciudad    if cliente else '') or '',
             })
         return Response(data)
 
