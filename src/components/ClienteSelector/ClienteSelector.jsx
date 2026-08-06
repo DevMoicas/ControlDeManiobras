@@ -10,10 +10,14 @@ import "./ClienteSelector.css";
  *
  * Props:
  *   currentValue  string   — nombre del cliente actualmente seleccionado
+ *   currentId     number   — id del cliente seleccionado. Opcional, pero es lo
+ *                            único que distingue dos clientes homónimos (dos
+ *                            "YAZAKI" con distinta dirección). Sin él se compara
+ *                            por nombre y los homónimos son indistinguibles.
  *   onSelect      function — callback recibe el objeto cliente completo
  *   disabled      boolean
  */
-export default function ClienteSelector({ currentValue, onSelect, disabled }) {
+export default function ClienteSelector({ currentValue, currentId, onSelect, disabled }) {
   const [abierto,  setAbierto]  = useState(false);
   const [coords,   setCoords]   = useState(null);
   const [clientes, setClientes] = useState([]);
@@ -70,10 +74,19 @@ export default function ClienteSelector({ currentValue, onSelect, disabled }) {
     };
   }, [abierto]);
 
+  // Resaltado. Sin id solo se puede comparar por nombre, así que en un registro
+  // viejo los dos "YAZAKI" salen marcados: es la verdad, no se sabe cuál era.
+  const esElSeleccionado = (c) =>
+    currentId != null ? c.id === currentId : c.nombre_cliente === currentValue;
+
   const handleSeleccionar = (cliente) => {
-    // reelegir el mismo = deseleccionar (objeto vacío para limpiar todos los campos)
-    const vacio = { nombre_cliente: "", domicilio: "", colonia: "", ciudad: "" };
-    onSelect(cliente.nombre_cliente === currentValue ? vacio : cliente);
+    // reelegir el mismo = deseleccionar (objeto vacío para limpiar todos los campos).
+    // Solo cuando el id lo confirma: en un registro viejo sin cliente_id, hacer clic
+    // en el homónimo correcto tiene que SELECCIONARLO —así se corrige el registro—,
+    // no borrarlo por el mero hecho de que el nombre coincida.
+    const vacio = { id: null, nombre_cliente: "", domicilio: "", colonia: "", ciudad: "" };
+    const deseleccionar = currentId != null && cliente.id === currentId;
+    onSelect(deseleccionar ? vacio : cliente);
     setAbierto(false);
   };
 
@@ -103,7 +116,7 @@ export default function ClienteSelector({ currentValue, onSelect, disabled }) {
             <button
               key={c.id}
               type="button"
-              className={`csl-item ${c.nombre_cliente === currentValue ? "csl-item--selected" : ""}`}
+              className={`csl-item ${esElSeleccionado(c) ? "csl-item--selected" : ""}`}
               onClick={() => handleSeleccionar(c)}
             >
               <span className="csl-nombre">{c.nombre_cliente}</span>

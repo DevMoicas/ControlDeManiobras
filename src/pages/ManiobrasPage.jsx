@@ -223,7 +223,9 @@ const COLUMNAS = [
 const MANIOBRA_VACIA = {
   solicita: "", agencia: "", codigo_pis: "", terminal: "", placas_pis: "",
   fecha_pis: "", horario: "", tipo_servicio: "sencillo", tipo: "", peso: "", contenedor: "", referencia: "", pedimento: "",
-  cliente: "", origen: "", destino: "", transportista: "", tercero: "", asignacion_operador_status: "",
+  // cliente = nombre (lo que se ve en la tabla); cliente_id = a cuál fila del
+  // catálogo apunta. El id es lo único que distingue dos clientes homónimos.
+  cliente: "", cliente_id: null, origen: "", destino: "", transportista: "", tercero: "", asignacion_operador_status: "",
   unidad: "", remolque: "", remolque_2: "", folio: "", vacio_patio: "", status_vacio: "",
   fecha_entrega_mercancia: "", no_factura: "", ccp: "", ruta_inicio: "", ruta_fin: "",
 };
@@ -403,7 +405,8 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
           ) : col.isCliente ? (
             <ClienteSelector
               currentValue={datos[col.key]}
-              onSelect={(c) => onChange(col.key, c.nombre_cliente)}
+              currentId={datos.cliente_id}
+              onSelect={(c) => { onChange(col.key, c.nombre_cliente); onChange("cliente_id", c.id ?? null); }}
               disabled={isSubmitting}
             />
           ) : col.isOrigen ? (
@@ -598,7 +601,8 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                 ) : col.isCliente ? (
                   <ClienteSelector
                     currentValue={datos[col.key] ?? ""}
-                    onSelect={(c) => onChange(col.key, c.nombre_cliente)}
+                    currentId={datos.cliente_id}
+                    onSelect={(c) => { onChange(col.key, c.nombre_cliente); onChange("cliente_id", c.id ?? null); }}
                     disabled={isSubmitting}
                   />
                 ) : col.isOrigen ? (

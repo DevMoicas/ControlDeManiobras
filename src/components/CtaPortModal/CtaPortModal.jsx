@@ -27,7 +27,10 @@ const ESTADO_INICIAL = {
   origen:      "",
   destino:     "",
 
-  // Datos del cliente
+  // Datos del cliente. cliente_id no va al documento: solo le dice al
+  // ClienteSelector cuál homónimo está puesto (dos "YAZAKI" con distinta
+  // dirección son indistinguibles por nombre).
+  cliente_id:        null,
   cliente_nombre:    "",
   cliente_domicilio: "",
   cliente_colonia:   "",
@@ -110,6 +113,7 @@ export default function CtaPortModal({ onCerrar }) {
       // Cliente del folio, editable después con el ClienteSelector. Se pisa
       // siempre —igual que origen/destino— para no mezclar el cliente de un
       // folio con la carga de otro; si la maniobra no lo trae, queda vacío.
+      cliente_id:        maniobra.cliente_id       ?? null,
       cliente_nombre:    maniobra.cliente_nombre    || "",
       cliente_domicilio: maniobra.cliente_domicilio || "",
       cliente_colonia:   maniobra.cliente_colonia   || "",
@@ -120,6 +124,7 @@ export default function CtaPortModal({ onCerrar }) {
   const handleCliente = (cliente) => {
     setDatos((p) => ({
       ...p,
+      cliente_id:        cliente.id             ?? null,
       cliente_nombre:    cliente.nombre_cliente || "",
       cliente_domicilio: cliente.domicilio      || "",
       cliente_colonia:   cliente.colonia        || "",
@@ -296,6 +301,7 @@ export default function CtaPortModal({ onCerrar }) {
               <label className="cpm-label">Seleccionar cliente</label>
               <ClienteSelector
                 currentValue={datos.cliente_nombre}
+                currentId={datos.cliente_id}
                 onSelect={handleCliente}
                 disabled={false}
               />
