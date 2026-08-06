@@ -75,6 +75,17 @@ class Maniobra(models.Model):
     referencia = models.CharField(max_length=255, null=True, blank=True)
     pedimento = models.CharField(max_length=255, null=True, blank=True)
     cliente = models.CharField(max_length=100, null=True, blank=True)
+    # Cliente real del catálogo. `cliente` (arriba) solo guarda el nombre y no
+    # distingue homónimos: dos "YAZAKI" con distinta dirección son dos filas de
+    # api_cliente y el nombre resuelve siempre a la misma. Se llama cliente_fk
+    # porque `cliente` ya ocupa ese nombre; la columna real es cliente_id, que la
+    # añade la migración 0028 vía RunSQL (la tabla es managed=False).
+    # ponytail: sin índice en cliente_id; solo se usa vía select_related (JOIN por
+    # la PK de api_cliente). Añadirlo si algún día se listan maniobras por cliente.
+    cliente_fk = models.ForeignKey(
+        'api.Cliente', null=True, blank=True, on_delete=models.SET_NULL,
+        db_column='cliente_id', related_name='maniobras',
+    )
     origen = models.CharField(max_length=100, null=True, blank=True)
     destino = models.CharField(max_length=100, null=True, blank=True)
     transportista = models.CharField(max_length=255, null=True, blank=True)

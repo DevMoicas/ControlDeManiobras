@@ -1,5 +1,6 @@
 import io
 import logging
+from types import SimpleNamespace
 
 from django.test import SimpleTestCase
 from django.db import IntegrityError
@@ -8,7 +9,7 @@ from openpyxl import load_workbook
 
 from .utils import custom_exception_handler
 from .Serializers import ManiobraSerializer
-from .views import _generar_pdf_cta_port, _TEMPLATE_PATH
+from .views import _generar_pdf_cta_port, _resolver_cliente, _TEMPLATE_PATH
 
 # Create your tests here.
 class ErrorHandlingTests(SimpleTestCase):
@@ -41,6 +42,34 @@ class ErrorHandlingTests(SimpleTestCase):
 
 		self.assertFalse(serializer.is_valid())
 		self.assertIn('solicita', serializer.errors)
+
+
+class ResolucionClientePorFolioTests(SimpleTestCase):
+	"""Al elegir un folio, la Carta Porte tiene que traer SU cliente aunque haya
+	homónimos: dos "YAZAKI" con distinta dirección solo se distinguen por el FK.
+	Si alguien vuelve a resolverlo por nombre, estos casos fallan.
+	Sin BD a propósito: `maniobras` es managed=False y el runner no crea la tabla."""
+
+	def _cliente(self, ciudad):
+		return SimpleNamespace(nombre_cliente='YAZAKI', domicilio='', colonia='', ciudad=ciudad)
+
+	def test_el_fk_gana_sobre_el_homonimo_del_mapa_por_nombre(self):
+		silao, durango = self._cliente('Silao'), self._cliente('Durango')
+		maniobra = SimpleNamespace(cliente='YAZAKI', cliente_fk_id=2, cliente_fk=silao)
+
+		self.assertIs(_resolver_cliente(maniobra, {'YAZAKI': durango}), silao)
+
+	def test_folio_viejo_sin_fk_cae_al_mapa_por_nombre(self):
+		durango = self._cliente('Durango')
+		maniobra = SimpleNamespace(cliente='YAZAKI', cliente_fk_id=None, cliente_fk=None)
+
+		self.assertIs(_resolver_cliente(maniobra, {'YAZAKI': durango}), durango)
+
+	def test_el_serializer_expone_cliente_id_apuntando_al_fk(self):
+		campos = ManiobraSerializer().fields
+
+		self.assertEqual(campos['cliente_id'].source, 'cliente_fk')
+		self.assertNotIn('cliente_fk', campos)
 
 
 class LoggingSeguridadTests(SimpleTestCase):

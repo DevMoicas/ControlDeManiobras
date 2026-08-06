@@ -64,10 +64,18 @@ class EmpleadoSerializer(serializers.ModelSerializer):
 class ManiobraSerializer(serializers.ModelSerializer):
     # Único campo obligatorio para registrar una maniobra.
     solicita = serializers.CharField(required=True, allow_blank=False, allow_null=False, max_length=30)
+    # El modelo llama al FK `cliente_fk` (el nombre `cliente` ya lo ocupa el texto
+    # libre histórico), pero hacia el front el contrato es `cliente_id`: es la
+    # columna real y lo que manda el ClienteSelector. El `exclude` evita exponer
+    # el mismo dato dos veces con dos nombres.
+    cliente_id = serializers.PrimaryKeyRelatedField(
+        source='cliente_fk', queryset=Cliente.objects.all(),
+        required=False, allow_null=True,
+    )
 
     class Meta:
         model = Maniobra
-        fields = '__all__'
+        exclude = ('cliente_fk',)
 
     # ponytail: codigo_pis acepta cualquier texto; el max_length=100 del modelo evita error de columna.
 

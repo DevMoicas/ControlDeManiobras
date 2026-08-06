@@ -516,6 +516,22 @@ class ManiobraFilter(django_filters.FilterSet):
         return queryset.exclude(tercero__isnull=True).exclude(tercero="")
 
 
+def _resolver_cliente(maniobra, clientes_por_nombre):
+    """Cliente del catálogo al que apunta una maniobra.
+
+    El FK manda: es lo único que distingue dos clientes homónimos (dos "YAZAKI"
+    con distinta dirección). El mapa por nombre es el fallback para los folios
+    creados antes del FK, que solo guardaron el texto — ahí la ambigüedad sigue
+    (devuelve siempre el mismo) y se corrige al reeditar la maniobra.
+
+    Vive fuera del ViewSet para poder probarlo sin BD: `maniobras` es
+    managed=False, así que el runner de tests no crea esa tabla.
+    """
+    if maniobra.cliente_fk_id:
+        return maniobra.cliente_fk
+    return clientes_por_nombre.get(maniobra.cliente)
+
+
 # --- NUEVA VISTA ---
 class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
     queryset = Maniobra.objects.all().order_by("-id")
@@ -549,6 +565,7 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
             Maniobra.objects
             .filter(folio__isnull=False)
             .exclude(folio='')
+            .select_related('cliente_fk')
             .order_by('-id')[:30]
         )
         # Mapa placas → tracto: resuelve Tipo de Unidad y Modelo sin N consultas.
@@ -557,11 +574,13 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
             t.placas: t
             for t in Tracto.objects.filter(placas__in=placas_unidad)
         } if placas_unidad else {}
-        # Mapa nombre → cliente, mismo patrón que tractos. Maniobra.cliente guarda
-        # el nombre (CharField, no FK), así que domicilio/colonia/ciudad se buscan
-        # por nombre en el catálogo. Un nombre que ya no exista allí devuelve la
+        # Mapa nombre → cliente, mismo patrón que tractos: SOLO para los folios
+        # previos al FK cliente_id, que únicamente guardaron el nombre (ver
+        # _resolver_cliente). Un nombre que ya no exista en el catálogo devuelve la
         # ficha vacía y el usuario la completa con el ClienteSelector.
-        nombres_cliente = {m.cliente for m in maniobras if m.cliente}
+        nombres_cliente = {
+            m.cliente for m in maniobras if m.cliente and not m.cliente_fk_id
+        }
         clientes = {
             c.nombre_cliente: c
             for c in Cliente.objects.filter(nombre_cliente__in=nombres_cliente)
@@ -570,7 +589,7 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
         data = []
         for m in maniobras:
             tracto = tractos.get(m.unidad)
-            cliente = clientes.get(m.cliente)
+            cliente = _resolver_cliente(m, clientes)
             data.append({
                 'id':          m.id,
                 'folio':       m.folio or '',
@@ -590,8 +609,13 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
                 'anio':        str(tracto.anio) if tracto and tracto.anio is not None else '',  # Modelo
                 'remolque_1':  m.remolque or '',
                 'remolque_2':  m.remolque_2 or '',
-                # Cliente del registro (autollenado de la Carta Porte)
-                'cliente_nombre':    m.cliente or '',
+                # Cliente del registro (autollenado de la Carta Porte). El nombre
+                # sale del catálogo cuando hay FK, así que un cliente renombrado
+                # allí se refleja aquí; `m.cliente` es el respaldo de los viejos.
+                # cliente_id viaja para que el ClienteSelector del modal sepa CUÁL
+                # homónimo está puesto (si no, elegir el otro parece "el mismo").
+                'cliente_id':        m.cliente_fk_id,
+                'cliente_nombre':    (cliente.nombre_cliente if cliente else m.cliente) or '',
                 'cliente_domicilio': (cliente.domicilio if cliente else '') or '',
                 'cliente_colonia':   (cliente.colonia   if cliente else '') or '',
                 'cliente_ciudad':    (cliente.ciudad    if cliente else '') or '',
