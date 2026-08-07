@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
@@ -300,3 +300,50 @@ class OperadorTerceroSerializer(serializers.ModelSerializer):
     class Meta:
         model  = OperadorTercero
         fields = '__all__'
+
+
+class FolioSerializer(serializers.ModelSerializer):
+    # allow_null porque sanitizarPayload() del apiClient manda null (no "") al
+    # vaciar una celda; validate_asignacion lo normaliza de vuelta a "" para no
+    # tener dos estados de "vacío" en la columna (NULL y '').
+    asignacion = serializers.CharField(
+        max_length=40, required=False, allow_blank=True, allow_null=True
+    )
+
+    # `codigo` lo siembra el generador, pero es editable a mano: a veces hay que
+    # añadirle algo que no sale automático. Se declara explícito con
+    # validators=[] para quitar el UniqueValidator que DRF añade solo — así el
+    # choque de duplicados se responde en validate(), bajo la clave 'detail',
+    # que es la ÚNICA que lee el apiClient del frontend (un error de campo le
+    # llegaría como un inútil "HTTP 400").
+    codigo = serializers.CharField(
+        max_length=30, required=False, allow_blank=True, allow_null=True, validators=[]
+    )
+
+    class Meta:
+        model  = Folio
+        fields = '__all__'
+        # `numero` sigue siendo de solo lectura aunque `codigo` ya no lo sea: es
+        # el contador real del que sale el siguiente lote. Renombrar un folio no
+        # debe poder mover la secuencia.
+        read_only_fields = ['tabla', 'numero', 'letra']
+
+    def validate_asignacion(self, value):
+        return value or ''
+
+    def validate(self, attrs):
+        if 'codigo' not in attrs:
+            return attrs
+
+        codigo = (attrs['codigo'] or '').strip()
+        if not codigo:
+            raise serializers.ValidationError({'detail': 'El folio no puede quedar vacío.'})
+
+        duplicados = Folio.objects.filter(codigo=codigo)
+        if self.instance is not None:
+            duplicados = duplicados.exclude(pk=self.instance.pk)
+        if duplicados.exists():
+            raise serializers.ValidationError({'detail': f'El folio "{codigo}" ya existe.'})
+
+        attrs['codigo'] = codigo
+        return attrs

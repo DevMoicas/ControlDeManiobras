@@ -267,6 +267,48 @@ class Cliente(models.Model):
         return self.nombre_cliente
 
 
+class Folio(models.Model):
+    MANZANILLO = 'manzanillo'
+    LAZARO     = 'lazaro'
+    TABLA_CHOICES = [
+        (MANZANILLO, 'Folios Manzanillo'),
+        (LAZARO,     'Folios Lázaro C'),
+    ]
+
+    tabla      = models.CharField(max_length=20, choices=TABLA_CHOICES, db_index=True)
+    numero     = models.IntegerField()
+    letra      = models.CharField(max_length=1)
+    codigo     = models.CharField(max_length=30, unique=True)
+    asignacion = models.CharField(max_length=40, blank=True, default='')
+
+    class Meta:
+        managed  = True
+        ordering = ['tabla', 'numero']
+        constraints = [
+            models.UniqueConstraint(fields=['tabla', 'numero'], name='uniq_folio_tabla_numero'),
+        ]
+
+    def __str__(self):
+        return self.codigo
+
+
+# Ciclo de 14 letras "FRABA"+"CONTAINER". Cada lote de AÑADIR FOLIOS reinicia
+# siempre en F (confirmado con el usuario) — el índice dentro del lote define
+# la letra, no numero % 14.
+LETRAS_CICLO = ['F', 'R', 'A', 'B', 'A', 'C', 'O', 'N', 'T', 'A', 'I', 'N', 'E', 'R']
+BATCH_SIZE   = len(LETRAS_CICLO)  # 14
+
+START_NUMERO = {Folio.MANZANILLO: 2279, Folio.LAZARO: 323}
+FORMATO_CODIGO = {
+    Folio.MANZANILLO: '{letra}-{numero}',
+    Folio.LAZARO:     '{letra}-LCR-{numero}',
+}
+
+# ponytail: sin campos de auditoría (created_by/updated_by). El único dato
+# editable es `asignacion` y no hay borrado en la UI; se añaden con el mismo
+# bloque de 4 líneas de Maniobra/Gasto/Vacio si algún día hace falta.
+
+
 class Origen(models.Model):
     ciudad = models.CharField(max_length=255)
 

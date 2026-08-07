@@ -28,6 +28,7 @@ from .views import (
     UnidadTerceroViewSet,
     OperadorTerceroViewSet,
     DispositivoConfianzaViewSet,
+    FolioViewSet,
 )
  
 router = DefaultRouter()
@@ -49,6 +50,7 @@ router.register(r'cargos',         CargoViewSet,         basename='cargos')
 router.register(r'unidades-terceros',  UnidadTerceroViewSet,   basename='unidades-terceros')
 router.register(r'operadores-terceros', OperadorTerceroViewSet, basename='operadores-terceros')
 router.register(r'dispositivos-confianza', DispositivoConfianzaViewSet, basename='dispositivos-confianza')
+router.register(r'folios', FolioViewSet, basename='folios')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -2,16 +2,17 @@ import base64
 import re
 import django_filters
 from rest_framework import viewsets
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, LETRAS_CICLO, FORMATO_CODIGO, START_NUMERO
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer
+from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .Serializers import CustomTokenObtainPairSerializer, DispositivoConfianzaSerializer
 from . import confianza
+from .db_context import get_db_alias
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
@@ -23,6 +24,7 @@ import logging
 import io
 from datetime import date
 from django.conf import settings
+from django.db import transaction
 from django.http import FileResponse, HttpResponse
 from openpyxl import load_workbook
 from PIL import Image
@@ -945,6 +947,65 @@ class OperadorTerceroViewSet(viewsets.ModelViewSet):
         if not request.user.is_staff:
             return Response({'detail': 'No tienes permisos para eliminar registros.'}, status=403)
         return super().destroy(request, *args, **kwargs)
+
+
+class FolioViewSet(viewsets.ModelViewSet):
+    queryset               = Folio.objects.all()
+    serializer_class       = FolioSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+    filter_backends        = [DjangoFilterBackend]
+    filterset_fields       = ['tabla']
+    # Sin paginar a propósito: Folio crece sin límite (14 filas por lote, para
+    # siempre) y el frontend necesita SIEMPRE la lista completa de una tabla
+    # para reconstruir los lotes en columnas. Con PAGE_SIZE=60 global, el
+    # quinto lote (70 filas) perdería las últimas 10 en silencio.
+    pagination_class       = None
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response({'detail': 'No tienes permisos para eliminar registros.'},
+                            status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
+
+    @action(detail=False, methods=['post'], url_path='generar')
+    def generar(self, request):
+        """Genera el siguiente lote de 14 folios para `tabla`
+        (body: {"tabla": "manzanillo"|"lazaro"}).
+
+        Abierto a cualquier usuario autenticado — confirmado con el usuario,
+        igual que el resto de altas/ediciones; solo destroy() se reserva a admin.
+        """
+        tabla = request.data.get('tabla')
+        if tabla not in dict(Folio.TABLA_CHOICES):
+            return Response({'detail': 'tabla inválida.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # using=get_db_alias() NO es opcional: el router manda el ORM al alias
+        # del hilo ('standard' en una petición normal), así que un atomic sobre
+        # 'default' abriría la transacción en OTRA conexión y el
+        # select_for_update de abajo correría en autocommit → 500. Es la misma
+        # regresión que tumbó /api/login/ el 2026-07-23 (ver Serializers.py).
+        with transaction.atomic(using=get_db_alias()):
+            # select_for_update sobre la última fila de esta tabla serializa
+            # clics concurrentes de AÑADIR FOLIOS.
+            ultimo = (Folio.objects.select_for_update()
+                      .filter(tabla=tabla).order_by('-numero').first())
+            # En producción la migración 0031 siembra el primer lote, así que
+            # `ultimo` nunca es None; el fallback evita el 500 si alguien vacía
+            # la tabla desde el admin (y es lo que hace arrancable el test, que
+            # corre con las migraciones de `api` saltadas).
+            siguiente = ultimo.numero + 1 if ultimo else START_NUMERO[tabla]
+            formato = FORMATO_CODIGO[tabla]
+            nuevos = [
+                Folio(tabla=tabla, numero=siguiente + i, letra=letra,
+                      codigo=formato.format(letra=letra, numero=siguiente + i))
+                for i, letra in enumerate(LETRAS_CICLO)
+            ]
+            creados = Folio.objects.bulk_create(nuevos)
+
+        return Response(FolioSerializer(creados, many=True).data,
+                        status=status.HTTP_201_CREATED)
 
 
 class FotoRegistroViewSet(viewsets.ViewSet):
