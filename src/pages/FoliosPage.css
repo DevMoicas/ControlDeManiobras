@@ -1,0 +1,80 @@
+/* Encabezado mínimo y filas compactas (~28px) para que las dos tablas apiladas
+   quepan sin scroll de página en pantallas altas. En laptops bajas (1366x768)
+   es esperable algo de scroll vertical — aceptado por el usuario. */
+
+.fp-page { min-height: calc(100vh - 40px); background: var(--bg, #f4f7fb); }
+
+.fp-wrap {
+  max-width: 1180px; margin: 0 auto; padding: 16px 24px 20px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+.fp-intro { text-align: center; }
+.fp-title {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'Oswald', sans-serif; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.03em; font-size: 2rem; line-height: 1.15; margin: 0;
+  color: var(--text, #1f2937);
+}
+
+.fp-notif { padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; border: 1px solid; }
+.fp-notif--exito { background: #ecfdf3; color: #15803d; border-color: #bbf7d0; }
+.fp-notif--error { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+
+.fp-panel {
+  width: 80%; margin: 0 auto; background: #fff; border: 1px solid #e6ecf5;
+  border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
+}
+.fp-panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 12px; background: #f9fbfe; border-bottom: 1px solid #eef2f7;
+}
+.fp-panel-titulo {
+  font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 0.85rem;
+  letter-spacing: 0.05em; text-transform: uppercase; margin: 0; color: var(--text, #1f2937);
+}
+.fp-btn-anadir {
+  font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 0.68rem;
+  letter-spacing: 0.04em; text-transform: uppercase; padding: 5px 12px;
+  border: none; border-radius: 7px; background: var(--primary, #2563eb); color: #fff; cursor: pointer;
+}
+.fp-btn-anadir:hover:not(:disabled) { background: #1d4ed8; }
+.fp-btn-anadir:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* overflow-x SIEMPRE activo (patrón de CatalogosPage/VaciosPage, no el
+   @media-only de MovimientosLocalesPage): la tabla crece hacia la derecha
+   para siempre, a cualquier ancho de pantalla. */
+.fp-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.fp-tabla { border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.78rem; }
+
+.fp-th {
+  font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 0.62rem; letter-spacing: 0.06em;
+  text-transform: uppercase; text-align: left; white-space: nowrap; padding: 5px 8px;
+  background: #2b3e50; color: #fff;
+}
+.fp-th--folio { width: 74px; }
+.fp-th--asig  { width: 150px; border-right: 2px solid #1e2b38; }
+
+.fp-td { padding: 6px 8px; border-bottom: 1px solid #eef2f7; white-space: nowrap; color: var(--text, #1f2937); }
+.fp-td--asig { border-right: 1px solid #eef2f7; }
+.fp-tabla tbody tr:last-child .fp-td { border-bottom: none; }
+
+.fp-celda-texto { cursor: text; display: block; min-width: 70px; padding: 2px 4px; border-radius: 5px; }
+.fp-celda-texto:hover { background: var(--primary-light, #eaf1ff); }
+.fp-placeholder { color: var(--text-light, #6b7280); font-style: normal; }
+
+.fp-input {
+  font-family: 'Inter', sans-serif; font-size: 0.78rem; padding: 3px 6px;
+  border: 1px solid var(--primary, #2563eb); border-radius: 5px;
+  width: 100%; min-width: 130px; box-sizing: border-box;
+}
+/* La columna FOLIO también se edita, pero es estrecha: sin esto el min-width
+   pensado para ASIGNACIÓN le duplicaría el ancho al entrar en edición. */
+.fp-td--folio .fp-input { min-width: 0; }
+
+.fp-cargando { text-align: center; color: var(--text-light, #6b7280); padding: 24px; }
+
+@media (max-width: 720px) {
+  .fp-wrap { padding: 14px 14px 18px; }
+  .fp-panel { width: 96%; }
+}

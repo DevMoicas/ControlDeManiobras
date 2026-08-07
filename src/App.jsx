@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, ChevronRight } from 'lucide-react';
+import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, Hash, ChevronRight } from 'lucide-react';
 import './App.css';
 import { useAuthContext } from './context/AuthContext';
 import { useInactivityTimer } from './hooks/useInactivityTimer';
@@ -17,6 +17,7 @@ import VaciosPage from './pages/VaciosPage';
 import AdminVaciosPage from './pages/AdminVaciosPage';
 import PerfilPage from './pages/PerfilPage';
 import MovimientosLocalesPage from './pages/MovimientosLocalesPage';
+import FoliosPage from './pages/FoliosPage';
 import { useAlertasVencimiento } from './hooks/useAlertasVencimiento';
 import AlertaVencimiento from './components/AlertaVencimiento/AlertaVencimiento';
 const HOME_MODULES = [
@@ -24,6 +25,7 @@ const HOME_MODULES = [
   { to: 'gastos-efectivo', icon: CircleDollarSign,      title: 'Gastos efectivo',     desc: 'Controla los gastos en efectivo de cada operación.' },
   { to: 'vacios',          icon: Container, title: 'Vacíos',              desc: 'Administra los contenedores vacíos.' },
   { to: 'movimientos-locales', icon: Wallet, title: 'Movimientos locales', desc: 'Controla los movimientos locales pendientes y pagados.' },
+  { to: 'folios',          icon: Hash,        title: 'Folios',              desc: 'Genera y administra los folios de Manzanillo y Lázaro Cárdenas.' },
   { to: 'catalogos',       icon: Library,     title: 'Catálogos',           desc: 'Gestiona operadores, placas, patios, unidades, etc.' },
   { to: 'documentos-viaje',icon: FileText,    title: 'Documentos de viaje', desc: 'Genera y consulta la documentación de cada viaje.' },
 ];
@@ -170,6 +172,7 @@ function AppRoutes() {
           <Route path="gastos-efectivo" element={<GastosPage title="GASTOS EFECTIVO" />} />
           <Route path="vacios" element={<VaciosPage />} />
           <Route path="movimientos-locales" element={<MovimientosLocalesPage />} />
+          <Route path="folios" element={<FoliosPage />} />
           <Route path="catalogos" element={<CatalogosPage />} />
           <Route path="documentos-viaje" element={<DocumentosViajePage />} />
           <Route path="perfil" element={<PerfilPage />} />
