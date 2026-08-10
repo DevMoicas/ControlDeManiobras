@@ -54,6 +54,10 @@ class BaseFolios(TestCase):
     def generar(self, tabla):
         return self.cliente.post('/api/folios/generar/', {'tabla': tabla}, format='json')
 
+    def generar_anterior(self, tabla):
+        return self.cliente.post('/api/folios/generar/',
+                                 {'tabla': tabla, 'direccion': 'anterior'}, format='json')
+
 
 class FoliosTests(BaseFolios):
 
@@ -93,6 +97,55 @@ class FoliosTests(BaseFolios):
         self.assertIn(APIClient().post('/api/folios/generar/',
                                        {'tabla': 'manzanillo'}, format='json').status_code,
                       (401, 403))
+
+    # ── Lotes hacia atrás ────────────────────────────────────────────────
+    def test_el_lote_anterior_de_manzanillo_es_2265_a_2278(self):
+        """El talonario que precede al primero sembrado por la 0031. Es el caso
+        real que motivó la función."""
+        self.generar('manzanillo')
+        r = self.generar_anterior('manzanillo')
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual([f['codigo'] for f in r.data],
+                         ['F-2265', 'R-2266', 'A-2267', 'B-2268', 'A-2269', 'C-2270',
+                          'O-2271', 'N-2272', 'T-2273', 'A-2274', 'I-2275', 'N-2276',
+                          'E-2277', 'R-2278'])
+
+    def test_dos_lotes_anteriores_seguidos_encadenan_hacia_abajo(self):
+        self.generar('manzanillo')
+        self.generar_anterior('manzanillo')
+        r = self.generar_anterior('manzanillo')
+        self.assertEqual(r.data[0]['codigo'], 'F-2251')
+        self.assertEqual(r.data[-1]['codigo'], 'R-2264')
+
+    def test_retroceder_no_mueve_el_contador_de_avanzar(self):
+        """Las dos direcciones salen de extremos distintos de la tabla: añadir
+        hacia atrás no puede hacer saltar ni repetir la secuencia de arriba."""
+        self.generar('manzanillo')
+        self.generar_anterior('manzanillo')
+        self.assertEqual(self.generar('manzanillo').data[0]['codigo'], 'F-2293')
+
+    def test_lazaro_retrocede_en_su_propia_secuencia(self):
+        self.generar('manzanillo')
+        self.generar('lazaro')
+        self.generar_anterior('manzanillo')
+        r = self.generar_anterior('lazaro')
+        self.assertEqual(r.data[0]['codigo'], 'F-LCR-309')
+        self.assertEqual(r.data[-1]['codigo'], 'R-LCR-322')
+
+    def test_retroceder_con_la_tabla_vacia_es_400(self):
+        """Sin ninguna fila no hay punto de referencia desde el que retroceder."""
+        r = self.generar_anterior('manzanillo')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('primer lote', str(r.data.get('detail', '')))
+
+    def test_no_se_puede_retroceder_por_debajo_de_1(self):
+        self.generar('lazaro')                 # 323..336
+        for _ in range(23):                    # 323 - 23*14 = 1, el mínimo alcanzable
+            self.assertEqual(self.generar_anterior('lazaro').status_code, 201)
+        r = self.generar_anterior('lazaro')    # 1 - 14 = -13 → rechazado
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('por debajo de 1', str(r.data.get('detail', '')))
+        self.assertEqual(Folio.objects.filter(tabla='lazaro', numero__lt=1).count(), 0)
 
     # ── Listado ──────────────────────────────────────────────────────────
     def test_el_listado_no_pagina_y_filtra_por_tabla(self):
@@ -216,6 +269,30 @@ class FoliosEnManiobrasTests(BaseFolios):
         maniobra.folio = ''
         maniobra.save()
         self.assertEqual(self.disponibles('manzanillo').data[0]['codigo'], 'F-2279')
+
+    def test_un_folio_con_asignacion_escrita_deja_de_ofrecerse(self):
+        """Marcar a mano la ASIGNACIÓN es como se retiran de circulación los
+        folios de un talonario viejo que ya se usó fuera del sistema."""
+        lote = self.generar('manzanillo').data
+        self.cliente.patch(f'/api/folios/{lote[0]["id"]}/',
+                           {'asignacion': 'viaje de marzo'}, format='json')
+        self.assertEqual([f['codigo'] for f in self.disponibles('manzanillo').data],
+                         LOTE_MZO[1:6])
+
+    def test_vaciar_la_asignacion_lo_devuelve_a_la_lista(self):
+        lote = self.generar('manzanillo').data
+        self.cliente.patch(f'/api/folios/{lote[0]["id"]}/',
+                           {'asignacion': 'viaje de marzo'}, format='json')
+        self.cliente.patch(f'/api/folios/{lote[0]["id"]}/',
+                           {'asignacion': None}, format='json')
+        self.assertEqual(self.disponibles('manzanillo').data[0]['codigo'], 'F-2279')
+
+    def test_el_lote_anterior_se_ofrece_primero(self):
+        """Los folios viejos tienen el número más bajo, así que salen antes que
+        F-2279 en el desplegable de Maniobras."""
+        self.generar('manzanillo')
+        self.generar_anterior('manzanillo')
+        self.assertEqual(self.disponibles('manzanillo').data[0]['codigo'], 'F-2265')
 
     def test_cada_tabla_ofrece_solo_los_suyos(self):
         self.generar('manzanillo')

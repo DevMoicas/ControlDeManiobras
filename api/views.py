@@ -2,7 +2,7 @@ import base64
 import re
 import django_filters
 from rest_framework import viewsets
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, LETRAS_CICLO, FORMATO_CODIGO, START_NUMERO
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
@@ -999,14 +999,29 @@ class FolioViewSet(viewsets.ModelViewSet):
         # maniobras.folio: es un scan por apertura del desplegable; añadirlo si pesa.
         usados = (Maniobra.objects.exclude(folio__isnull=True).exclude(folio='')
                   .values_list('folio', flat=True))
-        libres = (Folio.objects.filter(tabla=tabla).exclude(codigo__in=usados)
+        # asignacion='' — un folio con algo escrito a mano en ASIGNACIÓN cuenta
+        # como ocupado. Es la vía para cargar talonarios viejos (lotes anteriores)
+        # y marcar los que ya se usaron fuera del sistema, sin columna de estado.
+        # `asignacion` es blank/default='' y validate_asignacion normaliza null a
+        # '', así que "vacío" siempre es '' y no hace falta mirar NULL.
+        libres = (Folio.objects.filter(tabla=tabla, asignacion='')
+                  .exclude(codigo__in=usados)
                   .order_by('numero')[:5])
         return Response(FolioSerializer(libres, many=True).data)
 
     @action(detail=False, methods=['post'], url_path='generar')
     def generar(self, request):
-        """Genera el siguiente lote de 14 folios para `tabla`
-        (body: {"tabla": "manzanillo"|"lazaro"}).
+        """Genera un lote de 14 folios para `tabla`
+        (body: {"tabla": "manzanillo"|"lazaro", "direccion": "anterior"?}).
+
+        Sin `direccion` avanza: los 14 siguientes al número más alto. Con
+        "anterior" retrocede: los 14 que preceden al más bajo, para cargar los
+        talonarios que ya existían antes de que arrancara el sistema (Manzanillo
+        empieza en 2279 y Lázaro en 323, sembrados por la migración 0031, así que
+        sin esto todo lo anterior es inalcanzable).
+
+        Las letras salen de LETRAS_CICLO por índice DENTRO del lote, así que un
+        lote hacia atrás también empieza en F.
 
         Abierto a cualquier usuario autenticado — confirmado con el usuario,
         igual que el resto de altas/ediciones; solo destroy() se reserva a admin.
@@ -1014,6 +1029,7 @@ class FolioViewSet(viewsets.ModelViewSet):
         tabla = request.data.get('tabla')
         if tabla not in dict(Folio.TABLA_CHOICES):
             return Response({'detail': 'tabla inválida.'}, status=status.HTTP_400_BAD_REQUEST)
+        hacia_atras = request.data.get('direccion') == 'anterior'
 
         # using=get_db_alias() NO es opcional: el router manda el ORM al alias
         # del hilo ('standard' en una petición normal), así que un atomic sobre
@@ -1021,15 +1037,31 @@ class FolioViewSet(viewsets.ModelViewSet):
         # select_for_update de abajo correría en autocommit → 500. Es la misma
         # regresión que tumbó /api/login/ el 2026-07-23 (ver Serializers.py).
         with transaction.atomic(using=get_db_alias()):
-            # select_for_update sobre la última fila de esta tabla serializa
-            # clics concurrentes de AÑADIR FOLIOS.
-            ultimo = (Folio.objects.select_for_update()
-                      .filter(tabla=tabla).order_by('-numero').first())
-            # En producción la migración 0031 siembra el primer lote, así que
-            # `ultimo` nunca es None; el fallback evita el 500 si alguien vacía
-            # la tabla desde el admin (y es lo que hace arrancable el test, que
-            # corre con las migraciones de `api` saltadas).
-            siguiente = ultimo.numero + 1 if ultimo else START_NUMERO[tabla]
+            if hacia_atras:
+                # Bloquea la fila MÁS BAJA, la que define dónde empieza el hueco
+                # anterior — igual que la otra rama bloquea la más alta. Dos clics
+                # simultáneos se serializan.
+                primero = (Folio.objects.select_for_update()
+                           .filter(tabla=tabla).order_by('numero').first())
+                if primero is None:
+                    return Response(
+                        {'detail': 'No hay folios en esta tabla todavía: genera el primer lote antes de retroceder.'},
+                        status=status.HTTP_400_BAD_REQUEST)
+                siguiente = primero.numero - BATCH_SIZE
+                if siguiente < 1:
+                    return Response(
+                        {'detail': 'No se puede retroceder más: el lote anterior caería por debajo de 1.'},
+                        status=status.HTTP_400_BAD_REQUEST)
+            else:
+                # select_for_update sobre la última fila de esta tabla serializa
+                # clics concurrentes de AÑADIR FOLIOS.
+                ultimo = (Folio.objects.select_for_update()
+                          .filter(tabla=tabla).order_by('-numero').first())
+                # En producción la migración 0031 siembra el primer lote, así que
+                # `ultimo` nunca es None; el fallback evita el 500 si alguien vacía
+                # la tabla desde el admin (y es lo que hace arrancable el test, que
+                # corre con las migraciones de `api` saltadas).
+                siguiente = ultimo.numero + 1 if ultimo else START_NUMERO[tabla]
             formato = FORMATO_CODIGO[tabla]
             nuevos = [
                 Folio(tabla=tabla, numero=siguiente + i, letra=letra,
