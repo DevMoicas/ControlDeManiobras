@@ -41,6 +41,12 @@
 .fp-btn-anadir:hover:not(:disabled) { background: #1d4ed8; }
 .fp-btn-anadir:disabled { opacity: 0.55; cursor: not-allowed; }
 
+/* "+ Lote anterior" en secundario: carga talonarios viejos, no es la acción
+   habitual, y dos botones idénticos se pulsan por error. */
+.fp-btn-acciones { display: flex; align-items: center; gap: 8px; }
+.fp-btn-anadir--sec { background: #fff; color: var(--primary, #2563eb); border: 1px solid #bfdbfe; }
+.fp-btn-anadir--sec:hover:not(:disabled) { background: #eff6ff; }
+
 /* overflow-x SIEMPRE activo (patrón de CatalogosPage/VaciosPage, no el
    @media-only de MovimientosLocalesPage): la tabla crece hacia la derecha
    para siempre, a cualquier ancho de pantalla. */

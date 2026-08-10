@@ -35,11 +35,17 @@ export function useFolios() {
     }
   }, [mostrarNotif]);
 
-  const anadirFolios = useCallback(async (tabla) => {
+  // direccion: undefined = siguiente lote (lo de siempre) | "anterior" = el lote
+  // que precede al más bajo, para cargar talonarios previos al sistema. El lote
+  // anterior se antepone: sus números son menores y la tabla se pinta ordenada
+  // por `numero`. sanitizarPayload() descarta las claves undefined, así que sin
+  // direccion el backend recibe solo {tabla} y avanza.
+  const anadirFolios = useCallback(async (tabla, direccion) => {
     try {
-      const nuevos = await apiClient.post("/folios/generar/", { tabla });
-      setterDe(tabla)((prev) => [...prev, ...nuevos]);
-      mostrarNotif("Folios añadidos.");
+      const nuevos = await apiClient.post("/folios/generar/", { tabla, direccion });
+      const anterior = direccion === "anterior";
+      setterDe(tabla)((prev) => (anterior ? [...nuevos, ...prev] : [...prev, ...nuevos]));
+      mostrarNotif(anterior ? "Lote anterior añadido." : "Folios añadidos.");
     } catch (err) {
       mostrarNotif(err.message || "Error al añadir folios.", "error");
     }

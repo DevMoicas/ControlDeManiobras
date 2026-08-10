@@ -20,7 +20,7 @@ const chunk = (arr, size) => {
 
 // Sub-componente local (no en src/components/): las dos tablas son idénticas
 // salvo título/datos/callbacks y no se reusa fuera de esta página.
-function FolioTabla({ titulo, anadiendo, folios, onAnadir, onGuardar }) {
+function FolioTabla({ titulo, anadiendo, folios, onAnadir, onAnadirAnterior, onGuardar }) {
   const lotes = chunk(folios, BATCH_SIZE);
   const [editandoCelda, setEditandoCelda] = useState(null); // { id, key }
   const [valorEditando, setValorEditando] = useState("");
@@ -43,9 +43,22 @@ function FolioTabla({ titulo, anadiendo, folios, onAnadir, onGuardar }) {
     <section className="fp-panel">
       <div className="fp-panel-head">
         <h2 className="fp-panel-titulo">{titulo}</h2>
-        <button type="button" className="fp-btn-anadir" onClick={onAnadir} disabled={anadiendo}>
-          {anadiendo ? "..." : "+ Añadir folios"}
-        </button>
+        {/* Un solo flag de "en vuelo" para los dos botones: nunca hay que pulsar
+            los dos a la vez y evita duplicar estado. */}
+        <div className="fp-btn-acciones">
+          <button
+            type="button"
+            className="fp-btn-anadir fp-btn-anadir--sec"
+            onClick={onAnadirAnterior}
+            disabled={anadiendo}
+            title="Carga los 14 folios anteriores al más bajo de esta tabla"
+          >
+            {anadiendo ? "..." : "+ Lote anterior"}
+          </button>
+          <button type="button" className="fp-btn-anadir" onClick={onAnadir} disabled={anadiendo}>
+            {anadiendo ? "..." : "+ Añadir folios"}
+          </button>
+        </div>
       </div>
       <div className="fp-scroll">
         <table className="fp-tabla">
@@ -120,9 +133,9 @@ export default function FoliosPage() {
 
   useEffect(() => { cargarFolios(); }, [cargarFolios]);
 
-  const handleAnadir = async (tabla) => {
+  const handleAnadir = async (tabla, direccion) => {
     setAnadiendo((p) => ({ ...p, [tabla]: true }));
-    await anadirFolios(tabla);
+    await anadirFolios(tabla, direccion);
     setAnadiendo((p) => ({ ...p, [tabla]: false }));
   };
 
@@ -144,6 +157,7 @@ export default function FoliosPage() {
               anadiendo={anadiendo.manzanillo}
               folios={foliosManzanillo}
               onAnadir={() => handleAnadir("manzanillo")}
+              onAnadirAnterior={() => handleAnadir("manzanillo", "anterior")}
               onGuardar={(id, campo, v) => actualizarCampo("manzanillo", id, campo, v)}
             />
             <FolioTabla
@@ -151,6 +165,7 @@ export default function FoliosPage() {
               anadiendo={anadiendo.lazaro}
               folios={foliosLazaro}
               onAnadir={() => handleAnadir("lazaro")}
+              onAnadirAnterior={() => handleAnadir("lazaro", "anterior")}
               onGuardar={(id, campo, v) => actualizarCampo("lazaro", id, campo, v)}
             />
           </>
