@@ -141,26 +141,28 @@ const sinAcentos = (s) =>
   (s ?? "").normalize("NFD").replace(/\p{M}/gu, "").toUpperCase();
 
 // Manda el Origen; si el origen no es ninguna de las dos plazas, decide el Destino.
-// null = no se sabe todavía → el selector de folio se queda deshabilitado.
+// Y si ninguno de los dos lo es (Colima → Guadalajara, o la fila recién abierta
+// sin ruta todavía), la tabla por defecto es Manzanillo: solo existen esas dos
+// secuencias de folios y toda maniobra necesita una, asi que no hay caso "sin tabla".
 function tablaDeFolios({ origen, destino }) {
   for (const plaza of [origen, destino]) {
     const p = sinAcentos(plaza);
     if (p.includes("MANZANILLO")) return "manzanillo";
     if (p.includes("LAZARO")) return "lazaro";
   }
-  return null;
+  return "manzanillo";
 }
 
 // Cambiar de plaza cambia la tabla de folios, así que el folio ya elegido deja de
 // valer: se vacía y con eso vuelve a estar disponible para otra maniobra de su
 // plaza (no hay estado "usado" en la BD, se deriva de que alguien lo tenga puesto).
-// Solo si la tabla nueva es conocida y distinta: vaciar el Origen a medio editar
-// no debe borrar el folio.
+// Si la plaza cambia dentro de la misma tabla (Colima → Manzanillo, las dos caen en
+// Manzanillo) el folio se queda: solo se pierde al saltar de secuencia.
 function aplicarCambioPlaza(datos, onChange, key, valor) {
   onChange(key, valor);
   const antes = tablaDeFolios(datos);
   const ahora = tablaDeFolios({ ...datos, [key]: valor });
-  if (ahora && antes && ahora !== antes) onChange("folio", "");
+  if (ahora !== antes) onChange("folio", "");
 }
 
 // Full: dos inputs "TIPO DE CARGA" apilados, uno por contenedor.
