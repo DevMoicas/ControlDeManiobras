@@ -14,6 +14,7 @@ import TransportistaSelector from "../components/TransportistaSelector/Transport
 import PatioSelector from "../components/PatioSelector/PatioSelector";
 import ClienteSelector from "../components/ClienteSelector/ClienteSelector";
 import CiudadSelector from "../components/CiudadSelector/CiudadSelector";
+import FolioDisponibleSelector from "../components/FolioDisponibleSelector/FolioDisponibleSelector";
 import VacioStatusSelector from "../components/VacioStatusSelector/VacioStatusSelector";
 import TerceroSelector from "../components/TerceroSelector/TerceroSelector";
 import TipoServicioSelector, { getTipoServicioLabel, esServicioFull } from "../components/TipoServicioSelector/TipoServicioSelector";
@@ -132,6 +133,36 @@ function aplicarCambioTipoServicio(datos, onChange, nuevo) {
   if (nuevo === "sencillo") onChange("tipo", partirTipoFull(datos.tipo)[0]);
 }
 
+// ── Folios: qué tabla toca según la plaza del viaje ───────────────────────────
+// Sin acentos y en mayúsculas porque el catálogo de ciudades lo escribe el
+// usuario en Catálogos ("Lázaro Cárdenas", "LAZARO CARDENAS", "Manzanillo, Col.").
+// NFD separa la letra de su tilde y \p{M} (marcas combinantes) se la lleva.
+const sinAcentos = (s) =>
+  (s ?? "").normalize("NFD").replace(/\p{M}/gu, "").toUpperCase();
+
+// Manda el Origen; si el origen no es ninguna de las dos plazas, decide el Destino.
+// null = no se sabe todavía → el selector de folio se queda deshabilitado.
+function tablaDeFolios({ origen, destino }) {
+  for (const plaza of [origen, destino]) {
+    const p = sinAcentos(plaza);
+    if (p.includes("MANZANILLO")) return "manzanillo";
+    if (p.includes("LAZARO")) return "lazaro";
+  }
+  return null;
+}
+
+// Cambiar de plaza cambia la tabla de folios, así que el folio ya elegido deja de
+// valer: se vacía y con eso vuelve a estar disponible para otra maniobra de su
+// plaza (no hay estado "usado" en la BD, se deriva de que alguien lo tenga puesto).
+// Solo si la tabla nueva es conocida y distinta: vaciar el Origen a medio editar
+// no debe borrar el folio.
+function aplicarCambioPlaza(datos, onChange, key, valor) {
+  onChange(key, valor);
+  const antes = tablaDeFolios(datos);
+  const ahora = tablaDeFolios({ ...datos, [key]: valor });
+  if (ahora && antes && ahora !== antes) onChange("folio", "");
+}
+
 // Full: dos inputs "TIPO DE CARGA" apilados, uno por contenedor.
 function TipoFullInput({ value, onChange, disabled, idPrefix }) {
   const [par1, par2] = partirTipoFull(value);
@@ -210,7 +241,7 @@ const COLUMNAS = [
   { key: "unidad", label: "Unidad", isPlacas: true },
   { key: "remolque",   label: "Remolque 1", isRemolque: true },
   { key: "remolque_2", label: "Remolque 2", isRemolque2: true },
-  { key: "folio", label: "Folio" },
+  { key: "folio", label: "Folio", isFolio: true },
   { key: "vacio_patio", label: "Vacio Patio", isPatio: true },
   { key: "status_vacio", label: "Status Vacío", isStatusVacio: true },
   { key: "fecha_entrega_mercancia", label: "Entrega Mercancía", sortable: true },
@@ -414,7 +445,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               endpoint="/origenes/"
               placeholder="— Seleccionar origen —"
               currentValue={datos[col.key]}
-              onSelect={(val) => onChange(col.key, val)}
+              onSelect={(val) => aplicarCambioPlaza(datos, onChange, col.key, val)}
               disabled={isSubmitting}
             />
           ) : col.isDestino ? (
@@ -422,7 +453,14 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               endpoint="/destinos/"
               placeholder="— Seleccionar destino —"
               currentValue={datos[col.key]}
-              onSelect={(val) => onChange(col.key, val)}
+              onSelect={(val) => aplicarCambioPlaza(datos, onChange, col.key, val)}
+              disabled={isSubmitting}
+            />
+          ) : col.isFolio ? (
+            <FolioDisponibleSelector
+              tabla={tablaDeFolios(datos)}
+              currentValue={datos[col.key]}
+              onSelect={(codigo) => onChange(col.key, codigo)}
               disabled={isSubmitting}
             />
           ) : col.isPatio ? (
@@ -610,7 +648,7 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     endpoint="/origenes/"
                     placeholder="— Seleccionar origen —"
                     currentValue={datos[col.key] ?? ""}
-                    onSelect={(val) => onChange(col.key, val)}
+                    onSelect={(val) => aplicarCambioPlaza(datos, onChange, col.key, val)}
                     disabled={isSubmitting}
                   />
                 ) : col.isDestino ? (
@@ -618,7 +656,14 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     endpoint="/destinos/"
                     placeholder="— Seleccionar destino —"
                     currentValue={datos[col.key] ?? ""}
-                    onSelect={(val) => onChange(col.key, val)}
+                    onSelect={(val) => aplicarCambioPlaza(datos, onChange, col.key, val)}
+                    disabled={isSubmitting}
+                  />
+                ) : col.isFolio ? (
+                  <FolioDisponibleSelector
+                    tabla={tablaDeFolios(datos)}
+                    currentValue={datos[col.key] ?? ""}
+                    onSelect={(codigo) => onChange(col.key, codigo)}
                     disabled={isSubmitting}
                   />
                 ) : col.isPatio ? (
