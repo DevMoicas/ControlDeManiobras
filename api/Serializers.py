@@ -93,6 +93,22 @@ class ManiobraSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {campo: f"Máximo {limite} caracteres permitidos."}
                 )
+
+        # Un folio no puede quedar en dos maniobras. El desplegable ya solo ofrece
+        # los libres; esto cierra la ventana de dos usuarios eligiendo el mismo a la
+        # vez. Solo se comprueba cuando el folio CAMBIA: los registros viejos de la
+        # época del campo de texto libre pueden venir duplicados y editarles otra
+        # cosa no debe fallar por eso. El error va bajo 'detail' porque es la única
+        # clave que lee el apiClient del frontend.
+        folio = (data.get('folio') or '').strip()
+        if folio and (self.instance is None or (self.instance.folio or '') != folio):
+            otras = Maniobra.objects.filter(folio=folio)
+            if self.instance is not None:
+                otras = otras.exclude(pk=self.instance.pk)
+            if otras.exists():
+                raise serializers.ValidationError(
+                    {'detail': f'El folio "{folio}" ya está usado en otra maniobra.'}
+                )
         return data
     
 class MFARequerida(AuthenticationFailed):

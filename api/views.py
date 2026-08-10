@@ -969,6 +969,40 @@ class FolioViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
 
+    def perform_update(self, serializer):
+        """Renombrar un folio arrastra a la maniobra que lo tenía asignado.
+
+        No hay FK entre Maniobra y Folio (la tabla `maniobras` es managed=False):
+        el vínculo es el propio `codigo`, que es unique. Por eso al cambiarlo hay
+        que reescribirlo también donde se usó, o la maniobra quedaría apuntando a
+        un código que ya no existe. atomic() porque las dos escrituras son una
+        sola operación; el alias sale del router (ver generar(), más abajo).
+        """
+        anterior = serializer.instance.codigo
+        with transaction.atomic(using=get_db_alias()):
+            folio = serializer.save()
+            if folio.codigo != anterior:
+                Maniobra.objects.filter(folio=anterior).update(folio=folio.codigo)
+
+    @action(detail=False, methods=['get'], url_path='disponibles')
+    def disponibles(self, request):
+        """Los 5 siguientes folios de `tabla` que ninguna maniobra está usando.
+
+        Alimenta el desplegable de la columna FOLIO en Maniobras.
+        """
+        tabla = request.query_params.get('tabla')
+        if tabla not in dict(Folio.TABLA_CHOICES):
+            return Response({'detail': 'tabla inválida.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ponytail: "usado" se deriva de maniobras.folio, sin columna de estado —
+        # así vaciar o borrar una maniobra libera su folio sola. Sin índice en
+        # maniobras.folio: es un scan por apertura del desplegable; añadirlo si pesa.
+        usados = (Maniobra.objects.exclude(folio__isnull=True).exclude(folio='')
+                  .values_list('folio', flat=True))
+        libres = (Folio.objects.filter(tabla=tabla).exclude(codigo__in=usados)
+                  .order_by('numero')[:5])
+        return Response(FolioSerializer(libres, many=True).data)
+
     @action(detail=False, methods=['post'], url_path='generar')
     def generar(self, request):
         """Genera el siguiente lote de 14 folios para `tabla`
