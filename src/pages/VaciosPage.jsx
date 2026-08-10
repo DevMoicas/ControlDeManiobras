@@ -7,7 +7,7 @@ import { useAuthContext } from "../context/AuthContext";
 import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
 import SearchBar from "../components/SearchBar/SearchBar";
 import { useNavigate } from "react-router-dom";
-import VacioStatusSelector from "../components/VacioStatusSelector/VacioStatusSelector";
+import VacioStatusSelector, { EIR_STATUSES } from "../components/VacioStatusSelector/VacioStatusSelector";
 import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
 import TransportistaSelector from "../components/TransportistaSelector/TransportistaSelector";
 import PatioSelector from "../components/PatioSelector/PatioSelector";
@@ -57,6 +57,7 @@ const COLUMNAS = [
   { key: "fecha_entrega",             label: "Fecha Entrega",   isFecha: true },
   { key: "fecha_notificacion_cliente",label: "Cometarios" },
   { key: "status",                    label: "Status",            isStatus: true },
+  { key: "status_eir",                label: "Status EIR",        isStatusEir: true },
   { key: "operador",                  label: "OP del Viaje",      isOperador: true },
   { key: "transportista",             label: "Transportista",     isTransportista: true },
   { key: "operador_entrega",          label: "Entregó",           isOperadorEntrega: true },
@@ -94,6 +95,13 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
             />
           ) : col.isStatus ? (
             <VacioStatusSelector
+              currentStatus={datos[col.key] || ""}
+              onSelect={(val) => onChange(col.key, val)}
+              loading={false}
+            />
+          ) : col.isStatusEir ? (
+            <VacioStatusSelector
+              opciones={EIR_STATUSES}
               currentStatus={datos[col.key] || ""}
               onSelect={(val) => onChange(col.key, val)}
               loading={false}
@@ -190,6 +198,13 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     onSelect={(val) => onChange(col.key, val)}
                     loading={false}
                   />
+                ) : col.isStatusEir ? (
+                  <VacioStatusSelector
+                    opciones={EIR_STATUSES}
+                    currentStatus={datos[col.key] || ""}
+                    onSelect={(val) => onChange(col.key, val)}
+                    loading={false}
+                  />
                 ) : col.isOperador ? (
                   <OperadorSelector
                     currentValue={datos[col.key] || ""}
@@ -262,6 +277,12 @@ export default function VaciosPage() {
   } = useVacios(filtroStatus);
   const { isAdmin } = useAuthContext();
   const { updatingId, updateStatus } = useVacioStatusUpdate(setVacios);
+  // Mismo hook genérico apuntando a la otra columna de status del vacío: PATCH
+  // /vacios/{id}/ { status_eir }, optimista y con rollback.
+  const {
+    updatingId: updatingEirId,
+    updateStatus: updateEirStatus,
+  } = useVacioStatusUpdate(setVacios, { campo: "status_eir" });
 
   const [modoAgregar, setModoAgregar] = useState(false);
   const [nuevoVacio,  setNuevoVacio]  = useState(VACIO_VACIO);
@@ -368,6 +389,15 @@ export default function VaciosPage() {
       setNotif({ tipo: "error", msg: `Error al cambiar status: ${err.message}` });
     }
   }, [updateStatus]);
+
+  const handleEirStatusChange = useCallback(async (vacio, nuevoStatus) => {
+    try {
+      await updateEirStatus(vacio, nuevoStatus);
+      setNotif({ tipo: "ok", msg: "Status EIR actualizado." });
+    } catch (err) {
+      setNotif({ tipo: "error", msg: `Error al cambiar status EIR: ${err.message}` });
+    }
+  }, [updateEirStatus]);
 
   const handleOperadorChange = useCallback(async (vacio, nombreSeleccionado) => {
     const prevOperador = vacio.operador;
@@ -545,6 +575,13 @@ export default function VaciosPage() {
                           currentStatus={vacio.status}
                           onSelect={(nuevoStatus) => handleStatusChange(vacio, nuevoStatus)}
                           loading={updatingId === vacio.id}
+                        />
+                      ) : col.isStatusEir ? (
+                        <VacioStatusSelector
+                          opciones={EIR_STATUSES}
+                          currentStatus={vacio.status_eir}
+                          onSelect={(nuevoStatus) => handleEirStatusChange(vacio, nuevoStatus)}
+                          loading={updatingEirId === vacio.id}
                         />
                       ) : col.isOperador ? (
                         <OperadorSelector

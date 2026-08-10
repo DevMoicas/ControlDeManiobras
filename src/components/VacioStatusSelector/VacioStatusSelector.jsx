@@ -3,25 +3,35 @@ import { createPortal } from "react-dom";
 import useDropdownNav from "../../hooks/useDropdownNav";
 import "./VacioStatusSelector.css";
 
-const VACIO_STATUSES = [
-  { id: "pendiente", label: "Pendiente" },
-  { id: "entregado", label: "Entregado" },
+// Los colores viven en la propia lista (antes eran un switch por id): así el
+// selector sirve para cualquier juego de estados sin tocar su interior.
+export const VACIO_STATUSES = [
+  { id: "pendiente", label: "Pendiente", bg: "#fef9c3", fg: "#854d0e" },
+  { id: "entregado", label: "Entregado", bg: "#dcfce7", fg: "#166534" },
 ];
 
-function getStatusStyle(status) {
-  switch (status) {
-    case "pendiente": return { background: "#fef9c3", color: "#854d0e" };
-    case "entregado": return { background: "#dcfce7", color: "#166534" };
-    default:          return { background: "#f3f4f6", color: "#6b7280" };
-  }
+// Columna STATUS EIR de Vacíos. Los ids son los choices de Vacio.status_eir.
+export const EIR_STATUSES = [
+  { id: "enviado",        label: "Enviado",        bg: "#dcfce7", fg: "#166534" },
+  { id: "pendiente",      label: "Pendiente",      bg: "#fef9c3", fg: "#854d0e" },
+  { id: "sin_eir_fisico", label: "Sin EIR Físico", bg: "#fee2e2", fg: "#991b1b" },
+];
+
+const SIN_STATUS = { background: "#f3f4f6", color: "#6b7280" };
+
+function estiloDe(opciones, status) {
+  const opcion = opciones.find((s) => s.id === status);
+  return opcion ? { background: opcion.bg, color: opcion.fg } : SIN_STATUS;
 }
 
-function getStatusLabel(status) {
-  const found = VACIO_STATUSES.find((s) => s.id === status);
-  return found ? found.label : (status || "—");
+function etiquetaDe(opciones, status) {
+  const opcion = opciones.find((s) => s.id === status);
+  return opcion ? opcion.label : (status || "—");
 }
 
-export default function VacioStatusSelector({ currentStatus, onSelect, loading }) {
+// `opciones` por defecto = los estados del vacío, así las llamadas que ya existían
+// no cambian ni una línea.
+export default function VacioStatusSelector({ currentStatus, onSelect, loading, opciones = VACIO_STATUSES }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState(null);
   const containerRef = useRef(null);
@@ -71,7 +81,7 @@ export default function VacioStatusSelector({ currentStatus, onSelect, loading }
     onSelect(statusId);
   };
 
-  const style = getStatusStyle(currentStatus);
+  const style = estiloDe(opciones, currentStatus);
 
   return (
     <div className="vss-container" ref={containerRef}>
@@ -85,7 +95,7 @@ export default function VacioStatusSelector({ currentStatus, onSelect, loading }
         aria-expanded={open}
       >
         {loading ? <span className="vss-spinner" /> : null}
-        <span className="vss-label">{getStatusLabel(currentStatus)}</span>
+        <span className="vss-label">{etiquetaDe(opciones, currentStatus)}</span>
         {!loading && <span className="vss-chevron">{open ? "▲" : "▼"}</span>}
       </button>
 
@@ -96,13 +106,13 @@ export default function VacioStatusSelector({ currentStatus, onSelect, loading }
           ref={dropRef}
           style={{ top: coords.top, left: coords.left }}
         >
-          {VACIO_STATUSES.map((s) => (
+          {opciones.map((s) => (
             <li
               key={s.id}
               role="option"
               aria-selected={s.id === currentStatus}
               className={`vss-option ${s.id === currentStatus ? "vss-option--selected" : ""}`}
-              style={getStatusStyle(s.id)}
+              style={estiloDe(opciones, s.id)}
               onClick={(e) => { e.stopPropagation(); handleSelect(s.id); }}
             >
               {s.label}

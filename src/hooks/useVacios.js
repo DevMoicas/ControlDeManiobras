@@ -10,6 +10,7 @@ export const VACIO_VACIO = {
   fecha_entrega: "",
   fecha_notificacion_cliente: "",
   status: "",
+  status_eir: "",
   operador: "",
   transportista: "",
   operador_entrega: "",
