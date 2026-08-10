@@ -205,6 +205,19 @@ class Vacio(models.Model):
     fecha_entrega = models.DateField(null=True, blank=True)
     fecha_notificacion_cliente = models.CharField(max_length=50, null=True, blank=True)
     status = models.CharField(max_length=100, null=True, blank=True)
+    # STATUS EIR: en qué punto está el EIR físico del vacío. Va aparte de `status`
+    # (que es el del vacío en sí) porque son dos cosas independientes: un vacío
+    # entregado puede seguir con el EIR pendiente. Columna real en la migración
+    # 0032 (managed=False). Con `choices`, DRF valida solo y rechaza cualquier
+    # otro valor con un 400 — no hace falta escribir la validación.
+    STATUS_EIR_CHOICES = [
+        ('enviado',        'Enviado'),
+        ('pendiente',      'Pendiente'),
+        ('sin_eir_fisico', 'Sin EIR Físico'),
+    ]
+    status_eir = models.CharField(
+        max_length=20, choices=STATUS_EIR_CHOICES, null=True, blank=True
+    )
     operador = models.CharField(max_length=255, null=True, blank=True)
     # Vacíos: transportista del vacío y segundo operador ("Entregó"), que se filtra
     # por ese transportista (mismo patrón que Maniobra). Nullable → las filas
