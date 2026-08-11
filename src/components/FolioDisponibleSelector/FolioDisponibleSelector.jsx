@@ -110,6 +110,27 @@ export default function FolioDisponibleSelector({ tabla, currentValue, onSelect,
           ref={dropRef}
           style={{ top: coords.top, left: coords.left }}
         >
+          {/* Quitar el folio asignado. Hace falta una fila propia porque el folio
+              que ya tiene la maniobra NUNCA sale en /folios/disponibles/ (está
+              usado, por definición), así que el "reelegir = liberar" de abajo no
+              tiene dónde pulsarse. Va fuera de los estados de carga: liberar no
+              necesita la lista, y así se puede soltar el folio aunque la
+              petición falle. */}
+          {currentValue && (
+            <>
+              <li
+                role="option"
+                aria-selected={false}
+                className="fds-option fds-option--quitar"
+                onClick={(e) => { e.stopPropagation(); handleSelect(""); }}
+              >
+                <span>Quitar folio</span>
+                <span className="fds-codigo">{currentValue}</span>
+              </li>
+              <li role="presentation" className="fds-separador" />
+            </>
+          )}
+
           {cargando && <li className="fds-state">Cargando…</li>}
           {error && <li className="fds-state fds-state--error">{error}</li>}
           {!cargando && !error && folios.length === 0 && (

@@ -104,6 +104,21 @@
   background: #dbeafe;
 }
 
+/* Liberar no es elegir: se pinta en el rojo de las acciones destructivas del ERP
+   para que no se confunda con un folio de la lista. */
+.fds-option--quitar {
+  color: #dc2626;
+  font-weight: 600;
+}
+.fds-option--quitar:hover { background: #fef2f2; }
+.fds-option--quitar .fds-codigo { color: #dc2626; }
+
+.fds-separador {
+  height: 1px;
+  margin: 4px 2px;
+  background: #e5e7eb;
+}
+
 .fds-codigo {
   font-family: ui-monospace, "IBM Plex Mono", monospace;
   font-weight: 600;
