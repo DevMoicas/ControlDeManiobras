@@ -7,6 +7,7 @@ import { Trash2, SquarePen, Settings, X } from "lucide-react";
 import { useGastos } from "../hooks/useGastos";
 import FolioSelector from "../components/FolioSelector/FolioSelector";
 import SearchBar from "../components/SearchBar/SearchBar";
+import BotonArriba from "../components/BotonArriba/BotonArriba";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import DatePicker from "react-datepicker";
@@ -518,6 +519,7 @@ export default function GastosPage() {
           />
         )}
       </AnimatePresence>
+      <BotonArriba />
     </div>
   );
 }

@@ -28,6 +28,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { registerLocale } from "react-datepicker";
 import es from "date-fns/locale/es";
 import FotoModal from "../components/FotoModal/FotoModal";
+import BotonArriba from "../components/BotonArriba/BotonArriba";
 import { partirDoble, unirDoble } from "../utils/dobleValor.mjs";
 registerLocale("es", es);
 
@@ -1471,6 +1472,7 @@ export default function ManiobrasPage() {
           />
         )}
       </AnimatePresence>
+      <BotonArriba contenedorRef={scrollRef} />
     </div>
   );
 }

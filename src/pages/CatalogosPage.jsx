@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import "./CatalogosPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
+import BotonArriba from "../components/BotonArriba/BotonArriba";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import CargoSelector from "../components/CargoSelector/CargoSelector";
@@ -876,6 +877,7 @@ export default function NoEcoPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <BotonArriba />
     </div>
   );
 }

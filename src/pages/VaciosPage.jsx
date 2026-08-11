@@ -6,6 +6,7 @@ import { useVacios } from "../hooks/useVacios";
 import { useAuthContext } from "../context/AuthContext";
 import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
 import SearchBar from "../components/SearchBar/SearchBar";
+import BotonArriba from "../components/BotonArriba/BotonArriba";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import { useNavigate } from "react-router-dom";
@@ -681,6 +682,7 @@ export default function VaciosPage() {
           />
         )}
       </AnimatePresence>
+      <BotonArriba />
     </div>
   );
 }

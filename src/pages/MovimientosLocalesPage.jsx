@@ -8,6 +8,7 @@ import { Trash2, SquarePen } from "lucide-react";
 import { useAuthContext } from "../context/AuthContext";
 import { useMovimientosLocales } from "../hooks/useMovimientosLocales";
 import SearchBar from "../components/SearchBar/SearchBar";
+import BotonArriba from "../components/BotonArriba/BotonArriba";
 import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
 import PlacasSelector from "../components/PlacasSelector/PlacasSelector";
 import PendientePagadoSelector from "../components/PendientePagadoSelector/PendientePagadoSelector";
@@ -551,6 +552,7 @@ export default function MovimientosLocalesPage() {
         </motion.div>
         )}
       </AnimatePresence>
+      <BotonArriba />
     </div>
   );
 }
