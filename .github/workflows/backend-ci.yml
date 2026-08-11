@@ -193,10 +193,19 @@ jobs:
             --container-registry-url https://acrcdmfraba.azurecr.io
           # La Web App baja la imagen con su identidad administrada (rol AcrPull),
           # así que no hay usuario ni contraseña de registry en ninguna parte.
+          #
+          # Por fichero y no JSON en línea: desde az 2.88 --generic-configurations
+          # solo acepta `key=value` o `@<fichero>`, y el JSON suelto llega VACÍO al
+          # parser — "JSON is invalid: Expecting value: line 1 column 1 (char 0)",
+          # que es lo que devuelve json.loads(""). Rompió el despliegue del
+          # 2026-08-11; el del día anterior pasó porque el runner traía una versión
+          # anterior del CLI. Se prefiere el fichero a `key=value` porque este es un
+          # booleano y `key=value` lo mandaría como la cadena "true".
+          echo '{"acrUseManagedIdentityCreds": true}' > "$RUNNER_TEMP/acr-mi.json"
           az webapp config set \
             --resource-group rg-cdm-prod \
             --name app-cdm-fraba \
-            --generic-configurations '{"acrUseManagedIdentityCreds": true}'
+            --generic-configurations "@$RUNNER_TEMP/acr-mi.json"
           az webapp restart --resource-group rg-cdm-prod --name app-cdm-fraba
 
       - name: Comprobar que producción responde
