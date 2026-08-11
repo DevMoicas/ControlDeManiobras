@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { apiClient } from "../api/apiClient";
+import { useAlerta } from "../components/Alertas/Alertas";
 
 const PAGE_SIZE = 60;
 
@@ -8,14 +9,10 @@ export function useMovimientosLocales() {
   const [cargando,      setCargando]      = useState(false);
   const [hayMas,        setHayMas]        = useState(true);
   const [pagina,        setPagina]        = useState(1);
-  const [notif,         setNotif]         = useState(null);
-  const notifTimer = useRef(null);
-
-  const mostrarNotif = useCallback((msg, tipo = "exito") => {
-    clearTimeout(notifTimer.current);
-    setNotif({ msg, tipo });
-    notifTimer.current = setTimeout(() => setNotif(null), 3000);
-  }, []);
+  // Los avisos van a la pila global de la app. Aquí solo se conserva la firma
+  // mostrarNotif(msg, tipo) para no tocar ninguno de los sitios que la llaman.
+  const alerta = useAlerta();
+  const mostrarNotif = useCallback((msg, tipo = "exito") => alerta({ tipo, msg }), [alerta]);
 
   // ── Fetch con filtro de status y búsqueda ─────────────────────────────────
   const fetchMovimientos = useCallback(
@@ -101,8 +98,6 @@ export function useMovimientosLocales() {
     [mostrarNotif]
   );
 
-  useEffect(() => () => clearTimeout(notifTimer.current), []);
-
   return {
     movimientos,
     cargando,
@@ -111,6 +106,5 @@ export function useMovimientosLocales() {
     agregar,
     actualizar,
     eliminar,
-    notif,
   };
 }

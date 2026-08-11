@@ -129,17 +129,6 @@
 .ml-btn-agregar:disabled { opacity: 0.5; cursor: not-allowed; }
 .ml-btn-agregar:focus-visible { outline: 2px solid var(--primary, #2563eb); outline-offset: 2px; }
 
-/* ── Notificación ──────────────────────────────────────────────────────────── */
-.ml-notif {
-  margin-top: 18px;
-  padding: 10px 16px;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  border: 1px solid;
-}
-.ml-notif--exito { background: #ecfdf3; color: #15803d; border-color: #bbf7d0; }
-.ml-notif--error { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
-
 /* ── Panel / tabla ─────────────────────────────────────────────────────────── */
 .ml-panel {
   margin-top: 22px;

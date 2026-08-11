@@ -6,6 +6,8 @@ import { useVacios } from "../hooks/useVacios";
 import { useAuthContext } from "../context/AuthContext";
 import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
 import SearchBar from "../components/SearchBar/SearchBar";
+import { useAlerta } from "../components/Alertas/Alertas";
+import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import { useNavigate } from "react-router-dom";
 import VacioStatusSelector, { EIR_STATUSES } from "../components/VacioStatusSelector/VacioStatusSelector";
 import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
@@ -287,7 +289,8 @@ export default function VaciosPage() {
   const [modoAgregar, setModoAgregar] = useState(false);
   const [nuevoVacio,  setNuevoVacio]  = useState(VACIO_VACIO);
   const [modal,       setModal]       = useState(MODAL_CERRADO);
-  const [notif,       setNotif]       = useState(null);
+  const setNotif = useAlerta();
+  const preguntar = useConfirmacion();
   const [busqueda,    setBusqueda]    = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fotoModal,   setFotoModal]   = useState(null); // { registroId } | null
@@ -315,13 +318,6 @@ export default function VaciosPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [hasMore, loadingMore, loadMore]);
 
-  // ── Auto-dismiss notificaciones ───────────────────────────────────────────
-  useEffect(() => {
-    if (!notif) return;
-    const t = setTimeout(() => setNotif(null), 3000);
-    return () => clearTimeout(t);
-  }, [notif]);
-
   // ── Handlers CRUD ─────────────────────────────────────────────────────────
 
   const handleEliminar = useCallback(async (id) => {
@@ -329,7 +325,12 @@ export default function VaciosPage() {
       setNotif({ tipo: "error", msg: "No tienes permisos para eliminar." });
       return;
     }
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este vacío?")) return;
+    if (!await preguntar({
+      titulo: "Eliminar vacío",
+      mensaje: "Se borrará el registro completo. No se puede deshacer.",
+      accion: "Eliminar",
+      peligro: true,
+    })) return;
     setIsSubmitting(true);
     try {
       await eliminar(id);
@@ -509,12 +510,6 @@ export default function VaciosPage() {
       <div className="vp-search">
         <SearchBar value={busqueda} onChange={setBusqueda} />
       </div>
-
-      {notif && (
-        <div className={`notif notif-${notif.tipo}`} role="alert" aria-live="polite">
-          {notif.msg}
-        </div>
-      )}
 
       <div className="toolbar">
         <div className="filtros-status">

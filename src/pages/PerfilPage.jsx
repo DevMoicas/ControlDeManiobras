@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import { apiClient } from "../api/apiClient";
 import { User } from "lucide-react";
+import { useAlerta } from "../components/Alertas/Alertas";
+import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import "./PerfilPage.css";
 
 const fmtFecha = (iso) => {
@@ -14,6 +16,8 @@ const fmtFecha = (iso) => {
 
 export default function PerfilPage() {
   const { user, logout } = useAuthContext();
+  const alerta = useAlerta();
+  const preguntar = useConfirmacion();
   const navigate = useNavigate();
 
   const [equipos, setEquipos]   = useState([]);
@@ -36,9 +40,12 @@ export default function PerfilPage() {
 
   const revocar = async (id) => {
     // Revocar cierra TODAS las sesiones del usuario, esta incluida (decisión 13).
-    if (!window.confirm(
-      "Esto cerrará tu sesión en todos los equipos, incluido este. ¿Continuar?"
-    )) return;
+    if (!await preguntar({
+      titulo: "Revocar equipo",
+      mensaje: "Se cerrará tu sesión en todos los equipos, incluido este.",
+      accion: "Revocar",
+      peligro: true,
+    })) return;
 
     setRevocando(id);
     try {
@@ -50,7 +57,7 @@ export default function PerfilPage() {
       navigate("/");
     } catch {
       setRevocando(null);
-      window.alert("No se pudo revocar el equipo. Intenta de nuevo.");
+      alerta({ tipo: "error", msg: "No se pudo revocar el equipo. Intenta de nuevo." });
     }
   };
 

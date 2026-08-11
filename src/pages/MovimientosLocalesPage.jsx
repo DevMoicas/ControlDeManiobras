@@ -81,7 +81,6 @@ export default function MovimientosLocalesPage() {
     agregar,
     actualizar,
     eliminar,
-    notif,
   } = useMovimientosLocales();
 
   // ── Filtros y búsqueda ────────────────────────────────────────────────────
@@ -427,9 +426,6 @@ export default function MovimientosLocalesPage() {
         </div>
 
         {/* Notificación */}
-        {notif && (
-          <div className={`ml-notif ml-notif--${notif.tipo}`}>{notif.msg}</div>
-        )}
 
         {/* Tabla */}
         <div className="ml-panel">

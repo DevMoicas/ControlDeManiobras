@@ -17,15 +17,18 @@ import CiudadSelector from "../components/CiudadSelector/CiudadSelector";
 import FolioDisponibleSelector from "../components/FolioDisponibleSelector/FolioDisponibleSelector";
 import VacioStatusSelector from "../components/VacioStatusSelector/VacioStatusSelector";
 import TerceroSelector from "../components/TerceroSelector/TerceroSelector";
-import TipoServicioSelector, { getTipoServicioLabel, esServicioFull } from "../components/TipoServicioSelector/TipoServicioSelector";
+import TipoServicioSelector, { esServicioFull } from "../components/TipoServicioSelector/TipoServicioSelector";
 import "./ManiobrasPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
+import { useAlerta } from "../components/Alertas/Alertas";
+import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import { useAuthContext } from "../context/AuthContext";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { registerLocale } from "react-datepicker";
 import es from "date-fns/locale/es";
 import FotoModal from "../components/FotoModal/FotoModal";
+import { partirDoble, unirDoble } from "../utils/dobleValor.mjs";
 registerLocale("es", es);
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -75,26 +78,16 @@ function TipoSplitInput({ value, onChange, disabled, idPrefix }) {
 }
 
 // ── Servicio Full: dos valores en una sola columna ────────────────────────────
-// Los pares del Full se guardan en las MISMAS columnas (tipo/peso/contenedor)
-// separados por " - ", que es el separador que el backend ya parsea
-// (_parsear_tipo, _sumar_peso) y el texto exacto que espera la celda C17.
-// Así el Full no necesita columnas nuevas en la base de datos.
+// Los pares del Full se guardan en las MISMAS columnas (tipo/peso/contenedor),
+// así que el Full no necesita columnas nuevas en la base de datos.
+// El separador canónico es " - ", pero el histórico también trae "/" (la mayoría
+// de los contenedores de dos: "WHLU5591210/WHSU6575360"). El backend acepta las
+// dos formas (_sumar_peso) y en Contenedor imprime el texto tal cual en C17, así
+// que al editar se conserva el separador que traía — ver utils/dobleValor.mjs.
 
-// "20 - 40" → ["20", "40"].  Corta en el PRIMER guion: los valores reales
-// (contenedores, pesos) no llevan guiones internos.
-function partirDoble(valor) {
-  const s = String(valor || "");
-  const i = s.indexOf("-");
-  if (i === -1) return [s.trim(), ""];
-  return [s.slice(0, i).trim(), s.slice(i + 1).trim()];
-}
-
-// ["20", "40"] → "20 - 40".  Sin segundo valor devuelve solo el primero.
-function unirDoble(a, b) {
-  const izq = (a || "").trim();
-  const der = (b || "").trim();
-  return der ? `${izq} - ${der}` : izq;
-}
+// partirDoble / unirDoble viven en utils/dobleValor.mjs: parten por '-' Y por '/'
+// (el histórico usa las dos) y devuelven el separador para no reescribirlo al
+// guardar. Módulo suelto para poder probarlo con node --test.
 
 // "20 / DC" → ["20", "DC"]  (el formato que emite TipoSplitInput)
 function partesDelPar(par) {
@@ -188,14 +181,17 @@ function TipoFullInput({ value, onChange, disabled, idPrefix }) {
 
 // Full: dos inputs en una celda (peso y contenedor), guardados como "A - B".
 function DobleInput({ value, onChange, disabled, etiqueta, idPrefix }) {
-  const [a, b] = partirDoble(value);
+  // El separador viaja con el valor: si el dato venía como "A/B" se vuelve a
+  // guardar como "A/B", no como "A - B" — el contenedor se imprime tal cual en
+  // el documento y reescribirlo cambiaría lo que sale en el PDF.
+  const [a, b, sep] = partirDoble(value);
   return (
     <div className="tipo-split-input">
       <input
         id={idPrefix ? `${idPrefix}-1` : undefined}
         type="text"
         value={a}
-        onChange={(e) => onChange(unirDoble(e.target.value, b))}
+        onChange={(e) => onChange(unirDoble(e.target.value, b, sep))}
         placeholder={`${etiqueta} 1`}
         aria-label={`${etiqueta} 1`}
         disabled={disabled}
@@ -206,7 +202,7 @@ function DobleInput({ value, onChange, disabled, etiqueta, idPrefix }) {
         id={idPrefix ? `${idPrefix}-2` : undefined}
         type="text"
         value={b}
-        onChange={(e) => onChange(unirDoble(a, e.target.value))}
+        onChange={(e) => onChange(unirDoble(a, e.target.value, sep))}
         placeholder={`${etiqueta} 2`}
         aria-label={`${etiqueta} 2`}
         disabled={disabled}
@@ -217,23 +213,28 @@ function DobleInput({ value, onChange, disabled, etiqueta, idPrefix }) {
   );
 }
 
+// `inline`: la celda se edita con un clic encima, sin abrir el modal (mismo gesto
+// que Folios). `max` es el límite del SERIALIZER, que en varios campos es más
+// estricto que el del modelo (agencia/terminal: 30 vs 255): cortar aquí evita un
+// 400 que el apiClient solo sabe mostrar como "HTTP 400" (sin clave `detail`).
+// `obligatorio` marca la que el backend rechaza vacía (allow_blank=False).
 const COLUMNAS = [
-  { key: "solicita", label: "Solicita" },
-  { key: "agencia", label: "Agencia" },
+  { key: "solicita", label: "Solicita", inline: true, max: 30, obligatorio: true },
+  { key: "agencia", label: "Agencia", inline: true, max: 30 },
   {
-    key: "codigo_pis", label: "Código PIS",
+    key: "codigo_pis", label: "Código PIS", inline: true, max: 100,
     style: { color: "var(--primary-blue)", fontWeight: "bold", fontFamily: "monospace" }
   },
-  { key: "terminal", label: "Terminal" },
+  { key: "terminal", label: "Terminal", inline: true, max: 30 },
   { key: "placas_pis", label: "Placas PIS", isPlacas: true },
   { key: "fecha_pis", label: "Fecha PIS", sortable: true },
   { key: "horario", label: "Horario", isHora: true },
   { key: "tipo_servicio", label: "TIPO DE SERVICIO", isTipoServicio: true },
   { key: "tipo",  label: "TIPO DE CARGA", isTipo: true },
-  { key: "peso",  label: "Peso", isDoble: true },
-  { key: "contenedor", label: "Contenedor", isDoble: true },
-  { key: "referencia", label: "Referencia" },
-  { key: "pedimento", label: "Pedimento" },
+  { key: "peso",  label: "Peso", isDoble: true, max: 50 },
+  { key: "contenedor", label: "Contenedor", isDoble: true, max: 255 },
+  { key: "referencia", label: "Referencia", inline: true, max: 255 },
+  { key: "pedimento", label: "Pedimento", inline: true, max: 255 },
   { key: "cliente", label: "Cliente", isCliente: true },
   { key: "origen", label: "Origen", isOrigen: true },
   { key: "destino", label: "Destino", isDestino: true },
@@ -247,8 +248,8 @@ const COLUMNAS = [
   { key: "vacio_patio", label: "Vacio Patio", isPatio: true },
   { key: "status_vacio", label: "Status Vacío", isStatusVacio: true },
   { key: "fecha_entrega_mercancia", label: "Entrega Mercancía", sortable: true },
-  { key: "no_factura", label: "No. Factura" },
-  { key: "ccp", label: "CCP" },
+  { key: "no_factura", label: "No. Factura", inline: true, max: 100 },
+  { key: "ccp", label: "CCP", inline: true, max: 100 },
   { key: "ruta_inicio", label: "Ruta Inicio", isFechaHora: true },
   { key: "ruta_fin",    label: "Ruta Fin",    isFechaHora: true },
 ];
@@ -749,39 +750,306 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
 // ~2000 filas por cada cambio de status de una sola.
 const FilaManiobra = memo(function FilaManiobra({
   maniobra, isUpdating, isUpdatingVacio, isUpdatingTercero, isAdmin, isSubmitting,
-  onStatusChange, onVacioStatusChange, onTerceroChange, onEditar, onVerFotos, onEliminar,
+  onStatusChange, onVacioStatusChange, onTerceroChange, onGuardarCampos, onEditar, onVerFotos, onEliminar,
 }) {
   const statusConfig = getStatusConfig(maniobra.status);
+  const esFull = esServicioFull(maniobra);
+  const preguntar = useConfirmacion();
+
+  // Edición inline. El estado vive AQUÍ y no en la página a propósito: si viviera
+  // arriba, cada tecla cambiaría una prop de las ~2000 filas y el memo dejaría de
+  // servir. Así solo se re-renderiza la fila que se está editando.
+  const [celdaEditando, setCeldaEditando] = useState(null); // col.key | null
+  const [valorEditando, setValorEditando] = useState("");
+
+  const guardar = (campos) => onGuardarCampos(maniobra.id, campos);
+
+  const iniciarEdicion = (col) => {
+    setCeldaEditando(col.key);
+    setValorEditando(maniobra[col.key] ?? "");
+  };
+
+  const confirmarEdicion = async (col) => {
+    const valor = col.obligatorio ? valorEditando.trim() : valorEditando;
+    // Vaciar una columna obligatoria se descarta aquí en vez de mandar un PATCH
+    // que el backend va a rechazar igualmente (allow_blank=False en el serializer).
+    const hayCambio = valor !== (maniobra[col.key] ?? "") && !(col.obligatorio && !valor);
+    if (hayCambio) await guardar({ [col.key]: valor });
+    setCeldaEditando(null);
+  };
+
+  // Las fechas se guardan al CERRAR el calendario, no en cada clic: con hora hay
+  // dos pasos (día y hora) y guardar en el primero cerraría el picker a medias.
+  const cerrarFecha = (col) => {
+    if (valorEditando !== (maniobra[col.key] ?? "")) guardar({ [col.key]: valorEditando });
+    setCeldaEditando(null);
+  };
+
+  // Hay dos cambios que arrastran otros campos (la plaza libera el folio; salir de
+  // Full colapsa peso/contenedor/tipo). Las reglas ya existen para el modal y se
+  // reutilizan tal cual: en vez de escribir N veces, se recoge lo que tocan en UN
+  // objeto y sale un solo PATCH. Así la regla no puede divergir entre modal y tabla.
+  const recogerCampos = (aplicar) => {
+    const campos = {};
+    aplicar((k, v) => { campos[k] = v; });
+    return campos;
+  };
+
+  const guardarPlaza = (col, valor) =>
+    guardar(recogerCampos((set) => aplicarCambioPlaza(maniobra, set, col.key, valor)));
+
+  const guardarTipoServicio = async (valor) => {
+    const campos = recogerCampos((set) => aplicarCambioTipoServicio(maniobra, set, valor));
+    // Salir de Full descarta el segundo valor de peso/contenedor/tipo. En el modal
+    // se puede cancelar antes de guardar; aquí el clic escribe directo, así que se
+    // pregunta — pero solo cuando de verdad hay un segundo valor que perder.
+    const pierdeDatos = ["peso", "contenedor", "tipo"].some(
+      (k) => campos[k] !== undefined && campos[k] !== (maniobra[k] ?? "")
+    );
+    if (pierdeDatos && !await preguntar({
+      titulo: "Cambiar tipo de servicio",
+      mensaje: "Se descartará el segundo valor de Peso, Contenedor y Tipo de carga.",
+      dato: `${maniobra.peso || "—"}  ·  ${maniobra.contenedor || "—"}`,
+      accion: "Cambiar",
+      peligro: true,
+    })) return;
+    return guardar(campos);
+  };
+
+  // Ref estable (no una flecha en línea, que React re-ejecutaría en cada render y
+  // robaría el foco al segundo input): enfoca el primer hueco al abrir la celda.
+  const enfocarPrimerInput = useCallback((el) => { el?.querySelector("input")?.focus(); }, []);
+
+  // Celda de solo-texto que se abre al hacer clic. El guion no es decorativo: sin
+  // él una celda vacía no tendría superficie donde hacer clic.
+  const celdaClicable = (col, texto) => (
+    <span
+      className="mp-celda-texto"
+      title="Click para editar"
+      role="button"
+      tabIndex={0}
+      onClick={() => iniciarEdicion(col)}
+      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); iniciarEdicion(col); } }}
+    >
+      {texto || <em className="mp-placeholder">—</em>}
+    </span>
+  );
+
+  const renderCelda = (col) => {
+    // ── Selectores: montados siempre, igual que Status Vacío y Tercero ya lo
+    // estaban. Cerrados solo cuestan un <button>: ninguno pide su catálogo hasta
+    // que se abre (ver el `if (!open) return` de sus useEffect).
+    if (col.isPlacas) return (
+      <PlacasSelector
+        currentValue={maniobra[col.key]}
+        onSelect={(val) => guardar({ [col.key]: val })}
+        disabled={isSubmitting}
+        transportista={col.key === "unidad" ? maniobra.transportista : undefined}
+        todas={col.key === "placas_pis"}
+      />
+    );
+    if (col.isOperador) return (
+      <OperadorSelector
+        currentValue={maniobra[col.key]}
+        onSelect={(val) => guardar({ [col.key]: val })}
+        disabled={isSubmitting}
+        transportista={maniobra.transportista}
+      />
+    );
+    if (col.isTransportista) return (
+      <TransportistaSelector
+        currentValue={maniobra[col.key]}
+        onSelect={(val) => guardar({ [col.key]: val })}
+        disabled={isSubmitting}
+      />
+    );
+    if (col.isTercero) return (
+      <TerceroSelector
+        currentValue={maniobra[col.key]}
+        onSelect={(nuevoValor) => onTerceroChange(maniobra, nuevoValor)}
+        loading={isUpdatingTercero}
+      />
+    );
+    if (col.isStatusVacio) return (
+      <VacioStatusSelector
+        currentStatus={maniobra[col.key]}
+        onSelect={(nuevoStatus) => onVacioStatusChange(maniobra, nuevoStatus)}
+        loading={isUpdatingVacio}
+      />
+    );
+    if (col.isCliente) return (
+      /* Dos campos en un PATCH: el nombre es lo que se ve, el id es lo único que
+         distingue dos clientes homónimos. */
+      <ClienteSelector
+        currentValue={maniobra[col.key]}
+        currentId={maniobra.cliente_id}
+        onSelect={(c) => guardar({ cliente: c.nombre_cliente, cliente_id: c.id ?? null })}
+        disabled={isSubmitting}
+      />
+    );
+    if (col.isOrigen || col.isDestino) return (
+      <CiudadSelector
+        endpoint={col.isOrigen ? "/origenes/" : "/destinos/"}
+        placeholder={col.isOrigen ? "— Seleccionar origen —" : "— Seleccionar destino —"}
+        currentValue={maniobra[col.key]}
+        onSelect={(val) => guardarPlaza(col, val)}
+        disabled={isSubmitting}
+      />
+    );
+    if (col.isFolio) return (
+      <FolioDisponibleSelector
+        tabla={tablaDeFolios(maniobra)}
+        currentValue={maniobra[col.key]}
+        onSelect={(codigo) => guardar({ [col.key]: codigo })}
+        disabled={isSubmitting}
+      />
+    );
+    if (col.isPatio) return (
+      <PatioSelector
+        currentValue={maniobra[col.key]}
+        onSelect={(val) => guardar({ [col.key]: val })}
+        disabled={isSubmitting}
+      />
+    );
+    if (col.isRemolque || col.isRemolque2) return (
+      <RemolqueSelector
+        currentValue={maniobra[col.key]}
+        onSelect={(val) => guardar({ [col.key]: val })}
+        disabled={isSubmitting || (col.isRemolque2 && !esFull)}
+      />
+    );
+
+    if (col.isTipoServicio) return (
+      <TipoServicioSelector
+        currentValue={maniobra[col.key]}
+        onSelect={guardarTipoServicio}
+        disabled={isSubmitting}
+      />
+    );
+
+    // TIPO DE CARGA: no es un campo, son 2 huecos ("40 / HC") o 4 si es Full. Se
+    // monta el mismo editor compuesto del modal y se guarda cuando el foco sale
+    // del grupo entero — si no, pasar del hueco izquierdo al derecho guardaría a
+    // medias. relatedTarget es a dónde va el foco; null (clic fuera) también sale.
+    // Estas celdas no son un campo: son 2 o 4 huecos. TIPO DE CARGA siempre
+    // ("40 / HC", y en Full dos pares); Peso y Contenedor solo en Full, donde
+    // guardan dos valores como "A - B". Se monta el MISMO editor que usa el
+    // modal y se guarda cuando el foco sale del grupo entero — si no, pasar de
+    // un hueco al de al lado guardaría a medias.
+    const EditorCompuesto =
+      col.isTipo               ? (esFull ? TipoFullInput : TipoSplitInput)
+      : (col.isDoble && esFull) ? DobleInput
+      :                           null;
+
+    if (EditorCompuesto) {
+      if (celdaEditando !== col.key) return celdaClicable(col, maniobra[col.key]);
+      return (
+        <div
+          ref={enfocarPrimerInput}
+          onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) confirmarEdicion(col); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter")  confirmarEdicion(col);
+            if (e.key === "Escape") setCeldaEditando(null);
+          }}
+        >
+          <EditorCompuesto
+            value={valorEditando}
+            onChange={setValorEditando}
+            disabled={isSubmitting}
+            etiqueta={col.label}
+          />
+        </div>
+      );
+    }
+
+    // ── Fechas: bajo demanda. El DatePicker abre su calendario al recibir el foco,
+    // así que montarlo con autoFocus lo deja abierto con UN clic. Mientras no se
+    // edita, la celda enseña texto — que es lo que se lee de un vistazo en una
+    // tabla de 30 columnas.
+    if (col.sortable || col.isHora || col.isFechaHora) {
+      if (celdaEditando !== col.key) {
+        const texto = col.sortable    ? fechaParaMostrar(maniobra[col.key])
+                    : col.isFechaHora ? fechaHoraParaMostrar(maniobra[col.key])
+                    :                   maniobra[col.key];
+        return celdaClicable(col, texto);
+      }
+      const comunes = {
+        autoFocus: true,
+        className: "date-picker-input",
+        isClearable: true,
+        onClickOutside: () => cerrarFecha(col),
+        onCalendarClose: () => cerrarFecha(col),
+      };
+      if (col.sortable) return (
+        <DatePicker
+          {...comunes}
+          locale="es"
+          dateFormat="dd/MM/yyyy"
+          placeholderText="DD/MM/YYYY"
+          selected={fechaADate(valorEditando)}
+          onChange={(date) => setValorEditando(dateAFechaBackend(date))}
+        />
+      );
+      if (col.isHora) return (
+        <DatePicker
+          {...comunes}
+          showTimeSelect
+          showTimeSelectOnly
+          timeIntervals={15}
+          timeCaption="Hora"
+          timeFormat="HH:mm"
+          dateFormat="HH:mm"
+          placeholderText="HH:mm"
+          selected={horaADate(valorEditando)}
+          onChange={(date) => setValorEditando(dateAHora(date))}
+        />
+      );
+      return (
+        <DatePicker
+          {...comunes}
+          locale="es"
+          showTimeSelect
+          timeFormat="HH:mm"
+          timeIntervals={15}
+          dateFormat="dd/MM/yyyy HH:mm"
+          placeholderText="DD/MM/YYYY HH:mm"
+          selected={valorEditando ? new Date(valorEditando) : null}
+          onChange={(date) => setValorEditando(date ? date.toISOString() : "")}
+        />
+      );
+    }
+
+    // ── Texto: clic → escribir → blur/Enter guarda, Escape cancela.
+    // Peso y Contenedor solo cuando NO es Full: en Full guardan dos valores
+    // ("A - B") y componerlos a mano es cosa del modal.
+    // isDoble que llega hasta aquí ya es un servicio NO Full: un solo valor.
+    if (col.inline || col.isDoble) {
+      if (celdaEditando !== col.key) return celdaClicable(col, maniobra[col.key]);
+      return (
+        <input
+          type="text"
+          value={valorEditando}
+          autoFocus
+          maxLength={col.max}
+          aria-label={col.label}
+          onChange={(e) => setValorEditando(e.target.value)}
+          onBlur={() => confirmarEdicion(col)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter")  confirmarEdicion(col);
+            if (e.key === "Escape") setCeldaEditando(null);
+          }}
+        />
+      );
+    }
+
+    return maniobra[col.key];
+  };
+
   return (
     <tr className={statusConfig?.rowClass ?? ""}>
       {COLUMNAS.map((col) => (
         <td key={col.key} style={col.style ?? {}}>
-          {col.sortable ? (
-            fechaParaMostrar(maniobra[col.key])
-          ) : col.isFechaHora ? (
-            fechaHoraParaMostrar(maniobra[col.key])
-          ) : col.isTipoServicio ? (
-            /* Solo lectura en la tabla: se edita desde el modal, porque cambiarlo
-               reajusta también los campos de tipo/peso/contenedor. */
-            getTipoServicioLabel(maniobra[col.key])
-          ) : col.isStatusVacio ? (
-            /* Editable en la propia tabla, igual que en Vacíos: no hace falta
-               abrir el modal para cambiar el status del vacío. */
-            <VacioStatusSelector
-              currentStatus={maniobra[col.key]}
-              onSelect={(nuevoStatus) => onVacioStatusChange(maniobra, nuevoStatus)}
-              loading={isUpdatingVacio}
-            />
-          ) : col.isTercero ? (
-            /* Editable en la propia tabla, igual que el status de vacío. */
-            <TerceroSelector
-              currentValue={maniobra[col.key]}
-              onSelect={(nuevoValor) => onTerceroChange(maniobra, nuevoValor)}
-              loading={isUpdatingTercero}
-            />
-          ) : (
-            maniobra[col.key]
-          )}
+          {renderCelda(col)}
         </td>
       ))}
       <td style={{ whiteSpace: "nowrap" }}>
@@ -893,7 +1161,8 @@ export default function ManiobrasPage() {
   const [nuevaManiobra, setNuevaManiobra] = useState(MANIOBRA_VACIA);
   const scrollRef = useRef(null);
   const [modal,         setModal]         = useState(MODAL_CERRADO);
-  const [notif,         setNotif]         = useState(null);
+  const setNotif = useAlerta();
+  const preguntar = useConfirmacion();
   const [isSubmitting,  setIsSubmitting]  = useState(false);
   const [fotoModal,     setFotoModal]     = useState(null); // { registroId } | null
 
@@ -917,13 +1186,6 @@ export default function ManiobrasPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [hasMore, loadingMore, loadMore]);
 
-  // ── Auto-dismiss notificaciones ───────────────────────────────────────────
-  useEffect(() => {
-    if (!notif) return;
-    const t = setTimeout(() => setNotif(null), 3000);
-    return () => clearTimeout(t);
-  }, [notif]);
-
   // ── Handlers CRUD ─────────────────────────────────────────────────────────
 
   const handleEliminar = useCallback(async (id) => {
@@ -931,7 +1193,12 @@ export default function ManiobrasPage() {
       setNotif({ tipo: "error", msg: "No tienes permisos para eliminar." });
       return;
     }
-    if (!window.confirm("¿Estás seguro de que deseas eliminar esta maniobra?")) return;
+    if (!await preguntar({
+      titulo: "Eliminar maniobra",
+      mensaje: "Se borrará el registro completo. No se puede deshacer.",
+      accion: "Eliminar",
+      peligro: true,
+    })) return;
     setIsSubmitting(true);
     try {
       await eliminar(id);
@@ -960,6 +1227,26 @@ export default function ManiobrasPage() {
       setIsSubmitting(false);
     }
   }, [modal.datos, actualizar]);
+
+  // Guardado desde la tabla: PATCH parcial. Recibe un objeto y no un solo campo
+  // porque hay dos casos de dos campos a la vez (cliente + cliente_id, y plaza +
+  // folio liberado) que tienen que viajar en la MISMA escritura.
+  // useCallback porque la referencia viaja a las ~2000 filas memoizadas.
+  const handleGuardarCampos = useCallback(async (id, campos) => {
+    try {
+      await actualizar(id, campos);
+      // Se confirma QUÉ se escribió, no "campo actualizado": el valor va en la
+      // línea monoespaciada del aviso porque es un código que hay que verificar.
+      const [campo, valor] = Object.entries(campos)[0];
+      setNotif({
+        tipo: "ok",
+        msg: COLUMNAS.find((c) => c.key === campo)?.label ?? campo,
+        dato: valor || "(vacío)",
+      });
+    } catch (err) {
+      setNotif({ tipo: "error", msg: err.message || "Error al actualizar el campo." });
+    }
+  }, [actualizar]);
 
   const handleCambioNueva = useCallback((key, value) =>
     setNuevaManiobra((prev) => ({ ...prev, [key]: value })), []);
@@ -1054,12 +1341,6 @@ export default function ManiobrasPage() {
         <SearchBar value={busquedaInput} onChange={setBusquedaInput} />
       </div>
 
-      {notif && (
-        <div className={`notif notif-${notif.tipo}`} role="alert" aria-live="polite">
-          {notif.msg}
-        </div>
-      )}
-
       <div className="toolbar">
         <div className="filtros-status">
           {FILTROS.map(({ id, label }) => (
@@ -1144,6 +1425,7 @@ export default function ManiobrasPage() {
                     onStatusChange={handleStatusChange}
                     onVacioStatusChange={handleVacioStatusChange}
                     onTerceroChange={handleTerceroChange}
+                    onGuardarCampos={handleGuardarCampos}
                     onEditar={handleAbrirEdicion}
                     onVerFotos={handleVerFotos}
                     onEliminar={handleEliminar}

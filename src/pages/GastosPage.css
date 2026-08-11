@@ -3,7 +3,7 @@
    azul del app, Oswald display, IBM Plex Mono para etiquetas, Inter cuerpo.
 
    Todo cuelga de .gastos-container a propósito. Las clases de esta página
-   (.modal-content, .btn-agregar, .notif…) tienen nombres genéricos que Maniobras,
+   (.modal-content, .btn-agregar…) tienen nombres genéricos que Maniobras,
    Vacíos y Catálogos también declaran como globales; al scopearlas aquí ganan por
    especificidad (0,2,0 vs 0,1,0) sin importar el orden del bundle, y esta hoja
    deja de filtrarse a las otras páginas.
@@ -119,18 +119,6 @@
   border-color: var(--primary-blue) !important;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16) !important;
 }
-
-/* ── Notificación ─────────────────────────────────────────────────────────── */
-.gastos-container .notif {
-  margin-top: 18px;
-  padding: 10px 16px;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  border: 1px solid;
-}
-.gastos-container .notif-ok    { background: #ecfdf3; color: #15803d; border-color: #bbf7d0; }
-.gastos-container .notif-error { background: var(--danger-soft); color: var(--danger); border-color: #fecaca; }
 
 /* ── Toolbar ──────────────────────────────────────────────────────────────── */
 /* .filtros-status es un espaciador vacío: empuja el botón a la derecha. */

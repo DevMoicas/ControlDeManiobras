@@ -124,7 +124,6 @@ export default function FoliosPage() {
     foliosManzanillo,
     foliosLazaro,
     cargando,
-    notif,
     cargarFolios,
     anadirFolios,
     actualizarCampo,
@@ -145,8 +144,6 @@ export default function FoliosPage() {
         <header className="fp-intro">
           <h1 className="fp-title">Folios</h1>
         </header>
-
-        {notif && <div className={`fp-notif fp-notif--${notif.tipo}`}>{notif.msg}</div>}
 
         {cargando ? (
           <p className="fp-cargando">Cargando folios…</p>

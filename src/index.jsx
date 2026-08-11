@@ -7,6 +7,8 @@ import App from './App';
 import LoginPage from './Login/Login';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
+import { AlertasProvider } from './components/Alertas/Alertas';
+import { ConfirmacionProvider } from './components/Confirmacion/Confirmacion';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -16,6 +18,10 @@ root.render(
     <MotionConfig reducedMotion="user">
       <BrowserRouter>
        <AuthProvider>
+        {/* Una sola pila de avisos y un solo diálogo de confirmación para toda
+            la app, login incluido. */}
+        <AlertasProvider>
+        <ConfirmacionProvider>
         <Routes>
           <Route path="/" element={<LoginPage />} />
           {/* Toda la app cuelga de /home/*, así que este guardián es la única
@@ -31,6 +37,8 @@ root.render(
           {/* Cualquier otra URL inventada tampoco es una vía de entrada. */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </ConfirmacionProvider>
+        </AlertasProvider>
        </AuthProvider>
       </BrowserRouter>
     </MotionConfig>

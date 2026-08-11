@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import "./CatalogosPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
+import { useAlerta } from "../components/Alertas/Alertas";
+import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import CargoSelector from "../components/CargoSelector/CargoSelector";
 import TransportistaSelector from "../components/TransportistaSelector/TransportistaSelector";
 
@@ -14,6 +16,8 @@ import TransportistaSelector from "../components/TransportistaSelector/Transport
 const porId = (arr) => [...arr].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
 
 export default function NoEcoPage() {
+  const alerta = useAlerta();
+  const preguntar = useConfirmacion();
   const navigate = useNavigate();
   const { isAdmin } = useAuthContext();
 
@@ -198,13 +202,18 @@ export default function NoEcoPage() {
 
   const eliminarRegistro = async (id, vistaLocal) => {
     if (!isAdmin) {
-      alert("No tienes permisos para eliminar.");
+      alerta({ tipo: "error", msg: "No tienes permisos para eliminar." });
       return;
     }
 
     const vistaActiva = vistaLocal || vista;
 
-    if (window.confirm("¿Estás seguro de que deseas eliminar este registro?")) {
+    if (await preguntar({
+      titulo: "Eliminar registro",
+      mensaje: "Se borrará del catálogo. No se puede deshacer.",
+      accion: "Eliminar",
+      peligro: true,
+    })) {
       setIsSubmitting(true);
       try {
         await apiClient.delete(`/${vistaActiva}/${id}/`);
@@ -221,10 +230,10 @@ export default function NoEcoPage() {
         } else {
           setData(prev => prev.filter(item => item.id !== id));
         }
-        alert("Eliminado con éxito");
+        alerta({ tipo: "ok", msg: "Registro eliminado." });
       } catch (error) {
         console.error("Error:", error);
-        alert("Error al eliminar");
+        alerta({ tipo: "error", msg: "No se pudo eliminar el registro." });
       } finally {
         setIsSubmitting(false);
       }
@@ -310,10 +319,10 @@ export default function NoEcoPage() {
       setEditando(false);
       setRegistroEditando(null);
       setSubVista(null);
-      alert(editando ? "Registro actualizado" : "Registro creado");
+      alerta({ tipo: "ok", msg: editando ? "Registro actualizado." : "Registro creado." });
     } catch (error) {
       console.error(error);
-      alert("Error en la operación");
+      alerta({ tipo: "error", msg: "No se pudo guardar el registro." });
     } finally {
       setIsSubmitting(false);
     }

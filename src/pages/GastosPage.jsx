@@ -7,6 +7,8 @@ import { Trash2, SquarePen, Settings, X } from "lucide-react";
 import { useGastos } from "../hooks/useGastos";
 import FolioSelector from "../components/FolioSelector/FolioSelector";
 import SearchBar from "../components/SearchBar/SearchBar";
+import { useAlerta } from "../components/Alertas/Alertas";
+import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { registerLocale } from "react-datepicker";
@@ -243,7 +245,8 @@ export default function GastosPage() {
   const [modoAgregar, setModoAgregar] = useState(false);
   const [nuevoGasto, setNuevoGasto] = useState(GASTO_VACIO);
   const [modal, setModal]                 = useState(MODAL_CERRADO);
-  const [notif, setNotif]                 = useState(null);
+  const setNotif = useAlerta();
+  const preguntar = useConfirmacion();
   const [busqueda, setBusqueda] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -281,13 +284,6 @@ export default function GastosPage() {
     'comision_operador', 'reparaciones', 'gastos_totales'
   ];
 
-  // ── Auto-dismiss de notificaciones ──────────────────────────────────────────
-  useEffect(() => {
-    if (!notif) return;
-    const t = setTimeout(() => setNotif(null), 3000);
-    return () => clearTimeout(t);
-  }, [notif]);
-
   // ── Handlers CRUD ────────────────────────────────────────────────────────────
 
   const handleEliminar = useCallback(async (id) => {
@@ -296,7 +292,12 @@ export default function GastosPage() {
     return;
   }
 
-  if (!window.confirm("¿Estás seguro de que deseas eliminar este gasto?")) return;
+  if (!await preguntar({
+    titulo: "Eliminar gasto",
+    mensaje: "Se borrará el registro de gastos. No se puede deshacer.",
+    accion: "Eliminar",
+    peligro: true,
+  })) return;
 
   setIsSubmitting(true);
   try {
@@ -398,12 +399,6 @@ export default function GastosPage() {
       <div className="gp-search">
         <SearchBar value={busqueda} onChange={setBusqueda} />
       </div>
-
-      {notif && (
-        <div className={`notif notif-${notif.tipo}`} role="alert" aria-live="polite">
-          {notif.msg}
-        </div>
-      )}
 
       <div className="toolbar">
         {/* Espaciador vacío para empujar el botón a la derecha igual que en Maniobras */}

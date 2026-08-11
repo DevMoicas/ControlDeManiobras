@@ -3,12 +3,14 @@ import { motion } from "motion/react";
 import { overlayMotion } from "../../animations/modalMotion";
 import { Camera, X, Upload, Trash2, Eye } from "lucide-react";
 import { apiClient } from "../../api/apiClient";
+import { useConfirmacion } from "../Confirmacion/Confirmacion";
 import "./FotoModal.css";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_BYTES     = 2 * 1024 * 1024; // 2MB
 
 export default function FotoModal({ tipo, registroId, onCerrar, isAdmin }) {
+  const preguntar = useConfirmacion();
   const [fotos,         setFotos]         = useState({ foto_1: null, foto_2: null });
   const [loading,       setLoading]       = useState(true);
   const [uploading,     setUploading]     = useState(null);   // 1 | 2 | null
@@ -83,7 +85,13 @@ export default function FotoModal({ tipo, registroId, onCerrar, isAdmin }) {
 
   // ── Eliminar foto (solo admin) ────────────────────────────────────────────
   const handleEliminar = async (slot) => {
-    if (!window.confirm(`¿Estás seguro de que deseas eliminar la Foto ${slot}?`)) return;
+    if (!await preguntar({
+      titulo: "Eliminar foto",
+      mensaje: "La foto se borra del registro y no se puede recuperar.",
+      dato: `Foto ${slot}`,
+      accion: "Eliminar",
+      peligro: true,
+    })) return;
 
     setError(null);
     setDeleting(slot);

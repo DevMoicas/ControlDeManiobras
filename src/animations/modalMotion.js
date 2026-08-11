@@ -18,3 +18,15 @@ export const contentMotion = {
   exit: { opacity: 0, y: 12, scale: 0.98, transition: { duration: 0.15, ease: "easeIn" } },
   transition: { type: "spring", stiffness: 420, damping: 34, mass: 0.8 },
 };
+
+// Alertas: mismo muelle que el contenido de los modales, para que la app tenga
+// un solo lenguaje de movimiento. Entra bajando desde el borde superior (que es
+// donde vive la pila) y sale deslizándose hacia el borde izquierdo — se lee como
+// "archivado", no como "desaparecido". La salida es corta a propósito: nunca
+// estorba a la siguiente.
+export const alertaMotion = {
+  initial: { opacity: 0, y: -16, scale: 0.98 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, x: -24, transition: { duration: 0.16, ease: "easeIn" } },
+  transition: { type: "spring", stiffness: 420, damping: 34, mass: 0.8 },
+};

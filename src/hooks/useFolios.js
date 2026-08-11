@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { apiClient } from "../api/apiClient";
+import { useAlerta } from "../components/Alertas/Alertas";
 
 // Dos arrays de estado independientes (uno por tabla) para que editar una no
 // re-renderice la otra. Sin paginación: /folios/ devuelve la lista completa.
@@ -7,14 +8,10 @@ export function useFolios() {
   const [foliosManzanillo, setFoliosManzanillo] = useState([]);
   const [foliosLazaro,     setFoliosLazaro]     = useState([]);
   const [cargando, setCargando] = useState(false);
-  const [notif,    setNotif]    = useState(null);
-  const notifTimer = useRef(null);
-
-  const mostrarNotif = useCallback((msg, tipo = "exito") => {
-    clearTimeout(notifTimer.current);
-    setNotif({ msg, tipo });
-    notifTimer.current = setTimeout(() => setNotif(null), 3000);
-  }, []);
+  // Los avisos van a la pila global de la app. Aquí solo se conserva la firma
+  // mostrarNotif(msg, tipo) para no tocar ninguno de los sitios que la llaman.
+  const alerta = useAlerta();
+  const mostrarNotif = useCallback((msg, tipo = "exito") => alerta({ tipo, msg }), [alerta]);
 
   const setterDe = (tabla) => (tabla === "manzanillo" ? setFoliosManzanillo : setFoliosLazaro);
   const normalizar = (data) => (Array.isArray(data) ? data : (data?.results ?? []));
@@ -63,7 +60,5 @@ export function useFolios() {
     }
   }, [mostrarNotif]);
 
-  useEffect(() => () => clearTimeout(notifTimer.current), []);
-
-  return { foliosManzanillo, foliosLazaro, cargando, notif, cargarFolios, anadirFolios, actualizarCampo };
+  return { foliosManzanillo, foliosLazaro, cargando, cargarFolios, anadirFolios, actualizarCampo };
 }
