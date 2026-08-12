@@ -15,7 +15,15 @@
   --primary-blue:  var(--primary, #2563eb);
   --primary-hover: #1d4ed8;
   --primary-soft:  var(--primary-light, #eaf1ff);
-  --card-bg:       #fff;
+  /* VARIANTE C — la tabla deja de ser blanco puro y pasa a papel: un crema muy
+     cercano al blanco (L≈97) que baja el brillo de una superficie enorme sin
+     que se lea "amarillo". El azul marino de la cabecera y el crema son un par
+     clásico; el resto del app sigue en blanco, así que el tablero se lee como
+     una hoja apoyada sobre el escritorio. Para volver a A: --card-bg: #fff y
+     las tintas frías en --grid-line / --row-line / el hover de fila. */
+  --card-bg:       #faf8f3;
+  --paper-deep:    #f3ede1;  /* hover de fila y de control */
+  --paper-line:    #e6dfd1;  /* borde de los controles de papel */
   --text-main:     var(--text, #1f2937);
   --text-muted:    var(--text-light, #6b7280);
   --border-color:  #e6ecf5;
@@ -24,6 +32,22 @@
      hoja estuviera cargada. Ahora es propio. */
   --danger:        #dc2626;
   --danger-soft:   #fef2f2;
+  /* Cromo del tablero. Los colores de status NO viven aquí: son de statusConfig.js
+     y se pintan más abajo sin tocarse.
+
+     El cuerpo de la tabla está rediseñado como el documento que ya es en papel
+     en esta industria: un manifiesto de carga. Hoja crema, reglas impresas,
+     talón a la izquierda, radio corto. La CABECERA es la excepción: se queda en
+     la barra oscura original, la misma que usan Vacíos y Movimientos Locales,
+     para no tener tres cabeceras parecidas en el mismo sistema.
+
+     Toda la tinta del cuerpo es cálida: sobre crema, una línea azulada se ve
+     como un arañazo frío. */
+  --ink:           #23201c;                 /* tinta de imprenta */
+  --rule:          rgba(74, 58, 34, 0.24);  /* reglas mayores */
+  --grid-line:     rgba(74, 58, 34, 0.10);  /* filetes entre columnas */
+  --row-line:      rgba(74, 58, 34, 0.13);  /* renglones */
+  --sheet-edge:    #e3dccd;                 /* canto de la hoja */
 
   min-height: calc(100vh - 40px);
   padding: 52px 28px 64px;
@@ -93,14 +117,18 @@
   flex-wrap: wrap;
 }
 
-/* Filtros — control segmentado */
+/* Filtros — control segmentado.
+   El contenedor deja de ser una caja blanca y pasa a ser el mismo papel de la
+   tabla, hundido: la sombra interior lo convierte en la ranura por la que corre
+   la pastilla azul, en vez de una tarjeta con botones encima. */
 .maniobras-container .filtros-status {
   display: inline-flex;
-  background: #fff;
-  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  border: 1px solid var(--paper-line);
   border-radius: 10px;
   padding: 4px;
   gap: 4px;
+  box-shadow: inset 0 1px 2px rgba(74, 58, 34, 0.09);
 }
 .maniobras-container .btn-filtro {
   font-family: 'Oswald', sans-serif;
@@ -117,7 +145,7 @@
   transition: background 0.15s, color 0.15s;
 }
 .maniobras-container .btn-filtro:hover {
-  background: var(--primary-soft);
+  background: var(--paper-deep);
   color: var(--primary-blue);
   transform: none; /* anula el scale(1.05) del button global de App.css */
 }
@@ -137,25 +165,29 @@
   align-items: center;
 }
 
-/* Botones de salto horizontal — secundarios */
+/* Botones de salto horizontal — secundarios.
+   Rediseñados como interruptores del tablero, no como botones de formulario:
+   misma IBM Plex Mono espaciada que las cabeceras de columna, papel en reposo y
+   al pulsarlos invierten a la tinta de la cabecera. Así el par ⇤/⇥ se lee como
+   parte del instrumento que gobierna, y no compite con el azul de "Agregar". */
 .maniobras-container .btn-salto {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'IBM Plex Mono', monospace;
   font-weight: 500;
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  padding: 9px 14px;
-  border: 1px solid var(--border-color);
+  padding: 10px 15px;
+  border: 1px solid var(--paper-line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--card-bg);
   color: var(--text-main);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .maniobras-container .btn-salto:hover {
-  background: #f7f9fc;
-  border-color: #c7d9f7;
-  color: var(--primary-blue);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--card-bg);
   transform: none;
 }
 .maniobras-container .btn-salto:focus-visible {
@@ -189,12 +221,17 @@
 }
 
 /* ── Panel + tabla ────────────────────────────────────────────────────────── */
+/* La hoja. Radio corto y canto cálido en vez de tarjeta de 16px: un documento
+   apoyado sobre el escritorio, no un widget. La sombra larga es la que lo
+   despega; la corta, el grosor del papel. */
 .maniobras-container .table-responsive {
   margin-top: 22px;
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
+  border: 1px solid var(--sheet-edge);
+  border-radius: 6px;
+  box-shadow:
+    0 1px 2px rgba(74, 58, 34, 0.07),
+    0 18px 34px -24px rgba(74, 58, 34, 0.45);
   overflow: visible; /* el sticky se ancla al scroll del wrapper */
   animation: mp-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -203,17 +240,44 @@
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   max-height: calc(100vh - 230px);
-  border-radius: 16px;
+  border-radius: 6px;
+  /* Con ~30 columnas la barra horizontal es un control de primer orden, no un
+     residuo del navegador: se le da grosor y color propios, en la misma tinta
+     cálida que el resto de la hoja. */
+  scrollbar-width: thin;
+  scrollbar-color: #cec4b0 transparent;
 }
+.maniobras-container .table-scroll-wrapper::-webkit-scrollbar { width: 12px; height: 12px; }
+.maniobras-container .table-scroll-wrapper::-webkit-scrollbar-track,
+.maniobras-container .table-scroll-wrapper::-webkit-scrollbar-corner { background: var(--card-bg); }
+.maniobras-container .table-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: #cec4b0;
+  border-radius: 999px;
+  border: 3px solid var(--card-bg);
+}
+.maniobras-container .table-scroll-wrapper::-webkit-scrollbar-thumb:hover { background: #b6a98e; }
 
 .maniobras-container .maniobras-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--ink);
+  /* Cifras de ancho fijo: fechas, pesos y folios caen en columna al leer en
+     vertical. Es la diferencia entre una tabla y una hoja de cálculo. */
+  font-variant-numeric: tabular-nums;
 }
 
+/* ── Cabecera ─────────────────────────────────────────────────────────────────
+   Fusión pedida: el cuerpo se queda en el manifiesto (hoja crema, reglas
+   cálidas, talón) y la cabecera vuelve a la barra oscura original, la misma que
+   sigue en Vacíos y Movimientos Locales — valores idénticos a los de allí, para
+   que las tres páginas tengan una sola cabecera y no tres parecidas.
+
+   Barra lisa, sin filete vertical ni regla de talón: la retícula empieza en el
+   cuerpo. La cabecera es una sola pieza de color, como en Vacíos. */
 .maniobras-container .maniobras-table th {
   font-family: 'Oswald', sans-serif;
   font-weight: 600;
@@ -237,35 +301,73 @@
 }
 
 .maniobras-container .maniobras-table td {
-  padding: 11px 16px;
-  border-bottom: 1px solid var(--border-soft);
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--row-line);
+  /* Hairline vertical: con 30 columnas, sin retícula la vista se pierde entre
+     celdas. Tinta translúcida para que se lea igual sobre cualquier status. */
+  border-right: 1px solid var(--grid-line);
   color: var(--text-main);
   vertical-align: middle;
   min-width: 120px;
+  /* Opaco por defecto — lo exige la columna congelada de abajo, que si no deja
+     ver el contenido pasar por debajo. Los status lo sobrescriben. */
+  background: var(--card-bg);
 }
+.maniobras-container .maniobras-table td:last-child { border-right: none; }
 .maniobras-container .maniobras-table tbody tr:last-child td { border-bottom: none; }
 
 .maniobras-container .maniobras-table tbody tr { transition: background 0.12s; }
-.maniobras-container .maniobras-table tbody tr:hover td { background: #f9fbfe; }
+.maniobras-container .maniobras-table tbody tr:hover td { background: var(--paper-deep); }
+
+/* ── El talón ─────────────────────────────────────────────────────────────────
+   En un impreso, el talón es la franja izquierda que identifica el registro y va
+   separada del cuerpo por una regla vertical. Aquí es la primera columna, que
+   además se congela: con ~30 columnas, "Solicita" es lo único que dice de quién
+   es la fila, y al desplazarse a la derecha se perdía.
+
+   La regla de 2px hace el trabajo de separar; la sombra queda solo como pista
+   de que hay hoja corriendo por debajo. Las celdas con colspan (el "no hay
+   maniobras") quedan fuera: no son columna. */
+.maniobras-container .maniobras-table th:first-child,
+.maniobras-container .maniobras-table td:first-child:not([colspan]) {
+  position: sticky;
+  left: 0;
+}
+.maniobras-container .maniobras-table td:first-child:not([colspan]) {
+  z-index: 5;
+  border-right: 2px solid var(--rule);
+  box-shadow: 8px 0 10px -10px rgba(74, 58, 34, 0.5);
+}
+/* La esquina del header viaja en los dos ejes: por encima de ambos sticky. */
+.maniobras-container .maniobras-table thead th:first-child { z-index: 11; }
+
+/* Lomo de status: los 4px se reservan en TODAS las filas, con color o sin él,
+   para que el texto de la primera columna arranque siempre en el mismo sitio.
+   Era un inset box-shadow; pasa a borde porque la sombra ahora la necesita la
+   columna congelada. */
+.maniobras-container .maniobras-table th:first-child,
+.maniobras-container .maniobras-table td:first-child {
+  border-left: 4px solid transparent;
+}
 
 /* ── Colores de fila por status ───────────────────────────────────────────────
    Los tonos NO se tocan: son el código operativo que el equipo ya reconoce de un
    vistazo (statusConfig.js los declara). Lo que se añade es el lomo izquierdo de
    Movimientos Locales, que refuerza el estado sin depender solo del color. */
 .maniobras-container .maniobras-table tbody tr.row-status--activo td    { background: #c6e5b1; }
-.maniobras-container .maniobras-table tbody tr.row-status--activo td:first-child    { box-shadow: inset 4px 0 0 #15803d; }
+.maniobras-container .maniobras-table tbody tr.row-status--activo td:first-child    { border-left-color: #15803d; }
 .maniobras-container .maniobras-table tbody tr.row-status--activo:hover td    { background: #b6dd9c; }
 
 .maniobras-container .maniobras-table tbody tr.row-status--pendiente td { background: #96c6e0; }
-.maniobras-container .maniobras-table tbody tr.row-status--pendiente td:first-child { box-shadow: inset 4px 0 0 #1d4ed8; }
+.maniobras-container .maniobras-table tbody tr.row-status--pendiente td:first-child { border-left-color: #1d4ed8; }
 .maniobras-container .maniobras-table tbody tr.row-status--pendiente:hover td { background: #83bcda; }
 
 .maniobras-container .maniobras-table tbody tr.row-status--quemada td   { background: #ff6961; }
-.maniobras-container .maniobras-table tbody tr.row-status--quemada td:first-child   { box-shadow: inset 4px 0 0 #991b1b; }
+.maniobras-container .maniobras-table tbody tr.row-status--quemada td:first-child   { border-left-color: #991b1b; }
 .maniobras-container .maniobras-table tbody tr.row-status--quemada:hover td   { background: #f9564c; }
 
 .maniobras-container .maniobras-table tbody tr.row-status--por-salir td { background: #c7b0d4; }
-.maniobras-container .maniobras-table tbody tr.row-status--por-salir td:first-child { box-shadow: inset 4px 0 0 #6b21a8; }
+.maniobras-container .maniobras-table tbody tr.row-status--por-salir td:first-child { border-left-color: #6b21a8; }
 .maniobras-container .maniobras-table tbody tr.row-status--por-salir:hover td { background: #bba1ca; }
 
 /* ── Inputs ───────────────────────────────────────────────────────────────── */
@@ -308,7 +410,12 @@
   border-radius: 6px;
   cursor: text;
 }
-.maniobras-container .mp-celda-texto:hover { background: rgba(37, 99, 235, 0.12); }
+/* El azul al 12% se enturbiaba sobre las filas verdes, rojas y moradas. Un velo
+   blanco con anillo azul se lee igual sobre los cinco fondos posibles. */
+.maniobras-container .mp-celda-texto:hover {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.35);
+}
 .maniobras-container .mp-celda-texto:focus-visible {
   outline: 2px solid var(--primary-blue);
   outline-offset: 1px;
@@ -404,7 +511,7 @@
 }
 
 /* ── Ordenar por fecha ────────────────────────────────────────────────────── */
-/* Vive dentro del th, que ahora es azul: en gris era invisible. */
+/* Vive dentro del th, que vuelve a ser la barra oscura: la flecha va en blanco. */
 .maniobras-container .btn-ordenar {
   background: transparent;
   border: none;
@@ -428,6 +535,8 @@
 }
 
 /* ── Estados de carga / error ─────────────────────────────────────────────── */
+/* Ocupan el sitio de la tabla, así que son la misma hoja: mismo canto, mismo
+   radio corto. */
 .maniobras-container .loading-box,
 .maniobras-container .error-box {
   margin-top: 22px;
@@ -437,9 +546,9 @@
   align-items: center;
   height: 250px;
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
+  border: 1px solid var(--sheet-edge);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(74, 58, 34, 0.07);
 }
 
 .maniobras-container .loading-text {
@@ -722,6 +831,12 @@
   .maniobras-container .btn-agregar { flex: 1; }
   .maniobras-container .maniobras-table th,
   .maniobras-container .maniobras-table td { min-width: 100px; padding: 10px 8px; }
+  /* En móvil la columna congelada se comería un tercio de la pantalla. */
+  .maniobras-container .maniobras-table th:first-child,
+  .maniobras-container .maniobras-table td:first-child:not([colspan]) {
+    position: static;
+    box-shadow: none;
+  }
 }
 
 /* ── Movimiento reducido ──────────────────────────────────────────────────── */

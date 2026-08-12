@@ -15,14 +15,26 @@
   --primary-blue:  var(--primary, #2563eb);
   --primary-hover: #1d4ed8;
   --primary-soft:  var(--primary-light, #eaf1ff);
-  --card-bg:       #fff;
   --text-main:     var(--text, #1f2937);
   --text-muted:    var(--text-light, #6b7280);
   --border-color:  #e6ecf5;
   --border-soft:   #eef2f7;
-  --row-stripe:    #fafbfc;
   --danger:        #dc2626;
   --danger-soft:   #fef2f2;
+  /* ── Variante D ────────────────────────────────────────────────────────────
+     El cuerpo de la tabla se rediseña como el documento que ya es en papel en
+     esta industria: hoja crema (L≈97, un blanco menos intenso, no un amarillo),
+     reglas impresas, radio corto. La cabecera se queda en la barra oscura de
+     siempre. Toda la tinta del cuerpo es cálida: sobre crema, una línea azulada
+     se ve como un arañazo frío. */
+  --card-bg:       #faf8f3;  /* la hoja */
+  --paper-deep:    #f3ede1;  /* hover de fila y de control */
+  --paper-line:    #e6dfd1;  /* borde de los controles de papel */
+  --ink:           #23201c;  /* tinta de imprenta */
+  --grid-line:     rgba(74, 58, 34, 0.10);  /* filetes entre columnas */
+  --row-line:      rgba(74, 58, 34, 0.13);  /* renglones */
+  --sheet-edge:    #e3dccd;  /* canto de la hoja */
+  --row-stripe:    #f6f2e9;  /* zebra: un paso más de papel, no un gris frío */
 
   /* dvh y no vh: en móvil, 100vh es el viewport GRANDE (como si la barra de URL
      estuviera oculta), así que reservaba ~60-100px de más y dejaba un hueco
@@ -170,12 +182,15 @@
 }
 
 /* ── Panel de tabla ───────────────────────────────────────────────────────── */
+/* La hoja: radio corto y canto cálido en vez de tarjeta de 16px. */
 .noeco-container .table-container {
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border: 1px solid var(--sheet-edge);
+  border-radius: 6px;
   padding: 22px;
-  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
+  box-shadow:
+    0 1px 2px rgba(74, 58, 34, 0.07),
+    0 18px 34px -24px rgba(74, 58, 34, 0.45);
   animation: cp-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
   /* Una tabla no encoge por debajo del ancho mínimo de su contenido. Sin esto
      se desbordaba de la tarjeta —se veía el fondo de la página por detrás— y
@@ -251,11 +266,14 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  border-radius: 12px;
+  border-radius: 6px;
   overflow: hidden;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--sheet-edge);
   font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Cabecera clara, como el resto de tablas de la app (antes era gris pizarra) */
@@ -274,15 +292,19 @@
 }
 
 .noeco-container .custom-table td {
-  padding: 11px 16px;
-  border-bottom: 1px solid var(--border-soft);
-  color: var(--text-main);
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--row-line);
+  /* Filete vertical: sin retícula la vista se pierde entre columnas. */
+  border-right: 1px solid var(--grid-line);
+  color: var(--ink);
   vertical-align: middle;
 }
+.noeco-container .custom-table td:last-child { border-right: none; }
 .noeco-container .custom-table tbody tr { transition: background 0.12s; }
 .noeco-container .custom-table tbody tr:nth-child(even) { background: var(--row-stripe); }
+/* El lomo azul del hover se queda: es señal de interacción, no de estado. */
 .noeco-container .custom-table tbody tr:hover {
-  background: #f9fbfe;
+  background: var(--paper-deep);
   box-shadow: inset 3px 0 0 0 var(--primary-blue);
 }
 .noeco-container .custom-table tbody tr:last-child td { border-bottom: none; }
@@ -338,7 +360,9 @@
 
 .noeco-container .modal-content {
   position: relative;
-  background: var(--card-bg);
+  /* Blanco explícito, no var(--card-bg): un diálogo es otra superficie, no la
+     hoja. En el resto de páginas el modal ya era #fff literal. */
+  background: #fff;
   border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 26px 30px;

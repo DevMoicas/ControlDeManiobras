@@ -2,7 +2,27 @@
    quepan sin scroll de página en pantallas altas. En laptops bajas (1366x768)
    es esperable algo de scroll vertical — aceptado por el usuario. */
 
-.fp-page { min-height: calc(100vh - 40px); background: var(--bg, #f4f7fb); }
+/* ── Variante D ──────────────────────────────────────────────────────────────
+   El cuerpo de la tabla se rediseña como el documento que ya es en papel en
+   esta industria: hoja crema (L≈97, un blanco menos intenso, no un amarillo),
+   reglas impresas, radio corto. La cabecera se queda en la barra oscura de
+   siempre. Toda la tinta del cuerpo es cálida: sobre crema, una línea azulada
+   se ve como un arañazo frío.
+
+   Aquí NO se toca la densidad: las filas de ~28px y el cuerpo a 0.78rem son lo
+   que permite que las dos tablas quepan apiladas sin scroll de página. Cambia
+   la superficie y la tinta, no el tamaño. */
+.fp-page {
+  --card-bg:    #faf8f3;  /* la hoja */
+  --paper-deep: #f3ede1;  /* cabecera de panel y hover */
+  --paper-line: #e6dfd1;  /* borde de los controles de papel */
+  --ink:        #23201c;  /* tinta de imprenta */
+  --row-line:   rgba(74, 58, 34, 0.13);  /* renglones */
+  --sheet-edge: #e3dccd;  /* canto de la hoja */
+
+  min-height: calc(100vh - 40px);
+  background: var(--bg, #f4f7fb);
+}
 
 .fp-wrap {
   max-width: 1180px; margin: 0 auto; padding: 16px 24px 20px;
@@ -18,12 +38,15 @@
 }
 
 .fp-panel {
-  width: 80%; margin: 0 auto; background: #fff; border: 1px solid #e6ecf5;
-  border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
+  width: 80%; margin: 0 auto; background: var(--card-bg); border: 1px solid var(--sheet-edge);
+  border-radius: 6px; overflow: hidden;
+  box-shadow:
+    0 1px 2px rgba(74, 58, 34, 0.07),
+    0 18px 34px -24px rgba(74, 58, 34, 0.45);
 }
 .fp-panel-head {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 12px; background: #f9fbfe; border-bottom: 1px solid #eef2f7;
+  padding: 6px 12px; background: var(--paper-deep); border-bottom: 1px solid var(--row-line);
 }
 .fp-panel-titulo {
   font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 0.85rem;
@@ -40,14 +63,19 @@
 /* "+ Lote anterior" en secundario: carga talonarios viejos, no es la acción
    habitual, y dos botones idénticos se pulsan por error. */
 .fp-btn-acciones { display: flex; align-items: center; gap: 8px; }
-.fp-btn-anadir--sec { background: #fff; color: var(--primary, #2563eb); border: 1px solid #bfdbfe; }
-.fp-btn-anadir--sec:hover:not(:disabled) { background: #eff6ff; }
+.fp-btn-anadir--sec { background: var(--card-bg); color: var(--primary, #2563eb); border: 1px solid var(--paper-line); }
+.fp-btn-anadir--sec:hover:not(:disabled) { background: var(--paper-deep); }
 
 /* overflow-x SIEMPRE activo (patrón de CatalogosPage/VaciosPage, no el
    @media-only de MovimientosLocalesPage): la tabla crece hacia la derecha
    para siempre, a cualquier ancho de pantalla. */
 .fp-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.fp-tabla { border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.78rem; }
+.fp-tabla {
+  border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 0.78rem;
+  color: var(--ink);
+  /* Cifras de ancho fijo: una tabla de folios es una columna de números. */
+  font-variant-numeric: tabular-nums;
+}
 
 .fp-th {
   font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 0.62rem; letter-spacing: 0.06em;
@@ -57,12 +85,17 @@
 .fp-th--folio { width: 74px; }
 .fp-th--asig  { width: 150px; border-right: 2px solid #1e2b38; }
 
-.fp-td { padding: 6px 8px; border-bottom: 1px solid #eef2f7; white-space: nowrap; color: var(--text, #1f2937); }
-.fp-td--asig { border-right: 1px solid #eef2f7; }
+.fp-td { padding: 6px 8px; border-bottom: 1px solid var(--row-line); white-space: nowrap; color: var(--ink); }
+.fp-td--asig { border-right: 1px solid var(--row-line); }
 .fp-tabla tbody tr:last-child .fp-td { border-bottom: none; }
 
 .fp-celda-texto { cursor: text; display: block; min-width: 70px; padding: 2px 4px; border-radius: 5px; }
-.fp-celda-texto:hover { background: var(--primary-light, #eaf1ff); }
+/* Velo blanco con anillo azul, como en Maniobras: se lee igual sobre el papel
+   que sobre cualquier fila marcada, cosa que el azul al 12% no hacía. */
+.fp-celda-texto:hover {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.35);
+}
 .fp-placeholder { color: var(--text-light, #6b7280); font-style: normal; }
 
 .fp-input {

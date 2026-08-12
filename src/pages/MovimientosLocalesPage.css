@@ -4,6 +4,22 @@
    suave y lomo azul como firma. */
 
 .ml-page {
+  /* ── Variante D ────────────────────────────────────────────────────────────
+     El cuerpo de la tabla se rediseña como el documento que ya es en papel en
+     esta industria: hoja crema (L≈97, un blanco menos intenso, no un amarillo),
+     reglas impresas, radio corto. La cabecera se queda en la barra oscura de
+     siempre. Toda la tinta del cuerpo es cálida: sobre crema, una línea azulada
+     se ve como un arañazo frío.
+
+     Los colores de fila (pagada, nueva) NO se tocan: son la señal operativa. */
+  --card-bg:    #faf8f3;  /* la hoja */
+  --paper-deep: #f3ede1;  /* hover de fila y de control */
+  --paper-line: #e6dfd1;  /* borde de los controles de papel */
+  --ink:        #23201c;  /* tinta de imprenta */
+  --grid-line:  rgba(74, 58, 34, 0.10);  /* filetes entre columnas */
+  --row-line:   rgba(74, 58, 34, 0.13);  /* renglones */
+  --sheet-edge: #e3dccd;  /* canto de la hoja */
+
   min-height: calc(100vh - 40px);
   background:
     radial-gradient(900px 420px at 100% -8%, #e8f0ff 0%, transparent 58%),
@@ -77,14 +93,18 @@
   flex-wrap: wrap;
 }
 
-/* Filtros — control segmentado con colores del app */
+/* Filtros — control segmentado.
+   El contenedor deja de ser una caja blanca y pasa a ser el mismo papel de la
+   tabla, hundido: la sombra interior lo convierte en la ranura por la que corre
+   la pastilla azul, en vez de una tarjeta con botones encima. */
 .ml-filtros {
   display: inline-flex;
-  background: #fff;
-  border: 1px solid #e6ecf5;
+  background: var(--card-bg);
+  border: 1px solid var(--paper-line);
   border-radius: 10px;
   padding: 4px;
   gap: 4px;
+  box-shadow: inset 0 1px 2px rgba(74, 58, 34, 0.09);
 }
 .ml-filtro-btn {
   font-family: 'Oswald', sans-serif;
@@ -100,7 +120,7 @@
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
-.ml-filtro-btn:hover { background: var(--primary-light, #eaf1ff); color: var(--primary, #2563eb); }
+.ml-filtro-btn:hover { background: var(--paper-deep); color: var(--primary, #2563eb); }
 .ml-filtro-btn--activo {
   background: var(--primary, #2563eb);
   color: #fff;
@@ -130,15 +150,19 @@
 .ml-btn-agregar:focus-visible { outline: 2px solid var(--primary, #2563eb); outline-offset: 2px; }
 
 /* ── Panel / tabla ─────────────────────────────────────────────────────────── */
+/* La hoja: radio corto y canto cálido en vez de tarjeta de 16px. La sombra
+   larga la despega del escritorio; la corta es el grosor del papel. */
 .ml-panel {
   margin-top: 22px;
-  background: #fff;
-  border: 1px solid #e6ecf5;
-  border-radius: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--sheet-edge);
+  border-radius: 6px;
   /* hidden: recorta las esquinas limpias y pinta las filas hasta el borde.
      El desplegable de estado se renderiza en portal, así que no se recorta. */
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
+  box-shadow:
+    0 1px 2px rgba(74, 58, 34, 0.07),
+    0 18px 34px -24px rgba(74, 58, 34, 0.45);
   animation: ml-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -146,7 +170,11 @@
   width: 100%;
   border-collapse: collapse;
   font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--ink);
+  /* Cifras de ancho fijo: importes y fechas caen en columna al leer en vertical. */
+  font-variant-numeric: tabular-nums;
 }
 
 .ml-th {
@@ -164,15 +192,18 @@
 }
 
 .ml-td {
-  padding: 11px 16px;
-  border-bottom: 1px solid #eef2f7;
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--row-line);
+  /* Filete vertical: sin retícula la vista se pierde entre columnas. */
+  border-right: 1px solid var(--grid-line);
   vertical-align: middle;
-  color: var(--text, #1f2937);
+  color: var(--ink);
 }
+.ml-td:last-child { border-right: none; }
 .ml-tabla tbody tr:last-child .ml-td { border-bottom: none; }
 
 .ml-fila { transition: background 0.12s; }
-.ml-fila:hover td { background: #f9fbfe; }
+.ml-fila:hover td { background: var(--paper-deep); }
 
 /* Fila pagada — verde vivo + lomo verde a la izquierda */
 .ml-fila--pagada td { background: #b7f0ca; }

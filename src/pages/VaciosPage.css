@@ -18,13 +18,26 @@
   --primary-blue:  var(--primary, #2563eb);
   --primary-hover: #1d4ed8;
   --primary-soft:  var(--primary-light, #eaf1ff);
-  --card-bg:       #fff;
   --text-main:     var(--text, #1f2937);
   --text-muted:    var(--text-light, #6b7280);
   --border-color:  #e6ecf5;
   --border-soft:   #eef2f7;
   --danger:        #dc2626;
   --danger-soft:   #fef2f2;
+  /* ── Variante D ────────────────────────────────────────────────────────────
+     El cuerpo de la tabla se rediseña como el documento que ya es en papel en
+     esta industria: hoja crema (L≈97, un blanco menos intenso, no un amarillo),
+     reglas impresas, radio corto. La cabecera se queda en la barra oscura de
+     siempre. Toda la tinta del cuerpo es cálida: sobre crema, una línea azulada
+     se ve como un arañazo frío. */
+  --card-bg:       #faf8f3;  /* la hoja */
+  --paper-deep:    #f3ede1;  /* hover de fila y de control */
+  --paper-line:    #e6dfd1;  /* borde de los controles de papel */
+  --ink:           #23201c;  /* tinta de imprenta */
+  --rule:          rgba(74, 58, 34, 0.24);  /* reglas mayores */
+  --grid-line:     rgba(74, 58, 34, 0.10);  /* filetes entre columnas */
+  --row-line:      rgba(74, 58, 34, 0.13);  /* renglones */
+  --sheet-edge:    #e3dccd;  /* canto de la hoja */
 
   position: relative; /* ancla del botón de Admin Vacíos */
   min-height: calc(100vh - 40px);
@@ -77,23 +90,26 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-family: 'Oswald', sans-serif;
+  /* Mono espaciada, como las etiquetas de la app: interruptor del tablero. */
+  font-family: 'IBM Plex Mono', monospace;
   font-weight: 500;
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  padding: 9px 16px;
-  border: 1px solid var(--border-color);
+  padding: 10px 16px;
+  border: 1px solid var(--paper-line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--card-bg);
   color: var(--text-main);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
+/* Invierte a la barra de la cabecera: el control se lee como parte de la tabla
+   que gobierna, no como un botón de formulario suelto. */
 .vacios-container .vacios-admin-btn:hover {
-  background: #f7f9fc;
-  border-color: #c7d9f7;
-  color: var(--primary-blue);
+  background: #2b3e50;
+  border-color: #2b3e50;
+  color: #fff;
   transform: none; /* anula el scale(1.05) del button global de App.css */
 }
 .vacios-container .vacios-admin-btn:focus-visible {
@@ -216,23 +232,44 @@
 }
 
 /* ── Panel + tabla ────────────────────────────────────────────────────────── */
+/* La hoja: radio corto y canto cálido en vez de tarjeta de 16px. La sombra
+   larga la despega del escritorio; la corta es el grosor del papel. */
 .vacios-container .table-responsive {
   margin-top: 22px;
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
+  border: 1px solid var(--sheet-edge);
+  border-radius: 6px;
+  box-shadow:
+    0 1px 2px rgba(74, 58, 34, 0.07),
+    0 18px 34px -24px rgba(74, 58, 34, 0.45);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   animation: vp-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* La barra es el control con el que se recorre la tabla, no un residuo del
+     navegador: grosor y tinta propios. */
+  scrollbar-width: thin;
+  scrollbar-color: #cec4b0 transparent;
 }
+.vacios-container .table-responsive::-webkit-scrollbar { width: 12px; height: 12px; }
+.vacios-container .table-responsive::-webkit-scrollbar-track,
+.vacios-container .table-responsive::-webkit-scrollbar-corner { background: var(--card-bg); }
+.vacios-container .table-responsive::-webkit-scrollbar-thumb {
+  background: #cec4b0;
+  border-radius: 999px;
+  border: 3px solid var(--card-bg);
+}
+.vacios-container .table-responsive::-webkit-scrollbar-thumb:hover { background: #b6a98e; }
 
 .vacios-container .vacios-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--ink);
+  /* Cifras de ancho fijo: fechas y folios caen en columna al leer en vertical. */
+  font-variant-numeric: tabular-nums;
 }
 
 .vacios-container .vacios-table th {
@@ -251,15 +288,38 @@
 }
 
 .vacios-container .vacios-table td {
-  padding: 11px 16px;
-  border-bottom: 1px solid var(--border-soft);
-  color: var(--text-main);
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--row-line);
+  /* Filete vertical: sin retícula la vista se pierde entre columnas. */
+  border-right: 1px solid var(--grid-line);
+  color: var(--ink);
   vertical-align: middle;
   min-width: 120px;
+  /* Opaco por defecto — lo exige el talón congelado de abajo. */
+  background: var(--card-bg);
 }
+.vacios-container .vacios-table td:last-child { border-right: none; }
 .vacios-container .vacios-table tbody tr:last-child td { border-bottom: none; }
 .vacios-container .vacios-table tbody tr { transition: background 0.12s; }
-.vacios-container .vacios-table tbody tr:hover td { background: #f9fbfe; }
+.vacios-container .vacios-table tbody tr:hover td { background: var(--paper-deep); }
+
+/* ── El talón ─────────────────────────────────────────────────────────────────
+   En un impreso, el talón es la franja izquierda que identifica el registro y va
+   separada del cuerpo por una regla vertical. Aquí es la primera columna, que
+   además se congela: al desplazarse a la derecha se perdía de vista de quién es
+   la fila. Las celdas con colspan (el "no hay registros") quedan fuera: no son
+   columna. La cabecera queda lisa, así que la regla empieza en el cuerpo. */
+.vacios-container .vacios-table th:first-child,
+.vacios-container .vacios-table td:first-child:not([colspan]) {
+  position: sticky;
+  left: 0;
+}
+.vacios-container .vacios-table td:first-child:not([colspan]) {
+  z-index: 5;
+  border-right: 2px solid var(--rule);
+  box-shadow: 8px 0 10px -10px rgba(74, 58, 34, 0.5);
+}
+.vacios-container .vacios-table thead th:first-child { z-index: 11; }
 
 /* ── Inputs ───────────────────────────────────────────────────────────────── */
 .vacios-container .vacios-table input,
@@ -352,6 +412,7 @@
 }
 
 /* ── Estados de carga / error ─────────────────────────────────────────────── */
+/* Ocupan el sitio de la tabla, así que son la misma hoja. */
 .vacios-container .loading-box,
 .vacios-container .error-box {
   margin-top: 22px;
@@ -361,9 +422,9 @@
   align-items: center;
   height: 250px;
   background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
+  border: 1px solid var(--sheet-edge);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(74, 58, 34, 0.07);
 }
 .vacios-container .loading-text {
   font-family: 'Oswald', sans-serif;
@@ -651,6 +712,12 @@
   .vacios-container .btn-agregar { width: 100%; }
   .vacios-container .vacios-table th,
   .vacios-container .vacios-table td { min-width: 100px; padding: 10px 8px; }
+  /* En móvil el talón congelado se comería un tercio de la pantalla. */
+  .vacios-container .vacios-table th:first-child,
+  .vacios-container .vacios-table td:first-child:not([colspan]) {
+    position: static;
+    box-shadow: none;
+  }
 }
 
 /* ── Movimiento reducido ──────────────────────────────────────────────────── */
