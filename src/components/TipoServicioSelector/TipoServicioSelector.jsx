@@ -85,7 +85,11 @@ export default function TipoServicioSelector({ currentValue, onSelect, loading, 
 
   const handleSelect = (tipoId) => {
     setOpen(false);
-    onSelect(tipoId);
+    // Reelegir el mismo = deseleccionar, el patrón del resto de selectores.
+    // Maniobra.tipo_servicio es null=True, blank=True y los registros anteriores
+    // al campo viven en NULL: vaciarlo devuelve la maniobra a ese estado, en el
+    // que esServicioFull() cae a la heurística del contenedor.
+    onSelect(tipoId === currentValue ? "" : tipoId);
   };
 
   return (

@@ -121,7 +121,11 @@ function unirTipoFull(par1, par2) {
 // Carga suelta conserva los dos pares de TIPO DE CARGA (dos tipos de bulto).
 function aplicarCambioTipoServicio(datos, onChange, nuevo) {
   onChange("tipo_servicio", nuevo);
-  if (nuevo === "full") return;
+  // Deseleccionar ("") no es elegir un servicio más chico: es dejar de afirmar
+  // cuál es. Colapsar peso/contenedor ahí borraría el segundo valor de un Full a
+  // cambio de nada, así que solo se quita la etiqueta y la carga se queda como
+  // está — que es justo el estado de los registros anteriores al campo.
+  if (!nuevo || nuevo === "full") return;
   onChange("peso",       partirDoble(datos.peso)[0]);
   onChange("contenedor", partirDoble(datos.contenedor)[0]);
   if (nuevo === "sencillo") onChange("tipo", partirTipoFull(datos.tipo)[0]);

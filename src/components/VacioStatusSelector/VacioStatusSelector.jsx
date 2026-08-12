@@ -78,7 +78,12 @@ export default function VacioStatusSelector({ currentStatus, onSelect, loading, 
 
   const handleSelect = (statusId) => {
     setOpen(false);
-    onSelect(statusId);
+    // Reelegir el mismo = deseleccionar, igual que Ciudad/Patio/Operador/Cargo/
+    // Transportista/Placas/Remolque/Cliente. apiClient convierte "" → null, y los
+    // tres campos que usa este selector (Maniobra.status_vacio, Vacio.status,
+    // Vacio.status_eir) son null=True, blank=True: volver a vacío es un estado
+    // legítimo, el mismo con el que nacen los registros.
+    onSelect(statusId === currentStatus ? "" : statusId);
   };
 
   const style = estiloDe(opciones, currentStatus);
