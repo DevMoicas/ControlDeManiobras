@@ -85,6 +85,8 @@ export default function FolioSelector({ currentValue, onSelect, disabled }) {
               {m.origen && m.destino && (
                 <span className="fsl-ruta">{m.origen} → {m.destino}</span>
               )}
+              {m.operador && <span className="fsl-ruta">{m.operador}</span>}
+              {m.cliente_nombre && <span className="fsl-ruta">{m.cliente_nombre}</span>}
             </button>
           ))}
         </div>
