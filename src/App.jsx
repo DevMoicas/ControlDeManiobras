@@ -22,12 +22,12 @@ import { useAlertasVencimiento } from './hooks/useAlertasVencimiento';
 import AlertaVencimiento from './components/AlertaVencimiento/AlertaVencimiento';
 const HOME_MODULES = [
   { to: 'maniobras',       icon: Truck,       title: 'Maniobras',           desc: 'Registra y consulta los servicios.' },
-  { to: 'gastos-efectivo', icon: CircleDollarSign,      title: 'Gastos efectivo',     desc: 'Controla los gastos en efectivo de cada operación.' },
+  { to: 'gastos-efectivo', icon: CircleDollarSign,      title: 'Gastos efectivo',     desc: 'Controla los gastos de cada operación.' },
   { to: 'vacios',          icon: Container, title: 'Vacíos',              desc: 'Administra los contenedores vacíos.' },
   { to: 'movimientos-locales', icon: Wallet, title: 'Movimientos locales', desc: 'Controla los movimientos locales pendientes y pagados.' },
   { to: 'folios',          icon: Hash,        title: 'Folios',              desc: 'Genera y administra los folios de Manzanillo y Lázaro Cárdenas.' },
   { to: 'catalogos',       icon: Library,     title: 'Catálogos',           desc: 'Gestiona operadores, placas, patios, unidades, etc.' },
-  { to: 'documentos-viaje',icon: FileText,    title: 'Documentos de viaje', desc: 'Genera y consulta la documentación de cada viaje.' },
+  { to: 'documentos-viaje',icon: FileText,    title: 'Documentos de viaje', desc: 'Genera la documentación de cada viaje.' },
 ];
 
 function Home() {
