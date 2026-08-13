@@ -1,0 +1,34 @@
+/* Superficie clicable de una celda editable. Mismas reglas que .mp-celda-texto
+   de Maniobras, sin el prefijo de contenedor para poder montarse en cualquier
+   tabla. Los tokens (--primary-blue, --text-muted) los aporta el contenedor de
+   la página: .gastos-container y .vacios-container ya los declaran. */
+.celda-editable {
+  display: block;
+  padding: 2px 4px;
+  border-radius: 6px;
+  cursor: text;
+}
+
+/* Velo blanco con anillo azul: se lee igual sobre la hoja crema y sobre los
+   fondos de color que pintan las filas por status. */
+.celda-editable:hover {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.35);
+}
+
+.celda-editable:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 1px;
+}
+
+.celda-editable-vacia { color: var(--text-muted); font-style: normal; }
+
+/* Calendario en portal (ver FECHA_PORTAL_ID en el JSX). Al colgar del <body>
+   escapa del overflow de la tabla, pero hereda z-index:1 de la hoja de
+   react-datepicker y quedaría por debajo del overlay del modal. 9999 = misma
+   escala que los selectores en portal. El contenedor se deja SIN position a
+   propósito: al posicionarlo se convierte en el ancestro de referencia del
+   popper y el calendario aparece descolocado. */
+#celda-fecha-portal .react-datepicker-popper {
+  z-index: 9999;
+}

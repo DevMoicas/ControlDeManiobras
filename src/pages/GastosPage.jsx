@@ -7,6 +7,7 @@ import { Trash2, SquarePen, Settings, X } from "lucide-react";
 import { useGastos } from "../hooks/useGastos";
 import FolioSelector from "../components/FolioSelector/FolioSelector";
 import SearchBar from "../components/SearchBar/SearchBar";
+import CeldaEditable from "../components/CeldaEditable/CeldaEditable";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
@@ -44,6 +45,9 @@ function dateAFechaBackend(dateObject) {
 
 // ── Definición de Columnas según tu DB ────────────────────────────────────────
 
+// Las columnas sin `isComputed` ni `maniobra` se editan con un clic en la propia
+// celda (ver CeldaEditable). `gastos_totales` queda fuera: es read_only en el
+// serializer, lo recalcula Gasto.save() sumando el resto.
 const COLUMNAS = [
   { key: "maniobra", label: "carta_porte" },
   { key: "fecha_entrega_mercancia", label: "Fecha Entrega", isFecha: true },
@@ -56,9 +60,17 @@ const COLUMNAS = [
   { key: "comision_operador", label: "Comisión Op." },
   { key: "reparaciones", label: "Reparaciones" },
   { key: "gastos_totales", label: "G. Totales", style: { fontWeight: 'bold', color: '#d61b1b' } },
-  { key: "facturado", label: "Ingresos", style: { fontWeight: 'bold', color: '#0b0c06' }  },
+  { key: "facturado", label: "Ingresos", max: 50, style: { fontWeight: 'bold', color: '#0b0c06' }  },
   { key: "utilidad_bruta", label: "Utilidad Bruta", isComputed: true, style: { fontWeight: 'bold', color: '#059669' } },
   { key: "descripcion_gastos", label: "Descripción" },
+];
+
+// Columnas DecimalField: se muestran como moneda y, al vaciarlas, viajan como
+// null — "" no es un número válido para DRF y devolvería un 400 opaco.
+const COLUMNAS_MONEDA = [
+  'casetas_ida', 'casetas_regreso', 'gastos_adicionales',
+  'entregado', 'gasto_tag', 'gasto_diesel',
+  'comision_operador', 'reparaciones', 'gastos_totales',
 ];
 
 const GASTO_VACIO = {
@@ -279,12 +291,6 @@ export default function GastosPage() {
     return `$${num.toFixed(2)}`;
   };
 
-  const columnasMoneda = [
-    'casetas_ida', 'casetas_regreso', 'gastos_adicionales', 
-    'entregado', 'gasto_tag', 'gasto_diesel', 
-    'comision_operador', 'reparaciones', 'gastos_totales'
-  ];
-
   // ── Handlers CRUD ────────────────────────────────────────────────────────────
 
   const handleEliminar = useCallback(async (id) => {
@@ -332,6 +338,23 @@ export default function GastosPage() {
       setIsSubmitting(false);
     }
   }, [modal.datos, actualizar]);
+
+  // Guardado desde la tabla. A diferencia de Maniobras y Vacíos, useGastos
+  // escribe con PUT (objeto completo), así que se manda la fila entera con el
+  // campo cambiado: exactamente el mismo payload que ya envía el modal.
+  const handleGuardarCampo = useCallback(async (gasto, campo, valor) => {
+    try {
+      const limpio = COLUMNAS_MONEDA.includes(campo) && valor === "" ? null : valor;
+      await actualizar(gasto.id, { ...gasto, [campo]: limpio });
+      setNotif({
+        tipo: "ok",
+        msg: COLUMNAS.find((c) => c.key === campo)?.label ?? campo,
+        dato: valor || "(vacío)",
+      });
+    } catch (err) {
+      setNotif({ tipo: "error", msg: err.message || "Error al actualizar el campo." });
+    }
+  }, [actualizar]);
 
   const handleCambioNueva = useCallback((key, value) => {
     setNuevoGasto((prev) => ({ ...prev, [key]: value }));
@@ -451,11 +474,23 @@ export default function GastosPage() {
                         ? (gasto.folio || gasto.maniobra) /* folio del servicio; fallback al id para registros viejos */
                         : col.isComputed
                         ? formatMoneda(Number(gasto.facturado || 0) - Number(gasto.gastos_totales || 0))
+                        : col.key === "gastos_totales"
+                        ? formatMoneda(gasto[col.key]) /* read_only: lo recalcula el backend */
                         : col.isFecha
-                        ? fechaParaMostrar(gasto[col.key])
-                        : columnasMoneda.includes(col.key)
-                        ? formatMoneda(gasto[col.key])
-                        : gasto[col.key]
+                        ? <CeldaEditable
+                            fecha
+                            valor={gasto[col.key]}
+                            texto={fechaParaMostrar(gasto[col.key])}
+                            etiqueta={col.label}
+                            onGuardar={(val) => handleGuardarCampo(gasto, col.key, val)}
+                          />
+                        : <CeldaEditable
+                            valor={gasto[col.key]}
+                            texto={COLUMNAS_MONEDA.includes(col.key) ? formatMoneda(gasto[col.key]) : undefined}
+                            max={col.max}
+                            etiqueta={col.label}
+                            onGuardar={(val) => handleGuardarCampo(gasto, col.key, val)}
+                          />
                       }
                     </td>
                   ))}

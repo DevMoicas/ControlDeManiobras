@@ -6,6 +6,7 @@ import { useVacios } from "../hooks/useVacios";
 import { useAuthContext } from "../context/AuthContext";
 import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
 import SearchBar from "../components/SearchBar/SearchBar";
+import CeldaEditable from "../components/CeldaEditable/CeldaEditable";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
@@ -53,19 +54,22 @@ function dateAFechaBackend(dateObject) {
   return `${y}-${m}-${d}`;
 }
 
+// `max` es el límite del modelo/serializer: cortar aquí evita un 400 que el
+// apiClient solo sabe mostrar como "HTTP 400". Las columnas sin selector ni
+// fecha se editan con un clic en la propia celda (ver CeldaEditable).
 const COLUMNAS = [
-  { key: "contenedor",                label: "Contenedor" },
+  { key: "contenedor",                label: "Contenedor",        max: 255 },
   { key: "patio",                     label: "Patio",             isPatio: true },
   { key: "fecha_maniobra",            label: "Fecha Maniobra",  isFecha: true },
   { key: "fecha_entrega",             label: "Fecha Entrega",   isFecha: true },
-  { key: "fecha_notificacion_cliente",label: "Cometarios" },
+  { key: "fecha_notificacion_cliente",label: "Cometarios",        max: 50 },
   { key: "status",                    label: "Status",            isStatus: true },
   { key: "status_eir",                label: "Status EIR",        isStatusEir: true },
   { key: "operador",                  label: "OP del Viaje",      isOperador: true },
   { key: "transportista",             label: "Transportista",     isTransportista: true },
   { key: "operador_entrega",          label: "Entregó",           isOperadorEntrega: true },
-  { key: "cita",                      label: "Cita" },
-  { key: "cd",                        label: "CD" },
+  { key: "cita",                      label: "Cita",              max: 255 },
+  { key: "cd",                        label: "CD",                max: 255 },
 ];
 
 // Vista por defecto: Pendientes (primero). El filtro se resuelve en backend
@@ -361,6 +365,22 @@ export default function VaciosPage() {
     }
   }, [modal.datos, actualizar]);
 
+  // Guardado desde la tabla: PATCH de un solo campo, igual que Maniobras. Se
+  // confirma QUÉ se escribió (el valor va en la línea monoespaciada del aviso)
+  // porque son códigos que hay que poder verificar de un vistazo.
+  const handleGuardarCampo = useCallback(async (vacio, campo, valor) => {
+    try {
+      await actualizar(vacio.id, { [campo]: valor });
+      setNotif({
+        tipo: "ok",
+        msg: COLUMNAS.find((c) => c.key === campo)?.label ?? campo,
+        dato: valor || "(vacío)",
+      });
+    } catch (err) {
+      setNotif({ tipo: "error", msg: err.message || "Error al actualizar el campo." });
+    }
+  }, [actualizar]);
+
   const handleCambioNuevo = useCallback((key, value) =>
     setNuevoVacio((prev) => ({ ...prev, [key]: value })), []);
 
@@ -602,9 +622,20 @@ export default function VaciosPage() {
                           onSelect={(nombre) => handlePatioChange(vacio, nombre)}
                         />
                       ) : col.isFecha ? (
-                        fechaParaMostrar(vacio[col.key])
+                        <CeldaEditable
+                          fecha
+                          valor={vacio[col.key]}
+                          texto={fechaParaMostrar(vacio[col.key])}
+                          etiqueta={col.label}
+                          onGuardar={(val) => handleGuardarCampo(vacio, col.key, val)}
+                        />
                       ) : (
-                        vacio[col.key]
+                        <CeldaEditable
+                          valor={vacio[col.key]}
+                          max={col.max}
+                          etiqueta={col.label}
+                          onGuardar={(val) => handleGuardarCampo(vacio, col.key, val)}
+                        />
                       )}
                     </td>
                   ))}
