@@ -604,6 +604,13 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
                 'tipo_servicio': m.tipo_servicio or '',
                 'peso':        str(m.peso) if m.peso is not None else '',
                 'referencia':  m.referencia or '',
+                # Fecha de entrega de la maniobra, en ISO para que el front la
+                # pinte directa. Vacía si la maniobra aún no la tiene: entonces
+                # el gasto la deja en blanco y se elige a mano.
+                'fecha_entrega_mercancia': (
+                    m.fecha_entrega_mercancia.isoformat()
+                    if m.fecha_entrega_mercancia else ''
+                ),
                 # Operador, unidad y remolques del registro (autollenado de documentos)
                 'operador':    m.asignacion_operador_status or '',          # nombre del operador asignado
                 'placas':      m.unidad or '',                              # placas del tracto asignado
