@@ -63,6 +63,11 @@ const COLUMNAS = [
   { key: "facturado", label: "Ingresos", max: 50, style: { fontWeight: 'bold', color: '#0b0c06' }  },
   { key: "utilidad_bruta", label: "Utilidad Bruta", isComputed: true, style: { fontWeight: 'bold', color: '#059669' } },
   { key: "descripcion_gastos", label: "Descripción" },
+  // Operador y destino salen de la maniobra del folio elegido (read_only en el
+  // GastoSerializer). No se editan aquí: se cambian en Maniobras.
+  { key: "operador", label: "Operador", readOnly: true },
+  { key: "destino", label: "Destino", readOnly: true },
+  { key: "unidad", label: "Unidad", max: 100 },
 ];
 
 // Columnas DecimalField: se muestran como moneda y, al vaciarlas, viajan como
@@ -78,7 +83,10 @@ const GASTO_VACIO = {
   folio: "",     // folio visible; useGastos.agregar lo excluye del POST
   fecha_entrega_mercancia: "", casetas_ida: 0, casetas_regreso: 0,
   gastos_adicionales: 0, entregado: 0, gasto_tag: 0, gasto_diesel: 0,
-  comision_operador: 0, reparaciones: 0, facturado: "", descripcion_gastos: ""
+  comision_operador: 0, reparaciones: 0, facturado: "", descripcion_gastos: "",
+  // operador y destino los rellena el FolioSelector solo para verlos en la fila
+  // nueva; el backend los ignora al escribir (read_only) y los devuelve al leer.
+  operador: "", destino: "", unidad: ""
   // gastos_totales lo quitas porque es calculado
 };
 
@@ -97,6 +105,8 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
           onSelect={(m) => {
             onChange("maniobra", m.id);
             onChange("folio", m.folio);
+            onChange("operador", m.operador || "");
+            onChange("destino", m.destino || "");
           }}
         />
       </td>
@@ -127,12 +137,15 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               disabled
               style={{ color: '#059669', fontWeight: 'bold' }}
             />
+          ) : col.readOnly ? (
+            <input value={datos[col.key] ?? ""} aria-label={col.label} disabled />
           ) : (
             <input
               value={datos[col.key] ?? ""}
               onChange={(e) => onChange(col.key, e.target.value)}
               placeholder={col.label}
               aria-label={col.label}
+              maxLength={col.max}
               disabled={col.key === "gastos_totales"}
             />
           )}
@@ -206,11 +219,14 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     disabled
                     style={{ color: '#059669', fontWeight: 'bold' }}
                   />
+                ) : col.readOnly ? (
+                  <input id={`edit-${col.key}`} value={datos[col.key] ?? ""} disabled />
                 ) : (
                   <input
                     id={`edit-${col.key}`}
                     value={datos[col.key] ?? ""}
                     onChange={(e) => onChange(col.key, e.target.value)}
+                    maxLength={col.max}
                   />
                 )}
               </div>
@@ -472,6 +488,8 @@ export default function GastosPage() {
                     <td key={col.key} style={col.style ?? {}}>
                       {col.key === "maniobra"
                         ? (gasto.folio || gasto.maniobra) /* folio del servicio; fallback al id para registros viejos */
+                        : col.readOnly
+                        ? (gasto[col.key] || "") /* viene de la maniobra: se edita en Maniobras, no aquí */
                         : col.isComputed
                         ? formatMoneda(Number(gasto.facturado || 0) - Number(gasto.gastos_totales || 0))
                         : col.key === "gastos_totales"

@@ -232,6 +232,7 @@ const COLUMNAS = [
   },
   { key: "terminal", label: "Terminal", inline: true, max: 30 },
   { key: "placas_pis", label: "Placas PIS", isPlacas: true },
+  { key: "saca", label: "SACA", inline: true, max: 100 },
   { key: "fecha_pis", label: "Fecha PIS", sortable: true },
   { key: "horario", label: "Horario", isHora: true },
   { key: "tipo_servicio", label: "TIPO DE SERVICIO", isTipoServicio: true },
@@ -260,7 +261,7 @@ const COLUMNAS = [
 ];
 
 const MANIOBRA_VACIA = {
-  solicita: "", agencia: "", codigo_pis: "", terminal: "", placas_pis: "",
+  solicita: "", agencia: "", codigo_pis: "", terminal: "", placas_pis: "", saca: "",
   fecha_pis: "", horario: "", tipo_servicio: "sencillo", tipo: "", peso: "", contenedor: "", referencia: "", pedimento: "",
   // cliente = nombre (lo que se ve en la tabla); cliente_id = a cuál fila del
   // catálogo apunta. El id es lo único que distingue dos clientes homónimos.
