@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { overlayMotion, contentMotion } from "../animations/modalMotion";
 import { useAuthContext } from "../context/AuthContext";
@@ -9,6 +9,7 @@ import FolioSelector from "../components/FolioSelector/FolioSelector";
 import SearchBar from "../components/SearchBar/SearchBar";
 import CeldaEditable from "../components/CeldaEditable/CeldaEditable";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
+import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import DatePicker from "react-datepicker";
@@ -281,6 +282,7 @@ export default function GastosPage() {
   const preguntar = useConfirmacion();
   const [busqueda, setBusqueda] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const tablaRef = useRef(null);
 
   // ── Scroll listener en window (mismo patrón que Maniobras/Vacíos) ──────────
   useEffect(() => {
@@ -456,7 +458,7 @@ export default function GastosPage() {
         </button>
       </div>
 
-      <div className="table-responsive">
+      <div className="table-responsive" ref={tablaRef}>
         <table className="gastos-table">
           <thead>
             <tr>
@@ -552,6 +554,8 @@ export default function GastosPage() {
           </tbody>
         </table>
       </div>
+
+      <BarraScrollTabla contenedorRef={tablaRef} />
 
       {loadingMore && (
         <div className="loading-more" aria-live="polite">

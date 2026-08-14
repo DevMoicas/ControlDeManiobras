@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import "./CatalogosPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
+import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
@@ -23,6 +24,14 @@ export default function NoEcoPage() {
   const { isAdmin } = useAuthContext();
 
   const [vista, setVista] = useState("tractos");
+  // Una barra de scroll por tarjeta: cada tabla tiene su propio overflow. Solo
+  // se muestra la de la tabla cuyo pie queda bajo el pliegue, así que nunca
+  // aparecen dos a la vez (ver BarraScrollTabla).
+  const refOrigenes = useRef(null);
+  const refDestinos = useRef(null);
+  const refUnidades = useRef(null);
+  const refOperadores = useRef(null);
+  const refPrincipal = useRef(null);
   const [data, setData] = useState([]);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [formData, setFormData] = useState({});
@@ -486,7 +495,7 @@ export default function NoEcoPage() {
       {vista === "origenes_destinos" ? (
         <>
           {/* ── TABLA ORÍGENES ── */}
-          <div className="table-container" style={{ marginBottom: "30px" }}>
+          <div className="table-container" ref={refOrigenes} style={{ marginBottom: "30px" }}>
             <div className="add-button-container">
               <button
                 onClick={() => abrirModalAgregar("origenes")}
@@ -550,9 +559,10 @@ export default function NoEcoPage() {
               </tbody>
             </table>
           </div>
+          <BarraScrollTabla contenedorRef={refOrigenes} />
 
           {/* ── TABLA DESTINOS ── */}
-          <div className="table-container">
+          <div className="table-container" ref={refDestinos}>
             <div className="add-button-container">
               <button
                 onClick={() => abrirModalAgregar("destinos")}
@@ -616,11 +626,12 @@ export default function NoEcoPage() {
               </tbody>
             </table>
           </div>
+          <BarraScrollTabla contenedorRef={refDestinos} />
         </>
       ) : vista === "terceros" ? (
         <>
           {/* ── TABLA UNIDADES ── */}
-          <div className="table-container" style={{ marginBottom: "30px" }}>
+          <div className="table-container" ref={refUnidades} style={{ marginBottom: "30px" }}>
             <div className="add-button-container">
               <button
                 onClick={() => abrirModalAgregar("unidades-terceros")}
@@ -684,9 +695,10 @@ export default function NoEcoPage() {
               </tbody>
             </table>
           </div>
+          <BarraScrollTabla contenedorRef={refUnidades} />
 
           {/* ── TABLA OPERADORES ── */}
-          <div className="table-container">
+          <div className="table-container" ref={refOperadores}>
             <div className="add-button-container">
               <button
                 onClick={() => abrirModalAgregar("operadores-terceros")}
@@ -750,9 +762,11 @@ export default function NoEcoPage() {
               </tbody>
             </table>
           </div>
+          <BarraScrollTabla contenedorRef={refOperadores} />
         </>
       ) : (
-        <div className="table-container">
+        <>
+        <div className="table-container" ref={refPrincipal}>
           <div className="add-button-container">
             <button
               onClick={() => abrirModalAgregar(null)}
@@ -814,6 +828,8 @@ export default function NoEcoPage() {
             </tbody>
           </table>
         </div>
+        <BarraScrollTabla contenedorRef={refPrincipal} />
+        </>
       )}
 
       {/* Modal */}

@@ -9,6 +9,7 @@ import { useAuthContext } from "../context/AuthContext";
 import { useMovimientosLocales } from "../hooks/useMovimientosLocales";
 import SearchBar from "../components/SearchBar/SearchBar";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
+import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
 import PlacasSelector from "../components/PlacasSelector/PlacasSelector";
 import PendientePagadoSelector from "../components/PendientePagadoSelector/PendientePagadoSelector";
@@ -89,6 +90,7 @@ export default function MovimientosLocalesPage() {
   const [busqueda,     setBusqueda]     = useState("");
   const busquedaRef = useRef(busqueda);
   busquedaRef.current = busqueda;
+  const panelRef = useRef(null);
 
   // Carga inicial y cuando cambian filtros
   useEffect(() => {
@@ -429,7 +431,7 @@ export default function MovimientosLocalesPage() {
         {/* Notificación */}
 
         {/* Tabla */}
-        <div className="ml-panel">
+        <div className="ml-panel" ref={panelRef}>
         <table className="ml-tabla">
           <thead>
             <tr>
@@ -509,6 +511,7 @@ export default function MovimientosLocalesPage() {
             <p className="ml-vacio">Aún no hay movimientos. Registra el primero.</p>
           )}
         </div>
+        <BarraScrollTabla contenedorRef={panelRef} />
       </div>
 
       {/* Modal Editar */}

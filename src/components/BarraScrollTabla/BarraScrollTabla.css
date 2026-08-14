@@ -1,0 +1,33 @@
+/* Barra espejo fija al pie de la ventana. El JS le pone left/width para que
+   quede alineada con su tabla, y la clase --visible solo cuando desborda.
+
+   z-index 800: por debajo del botón de subir (900), de los modales (1000) y de
+   los desplegables en portal (9999), que deben taparla. */
+.bst {
+  position: fixed;
+  bottom: 0;
+  z-index: 800;
+  display: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--card-bg, #fff);
+  border-top: 1px solid var(--sheet-edge, #e5e7eb);
+  border-radius: 0 0 6px 6px;
+  /* Misma tinta cálida que las barras de Maniobras y Gastos, pero sin `thin`:
+     esta se arrastra a propósito, así que se le deja el grosor cómodo. */
+  scrollbar-color: #cec4b0 transparent;
+}
+
+.bst--visible { display: block; }
+
+/* Solo existe para dar ancho al scroll: no se ve nada de él. */
+.bst-espacio { height: 1px; }
+
+.bst::-webkit-scrollbar { height: 14px; }
+.bst::-webkit-scrollbar-track { background: var(--card-bg, #fff); }
+.bst::-webkit-scrollbar-thumb {
+  background: #cec4b0;
+  border-radius: 8px;
+  border: 3px solid var(--card-bg, #fff);
+}
+.bst::-webkit-scrollbar-thumb:hover { background: #b6a98e; }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { overlayMotion, contentMotion } from "../animations/modalMotion";
 import { Trash2, SquarePen, Camera, Settings, X } from "lucide-react";
@@ -8,6 +8,7 @@ import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
 import SearchBar from "../components/SearchBar/SearchBar";
 import CeldaEditable from "../components/CeldaEditable/CeldaEditable";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
+import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import { useNavigate } from "react-router-dom";
@@ -298,6 +299,7 @@ export default function VaciosPage() {
   const preguntar = useConfirmacion();
   const [busqueda,    setBusqueda]    = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const tablaRef = useRef(null);
   const [fotoModal,   setFotoModal]   = useState(null); // { registroId } | null
 
   // ── Scroll listener en window ─────────────────────────────────────────────
@@ -553,7 +555,7 @@ export default function VaciosPage() {
         </button>
       </div>
 
-      <div className="table-responsive">
+      <div className="table-responsive" ref={tablaRef}>
         <table className="vacios-table">
           <thead>
             <tr>
@@ -679,6 +681,8 @@ export default function VaciosPage() {
           </tbody>
         </table>
       </div>
+
+      <BarraScrollTabla contenedorRef={tablaRef} />
 
       {loadingMore && (
         <div className="loading-more" aria-live="polite">

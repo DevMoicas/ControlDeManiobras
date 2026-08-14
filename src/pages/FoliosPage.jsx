@@ -1,4 +1,5 @@
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
+import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import { useFolios } from "../hooks/useFolios";
 import "./FoliosPage.css";
 
@@ -21,6 +22,8 @@ const chunk = (arr, size) => {
 // Sub-componente local (no en src/components/): las dos tablas son idénticas
 // salvo título/datos/callbacks y no se reusa fuera de esta página.
 function FolioTabla({ titulo, anadiendo, folios, onAnadir, onAnadirAnterior, onGuardar }) {
+  // Una barra por tabla: cada plaza tiene su propio scroll horizontal.
+  const scrollRef = useRef(null);
   const lotes = chunk(folios, BATCH_SIZE);
   const [editandoCelda, setEditandoCelda] = useState(null); // { id, key }
   const [valorEditando, setValorEditando] = useState("");
@@ -60,7 +63,7 @@ function FolioTabla({ titulo, anadiendo, folios, onAnadir, onAnadirAnterior, onG
           </button>
         </div>
       </div>
-      <div className="fp-scroll">
+      <div className="fp-scroll" ref={scrollRef}>
         <table className="fp-tabla">
           <thead>
             <tr>
@@ -115,6 +118,7 @@ function FolioTabla({ titulo, anadiendo, folios, onAnadir, onAnadirAnterior, onG
           </tbody>
         </table>
       </div>
+      <BarraScrollTabla contenedorRef={scrollRef} />
     </section>
   );
 }
