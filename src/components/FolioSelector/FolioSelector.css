@@ -24,11 +24,12 @@
   cursor: not-allowed;
 }
 
+/* position: fixed + portal a document.body — las coordenadas las pone el JS con
+   getBoundingClientRect. Con `absolute` dentro de la tabla, el desplegable lo
+   recortaba el overflow y lo tapaban las filas de abajo. */
 .fsl-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  z-index: 200;
+  position: fixed;
+  z-index: 9999;
   min-width: 260px;
   max-height: 280px;
   overflow-y: auto;

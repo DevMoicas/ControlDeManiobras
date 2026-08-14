@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { apiClient } from "../../api/apiClient";
 import useDropdownNav from "../../hooks/useDropdownNav";
 import "./FolioSelector.css";
@@ -18,9 +19,23 @@ export default function FolioSelector({ currentValue, onSelect, disabled }) {
   const [folios,  setFolios]      = useState([]);
   const [cargando, setCargando]   = useState(false);
   const [error,   setError]       = useState(null);
+  const [coords,  setCoords]      = useState(null);
   const ref = useRef(null);
   const dropRef = useRef(null);
   useDropdownNav({ abierto, setAbierto, wrapperRef: ref, dropdownRef: dropRef });
+
+  // El desplegable va en un portal con position: fixed para que no lo recorte el
+  // overflow de la tabla ni lo tapen las filas de abajo (mismo patrón que
+  // OperadorSelector y los demás selectores).
+  const actualizarCoords = () => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 4, left: r.left });
+  };
+
+  useLayoutEffect(() => {
+    if (abierto) actualizarCoords();
+  }, [abierto]);
 
   // Cargar folios al abrir el dropdown
   useEffect(() => {
@@ -40,14 +55,24 @@ export default function FolioSelector({ currentValue, onSelect, disabled }) {
     const handleKey = (e) => {
       if (e.key === "Escape") setAbierto(false);
     };
+    // El dropdown ya no está dentro del wrapper (vive en el portal), así que hay
+    // que exceptuarlo aparte: si no, el mousedown lo cerraría antes de que el
+    // click llegara a la opción y no se podría elegir folio.
     const handleClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setAbierto(false);
+      if (ref.current && ref.current.contains(e.target)) return;
+      if (dropRef.current && dropRef.current.contains(e.target)) return;
+      setAbierto(false);
     };
+    const reposicionar = () => actualizarCoords();
     document.addEventListener("keydown", handleKey);
     document.addEventListener("mousedown", handleClick);
+    window.addEventListener("scroll", reposicionar, true);
+    window.addEventListener("resize", reposicionar);
     return () => {
       document.removeEventListener("keydown", handleKey);
       document.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("scroll", reposicionar, true);
+      window.removeEventListener("resize", reposicionar);
     };
   }, [abierto]);
 
@@ -67,8 +92,8 @@ export default function FolioSelector({ currentValue, onSelect, disabled }) {
         {currentValue || "— Seleccionar folio —"}
       </button>
 
-      {abierto && (
-        <div className="fsl-dropdown" ref={dropRef}>
+      {abierto && coords && createPortal(
+        <div className="fsl-dropdown" ref={dropRef} style={{ top: coords.top, left: coords.left }}>
           {cargando && <div className="fsl-msg">Cargando...</div>}
           {error && <div className="fsl-msg fsl-error">{error}</div>}
           {!cargando && !error && folios.length === 0 && (
@@ -89,7 +114,8 @@ export default function FolioSelector({ currentValue, onSelect, disabled }) {
               {m.cliente_nombre && <span className="fsl-ruta">{m.cliente_nombre}</span>}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
