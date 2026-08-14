@@ -431,6 +431,8 @@ export default function MovimientosLocalesPage() {
         {/* Notificación */}
 
         {/* Tabla */}
+        <div className="bst-zona">
+        <BarraScrollTabla contenedorRef={panelRef} />
         <div className="ml-panel" ref={panelRef}>
         <table className="ml-tabla">
           <thead>
@@ -511,7 +513,7 @@ export default function MovimientosLocalesPage() {
             <p className="ml-vacio">Aún no hay movimientos. Registra el primero.</p>
           )}
         </div>
-        <BarraScrollTabla contenedorRef={panelRef} />
+        </div>
       </div>
 
       {/* Modal Editar */}

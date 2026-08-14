@@ -495,6 +495,8 @@ export default function NoEcoPage() {
       {vista === "origenes_destinos" ? (
         <>
           {/* ── TABLA ORÍGENES ── */}
+          <div className="bst-zona">
+          <BarraScrollTabla contenedorRef={refOrigenes} />
           <div className="table-container" ref={refOrigenes} style={{ marginBottom: "30px" }}>
             <div className="add-button-container">
               <button
@@ -559,9 +561,11 @@ export default function NoEcoPage() {
               </tbody>
             </table>
           </div>
-          <BarraScrollTabla contenedorRef={refOrigenes} />
+          </div>
 
           {/* ── TABLA DESTINOS ── */}
+          <div className="bst-zona">
+          <BarraScrollTabla contenedorRef={refDestinos} />
           <div className="table-container" ref={refDestinos}>
             <div className="add-button-container">
               <button
@@ -626,11 +630,13 @@ export default function NoEcoPage() {
               </tbody>
             </table>
           </div>
-          <BarraScrollTabla contenedorRef={refDestinos} />
+          </div>
         </>
       ) : vista === "terceros" ? (
         <>
           {/* ── TABLA UNIDADES ── */}
+          <div className="bst-zona">
+          <BarraScrollTabla contenedorRef={refUnidades} />
           <div className="table-container" ref={refUnidades} style={{ marginBottom: "30px" }}>
             <div className="add-button-container">
               <button
@@ -695,9 +701,11 @@ export default function NoEcoPage() {
               </tbody>
             </table>
           </div>
-          <BarraScrollTabla contenedorRef={refUnidades} />
+          </div>
 
           {/* ── TABLA OPERADORES ── */}
+          <div className="bst-zona">
+          <BarraScrollTabla contenedorRef={refOperadores} />
           <div className="table-container" ref={refOperadores}>
             <div className="add-button-container">
               <button
@@ -762,10 +770,11 @@ export default function NoEcoPage() {
               </tbody>
             </table>
           </div>
-          <BarraScrollTabla contenedorRef={refOperadores} />
+          </div>
         </>
       ) : (
-        <>
+        <div className="bst-zona">
+        <BarraScrollTabla contenedorRef={refPrincipal} />
         <div className="table-container" ref={refPrincipal}>
           <div className="add-button-container">
             <button
@@ -828,8 +837,7 @@ export default function NoEcoPage() {
             </tbody>
           </table>
         </div>
-        <BarraScrollTabla contenedorRef={refPrincipal} />
-        </>
+        </div>
       )}
 
       {/* Modal */}

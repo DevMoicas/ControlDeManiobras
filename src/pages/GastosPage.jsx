@@ -458,6 +458,10 @@ export default function GastosPage() {
         </button>
       </div>
 
+      <div className="bst-zona">
+
+      <BarraScrollTabla contenedorRef={tablaRef} />
+
       <div className="table-responsive" ref={tablaRef}>
         <table className="gastos-table">
           <thead>
@@ -555,7 +559,7 @@ export default function GastosPage() {
         </table>
       </div>
 
-      <BarraScrollTabla contenedorRef={tablaRef} />
+      </div>
 
       {loadingMore && (
         <div className="loading-more" aria-live="polite">

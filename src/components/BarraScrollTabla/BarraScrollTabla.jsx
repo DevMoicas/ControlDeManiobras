@@ -1,20 +1,24 @@
 import { useEffect, useRef } from "react";
-import { haceFaltaBarra } from "./visibilidad.mjs";
 import "./BarraScrollTabla.css";
 
 /**
  * BarraScrollTabla
- * Barra de scroll horizontal fija al pie de la ventana, espejo del contenedor
- * que se le pasa.
+ * Barra de scroll horizontal encima de la cabecera de la tabla, espejo del
+ * contenedor que se le pasa.
  *
  * Por qué existe: la barra nativa vive al FINAL del contenedor. Con una tabla
  * más alta que la pantalla hay que bajar hasta el fondo de la página para
- * alcanzarla, y mientras tanto solo queda la rueda del ratón. Esta está siempre
- * a la vista, se arrastra, y mueve la tabla.
+ * alcanzarla, y hasta entonces solo queda la rueda del ratón. Esta se ve desde
+ * el primer momento, encima de los encabezados, y se queda pegada al borde
+ * superior mientras se recorre la tabla.
  *
  * Se oculta sola cuando la tabla no desborda, así que ponerla en una tabla
  * estrecha no cuesta nada. Es puramente aditiva: el scroll nativo del
  * contenedor sigue funcionando igual.
+ *
+ * Va DENTRO de un .bst-zona que envuelve también al contenedor: eso acota el
+ * `sticky` a la altura de su tabla, así que desaparece al pasarla de largo y
+ * dos tablas de la misma página nunca se pisan la barra.
  *
  * Props:
  *   contenedorRef  ref — el div con overflow-x cuyo scroll se va a espejar
@@ -29,30 +33,13 @@ export default function BarraScrollTabla({ contenedorRef }) {
     const espacio = espacioRef.current;
     if (!caja || !barra || !espacio) return;
 
-    // Cuándo hace falta lo decide visibilidad.mjs, que está probado aparte.
-    // Aquí solo se miden las cajas y se aplica.
-    //
-    // Ancho del hueco = ancho real del contenido, para que el pulgar mida lo
-    // mismo que el de la nativa; y se alinea con el contenedor en vez de cruzar
-    // toda la ventana, que parecería un fallo.
+    // El hueco mide lo que el contenido, para que el pulgar de esta barra sea
+    // del mismo tamaño que el de la nativa. El +1 absorbe los subpíxeles del
+    // zoom: sin él, una tabla que cabe justo saca una barra que no mueve nada.
     const medir = () => {
-      const r = caja.getBoundingClientRect();
-      const mostrar = haceFaltaBarra({
-        scrollWidth: caja.scrollWidth,
-        clientWidth: caja.clientWidth,
-        top: r.top,
-        bottom: r.bottom,
-        alto: window.innerHeight,
-      });
-      barra.classList.toggle("bst--visible", mostrar);
-      if (!mostrar) return;
-      barra.style.left = `${r.left}px`;
-      barra.style.width = `${r.width}px`;
-      espacio.style.width = `${caja.scrollWidth}px`;
-      // OJO: aquí NO se toca scrollLeft. `medir` está enganchado en fase de
-      // captura, así que al arrastrar la barra correría ANTES que la
-      // sincronización y la devolvería a su sitio: el pulgar no se movería.
-      // De mantener los dos scrolls a la vez ya se encargan deCaja/deBarra.
+      const desborda = caja.scrollWidth > caja.clientWidth + 1;
+      barra.classList.toggle("bst--visible", desborda);
+      if (desborda) espacio.style.width = `${caja.scrollWidth}px`;
     };
 
     // Escribir scrollLeft dispara otro evento scroll: sin la guarda, barra y
@@ -79,16 +66,11 @@ export default function BarraScrollTabla({ contenedorRef }) {
     caja.addEventListener("scroll", deCaja, { passive: true });
     barra.addEventListener("scroll", deBarra, { passive: true });
     window.addEventListener("resize", medir);
-    // Al scrollear la página la tabla entra y sale del pliegue, que es lo que
-    // decide si esta barra hace falta. Va en captura porque el scroll puede
-    // venir de un contenedor interno, no solo de la ventana.
-    window.addEventListener("scroll", medir, { passive: true, capture: true });
     return () => {
       ro.disconnect();
       caja.removeEventListener("scroll", deCaja);
       barra.removeEventListener("scroll", deBarra);
       window.removeEventListener("resize", medir);
-      window.removeEventListener("scroll", medir, { capture: true });
     };
   }, [contenedorRef]);
 

@@ -555,6 +555,10 @@ export default function VaciosPage() {
         </button>
       </div>
 
+      <div className="bst-zona">
+
+      <BarraScrollTabla contenedorRef={tablaRef} />
+
       <div className="table-responsive" ref={tablaRef}>
         <table className="vacios-table">
           <thead>
@@ -682,7 +686,7 @@ export default function VaciosPage() {
         </table>
       </div>
 
-      <BarraScrollTabla contenedorRef={tablaRef} />
+      </div>
 
       {loadingMore && (
         <div className="loading-more" aria-live="polite">

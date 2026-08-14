@@ -1,20 +1,24 @@
-/* Barra espejo fija al pie de la ventana. El JS le pone left/width para que
-   quede alineada con su tabla, y la clase --visible solo cuando desborda.
+/* La zona envuelve barra + tabla. Su única razón de ser es acotar el `sticky`
+   de la barra a la altura de SU tabla: fuera de ella la barra desaparece, y en
+   una página con varias tablas cada una se queda con la suya. Sin overflow ni
+   transform, que romperían el sticky de dentro. */
+.bst-zona { position: relative; }
 
-   z-index 800: por debajo del botón de subir (900), de los modales (1000) y de
-   los desplegables en portal (9999), que deben taparla. */
 .bst {
-  position: fixed;
-  bottom: 0;
-  z-index: 800;
+  position: sticky;
+  top: 0;
+  /* Por encima de las celdas y del thead de Maniobras (10), por debajo de los
+     modales (1000) y de los desplegables en portal (9999). */
+  z-index: 20;
   display: none;
   overflow-x: auto;
   overflow-y: hidden;
+  margin-top: 22px;
   background: var(--card-bg, #fff);
-  border-top: 1px solid var(--sheet-edge, #e5e7eb);
-  border-radius: 0 0 6px 6px;
-  /* Misma tinta cálida que las barras de Maniobras y Gastos, pero sin `thin`:
-     esta se arrastra a propósito, así que se le deja el grosor cómodo. */
+  border: 1px solid var(--sheet-edge, #e5e7eb);
+  border-radius: 6px;
+  /* Misma tinta cálida que las barras nativas de Maniobras y Gastos, pero sin
+     `thin`: esta se arrastra a propósito, así que se le deja grosor cómodo. */
   scrollbar-color: #cec4b0 transparent;
 }
 
