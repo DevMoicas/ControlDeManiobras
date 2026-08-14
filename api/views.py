@@ -604,13 +604,16 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
                 'tipo_servicio': m.tipo_servicio or '',
                 'peso':        str(m.peso) if m.peso is not None else '',
                 'referencia':  m.referencia or '',
-                # Fecha de entrega de la maniobra, en ISO para que el front la
-                # pinte directa. Vacía si la maniobra aún no la tiene: entonces
-                # el gasto la deja en blanco y se elige a mano.
-                'fecha_entrega_mercancia': (
-                    m.fecha_entrega_mercancia.isoformat()
-                    if m.fecha_entrega_mercancia else ''
-                ),
+                # Fecha de entrega de la maniobra. OJO: el modelo dice DateField
+                # pero la columna REAL es TEXT (la tabla es managed=False, así que
+                # cambiar el modelo nunca alteró el esquema — ver schema.sql y la
+                # 0001). Llega ya como 'YYYY-MM-DD', que es justo lo que espera el
+                # front; str() la deja igual y seguiría valiendo si algún día la
+                # columna pasara a ser date de verdad. Nada de .isoformat(): sobre
+                # un str revienta y se lleva por delante todo el endpoint.
+                # Vacía si la maniobra aún no la tiene: entonces el gasto la deja
+                # en blanco y se elige a mano.
+                'fecha_entrega_mercancia': str(m.fecha_entrega_mercancia or ''),
                 # Operador, unidad y remolques del registro (autollenado de documentos)
                 'operador':    m.asignacion_operador_status or '',          # nombre del operador asignado
                 'placas':      m.unidad or '',                              # placas del tracto asignado
