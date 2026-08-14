@@ -239,6 +239,12 @@ class DispositivoConfianzaSerializer(serializers.ModelSerializer):
 
 class GastoSerializer(serializers.ModelSerializer):
     folio = serializers.CharField(source='maniobra.folio', read_only=True)
+    # Operador y destino del folio elegido. Se leen de la maniobra enlazada en vez
+    # de copiarse a `gastos`: así no se desincronizan si la maniobra cambia y no
+    # hacen falta columnas nuevas. read_only → un PUT que los traiga los ignora.
+    # El N+1 ya lo cubre el select_related('maniobra') del GastoViewSet.
+    operador = serializers.CharField(source='maniobra.asignacion_operador_status', read_only=True)
+    destino = serializers.CharField(source='maniobra.destino', read_only=True)
 
     class Meta:
         model = Gasto

@@ -51,6 +51,7 @@ class Maniobra(models.Model):
     codigo_pis = models.CharField(max_length=100, null=True, blank=True)
     terminal = models.CharField(max_length=100, null=True, blank=True)
     placas_pis = models.CharField(max_length=100, null=True, blank=True)
+    saca = models.CharField(max_length=100, null=True, blank=True)
     fecha_pis = models.DateField(max_length=50, null=True, blank=True, db_index=True)
     horario = models.CharField(max_length=50, null=True, blank=True)
     
@@ -171,6 +172,9 @@ class Gasto(models.Model):
     gastos_totales = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     facturado = models.CharField(max_length=50, null=True, blank=True)
     descripcion_gastos = models.TextField(null=True, blank=True)
+    # Texto libre propio del gasto. NO es la `unidad` de la maniobra (placas del
+    # tracto): se escribe a mano en la fila y no se deriva del folio.
+    unidad = models.CharField(max_length=100, null=True, blank=True)
 
     # ── Auditoría (quién/cuándo) ──
     created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
