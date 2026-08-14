@@ -107,6 +107,9 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
             onChange("folio", m.folio);
             onChange("operador", m.operador || "");
             onChange("destino", m.destino || "");
+            // Si la maniobra no tiene fecha de entrega, se queda vacía y el
+            // DatePicker sigue ahí para ponerla a mano.
+            onChange("fecha_entrega_mercancia", m.fecha_entrega_mercancia || "");
           }}
         />
       </td>
