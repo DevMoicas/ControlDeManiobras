@@ -8,6 +8,7 @@ import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
 import { getStatusConfig } from "../config/statusConfig";
 import StatusSelector from "../components/StatusSelector/StatusSelector";
 import PlacasSelector from "../components/PlacasSelector/PlacasSelector";
+import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import RemolqueSelector from "../components/RemolqueSelector/RemolqueSelector";
 import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
 import TransportistaSelector from "../components/TransportistaSelector/TransportistaSelector";
@@ -1392,6 +1393,8 @@ export default function ManiobrasPage() {
       <div className="table-responsive">
 
         {/* ── BODY — scroll horizontal + vertical ── */}
+        <div className="bst-zona">
+        <BarraScrollTabla contenedorRef={scrollRef} />
         <div className="table-scroll-wrapper" ref={scrollRef}>
           <table className="maniobras-table">
             {/* thead fantasma para sincronizar anchos de columna */}
@@ -1440,6 +1443,7 @@ export default function ManiobrasPage() {
               )}
             </tbody>
           </table>
+        </div>
         </div>
 
       </div>

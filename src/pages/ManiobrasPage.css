@@ -241,13 +241,16 @@
   -webkit-overflow-scrolling: touch;
   max-height: calc(100vh - 230px);
   border-radius: 6px;
-  /* Con ~30 columnas la barra horizontal es un control de primer orden, no un
-     residuo del navegador: se le da grosor y color propios, en la misma tinta
-     cálida que el resto de la hoja. */
+  /* La barra VERTICAL sigue siendo del navegador, con grosor y tinta propios.
+     La horizontal se mueve arriba (BarraScrollTabla), así que aquí se anula:
+     abajo del todo, con ~30 columnas, quedaba lejos de los encabezados. */
   scrollbar-width: thin;
   scrollbar-color: #cec4b0 transparent;
 }
 .maniobras-container .table-scroll-wrapper::-webkit-scrollbar { width: 12px; height: 12px; }
+/* Solo el eje horizontal. Firefox no distingue ejes (scrollbar-width los apaga
+   los dos), así que allí quedan las dos barras: la de arriba y la nativa. */
+.maniobras-container .table-scroll-wrapper::-webkit-scrollbar:horizontal { height: 0; }
 .maniobras-container .table-scroll-wrapper::-webkit-scrollbar-track,
 .maniobras-container .table-scroll-wrapper::-webkit-scrollbar-corner { background: var(--card-bg); }
 .maniobras-container .table-scroll-wrapper::-webkit-scrollbar-thumb {
@@ -851,4 +854,15 @@
   .maniobras-container .btn-accion,
   .maniobras-container .btn-guardar,
   .maniobras-container .btn-cancelar { transition: none; }
+}
+
+/* ── Barra de scroll horizontal (arriba de los encabezados) ─────────────────── */
+/* Aquí la barra vive DENTRO de la hoja, no encima: hace de borde superior del
+   papel, así que se le quita la separación y el marco propios y solo conserva
+   la línea que la separa de la cabecera de la tabla. */
+.maniobras-container .bst {
+  margin-top: 0;
+  border: none;
+  border-bottom: 1px solid var(--sheet-edge);
+  border-radius: 6px 6px 0 0;
 }
