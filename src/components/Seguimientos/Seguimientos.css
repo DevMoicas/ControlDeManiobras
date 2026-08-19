@@ -1,0 +1,78 @@
+/* Panel SEGUIMIENTOS — resumen corto arriba a la derecha del inicio, a la altura
+   del logo.
+
+   La posición NO se decide aquí: el panel es el primer elemento de la columna
+   .home-lateral (App.css), que es la que se ancla al borde de la ventana y queda
+   fuera del flujo. Así el margen derecho se toca en un solo sitio y las alertas
+   de vencimiento, que van justo debajo, lo comparten sin repetir el cálculo. */
+.seg-panel {
+  width: 320px;
+  border: 1px solid #e6ecf5;
+  border-radius: 10px;
+  overflow: hidden;              /* recorta la cabecera al radio del borde */
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Mismo azul que el thead de las tablas (ManiobrasPage.css: .maniobras-table th) */
+.seg-header {
+  margin: 0;
+  padding: 8px 12px;
+  background: #2b3e50;
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+}
+
+.seg-cuerpo {
+  padding: 8px 12px 10px;
+}
+
+.seg-fila {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 0;
+  font-size: 0.82rem;
+}
+
+/* El color lo pone el componente desde STATUS_MAP. El borde tenue es porque los
+   dos colores de status son claros y sobre blanco se desdibujan. */
+.seg-bolita {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(16, 24, 40, 0.18);
+}
+
+.seg-etiqueta {
+  color: #344054;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+/* tabular-nums: los números no bailan de ancho al pasar de 9 a 10. */
+.seg-numero {
+  margin-left: auto;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #101828;
+}
+
+.seg-fallo {
+  margin: 0;
+  padding: 2px 0;
+  font-size: 0.78rem;
+  color: #b42318;
+}
+
+/* En pantalla estrecha la columna vuelve al flujo (ver .home-lateral) y el panel
+   ocupa todo el ancho disponible. */
+@media (max-width: 760px) {
+  .seg-panel {
+    width: 100%;
+  }
+}

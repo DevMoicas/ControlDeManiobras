@@ -264,6 +264,10 @@ const COLUMNAS = [
   { key: "fecha_entrega_mercancia", label: "Entrega Mercancía", sortable: true },
   { key: "no_factura", label: "No. Factura", inline: true, max: 100 },
   { key: "ccp", label: "CCP", inline: true, max: 100 },
+  // El CCP va emparejado al folio: la remisión del documento es "folio / ccp",
+  // así que el operador 2 necesita el suyo. Oculto hasta que se le asigna uno,
+  // igual que su folio y su unidad.
+  { key: "ccp_2", label: "CCP 2", inline: true, max: 100, requiereOperador2: true },
   { key: "ruta_inicio", label: "Ruta Inicio", isFechaHora: true },
   { key: "ruta_fin",    label: "Ruta Fin",    isFechaHora: true },
 ];
@@ -278,7 +282,7 @@ const MANIOBRA_VACIA = {
   fecha_entrega_mercancia: "", no_factura: "", ccp: "", ruta_inicio: "", ruta_fin: "",
   // Segundo operador y su carga (migración 0035)
   operador_2: "", unidad_2: "", folio_2: "", remolque_3: "", remolque_4: "",
-  tipo_2: "", peso_2: "", contenedor_2: "",
+  tipo_2: "", peso_2: "", contenedor_2: "", ccp_2: "",
 };
 
 const MODAL_CERRADO = { abierto: false, datos: null };

@@ -20,6 +20,7 @@ import MovimientosLocalesPage from './pages/MovimientosLocalesPage';
 import FoliosPage from './pages/FoliosPage';
 import { useAlertasVencimiento } from './hooks/useAlertasVencimiento';
 import AlertaVencimiento from './components/AlertaVencimiento/AlertaVencimiento';
+import Seguimientos from './components/Seguimientos/Seguimientos';
 const HOME_MODULES = [
   { to: 'maniobras',       icon: Truck,       title: 'Maniobras',           desc: 'Registra y consulta los servicios.' },
   { to: 'gastos-efectivo', icon: CircleDollarSign,      title: 'Gastos efectivo',     desc: 'Controla los gastos de cada operación.' },
@@ -48,27 +49,36 @@ function Home() {
       </header>
 
       <main className="home-main">
-        {/* Alertas de vencimiento — visibles para cualquier usuario con sesión.
-            Si la consulta falla se avisa, en vez de dejar el hueco vacío: una
-            alerta que no llega no puede parecerse a que no haya ninguna. */}
-        {(alertas.length > 0 || errorAlertas) && (
-          <div className="home-alertas-container">
-            {errorAlertas ? (
-              <div className="av-card av-card--fallo" role="alert">
-                <p className="av-mensaje">
-                  No se pudieron cargar las alertas de licencias y pólizas.
-                  Recarga la página; si sigue igual, vuelve a iniciar sesión.
-                </p>
+        <div className="home-head">
+          {/* Columna derecha: el resumen de seguimientos y, debajo, las alertas
+              de vencimiento. Va anclada al borde de la ventana y FUERA del flujo
+              (ver .home-lateral en App.css) para no empujar el logo hacia abajo.
+              Al apilarlas en el mismo contenedor, las alertas caen bajo el panel
+              sin depender de su altura. */}
+          <div className="home-lateral">
+            <Seguimientos />
+
+            {/* Alertas de vencimiento — visibles para cualquier usuario con sesión.
+                Si la consulta falla se avisa, en vez de dejar el hueco vacío: una
+                alerta que no llega no puede parecerse a que no haya ninguna. */}
+            {(alertas.length > 0 || errorAlertas) && (
+              <div className="home-alertas-container">
+                {errorAlertas ? (
+                  <div className="av-card av-card--fallo" role="alert">
+                    <p className="av-mensaje">
+                      No se pudieron cargar las alertas de licencias y pólizas.
+                      Recarga la página; si sigue igual, vuelve a iniciar sesión.
+                    </p>
+                  </div>
+                ) : (
+                  alertas.map((alerta, index) => (
+                    <AlertaVencimiento key={`${alerta.tipo}-${index}`} alerta={alerta} />
+                  ))
+                )}
               </div>
-            ) : (
-              alertas.map((alerta, index) => (
-                <AlertaVencimiento key={`${alerta.tipo}-${index}`} alerta={alerta} />
-              ))
             )}
           </div>
-        )}
 
-        <div className="home-head">
           <img src={logoFraba} alt="Logo Fraba" className="home-logo" />
           <h1>Control de Maniobras</h1>
           <p>Elige un módulo para comenzar.</p>

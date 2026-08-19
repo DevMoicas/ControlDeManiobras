@@ -84,6 +84,9 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  /* Ancla del panel de Seguimientos, que va a la altura del logo (ver
+     components/Seguimientos/Seguimientos.css). */
+  position: relative;
 }
 .home-logo {
   display: block;
@@ -92,7 +95,10 @@
   object-fit: contain;
   margin-bottom: 30px;
 }
-.home-head h1 {
+/* Hijos DIRECTOS a propósito: dentro de .home-head cuelga también la columna
+   .home-lateral (seguimientos + alertas de vencimiento), y como descendientes
+   estas reglas le repintaban los textos con el gris y la tipografía del título. */
+.home-head > h1 {
   font-family: 'Oswald', sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -101,7 +107,7 @@
   font-weight: 600;
   margin: 0;
 }
-.home-head p {
+.home-head > p {
   margin: 6px 0 0;
   color: var(--text-light);
   font-size: 0.98rem;
@@ -311,18 +317,45 @@ html, body, #root {
   margin: 0;
   padding: 0;
 }
-/* Contenedor de alertas de vencimiento en Home */
+/* Columna derecha del inicio: el panel de Seguimientos y, debajo, las alertas de
+   vencimiento. Fuera del flujo para no empujar el logo ni las tarjetas.
+
+   El `right` negativo rompe el ancho máximo de .home-main (1040 px centrados)
+   para anclarse al borde de la VENTANA: la distancia entre los dos bordes es
+   (100vw - ancho)/2, y 50% - 50vw la cancela. El número final es el margen con
+   el borde derecho de la página, y manda para las dos cosas de la columna. */
+.home-lateral {
+  position: absolute;
+  top: 0;
+  right: calc(50% - 50vw + 100px);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;   /* las alertas son más anchas que el panel: se alinean por la derecha */
+  gap: 16px;
+  text-align: left;        /* .home-head centra el texto; aquí no */
+}
+
 .home-alertas-container {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 16px;
-  justify-content: center;
-  padding: 16px 24px 8px;
-  /* Rompe el max-width de .home-main para llenar el ancho de la pantalla:
-     las alertas van en línea hasta el borde y solo ahí bajan de fila. */
-  width: 100vw;
-  margin-left: calc(-50vw + 50%);
   box-sizing: border-box;
+}
+
+/* En pantalla estrecha no hay hueco al lado del logo: la columna vuelve al flujo,
+   encima del logo y a todo el ancho, en vez de taparlo. */
+@media (max-width: 760px) {
+  .home-lateral {
+    position: static;
+    align-items: stretch;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  .home-alertas-container {
+    align-items: stretch;
+  }
 }
 
 /* Corrige home-page para que no compita con el flex del layout */
