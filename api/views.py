@@ -25,6 +25,7 @@ import io
 from datetime import date
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 from django.http import FileResponse, HttpResponse
 from openpyxl import load_workbook
 from PIL import Image
@@ -340,10 +341,18 @@ def _generar_pdf_cta_port(request_data, template_path, nombre_archivo_pdf: str, 
     else:
         es_carga_suelta = _es_carga_suelta(contenedor)
         es_full         = len(contenedor) > 12
-    cantidad_label  = 2 if es_full else 1
-    tipo_label      = 'CONTENEDORES' if es_full else 'CONTENEDOR'
-
     numero_1, numero_2, letra_1, letra_2 = _parsear_tipo(tipo)
+
+    # El conteo mira lo que se va a IMPRIMIR, no la etiqueta del servicio: los
+    # campos de la carga son editables en el modal y un Full puede salir con un
+    # solo contenedor (el otro viaja con otro operador). Si el tipo llega con un
+    # solo par, es 1 CONTENEDOR — nunca "1 CONTENEDORES".
+    # Acotado a quien manda tipo_servicio explícito: los registros anteriores a
+    # ese campo entran en es_full por la heurística del contenedor largo y su
+    # `tipo` puede traer un solo par, así que se les conserva el 2 de siempre.
+    lleva_dos = es_full and (not tipo_servicio or numero_2 or letra_2)
+    cantidad_label  = 2 if lleva_dos else 1
+    tipo_label      = 'CONTENEDORES' if cantidad_label > 1 else 'CONTENEDOR'
 
     clave_sat_celda = f"CLAVE SAT:{clave_sat}" if clave_sat else ''
 
@@ -560,18 +569,31 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='folios-recientes')
     def folios_recientes(self, request):
-        """Devuelve los últimos 30 registros de maniobras con folio no vacío,
-        incluyendo unidad (placas/tipo/modelo del tracto) y remolques para
-        autollenar los documentos a partir del folio elegido."""
+        """Devuelve UNA FILA POR FOLIO de las últimas 30 maniobras, incluyendo
+        unidad (placas/tipo/modelo del tracto) y remolques para autollenar los
+        documentos a partir del folio elegido.
+
+        Un Full repartido entre dos operadores gasta un folio por operador y
+        produce DOS filas: cada una con el operador, el tracto, los remolques y
+        el contenedor que le tocan. Así elegir el folio en el modal ya elige de
+        quién es el documento — no hace falta un selector de operador aparte."""
+        con_folio   = Q(folio__isnull=False)   & ~Q(folio='')
+        con_folio_2 = Q(folio_2__isnull=False) & ~Q(folio_2='')
         maniobras = (
             Maniobra.objects
-            .filter(folio__isnull=False)
-            .exclude(folio='')
+            .filter(con_folio | con_folio_2)
             .select_related('cliente_fk')
             .order_by('-id')[:30]
         )
         # Mapa placas → tracto: resuelve Tipo de Unidad y Modelo sin N consultas.
-        placas_unidad = {m.unidad for m in maniobras if m.unidad}
+        # Incluye los dos tractos: la Bitácora de Sueño del operador 2 necesita
+        # el suyo igual que la del 1.
+        placas_unidad = {
+            placas
+            for m in maniobras
+            for placas in (m.unidad, m.unidad_2)
+            if placas
+        }
         tractos = {
             t.placas: t
             for t in Tracto.objects.filter(placas__in=placas_unidad)
@@ -590,20 +612,35 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
 
         data = []
         for m in maniobras:
-            tracto = tractos.get(m.unidad)
             cliente = _resolver_cliente(m, clientes)
-            data.append({
+            # Dos operadores = el reparto ya está decidido en la maniobra, y cada
+            # folio lleva lo suyo. El front usa esto para NO ofrecer el
+            # desplegable 1/2/Los dos: el documento no debe poder contradecir lo
+            # guardado.
+            dos_operadores = bool(m.operador_2 or m.folio_2)
+
+            comun = {
                 'id':          m.id,
-                'folio':       m.folio or '',
                 'origen':      m.origen or '',
                 'destino':     m.destino or '',
-                'contenedor':  m.contenedor or '',
                 'ccp':         m.ccp or '',
                 'pedimento':   m.pedimento or '',
-                'tipo':        m.tipo or '',
-                'tipo_servicio': m.tipo_servicio or '',
-                'peso':        str(m.peso) if m.peso is not None else '',
                 'referencia':  m.referencia or '',
+                'tipo_servicio': m.tipo_servicio or '',
+                'dos_operadores': dos_operadores,
+                # La carga viaja EN CRUDO, las dos columnas tal cual, y el reparto
+                # lo hace cargaDeParte() en el front con `parte`. Es a propósito:
+                # los registros anteriores a la 0035 guardan los dos contenedores
+                # dentro de la primera columna ("20 - 40 / DC - HC") y partirlos
+                # aquí exigiría duplicar en Python el partidor que ya vive —y ya
+                # está probado— en utils/dobleValor.mjs. Dos copias de esa regla
+                # es justo como se separan con el tiempo.
+                'tipo':        m.tipo or '',
+                'peso':        str(m.peso) if m.peso is not None else '',
+                'contenedor':  m.contenedor or '',
+                'tipo_2':       m.tipo_2 or '',
+                'peso_2':       str(m.peso_2) if m.peso_2 is not None else '',
+                'contenedor_2': m.contenedor_2 or '',
                 # Fecha de entrega de la maniobra. OJO: el modelo dice DateField
                 # pero la columna REAL es TEXT (la tabla es managed=False, así que
                 # cambiar el modelo nunca alteró el esquema — ver schema.sql y la
@@ -614,13 +651,6 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
                 # Vacía si la maniobra aún no la tiene: entonces el gasto la deja
                 # en blanco y se elige a mano.
                 'fecha_entrega_mercancia': str(m.fecha_entrega_mercancia or ''),
-                # Operador, unidad y remolques del registro (autollenado de documentos)
-                'operador':    m.asignacion_operador_status or '',          # nombre del operador asignado
-                'placas':      m.unidad or '',                              # placas del tracto asignado
-                'tipo_unidad': (tracto.unidad if tracto else '') or '',     # Tipo de Unidad
-                'anio':        str(tracto.anio) if tracto and tracto.anio is not None else '',  # Modelo
-                'remolque_1':  m.remolque or '',
-                'remolque_2':  m.remolque_2 or '',
                 # Cliente del registro (autollenado de la Carta Porte). El nombre
                 # sale del catálogo cuando hay FK, así que un cliente renombrado
                 # allí se refleja aquí; `m.cliente` es el respaldo de los viejos.
@@ -631,7 +661,41 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
                 'cliente_domicilio': (cliente.domicilio if cliente else '') or '',
                 'cliente_colonia':   (cliente.colonia   if cliente else '') or '',
                 'cliente_ciudad':    (cliente.ciudad    if cliente else '') or '',
-            })
+            }
+
+            if m.folio:
+                tracto = tractos.get(m.unidad)
+                data.append({
+                    **comun,
+                    'folio':       m.folio,
+                    # Operador, unidad y remolques del registro (autollenado de documentos)
+                    'operador':    m.asignacion_operador_status or '',      # nombre del operador asignado
+                    'placas':      m.unidad or '',                          # placas del tracto asignado
+                    'tipo_unidad': (tracto.unidad if tracto else '') or '', # Tipo de Unidad
+                    'anio':        str(tracto.anio) if tracto and tracto.anio is not None else '',  # Modelo
+                    'remolque_1':  m.remolque or '',
+                    'remolque_2':  m.remolque_2 or '',
+                    # Con dos operadores este folio se queda SOLO con el primer
+                    # contenedor; con uno solo se lleva los dos y el desplegable
+                    # 1/2/Los dos decide (por defecto, los dos).
+                    'parte': '1' if dos_operadores else 'ambos',
+                })
+
+            if m.folio_2:
+                tracto_2 = tractos.get(m.unidad_2)
+                data.append({
+                    **comun,
+                    'folio':       m.folio_2,
+                    'operador':    m.operador_2 or '',
+                    'placas':      m.unidad_2 or '',
+                    'tipo_unidad': (tracto_2.unidad if tracto_2 else '') or '',
+                    'anio':        str(tracto_2.anio) if tracto_2 and tracto_2.anio is not None else '',
+                    'remolque_1':  m.remolque_3 or '',
+                    'remolque_2':  m.remolque_4 or '',
+                    # El folio del segundo operador se lleva el segundo contenedor,
+                    # esté guardado en su columna o todavía dentro de la primera.
+                    'parte': '2',
+                })
         return Response(data)
 
     def destroy(self, request, *args, **kwargs):
@@ -1004,11 +1068,19 @@ class FolioViewSet(viewsets.ModelViewSet):
         if tabla not in dict(Folio.TABLA_CHOICES):
             return Response({'detail': 'tabla inválida.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ponytail: "usado" se deriva de maniobras.folio, sin columna de estado —
-        # así vaciar o borrar una maniobra libera su folio sola. Sin índice en
-        # maniobras.folio: es un scan por apertura del desplegable; añadirlo si pesa.
-        usados = (Maniobra.objects.exclude(folio__isnull=True).exclude(folio='')
-                  .values_list('folio', flat=True))
+        # ponytail: "usado" se deriva de maniobras.folio/folio_2, sin columna de
+        # estado — así vaciar o borrar una maniobra libera sus folios sola. Sin
+        # índice en ninguna de las dos: es un scan por apertura del desplegable;
+        # añadirlo si pesa.
+        # Las DOS columnas cuentan: un Full repartido entre dos operadores gasta
+        # un folio por operador, y omitir folio_2 aquí volvería a ofrecer como
+        # libre uno ya asignado (mismo motivo que la validación del serializer).
+        usados = [
+            codigo
+            for fila in Maniobra.objects.values_list('folio', 'folio_2')
+            for codigo in fila
+            if codigo
+        ]
         # asignacion='' — un folio con algo escrito a mano en ASIGNACIÓN cuenta
         # como ocupado. Es la vía para cargar talonarios viejos (lotes anteriores)
         # y marcar los que ya se usaron fuera del sistema, sin columna de estado.

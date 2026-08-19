@@ -105,6 +105,26 @@ class Maniobra(models.Model):
     ruta_inicio = models.DateTimeField(null=True, blank=True)
     ruta_fin    = models.DateTimeField(null=True, blank=True)
 
+    # ── Segundo operador (migración 0035) ────────────────────────────────────
+    # Un Full puede repartirse entre dos operadores: cada uno se lleva UN
+    # contenedor con su propio tracto y sus remolques. El reparto es posicional
+    # y fijo: folio/contenedor/tipo/peso + unidad + remolque/remolque_2 son del
+    # operador 1; los campos _2 y remolque_3/4 son del operador 2.
+    #
+    # La carga va en columnas propias (no partiendo la cadena "A / B" del
+    # formato viejo) porque facturación y nóminas necesitan saber qué operador
+    # se llevó qué contenedor sin partir texto en SQL. Los registros anteriores
+    # a esta migración conservan los dos valores dentro de la columna 1: NO hay
+    # backfill, el frontend lee los dos formatos y migra cada fila al editarla.
+    operador_2 = models.CharField(max_length=100, null=True, blank=True)
+    unidad_2 = models.CharField(max_length=100, null=True, blank=True)
+    folio_2 = models.CharField(max_length=100, null=True, blank=True)
+    remolque_3 = models.CharField(max_length=255, null=True, blank=True)
+    remolque_4 = models.CharField(max_length=100, null=True, blank=True)
+    tipo_2 = models.CharField(max_length=100, null=True, blank=True)
+    peso_2 = models.CharField(max_length=50, null=True, blank=True)
+    contenedor_2 = models.CharField(max_length=255, null=True, blank=True)
+
     # Una maniobra puede tener hasta 2 status a la vez. Se guardan en este mismo
     # campo separados por coma, SIEMPRE en orden de prioridad descendente:
     #     por_salir > activo > quemada > pendiente

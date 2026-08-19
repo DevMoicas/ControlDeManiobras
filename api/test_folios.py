@@ -339,3 +339,44 @@ class FoliosEnManiobrasTests(BaseFolios):
         r = self.cliente.patch(f'/api/maniobras/{maniobra.id}/',
                                {'solicita': 'cambiada', 'folio': 'F-2279'}, format='json')
         self.assertEqual(r.status_code, 200)
+
+    # ── Segundo operador: folio_2 cuenta igual que folio ──────────────────
+    # Un Full repartido gasta un folio por operador. Si estas dos columnas no se
+    # miran juntas, un folio puesto como folio_2 se vuelve a ofrecer como libre
+    # y acaba en dos maniobras — en documentos fiscales.
+    def test_un_folio_usado_como_folio_2_desaparece_de_la_lista(self):
+        self.generar('manzanillo')
+        Maniobra.objects.create(solicita='prueba', folio='R-2280', folio_2='F-2279')
+        codigos = [f['codigo'] for f in self.disponibles('manzanillo').data]
+        self.assertNotIn('F-2279', codigos)
+        self.assertNotIn('R-2280', codigos)
+
+    def test_no_se_puede_dar_a_otra_maniobra_un_folio_ya_usado_como_folio_2(self):
+        Maniobra.objects.create(solicita='prueba', folio='R-2280', folio_2='F-2279')
+        r = self.cliente.post('/api/maniobras/',
+                              {'solicita': 'otra', 'folio': 'F-2279'}, format='json')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('ya está usado', str(r.data.get('detail', '')))
+
+    def test_no_se_puede_repetir_el_mismo_folio_en_los_dos_operadores(self):
+        r = self.cliente.post('/api/maniobras/',
+                              {'solicita': 'otra', 'folio': 'F-2279', 'folio_2': 'F-2279'},
+                              format='json')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('los dos operadores', str(r.data.get('detail', '')))
+
+    def test_un_patch_solo_de_folio_2_choca_con_el_folio_que_ya_tiene(self):
+        """El PATCH parcial no manda `folio`: sin leerlo de la fila, este choque
+        pasaría desapercibido y la maniobra acabaría con el folio duplicado."""
+        maniobra = Maniobra.objects.create(solicita='prueba', folio='F-2279')
+        r = self.cliente.patch(f'/api/maniobras/{maniobra.id}/',
+                               {'folio_2': 'F-2279'}, format='json')
+        self.assertEqual(r.status_code, 400)
+
+    def test_asignar_un_segundo_folio_libre_funciona(self):
+        maniobra = Maniobra.objects.create(solicita='prueba', folio='F-2279')
+        r = self.cliente.patch(f'/api/maniobras/{maniobra.id}/',
+                               {'folio_2': 'R-2280'}, format='json')
+        self.assertEqual(r.status_code, 200, r.data)
+        maniobra.refresh_from_db()
+        self.assertEqual(maniobra.folio_2, 'R-2280')

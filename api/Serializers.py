@@ -5,6 +5,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
 from django.core.validators import RegexValidator, MinLengthValidator, MaxLengthValidator
 from django.db import transaction
+from django.db.models import Q
 from django_otp import devices_for_user, match_token
 from .db_context import get_db_alias
 from . import confianza
@@ -100,14 +101,37 @@ class ManiobraSerializer(serializers.ModelSerializer):
         # época del campo de texto libre pueden venir duplicados y editarles otra
         # cosa no debe fallar por eso. El error va bajo 'detail' porque es la única
         # clave que lee el apiClient del frontend.
-        folio = (data.get('folio') or '').strip()
-        if folio and (self.instance is None or (self.instance.folio or '') != folio):
-            otras = Maniobra.objects.filter(folio=folio)
+        #
+        # Desde el segundo operador hay DOS columnas de folio y cada una se compara
+        # contra las dos de las demás filas: sin esto un folio puesto como folio_2
+        # se ofrecería otra vez como libre (ver FolioViewSet.disponibles).
+        def _folio_efectivo(campo):
+            # En un PATCH parcial el campo que no viene se toma de la fila, o el
+            # folio_2 nuevo podría chocar con el folio que ya tiene guardado.
+            if campo in data:
+                return (data.get(campo) or '').strip()
+            return (getattr(self.instance, campo, None) or '').strip() if self.instance else ''
+
+        folio   = _folio_efectivo('folio')
+        folio_2 = _folio_efectivo('folio_2')
+
+        if folio and folio == folio_2:
+            raise serializers.ValidationError(
+                {'detail': f'El folio "{folio}" no puede estar en los dos operadores.'}
+            )
+
+        for campo, valor in (('folio', folio), ('folio_2', folio_2)):
+            if not valor:
+                continue
+            anterior = (getattr(self.instance, campo, None) or '').strip() if self.instance else ''
+            if valor == anterior:
+                continue
+            otras = Maniobra.objects.filter(Q(folio=valor) | Q(folio_2=valor))
             if self.instance is not None:
                 otras = otras.exclude(pk=self.instance.pk)
             if otras.exists():
                 raise serializers.ValidationError(
-                    {'detail': f'El folio "{folio}" ya está usado en otra maniobra.'}
+                    {'detail': f'El folio "{valor}" ya está usado en otra maniobra.'}
                 )
         return data
     

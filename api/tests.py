@@ -251,3 +251,13 @@ class CtaPortTipoServicioTests(SimpleTestCase):
 		self.assertEqual(ws['A18'].value, '14')
 		self.assertEqual(ws['B18'].value, 'CARTONES')
 		self.assertEqual(ws['C17'].value, 'CARGA SUELTA')
+
+	def test_full_con_un_solo_par_cuenta_uno(self):
+		# La carga es editable en el modal: un Full puede salir con un solo
+		# contenedor (el otro viaja con otro operador). El conteo sigue a lo que
+		# se imprime, así que aquí es 1 CONTENEDOR — nunca "1 CONTENEDORES".
+		ws = self._celdas(tipo_servicio='full', tipo='40 / HC',
+		                  contenedor='CBHU4284545')
+		self.assertEqual(ws['A17'].value, 1)
+		self.assertEqual(ws['B17'].value, 'CONTENEDOR')
+		self.assertIsNone(ws['A19'].value)
