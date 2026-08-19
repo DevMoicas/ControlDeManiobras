@@ -501,15 +501,25 @@ class ChoferViewSet(viewsets.ModelViewSet):
             )
         return super().destroy(request, *args, **kwargs)
 
-class ManiobraFilter(django_filters.FilterSet):
-    """El campo `status` guarda hasta 2 status separados por coma ("activo,quemada").
+def filtro_status(valor):
+    """Maniobras que tienen `valor` entre sus status.
 
-    Con el filtro exacto de antes, ?status=activo dejaba fuera a esa maniobra. Aquí
-    se busca el valor como SEGMENTO completo del combo: las anclas (^|,) y (,|$)
-    cubren de una sola vez los tres casos (va solo, va primero, va segundo) y evitan
-    falsos positivos por coincidencia parcial si algún día un id fuera substring
-    de otro.
+    El campo guarda hasta 2 status separados por coma ("activo,quemada"), así que
+    un filtro exacto dejaría fuera a esa maniobra. Se busca el valor como SEGMENTO
+    completo del combo: las anclas (^|,) y (,|$) cubren de una sola vez los tres
+    casos (va solo, va primero, va segundo) y evitan falsos positivos por
+    coincidencia parcial si algún día un id fuera substring de otro.
+
+    Vive suelto porque lo usan el filtro de la lista y el conteo de
+    `resumen_status`: con una copia en cada sitio, un cambio en la regla se
+    aplicaría solo a la mitad y la tabla y el panel dirían cosas distintas.
     """
+    return Q(status__regex=rf"(^|,){re.escape(valor)}(,|$)")
+
+
+class ManiobraFilter(django_filters.FilterSet):
+    """Filtros de la lista de maniobras. La regla del status vive en
+    `filtro_status` porque el panel de seguimientos cuenta con la misma."""
     status = django_filters.CharFilter(method="filter_status")
     # Bandera TERCERO (columna `tercero`): el front solo manda ?tercero=1 cuando
     # quiere ver únicamente los registros marcados, así que la presencia del
@@ -521,7 +531,7 @@ class ManiobraFilter(django_filters.FilterSet):
         fields = ["status", "tercero"]
 
     def filter_status(self, queryset, name, value):
-        return queryset.filter(status__regex=rf"(^|,){re.escape(value)}(,|$)")
+        return queryset.filter(filtro_status(value))
 
     def filter_tercero(self, queryset, name, value):
         return queryset.exclude(tercero__isnull=True).exclude(tercero="")
@@ -566,6 +576,24 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
             if not es_valido:
                 return Response({'detail': mensaje}, status=400)
         return super().update(request, *args, **kwargs)
+
+    @action(detail=False, methods=['get'], url_path='resumen-status')
+    def resumen_status(self, request):
+        """Cuántas maniobras hay en cada status. Alimenta el panel SEGUIMIENTOS
+        de la pantalla de inicio.
+
+        Existe en vez de contarlo desde el cliente porque la lista va paginada de
+        60 en 60 y `page_size` no es configurable: leer el `count` desde el front
+        obligaría a traerse 60 registros completos por cada status para mostrar
+        dos números. Aquí son dos COUNT(*) y dos enteros.
+
+        Cuenta por segmento (ver filtro_status): una maniobra "por_salir,activo"
+        cuenta como activa, igual que en el filtro de la tabla.
+        """
+        return Response({
+            estado: Maniobra.objects.filter(filtro_status(estado)).count()
+            for estado in ('activo', 'pendiente')
+        })
 
     @action(detail=False, methods=['get'], url_path='folios-recientes')
     def folios_recientes(self, request):
@@ -623,7 +651,6 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
                 'id':          m.id,
                 'origen':      m.origen or '',
                 'destino':     m.destino or '',
-                'ccp':         m.ccp or '',
                 'pedimento':   m.pedimento or '',
                 'referencia':  m.referencia or '',
                 'tipo_servicio': m.tipo_servicio or '',
@@ -668,6 +695,9 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
                 data.append({
                     **comun,
                     'folio':       m.folio,
+                    # El CCP es de cada operador: la remisión del documento se
+                    # compone como "folio / ccp", así que va emparejado al folio.
+                    'ccp':         m.ccp or '',
                     # Operador, unidad y remolques del registro (autollenado de documentos)
                     'operador':    m.asignacion_operador_status or '',      # nombre del operador asignado
                     'placas':      m.unidad or '',                          # placas del tracto asignado
@@ -686,6 +716,7 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
                 data.append({
                     **comun,
                     'folio':       m.folio_2,
+                    'ccp':         m.ccp_2 or '',
                     'operador':    m.operador_2 or '',
                     'placas':      m.unidad_2 or '',
                     'tipo_unidad': (tracto_2.unidad if tracto_2 else '') or '',

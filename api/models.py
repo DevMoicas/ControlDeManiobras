@@ -124,6 +124,10 @@ class Maniobra(models.Model):
     tipo_2 = models.CharField(max_length=100, null=True, blank=True)
     peso_2 = models.CharField(max_length=50, null=True, blank=True)
     contenedor_2 = models.CharField(max_length=255, null=True, blank=True)
+    # CCP del operador 2 (migración 0036). La remisión del documento es
+    # "folio / ccp", así que cada operador necesita el suyo o la carta porte del
+    # segundo saldría con el CCP del primero.
+    ccp_2 = models.CharField(max_length=100, null=True, blank=True)
 
     # Una maniobra puede tener hasta 2 status a la vez. Se guardan en este mismo
     # campo separados por coma, SIEMPRE en orden de prioridad descendente:
