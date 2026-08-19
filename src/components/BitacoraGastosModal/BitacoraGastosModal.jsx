@@ -7,7 +7,6 @@ import OperadorSelector from "../OperadorSelector/OperadorSelector";
 import PlacasSelector from "../PlacasSelector/PlacasSelector";
 import RemolqueSelector from "../RemolqueSelector/RemolqueSelector";
 import FolioSelector from "../FolioSelector/FolioSelector";
-import { esServicioFull } from "../TipoServicioSelector/TipoServicioSelector";
 import { sumarPeso } from "../../utils/sumarPeso.mjs";
 import "./BitacoraGastosModal.css";
 
@@ -69,9 +68,6 @@ export default function BitacoraGastosModal({ onCerrar }) {
     return () => clearTimeout(t);
   }, [exito]);
 
-  // Remolque 2 solo aplica en viajes full, igual que en los otros tres modales.
-  const remolque2Habilitado = esServicioFull(maniobra1);
-
   // El peso se CALCULA, nunca se teclea: lo que se pinta es lo que se manda.
   const pesoTotal = sumarPeso(
     maniobra1?.peso ?? "",
@@ -94,7 +90,7 @@ export default function BitacoraGastosModal({ onCerrar }) {
       operador:   maniobra.operador   || "",
       placas:     maniobra.placas     || "",
       remolque_1: maniobra.remolque_1 || "",
-      remolque_2: esServicioFull(maniobra) ? (maniobra.remolque_2 || "") : "",
+      remolque_2: maniobra.remolque_2 || "",
     }));
   };
 
@@ -267,7 +263,7 @@ export default function BitacoraGastosModal({ onCerrar }) {
           <div className="bgm-seccion">
             <h3 className="bgm-seccion-titulo">Destino</h3>
             <div className="bgm-campo">
-              <label className="bgm-label">Destino (editable)</label>
+              <label className="bgm-label">Destino</label>
               <input
                 type="text"
                 className="bgm-input"
@@ -311,7 +307,7 @@ export default function BitacoraGastosModal({ onCerrar }) {
                 <RemolqueSelector
                   currentValue={datos.remolque_2}
                   onSelect={handleRemolque2}
-                  disabled={!remolque2Habilitado}
+                  disabled={false}
                 />
               </div>
             </div>

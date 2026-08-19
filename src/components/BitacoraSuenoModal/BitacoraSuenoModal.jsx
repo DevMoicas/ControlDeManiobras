@@ -11,7 +11,6 @@ import OperadorSelector from "../OperadorSelector/OperadorSelector";
 import PlacasSelector from "../PlacasSelector/PlacasSelector";
 import RemolqueSelector from "../RemolqueSelector/RemolqueSelector";
 import FolioSelector from "../FolioSelector/FolioSelector";
-import { esServicioFull } from "../TipoServicioSelector/TipoServicioSelector";
 import "react-datepicker/dist/react-datepicker.css";
 import "./BitacoraSuenoModal.css";
 
@@ -114,11 +113,6 @@ export default function BitacoraSuenoModal({ onCerrar }) {
   };
 
   const folioFinal = empate && folio2 ? `${datos.folio}, ${folio2}` : datos.folio;
-
-  // ── Lógica remolque 2: habilitado solo en viajes full ──────────────────────
-  // Lo dictamina el tipo_servicio de la maniobra; los registros anteriores a ese
-  // campo caen a la heurística vieja (contenedor > 12 caracteres).
-  const remolque2Habilitado = esServicioFull(datos);
 
   // ── Generar PDF ────────────────────────────────────────────────────────────
 
@@ -261,13 +255,10 @@ export default function BitacoraSuenoModal({ onCerrar }) {
                 <RemolqueSelector
                   currentValue={datos.remolque_2}
                   onSelect={handleRemolque2}
-                  disabled={!remolque2Habilitado}
+                  disabled={false}
                 />
               </div>
             </div>
-            {datos.folio && !remolque2Habilitado && (
-              <p className="bsm-hint">Remolque 2 disponible solo para viajes con tipo de servicio Full.</p>
-            )}
           </div>
 
           {/* Tipo de Unidad y Modelo — solo lectura, auto-llenados */}

@@ -30,7 +30,7 @@ import { registerLocale } from "react-datepicker";
 import es from "date-fns/locale/es";
 import FotoModal from "../components/FotoModal/FotoModal";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
-import { partirDoble, unirDoble } from "../utils/dobleValor.mjs";
+import { partirDoble, partirTipoFull, leerPar } from "../utils/dobleValor.mjs";
 registerLocale("es", es);
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -87,35 +87,16 @@ function TipoSplitInput({ value, onChange, disabled, idPrefix }) {
 // dos formas (_sumar_peso) y en Contenedor imprime el texto tal cual en C17, así
 // que al editar se conserva el separador que traía — ver utils/dobleValor.mjs.
 
-// partirDoble / unirDoble viven en utils/dobleValor.mjs: parten por '-' Y por '/'
-// (el histórico usa las dos) y devuelven el separador para no reescribirlo al
-// guardar. Módulo suelto para poder probarlo con node --test.
-
-// "20 / DC" → ["20", "DC"]  (el formato que emite TipoSplitInput)
-function partesDelPar(par) {
-  const p = String(par || "").split("/");
-  return [(p[0] || "").trim(), (p[1] || "").trim()];
-}
-
-// "20 - 40 / DC - HC" → ["20 / DC", "40 / HC"]
-function partirTipoFull(tipo) {
-  const [izquierda, derecha] = partesDelPar(tipo);
-  const [n1, n2] = partirDoble(izquierda);
-  const [l1, l2] = partirDoble(derecha);
-  return [
-    n1 || l1 ? `${n1} / ${l1}` : "",
-    n2 || l2 ? `${n2} / ${l2}` : "",
-  ];
-}
-
-// ["20 / DC", "40 / HC"] → "20 - 40 / DC - HC"
-function unirTipoFull(par1, par2) {
-  const [n1, l1] = partesDelPar(par1);
-  const [n2, l2] = partesDelPar(par2);
-  const numeros = unirDoble(n1, n2);
-  const letras  = unirDoble(l1, l2);
-  return numeros || letras ? `${numeros} / ${letras}` : "";
-}
+// partirDoble / unirDoble / partirTipoFull / leerPar viven en utils/dobleValor.mjs:
+// parten por '-' Y por '/' (el histórico usa las dos) y devuelven el separador
+// para no reescribirlo al guardar. Módulo suelto para poder probarlo con
+// node --test, y compartido con los modales de documentos.
+//
+// Desde la 0035 cada mitad de la carga tiene SU columna (tipo_2, peso_2,
+// contenedor_2) porque facturación necesita saber qué operador se llevó qué
+// contenedor. Los registros anteriores traen las dos dentro de la primera:
+// leerPar() devuelve el par venga en el formato que venga, y escribir va
+// siempre a las dos columnas, así que cada fila se migra al editarla.
 
 // Cambiar el tipo de servicio colapsa los campos que dejan de tener dos inputs,
 // para no arrastrar el segundo valor de un Full a un servicio que ya no lo usa.
@@ -127,9 +108,16 @@ function aplicarCambioTipoServicio(datos, onChange, nuevo) {
   // cambio de nada, así que solo se quita la etiqueta y la carga se queda como
   // está — que es justo el estado de los registros anteriores al campo.
   if (!nuevo || nuevo === "full") return;
-  onChange("peso",       partirDoble(datos.peso)[0]);
-  onChange("contenedor", partirDoble(datos.contenedor)[0]);
-  if (nuevo === "sencillo") onChange("tipo", partirTipoFull(datos.tipo)[0]);
+  // Se colapsa leyendo el par (los registros viejos traen los dos valores en la
+  // columna 1) y se limpia la columna 2, que es donde vive ahora el segundo.
+  onChange("peso",         leerPar(datos.peso, datos.peso_2)[0]);
+  onChange("peso_2",       "");
+  onChange("contenedor",   leerPar(datos.contenedor, datos.contenedor_2)[0]);
+  onChange("contenedor_2", "");
+  if (nuevo === "sencillo") {
+    onChange("tipo",   leerPar(datos.tipo, datos.tipo_2, partirTipoFull)[0]);
+    onChange("tipo_2", "");
+  }
 }
 
 // ── Folios: qué tabla toca según la plaza del viaje ───────────────────────────
@@ -161,23 +149,32 @@ function aplicarCambioPlaza(datos, onChange, key, valor) {
   onChange(key, valor);
   const antes = tablaDeFolios(datos);
   const ahora = tablaDeFolios({ ...datos, [key]: valor });
-  if (ahora !== antes) onChange("folio", "");
+  // Los dos folios salen de la MISMA secuencia de la plaza, así que al saltar de
+  // tabla se pierden los dos; si no, el del operador 2 quedaría con un código de
+  // la otra plaza (y ocupándolo para siempre).
+  if (ahora !== antes) {
+    onChange("folio", "");
+    onChange("folio_2", "");
+  }
 }
 
 // Full: dos inputs "TIPO DE CARGA" apilados, uno por contenedor.
-function TipoFullInput({ value, onChange, disabled, idPrefix }) {
-  const [par1, par2] = partirTipoFull(value);
+// Cada hueco guarda en SU columna: el de arriba es del operador 1 y el de abajo
+// del operador 2. `onChange(a, b)` escribe las dos de una vez para que nunca
+// queden a medias. Mismo aspecto que antes de la 0035.
+function TipoFullInput({ value, value2, onChange, disabled, idPrefix }) {
+  const [par1, par2] = leerPar(value, value2, partirTipoFull);
   return (
     <div className="tipo-full-input">
       <TipoSplitInput
         value={par1}
-        onChange={(v) => onChange(unirTipoFull(v, par2))}
+        onChange={(v) => onChange(v, par2)}
         disabled={disabled}
         idPrefix={idPrefix ? `${idPrefix}-1` : undefined}
       />
       <TipoSplitInput
         value={par2}
-        onChange={(v) => onChange(unirTipoFull(par1, v))}
+        onChange={(v) => onChange(par1, v)}
         disabled={disabled}
         idPrefix={idPrefix ? `${idPrefix}-2` : undefined}
       />
@@ -185,19 +182,16 @@ function TipoFullInput({ value, onChange, disabled, idPrefix }) {
   );
 }
 
-// Full: dos inputs en una celda (peso y contenedor), guardados como "A - B".
-function DobleInput({ value, onChange, disabled, etiqueta, idPrefix }) {
-  // El separador viaja con el valor: si el dato venía como "A/B" se vuelve a
-  // guardar como "A/B", no como "A - B" — el contenedor se imprime tal cual en
-  // el documento y reescribirlo cambiaría lo que sale en el PDF.
-  const [a, b, sep] = partirDoble(value);
+// Full: dos inputs en una celda (peso y contenedor), cada uno en su columna.
+function DobleInput({ value, value2, onChange, disabled, etiqueta, idPrefix }) {
+  const [a, b] = leerPar(value, value2);
   return (
     <div className="tipo-split-input">
       <input
         id={idPrefix ? `${idPrefix}-1` : undefined}
         type="text"
         value={a}
-        onChange={(e) => onChange(unirDoble(e.target.value, b, sep))}
+        onChange={(e) => onChange(e.target.value, b)}
         placeholder={`${etiqueta} 1`}
         aria-label={`${etiqueta} 1`}
         disabled={disabled}
@@ -208,7 +202,7 @@ function DobleInput({ value, onChange, disabled, etiqueta, idPrefix }) {
         id={idPrefix ? `${idPrefix}-2` : undefined}
         type="text"
         value={b}
-        onChange={(e) => onChange(unirDoble(a, e.target.value, sep))}
+        onChange={(e) => onChange(a, e.target.value)}
         placeholder={`${etiqueta} 2`}
         aria-label={`${etiqueta} 2`}
         disabled={disabled}
@@ -237,9 +231,12 @@ const COLUMNAS = [
   { key: "fecha_pis", label: "Fecha PIS", sortable: true },
   { key: "horario", label: "Horario", isHora: true },
   { key: "tipo_servicio", label: "TIPO DE SERVICIO", isTipoServicio: true },
-  { key: "tipo",  label: "TIPO DE CARGA", isTipo: true },
-  { key: "peso",  label: "Peso", isDoble: true, max: 50 },
-  { key: "contenedor", label: "Contenedor", isDoble: true, max: 255 },
+  // key2 = la columna del segundo contenedor. La celda sigue viéndose igual (dos
+  // huecos en Full), pero cada hueco guarda en la suya para que facturación
+  // sepa qué se llevó cada operador sin partir texto en SQL.
+  { key: "tipo",  label: "TIPO DE CARGA", isTipo: true, key2: "tipo_2" },
+  { key: "peso",  label: "Peso", isDoble: true, max: 50, key2: "peso_2" },
+  { key: "contenedor", label: "Contenedor", isDoble: true, max: 255, key2: "contenedor_2" },
   { key: "referencia", label: "Referencia", inline: true, max: 255 },
   { key: "pedimento", label: "Pedimento", inline: true, max: 255 },
   { key: "cliente", label: "Cliente", isCliente: true },
@@ -252,6 +249,16 @@ const COLUMNAS = [
   { key: "remolque",   label: "Remolque 1", isRemolque: true },
   { key: "remolque_2", label: "Remolque 2", isRemolque2: true },
   { key: "folio", label: "Folio", isFolio: true },
+  // ── Segundo operador ───────────────────────────────────────────────────────
+  // Un Full puede repartirse entre dos: cada uno se lleva UN contenedor con su
+  // tracto y sus remolques, y gasta su propio folio. Todo lo que cuelga del
+  // operador 2 (`requiereOperador2`) permanece oculto mientras no se le asigne
+  // uno: sin operador no hay a quién asignarle folio, unidad ni remolques.
+  { key: "operador_2", label: "Operador 2", isOperador: true },
+  { key: "unidad_2", label: "Unidad 2", isPlacas: true, requiereOperador2: true },
+  { key: "remolque_3", label: "Remolque 3", isRemolque: true, requiereOperador2: true },
+  { key: "remolque_4", label: "Remolque 4", isRemolque: true, requiereOperador2: true },
+  { key: "folio_2", label: "Folio 2", isFolio: true, requiereOperador2: true },
   { key: "vacio_patio", label: "Vacio Patio", isPatio: true },
   { key: "status_vacio", label: "Status Vacío", isStatusVacio: true },
   { key: "fecha_entrega_mercancia", label: "Entrega Mercancía", sortable: true },
@@ -269,6 +276,9 @@ const MANIOBRA_VACIA = {
   cliente: "", cliente_id: null, origen: "", destino: "", transportista: "", tercero: "", asignacion_operador_status: "",
   unidad: "", remolque: "", remolque_2: "", folio: "", vacio_patio: "", status_vacio: "",
   fecha_entrega_mercancia: "", no_factura: "", ccp: "", ruta_inicio: "", ruta_fin: "",
+  // Segundo operador y su carga (migración 0035)
+  operador_2: "", unidad_2: "", folio_2: "", remolque_3: "", remolque_4: "",
+  tipo_2: "", peso_2: "", contenedor_2: "",
 };
 
 const MODAL_CERRADO = { abierto: false, datos: null };
@@ -379,7 +389,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
     <tr>
       {COLUMNAS.map((col) => (
         <td key={col.key}>
-          {col.sortable ? (
+          {col.requiereOperador2 && !datos.operador_2 ? null : col.sortable ? (
             <DatePicker
               locale="es"
               dateFormat="dd/MM/yyyy"
@@ -495,7 +505,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
             <RemolqueSelector
               currentValue={datos[col.key]}
               onSelect={(val) => onChange(col.key, val)}
-              disabled={isSubmitting || !esFull}
+              disabled={isSubmitting}
             />
           ) : col.isTipoServicio ? (
             <TipoServicioSelector
@@ -507,7 +517,8 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
             esFull ? (
               <TipoFullInput
                 value={datos[col.key]}
-                onChange={(val) => onChange(col.key, val)}
+                value2={datos[col.key2]}
+                onChange={(a, b) => { onChange(col.key, a); onChange(col.key2, b); }}
                 disabled={isSubmitting}
               />
             ) : (
@@ -520,7 +531,8 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
           ) : col.isDoble && esFull ? (
             <DobleInput
               value={datos[col.key]}
-              onChange={(val) => onChange(col.key, val)}
+              value2={datos[col.key2]}
+              onChange={(a, b) => { onChange(col.key, a); onChange(col.key2, b); }}
               disabled={isSubmitting}
               etiqueta={col.label}
             />
@@ -576,7 +588,7 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
         </div>
         <form onSubmit={onGuardar} className="modal-form">
           <div className="modal-grid">
-            {COLUMNAS.map((col) => (
+            {COLUMNAS.filter((col) => !col.requiereOperador2 || datos.operador_2).map((col) => (
               <div key={col.key} className="modal-campo">
                 <label htmlFor={`edit-${col.key}`}>{col.label}</label>
                 {col.sortable ? (
@@ -698,7 +710,7 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                   <RemolqueSelector
                     currentValue={datos[col.key] ?? ""}
                     onSelect={(val) => onChange(col.key, val)}
-                    disabled={isSubmitting || !esFull}
+                    disabled={isSubmitting}
                   />
                 ) : col.isTipoServicio ? (
                   <TipoServicioSelector
@@ -711,7 +723,8 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     <TipoFullInput
                       idPrefix={`edit-${col.key}`}
                       value={datos[col.key] ?? ""}
-                      onChange={(val) => onChange(col.key, val)}
+                      value2={datos[col.key2] ?? ""}
+                      onChange={(a, b) => { onChange(col.key, a); onChange(col.key2, b); }}
                       disabled={isSubmitting}
                     />
                   ) : (
@@ -726,7 +739,8 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                   <DobleInput
                     idPrefix={`edit-${col.key}`}
                     value={datos[col.key] ?? ""}
-                    onChange={(val) => onChange(col.key, val)}
+                    value2={datos[col.key2] ?? ""}
+                    onChange={(a, b) => { onChange(col.key, a); onChange(col.key2, b); }}
                     disabled={isSubmitting}
                     etiqueta={col.label}
                   />
@@ -768,16 +782,39 @@ const FilaManiobra = memo(function FilaManiobra({
   // servir. Así solo se re-renderiza la fila que se está editando.
   const [celdaEditando, setCeldaEditando] = useState(null); // col.key | null
   const [valorEditando, setValorEditando] = useState("");
+  // Segunda mitad de la carga de un Full (tipo_2/peso_2/contenedor_2). Solo la
+  // usan las celdas con dos huecos; en el resto se queda a "" y no estorba.
+  const [valorEditando2, setValorEditando2] = useState("");
+
+  // La carga se parte en dos columnas SOLO en Full: fuera de ahí la segunda no
+  // se toca (y aplicarCambioTipoServicio ya la vacía al salir de Full).
+  const dosColumnas = (col) => Boolean(col.key2) && esFull;
 
   const guardar = (campos) => onGuardarCampos(maniobra.id, campos);
 
   const iniciarEdicion = (col) => {
     setCeldaEditando(col.key);
-    setValorEditando(maniobra[col.key] ?? "");
+    // leerPar para que un registro del formato viejo ("A - B" en la columna 1)
+    // se abra ya repartido en los dos huecos.
+    const [a, b] = dosColumnas(col)
+      ? leerPar(maniobra[col.key], maniobra[col.key2], col.isTipo ? partirTipoFull : partirDoble)
+      : [maniobra[col.key] ?? "", ""];
+    setValorEditando(a);
+    setValorEditando2(b);
   };
 
   const confirmarEdicion = async (col) => {
     const valor = col.obligatorio ? valorEditando.trim() : valorEditando;
+    if (dosColumnas(col)) {
+      // Las dos mitades viajan juntas: mandar solo la primera dejaría la segunda
+      // con el valor viejo, y un registro del formato antiguo quedaría duplicado
+      // (los dos valores en la columna 1 y otra vez el segundo en la 2).
+      const cambio = valor !== (maniobra[col.key] ?? "")
+                  || valorEditando2 !== (maniobra[col.key2] ?? "");
+      if (cambio) await guardar({ [col.key]: valor, [col.key2]: valorEditando2 });
+      setCeldaEditando(null);
+      return;
+    }
     // Vaciar una columna obligatoria se descarta aquí en vez de mandar un PATCH
     // que el backend va a rechazar igualmente (allow_blank=False en el serializer).
     const hayCambio = valor !== (maniobra[col.key] ?? "") && !(col.obligatorio && !valor);
@@ -810,7 +847,11 @@ const FilaManiobra = memo(function FilaManiobra({
     // Salir de Full descarta el segundo valor de peso/contenedor/tipo. En el modal
     // se puede cancelar antes de guardar; aquí el clic escribe directo, así que se
     // pregunta — pero solo cuando de verdad hay un segundo valor que perder.
-    const pierdeDatos = ["peso", "contenedor", "tipo"].some(
+    // Las columnas _2 entran en la cuenta: en un registro ya migrado el segundo
+    // valor vive SOLO ahí, así que mirando únicamente peso/contenedor/tipo el
+    // borrado pasaría sin preguntar.
+    const pierdeDatos = ["peso", "contenedor", "tipo",
+                         "peso_2", "contenedor_2", "tipo_2"].some(
       (k) => campos[k] !== undefined && campos[k] !== (maniobra[k] ?? "")
     );
     if (pierdeDatos && !await preguntar({
@@ -843,6 +884,11 @@ const FilaManiobra = memo(function FilaManiobra({
   );
 
   const renderCelda = (col) => {
+    // Folio 2, Unidad 2 y sus remolques no existen hasta que hay un segundo
+    // operador a quien asignárselos: la columna sigue en la tabla (es global),
+    // pero la celda queda vacía en las filas que no lo tienen.
+    if (col.requiereOperador2 && !maniobra.operador_2) return null;
+
     // ── Selectores: montados siempre, igual que Status Vacío y Tercero ya lo
     // estaban. Cerrados solo cuestan un <button>: ninguno pide su catálogo hasta
     // que se abre (ver el `if (!open) return` de sus useEffect).
@@ -922,7 +968,7 @@ const FilaManiobra = memo(function FilaManiobra({
       <RemolqueSelector
         currentValue={maniobra[col.key]}
         onSelect={(val) => guardar({ [col.key]: val })}
-        disabled={isSubmitting || (col.isRemolque2 && !esFull)}
+        disabled={isSubmitting}
       />
     );
 
@@ -961,7 +1007,13 @@ const FilaManiobra = memo(function FilaManiobra({
         >
           <EditorCompuesto
             value={valorEditando}
-            onChange={setValorEditando}
+            value2={valorEditando2}
+            // TipoSplitInput (el de un solo par) llama con un argumento;
+            // TipoFullInput y DobleInput, con los dos. Una sola firma sirve.
+            onChange={(a, b) => {
+              setValorEditando(a);
+              if (b !== undefined) setValorEditando2(b);
+            }}
             disabled={isSubmitting}
             etiqueta={col.label}
           />

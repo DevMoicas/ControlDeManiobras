@@ -52,3 +52,99 @@ export function unirDoble(a, b, separador = " - ") {
   const der = String(b ?? "").trim();
   return der ? `${izq}${separador}${der}` : izq;
 }
+
+// "20 / DC" → ["20", "DC"]  (el formato que emite TipoSplitInput)
+export function partesDelPar(par) {
+  const p = String(par ?? "").split("/");
+  return [(p[0] || "").trim(), (p[1] || "").trim()];
+}
+
+// "20 - 40 / DC - HC" → ["20 / DC", "40 / HC"]
+export function partirTipoFull(tipo) {
+  const [izquierda, derecha] = partesDelPar(tipo);
+  const [n1, n2] = partirDoble(izquierda);
+  const [l1, l2] = partirDoble(derecha);
+  return [
+    n1 || l1 ? `${n1} / ${l1}` : "",
+    n2 || l2 ? `${n2} / ${l2}` : "",
+  ];
+}
+
+// ["20 / DC", "40 / HC"] → "20 - 40 / DC - HC"
+export function unirTipoFull(par1, par2) {
+  const [n1, l1] = partesDelPar(par1);
+  const [n2, l2] = partesDelPar(par2);
+  const numeros = unirDoble(n1, n2);
+  const letras  = unirDoble(l1, l2);
+  return numeros || letras ? `${numeros} / ${letras}` : "";
+}
+
+/**
+ * Las dos mitades de una carga, venga en el formato que venga.
+ *
+ * Desde la migración 0035 cada mitad vive en SU columna (tipo/tipo_2,
+ * peso/peso_2, contenedor/contenedor_2). Los registros anteriores guardan las
+ * dos dentro de la primera ("A - B", "A/B"): no hubo backfill a propósito.
+ * Escribir va siempre a las dos columnas, así que cada fila pasa al formato
+ * nuevo la primera vez que se edita.
+ *
+ * Devuelve también el separador original para poder reconstruir la cadena tal
+ * cual la traía: el contenedor se imprime literal en la celda C17 del documento
+ * (api/views.py), y convertir "A/B" en "A - B" cambiaría lo que sale en el PDF
+ * de ~77 registros que nadie pidió tocar.
+ *
+ * @param {string} valor   columna 1
+ * @param {string} valor2  columna 2 — vacía en los registros del formato viejo
+ * @param {function} [partir=partirDoble] cómo partir el formato viejo
+ * @returns {[string, string, string]} [primero, segundo, separador]
+ */
+export function leerPar(valor, valor2, partir = partirDoble) {
+  const segundo = String(valor2 ?? "").trim();
+  if (segundo) return [String(valor ?? "").trim(), segundo, " - "];
+  const [a, b] = partir(valor);
+  // partirTipoFull no devuelve separador; el de las cargas simples sí importa.
+  const sep = partir === partirDoble ? partirDoble(valor)[2] : " - ";
+  return [a, b, sep];
+}
+
+/**
+ * ¿La carga de este folio trae un segundo contenedor que se pueda acotar?
+ *
+ * Sirve para decidir si el modal ofrece el desplegable 1 / 2 / Los dos. Cuando
+ * la maniobra ya tiene DOS operadores no hay nada que elegir: cada folio trae
+ * lo suyo y el documento no debe poder contradecir lo guardado.
+ *
+ * @param {object} folio fila de /maniobras/folios-recientes/
+ * @returns {boolean}
+ */
+export function tieneDosContenedores(folio) {
+  if (!folio || folio.dos_operadores) return false;
+  const [, tipo2] = leerPar(folio.tipo, folio.tipo_2, partirTipoFull);
+  const [, peso2] = leerPar(folio.peso, folio.peso_2);
+  const [, cont2] = leerPar(folio.contenedor, folio.contenedor_2);
+  return Boolean(tipo2 || peso2 || cont2);
+}
+
+/**
+ * La carga que va al documento según el contenedor elegido.
+ *
+ * "ambos" reconstruye la cadena EXACTA que traía el registro —mismo separador
+ * incluido—, así que un documento en el que nadie toca el desplegable sale
+ * idéntico a como salía antes de que existiera.
+ *
+ * @param {object} folio fila de /maniobras/folios-recientes/
+ * @param {"ambos"|"1"|"2"} parte
+ * @returns {{tipo: string, peso: string, contenedor: string}}
+ */
+export function cargaDeParte(folio, parte) {
+  const [tipo1, tipo2]       = leerPar(folio.tipo, folio.tipo_2, partirTipoFull);
+  const [peso1, peso2, sepP] = leerPar(folio.peso, folio.peso_2);
+  const [cont1, cont2, sepC] = leerPar(folio.contenedor, folio.contenedor_2);
+  if (parte === "1") return { tipo: tipo1, peso: peso1, contenedor: cont1 };
+  if (parte === "2") return { tipo: tipo2, peso: peso2, contenedor: cont2 };
+  return {
+    tipo:       unirTipoFull(tipo1, tipo2),
+    peso:       unirDoble(peso1, peso2, sepP),
+    contenedor: unirDoble(cont1, cont2, sepC),
+  };
+}

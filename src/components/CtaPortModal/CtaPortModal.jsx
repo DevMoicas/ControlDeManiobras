@@ -12,6 +12,7 @@ import RemolqueSelector from "../RemolqueSelector/RemolqueSelector";
 import FolioSelector from "../FolioSelector/FolioSelector";
 import ClienteSelector from "../ClienteSelector/ClienteSelector";
 import { getTipoServicioLabel, esServicioFull } from "../TipoServicioSelector/TipoServicioSelector";
+import { cargaDeParte, tieneDosContenedores } from "../../utils/dobleValor.mjs";
 import "react-datepicker/dist/react-datepicker.css";
 import "./CtaPortModal.css";
 
@@ -36,7 +37,9 @@ const ESTADO_INICIAL = {
   cliente_colonia:   "",
   cliente_ciudad:    "",
 
-  // Carga — solo lectura, auto desde folio
+  // Carga — auto desde folio y editable: el documento puede acotarse a lo que
+  // realmente viaja. Nada de esto se guarda en la maniobra (ver handleGenerar:
+  // la única llamada de red del modal es la descarga del documento).
   tipo_servicio: "",
   tipo:        "",
   peso:        "",
@@ -67,6 +70,11 @@ export default function CtaPortModal({ onCerrar }) {
   const [generando, setGenerando] = useState(false);
   const [error,     setError]     = useState(null);
   const [exito,     setExito]     = useState(false);
+  // Folio elegido en crudo: hace falta para poder rehacer el reparto de la carga
+  // sin volver a pedirlo. Y la parte elegida: "ambos" por defecto, que es lo que
+  // hacía el sistema antes de que este desplegable existiera.
+  const [folioElegido, setFolioElegido] = useState(null);
+  const [parteCarga,   setParteCarga]   = useState("ambos");
 
   // Cerrar con Escape
   useEffect(() => {
@@ -85,13 +93,25 @@ export default function CtaPortModal({ onCerrar }) {
   // ── Lógica full/sencillo/carga suelta ──────────────────────────────────────
   // Lo dictamina el campo tipo_servicio de la maniobra. Los registros anteriores
   // a ese campo no lo traen: ahí se conserva la heurística vieja (>12 caracteres).
-  const esFullViaje         = esServicioFull(datos);
-  const remolque2Habilitado = esFullViaje;
+  // Solo etiqueta el servicio en el resumen de la carga: el Remolque 2 ya NO
+  // depende de esto — un sencillo también puede llevar dos.
+  const esFullViaje = esServicioFull(datos);
+
+  // El backend parte el tipo por la diagonal (_parsear_tipo) y sin ella devuelve
+  // las cuatro piezas vacías: el PDF sale con esa línea en blanco y sin error.
+  // Avisa, no bloquea: el formato podría cambiar y nadie se queda sin documento.
+  const tipoSinDiagonal = datos.tipo.trim() !== "" && !datos.tipo.includes("/");
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   const handleFolio = (maniobra) => {
-    const esFull = esServicioFull(maniobra);
+    // `parte` la manda el backend: '1'/'2' cuando la maniobra tiene dos
+    // operadores (cada folio se lleva su contenedor y no hay nada que elegir),
+    // 'ambos' cuando tiene uno solo. El reparto lo hace cargaDeParte, que
+    // entiende tanto las columnas nuevas como el formato viejo de una sola.
+    const parte = maniobra.parte || "ambos";
+    setFolioElegido(maniobra);
+    setParteCarga(parte);
     setDatos((p) => ({
       ...p,
       folio:      maniobra.folio      || "",
@@ -99,17 +119,14 @@ export default function CtaPortModal({ onCerrar }) {
       origen:     maniobra.origen     || "",   // auto, editable
       destino:    maniobra.destino    || "",   // auto, editable
       tipo_servicio: maniobra.tipo_servicio || "",
-      tipo:       maniobra.tipo       || "",
-      peso:       maniobra.peso       || "",
-      contenedor: maniobra.contenedor || "",
+      ...cargaDeParte(maniobra, parte),
       pedimento:  maniobra.pedimento  || "",
       referencia: maniobra.referencia || "",
       // Operador, unidad y remolques recuperados del folio elegido
       operador:   maniobra.operador   || "",
       placas:     maniobra.placas     || "",
       remolque_1: maniobra.remolque_1 || "",
-      // Remolque 2 solo aplica en viajes full; si no, queda vacío
-      remolque_2: esFull ? (maniobra.remolque_2 || "") : "",
+      remolque_2: maniobra.remolque_2 || "",
       // Cliente del folio, editable después con el ClienteSelector. Se pisa
       // siempre —igual que origen/destino— para no mezclar el cliente de un
       // folio con la carga de otro; si la maniobra no lo trae, queda vacío.
@@ -151,6 +168,14 @@ export default function CtaPortModal({ onCerrar }) {
 
   const cambiarCampo = (campo, valor) => {
     setDatos((p) => ({ ...p, [campo]: valor }));
+  };
+
+  // Elegir contenedor reescribe los tres campos de la carga a la vez: dejarlos
+  // sueltos permitiría un documento con el tipo de uno y el peso del otro.
+  // Pisa lo tecleado a mano, y es lo que se espera al cambiar de contenedor.
+  const elegirParte = (parte) => {
+    setParteCarga(parte);
+    setDatos((p) => ({ ...p, ...cargaDeParte(folioElegido, parte) }));
   };
 
   // ── Generar PDF ────────────────────────────────────────────────────────────
@@ -243,7 +268,7 @@ export default function CtaPortModal({ onCerrar }) {
                 />
               </div>
               <div className="cpm-campo">
-                <label className="cpm-label">CCP (editable)</label>
+                <label className="cpm-label">CCP</label>
                 <input
                   type="text"
                   className="cpm-input"
@@ -272,7 +297,7 @@ export default function CtaPortModal({ onCerrar }) {
             <h3 className="cpm-seccion-titulo">Origen y Destino</h3>
             <div className="cpm-fila-dos">
               <div className="cpm-campo">
-                <label className="cpm-label">Origen (editable)</label>
+                <label className="cpm-label">Origen</label>
                 <input
                   type="text"
                   className="cpm-input"
@@ -282,7 +307,7 @@ export default function CtaPortModal({ onCerrar }) {
                 />
               </div>
               <div className="cpm-campo">
-                <label className="cpm-label">Destino (editable)</label>
+                <label className="cpm-label">Destino</label>
                 <input
                   type="text"
                   className="cpm-input"
@@ -316,30 +341,86 @@ export default function CtaPortModal({ onCerrar }) {
             )}
           </div>
 
-          {/* Carga (solo lectura) */}
+          {/* Carga — auto desde folio y editable */}
           <div className="cpm-seccion">
-            <h3 className="cpm-seccion-titulo">Carga (auto desde folio)</h3>
+            <h3 className="cpm-seccion-titulo">Carga</h3>
+            {/* Solo cuando la maniobra tiene UN operador y dos contenedores: es
+                el único caso ambiguo (¿los lleva los dos o solo uno?). Con dos
+                operadores manda el folio y no hay nada que elegir. */}
+            {tieneDosContenedores(folioElegido) && (
+              <div className="cpm-campo" style={{ marginBottom: 10 }}>
+                <label className="cpm-label" htmlFor="cpm-parte-carga">
+                  Contenedores en este documento
+                </label>
+                <select
+                  id="cpm-parte-carga"
+                  className="cpm-input"
+                  value={parteCarga}
+                  onChange={(e) => elegirParte(e.target.value)}
+                >
+                  <option value="ambos">Los dos</option>
+                  <option value="1">Solo el 1º</option>
+                  <option value="2">Solo el 2º</option>
+                </select>
+              </div>
+            )}
             <div className="cpm-grid-cuatro">
               <div className="cpm-campo">
                 <label className="cpm-label">Tipo</label>
-                <input type="text" className="cpm-input cpm-input--readonly" value={datos.tipo}       readOnly placeholder="—" />
+                <input
+                  type="text"
+                  className="cpm-input"
+                  value={datos.tipo}
+                  onChange={(e) => cambiarCampo("tipo", e.target.value)}
+                  placeholder="Ej. 40 / HC"
+                />
               </div>
               <div className="cpm-campo">
                 <label className="cpm-label">Peso</label>
-                <input type="text" className="cpm-input cpm-input--readonly" value={datos.peso}       readOnly placeholder="—" />
+                <input
+                  type="text"
+                  className="cpm-input"
+                  value={datos.peso}
+                  onChange={(e) => cambiarCampo("peso", e.target.value)}
+                  placeholder="Auto desde folio"
+                />
               </div>
               <div className="cpm-campo">
                 <label className="cpm-label">Contenedor</label>
-                <input type="text" className="cpm-input cpm-input--readonly" value={datos.contenedor} readOnly placeholder="—" />
+                <input
+                  type="text"
+                  className="cpm-input"
+                  value={datos.contenedor}
+                  onChange={(e) => cambiarCampo("contenedor", e.target.value)}
+                  placeholder="Auto desde folio"
+                />
               </div>
               <div className="cpm-campo">
                 <label className="cpm-label">Referencia</label>
-                <input type="text" className="cpm-input cpm-input--readonly" value={datos.referencia} readOnly placeholder="—" />
+                <input
+                  type="text"
+                  className="cpm-input"
+                  value={datos.referencia}
+                  onChange={(e) => cambiarCampo("referencia", e.target.value)}
+                  placeholder="Auto desde folio"
+                />
               </div>
             </div>
+            {tipoSinDiagonal && (
+              <p className="cpm-error" style={{ marginTop: 8 }}>
+                El Tipo debe llevar diagonal (ej. <code>40 / HC</code>). Sin ella esa
+                línea sale en blanco en el documento.
+              </p>
+            )}
             <div className="cpm-campo" style={{ marginTop: 8 }}>
               <label className="cpm-label">Pedimento</label>
-              <input type="text" className="cpm-input cpm-input--readonly" value={datos.pedimento} readOnly placeholder="—" />
+              <input
+                type="text"
+                className="cpm-input"
+                value={datos.pedimento}
+                onChange={(e) => cambiarCampo("pedimento", e.target.value)}
+                placeholder="Auto desde folio"
+              />
             </div>
             {datos.contenedor && (
               <p className="cpm-hint">
@@ -413,7 +494,7 @@ export default function CtaPortModal({ onCerrar }) {
                 <RemolqueSelector
                   currentValue={datos.remolque_2}
                   onSelect={handleRemolque2}
-                  disabled={!remolque2Habilitado}
+                  disabled={false}
                 />
               </div>
             </div>
