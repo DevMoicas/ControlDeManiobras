@@ -11,6 +11,13 @@ const FILAS = [
   { id: "pendiente", etiqueta: "PENDIENTES" },
 ];
 
+// Cada cuánto se vuelven a pedir los conteos. Los status se cambian desde
+// Maniobras, y volver al inicio desmonta y remonta esta pantalla, así que ese
+// camino ya se refresca solo; el intervalo cubre dejar el inicio abierto
+// mientras otra persona los mueve. Un minuto: son dos COUNT(*) y el dato es un
+// resumen, no un marcador en vivo.
+const REFRESCO_MS = 60_000;
+
 /**
  * Seguimientos
  * Resumen corto de cuántas maniobras hay activas y pendientes. Se pide una vez
@@ -21,12 +28,31 @@ export default function Seguimientos() {
   const [error,   setError]   = useState(false);
 
   useEffect(() => {
-    apiClient
-      .get("/maniobras/resumen-status/")
-      .then(setConteos)
-      // Un fallo NO puede parecerse a "no hay ninguna": un cero es un dato y una
-      // consulta caída no lo es. Misma lección que las alertas de vencimiento.
-      .catch(() => setError(true));
+    // El intervalo puede resolver una petición después de desmontar; la bandera
+    // evita tocar el estado de un componente que ya no está.
+    let cancelado = false;
+
+    const pedir = () => {
+      apiClient
+        .get("/maniobras/resumen-status/")
+        .then((datos) => {
+          if (cancelado) return;
+          setConteos(datos);
+          // Se limpia al acertar: con refresco automático, un fallo pasajero de
+          // red dejaría el aviso puesto para siempre aunque ya vuelva a haber datos.
+          setError(false);
+        })
+        // Un fallo NO puede parecerse a "no hay ninguna": un cero es un dato y una
+        // consulta caída no lo es. Misma lección que las alertas de vencimiento.
+        .catch(() => { if (!cancelado) setError(true); });
+    };
+
+    pedir();
+    // Con la pestaña en segundo plano no hay nadie mirando: no tiene sentido
+    // gastar una consulta por minuto en una pantalla que nadie ve.
+    const id = setInterval(() => { if (!document.hidden) pedir(); }, REFRESCO_MS);
+
+    return () => { cancelado = true; clearInterval(id); };
   }, []);
 
   return (
