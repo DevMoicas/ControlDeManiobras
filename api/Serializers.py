@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
@@ -62,6 +62,38 @@ class EmpleadoSerializer(serializers.ModelSerializer):
         model = Empleado
         fields = '__all__'
 
+class PendienteSerializer(serializers.ModelSerializer):
+    # `expira_en` sale calculado del servidor para que la regla de las 28 horas
+    # tenga UN solo dueño. El front no la conoce: solo compara esta fecha con su
+    # reloj para ocultar lo caducado en una pestaña que lleve horas abierta.
+    expira_en = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model  = Pendiente
+        fields = ('id', 'tablero', 'texto', 'hecho', 'creado_en', 'expira_en')
+        read_only_fields = ('creado_en', 'expira_en')
+
+
+class CostoExtraSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = CostoExtra
+        fields = '__all__'
+
+
+class ManiobraCostoExtraSerializer(serializers.ModelSerializer):
+    """Lo que ve el frontend de un costo extra ya asignado a una maniobra.
+
+    `id` es el del CATÁLOGO, no el del enlace: es lo que el desplegable de
+    Maniobras necesita para marcar las casillas. `movimiento` y `costo` salen
+    del enlace (tarifa congelada), no del catálogo, que puede haber cambiado.
+    """
+    id = serializers.IntegerField(source='costo_extra_id', read_only=True)
+
+    class Meta:
+        model  = ManiobraCostoExtra
+        fields = ('id', 'movimiento', 'costo')
+
+
 class ManiobraSerializer(serializers.ModelSerializer):
     # Único campo obligatorio para registrar una maniobra.
     solicita = serializers.CharField(required=True, allow_blank=False, allow_null=False, max_length=30)
@@ -72,6 +104,19 @@ class ManiobraSerializer(serializers.ModelSerializer):
     cliente_id = serializers.PrimaryKeyRelatedField(
         source='cliente_fk', queryset=Cliente.objects.all(),
         required=False, allow_null=True,
+    )
+
+    # Costos extra de la maniobra. Contrato asimétrico a propósito: se LEE la
+    # lista con importe congelado (`costos_extra`) y se ESCRIBE solo la lista de
+    # ids elegidos (`costos_extra_ids`). Mandar importes desde el cliente
+    # significaría dejar que el navegador fije el precio; aquí lo pone siempre
+    # el catálogo del servidor.
+    costos_extra = ManiobraCostoExtraSerializer(
+        source='costos_extra_links', many=True, read_only=True,
+    )
+    costos_extra_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        write_only=True, required=False, allow_empty=True,
     )
 
     class Meta:
@@ -134,7 +179,60 @@ class ManiobraSerializer(serializers.ModelSerializer):
                     {'detail': f'El folio "{valor}" ya está usado en otra maniobra.'}
                 )
         return data
-    
+
+    # ── Costos extra ──────────────────────────────────────────────────
+
+    @staticmethod
+    def _sincronizar_costos_extra(maniobra, ids):
+        """Deja los enlaces de la maniobra exactamente en `ids`.
+
+        Los que YA estaban no se tocan: ahí está la tarifa congelada, y
+        reescribirla al reguardar la maniobra sería justo lo que se quiere
+        evitar. Solo se borran los que sobran y se crean los que faltan, estos
+        con el importe VIGENTE del catálogo.
+        """
+        ids = list(dict.fromkeys(ids))  # sin duplicados, conservando el orden
+
+        catalogo = {c.id: c for c in CostoExtra.objects.filter(id__in=ids)}
+        faltan = [i for i in ids if i not in catalogo]
+        if faltan:
+            raise serializers.ValidationError(
+                {'detail': f'Costo extra inexistente: {faltan}'}
+            )
+
+        # Todo dentro de una transacción: un fallo a mitad dejaría la maniobra
+        # con los enlaces viejos borrados y los nuevos sin crear.
+        with transaction.atomic(using=get_db_alias()):
+            enlaces = ManiobraCostoExtra.objects.filter(maniobra=maniobra)
+            enlaces.exclude(costo_extra_id__in=ids).delete()
+            ya = set(enlaces.values_list('costo_extra_id', flat=True))
+            ManiobraCostoExtra.objects.bulk_create([
+                ManiobraCostoExtra(
+                    maniobra=maniobra,
+                    costo_extra=catalogo[i],
+                    movimiento=catalogo[i].movimiento,
+                    costo=catalogo[i].costo,
+                )
+                for i in ids if i not in ya
+            ])
+
+    def create(self, validated_data):
+        ids = validated_data.pop('costos_extra_ids', None)
+        maniobra = super().create(validated_data)
+        if ids:
+            self._sincronizar_costos_extra(maniobra, ids)
+        return maniobra
+
+    def update(self, instance, validated_data):
+        # `is not None` y no truthy: una lista vacía significa "quita todos",
+        # que es distinto de "no vino el campo" (PATCH parcial, no tocar nada).
+        ids = validated_data.pop('costos_extra_ids', None)
+        maniobra = super().update(instance, validated_data)
+        if ids is not None:
+            self._sincronizar_costos_extra(maniobra, ids)
+        return maniobra
+
+
 class MFARequerida(AuthenticationFailed):
     """Credenciales correctas, falta el código. El front lo distingue por `codigo`
     para pasar al segundo paso en vez de decir 'usuario o contraseña incorrectos'."""

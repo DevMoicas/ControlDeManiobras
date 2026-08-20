@@ -1,7 +1,8 @@
 from datetime import timedelta
+from decimal import Decimal
 
 from django.conf import settings
-from django.core.validators import MinLengthValidator
+from django.core.validators import MinLengthValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -474,6 +475,124 @@ class OperadorTercero(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+class CostoExtra(models.Model):
+    """Catálogo de conceptos de costo extra (Finanzas → Costos extra).
+
+    `costo` es Decimal y no CharField como el `peso` de Maniobra: aquí Sí se
+    suman importes en BD (el reporte por folio que vendrá después), y sumar
+    texto obliga a castear en cada consulta. MinValueValidator(0) lo aplica DRF
+    solo, sin escribir validación en el serializer.
+    """
+    movimiento = models.CharField(max_length=255)
+    costo      = models.DecimalField(
+        max_digits=10, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0'))],
+    )
+
+    class Meta:
+        managed  = True
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.movimiento} (${self.costo})"
+
+
+class ManiobraCostoExtra(models.Model):
+    """Un costo extra seleccionado en una maniobra, con la tarifa CONGELADA.
+
+    `movimiento` y `costo` se copian del catálogo al seleccionar y no vuelven a
+    tocarse: subir la tarifa de "Grúa" de 500 a 600 no debe reescribir lo que
+    costó un servicio de agosto. Por eso hay columnas propias aquí y no un
+    simple JOIN al catálogo (decisión del usuario, 2026-08-20).
+
+    Tabla de enlace y no una columna JSON en `maniobras` porque el reporte que
+    vendrá después ("recuperarlo con el folio") es un SUM sobre un JOIN, no un
+    recorrido de arrays JSON.
+    """
+    # db_constraint=False en las dos FK por el mismo motivo que
+    # DispositivoConfianza.usuario: `api` corre sin migraciones en la base de
+    # test, donde las tablas managed=False (maniobras) no existen, y un
+    # constraint contra ellas rompería la creación de la BD de pruebas.
+    # El CASCADE del ORM sigue actuando en los borrados por Django.
+    maniobra = models.ForeignKey(
+        Maniobra, on_delete=models.CASCADE,
+        related_name='costos_extra_links', db_constraint=False,
+    )
+    # SET_NULL y no CASCADE/PROTECT: si el admin borra el concepto del catálogo,
+    # lo que ya se cobró en una maniobra no puede evaporarse (CASCADE) ni dejar
+    # el catálogo imborrable (PROTECT). El enlace sobrevive huérfano con su
+    # importe congelado; solo deja de ofrecerse para nuevas selecciones.
+    costo_extra = models.ForeignKey(
+        CostoExtra, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+', db_constraint=False,
+    )
+    movimiento = models.CharField(max_length=255)
+    costo      = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        managed  = True
+        ordering = ['id']
+        constraints = [
+            # Un mismo concepto no puede estar dos veces en la misma maniobra.
+            # Postgres permite varios NULL aquí, así que los enlaces huérfanos
+            # (costo_extra borrado del catálogo) no chocan entre sí.
+            models.UniqueConstraint(
+                fields=['maniobra', 'costo_extra'],
+                name='uniq_maniobra_costo_extra',
+            ),
+        ]
+
+    def __str__(self):
+        return f"Maniobra #{self.maniobra_id} · {self.movimiento} (${self.costo})"
+
+
+# Vida de un pendiente. Única definición de la regla: el serializer publica
+# `expira_en` calculado con esto, y el frontend solo compara esa fecha con el
+# reloj — así las 28 horas no viven duplicadas en los dos lados.
+PENDIENTE_VIDA = timedelta(hours=28)
+
+
+class Pendiente(models.Model):
+    """Una línea de la lista de pendientes de un tablero.
+
+    Cinco tableros fijos con nombre de persona, compartidos por toda la empresa:
+    no hay noción de dueño ni de usuario, todos ven y marcan lo mismo. Van como
+    `choices` y no como tabla de catálogo porque son cinco valores que no cambian
+    — una tabla, su ABM y su pantalla serían andamiaje para nada. Añadir un sexto
+    tablero es una línea aquí y otra en PendientesPage.jsx.
+
+    No se pueden borrar a mano: el ViewSet no monta `destroy` (ver views.py), así
+    que la ruta de borrado no existe para nadie, admin incluido. Desaparecen solos
+    a las 28 horas de crearse — el reloj NO se reinicia al editar el texto.
+    """
+    TABLERO_CHOICES = [
+        ('ali',     'Ali'),
+        ('enrique', 'Enrique'),
+        ('mari',    'Mari'),
+        ('shell',   'Shell'),
+        ('edson',   'Edson'),
+    ]
+    # Con `choices`, DRF rechaza solo cualquier otro tablero con un 400: no hace
+    # falta escribir la validación.
+    tablero   = models.CharField(max_length=20, choices=TABLERO_CHOICES, db_index=True)
+    texto     = models.CharField(max_length=500)
+    hecho     = models.BooleanField(default=False)
+    # db_index: cada listado filtra y barre por esta columna.
+    creado_en = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        managed  = True
+        # Ascendente = orden de creación: el primero arriba, el último abajo.
+        ordering = ['id']
+
+    def __str__(self):
+        return f"[{self.tablero}] {self.texto[:40]}"
+
+    @property
+    def expira_en(self):
+        return self.creado_en + PENDIENTE_VIDA
 
 
 # ── 9.1 fase 3: dispositivo de confianza ────────────────────────────────────

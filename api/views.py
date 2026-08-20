@@ -1,13 +1,13 @@
 import base64
 import re
 import django_filters
-from rest_framework import viewsets
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO
+from rest_framework import viewsets, mixins
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, PENDIENTE_VIDA, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer
+from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer, CostoExtraSerializer, PendienteSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .Serializers import CustomTokenObtainPairSerializer, DispositivoConfianzaSerializer
@@ -25,6 +25,7 @@ import io
 from datetime import date
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 from django.db.models import Q
 from django.http import FileResponse, HttpResponse
 from openpyxl import load_workbook
@@ -555,7 +556,9 @@ def _resolver_cliente(maniobra, clientes_por_nombre):
 
 # --- NUEVA VISTA ---
 class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
-    queryset = Maniobra.objects.all().order_by("-id")
+    # prefetch_related: la columna Costos Extra necesita los enlaces de cada
+    # fila. Sin esto, una página de 60 maniobras hace 60 consultas extra.
+    queryset = Maniobra.objects.all().prefetch_related('costos_extra_links').order_by("-id")
     serializer_class = ManiobraSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -1047,6 +1050,62 @@ class OperadorTerceroViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         t = self.request.query_params.get('transportista')
         return super().get_queryset().filter(transportista=t) if t else super().get_queryset()
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response({'detail': 'No tienes permisos para eliminar registros.'}, status=403)
+        return super().destroy(request, *args, **kwargs)
+
+
+class PendienteViewSet(mixins.ListModelMixin,
+                        mixins.CreateModelMixin,
+                        mixins.UpdateModelMixin,
+                        viewsets.GenericViewSet):
+    """Listas de pendientes de los cinco tableros.
+
+    SIN `destroy` a propósito, y por eso no hereda de ModelViewSet: la ruta de
+    borrado no existe, así que nadie puede borrar un pendiente — tampoco un
+    admin. No es un permiso que se pueda saltar, es una URL que no está.
+
+    Caducan a las 28 horas y se van solos. El barrido es perezoso, en el listado:
+    la página se abre varias veces al día, así que no hace falta cron ni Celery
+    para una tabla que nunca pasará de unas decenas de filas.
+    """
+    serializer_class       = PendienteSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+    # Sin paginar: son cinco tableros de una lista que se vacía cada 28 horas y
+    # el front los necesita TODOS de una vez para repartirlos. Con el PAGE_SIZE=60
+    # global, los tableros de abajo se quedarían a medias sin avisar.
+    pagination_class       = None
+
+    @staticmethod
+    def _limite():
+        return timezone.now() - PENDIENTE_VIDA
+
+    def get_queryset(self):
+        # El filtro va aquí y no solo en el barrido: entre dos listados, un
+        # pendiente ya caducado no debe poder leerse ni editarse.
+        return Pendiente.objects.filter(creado_en__gte=self._limite())
+
+    def list(self, request, *args, **kwargs):
+        Pendiente.objects.filter(creado_en__lt=self._limite()).delete()
+        return super().list(request, *args, **kwargs)
+
+
+class CostoExtraViewSet(viewsets.ModelViewSet):
+    """Catálogo de costos extra (Finanzas → Costos extra).
+
+    Borrado solo para admin, igual que el resto de catálogos. Doble candado: el
+    403 de aquí y, por debajo, el rol de Postgres — los no-admin corren con el
+    alias `standard`, que no tiene DELETE sobre esta tabla (migración 0038).
+    """
+    queryset               = CostoExtra.objects.all()
+    serializer_class       = CostoExtraSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
 
     def destroy(self, request, *args, **kwargs):
         if not request.user.is_staff:
