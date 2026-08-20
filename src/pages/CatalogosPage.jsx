@@ -107,11 +107,14 @@ export default function NoEcoPage() {
       { name: "licencia", label: "Número de Licencia", type: "text", required: false },
       { name: "fecha_vencimiento_licencia", label: "Fecha Vencimiento Licencia", type: "date", required: false }
     ],
+    // Obligatorios solo Nombre y Cargo; el resto queda opcional. El modelo ya
+    // aceptaba vacío en fecha_ingreso, nss y teléfono — la obligatoriedad vivía
+    // únicamente en este formulario.
     empleados: [
       { name: "nombre_trabajador", label: "Nombre del Trabajador", type: "text" },
-      { name: "fecha_ingreso", label: "Fecha de Ingreso", type: "date" },
-      { name: "nss", label: "NSS", type: "text" },
-      { name: "cargo", label: "Cargo", type: "selector", selector: "cargo", required: false },
+      { name: "fecha_ingreso", label: "Fecha de Ingreso", type: "date", required: false },
+      { name: "nss", label: "NSS", type: "text", required: false },
+      { name: "cargo", label: "Cargo", type: "selector", selector: "cargo" },
       { name: "telefono", label: "Teléfono", type: "tel", required: false }
     ],
     patios: [
@@ -291,8 +294,20 @@ export default function NoEcoPage() {
 
   const guardarNuevoRegistro = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
     const vistaActiva = subVista || vista;
+
+    // El atributo `required` del navegador solo cubre los <input>. Los campos de
+    // tipo selector (Cargo, Transportista) se pintan como botón y se colarían
+    // vacíos, así que la comprobación se hace aquí para TODOS los obligatorios.
+    const faltan = (configFormularios[vistaActiva] ?? [])
+      .filter((campo) => campo.required !== false && !String(formData[campo.name] ?? "").trim())
+      .map((campo) => campo.label);
+    if (faltan.length) {
+      alerta({ tipo: "error", msg: `Falta por llenar: ${faltan.join(", ")}` });
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
       let resultado;

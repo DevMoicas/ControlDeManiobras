@@ -15,6 +15,9 @@ import { useNavigate } from "react-router-dom";
 import VacioStatusSelector, { EIR_STATUSES } from "../components/VacioStatusSelector/VacioStatusSelector";
 import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
 import PatioSelector from "../components/PatioSelector/PatioSelector";
+// Mismo componente que usan Origen y Destino en Maniobras; el alias es para que
+// aquí se lea por lo que hace y no por su nombre de fichero.
+import CatalogoSelector from "../components/CiudadSelector/CiudadSelector";
 import DatePicker from "react-datepicker";
 import { shift } from "@floating-ui/react";
 import "react-datepicker/dist/react-datepicker.css";
@@ -61,6 +64,11 @@ function dateAFechaBackend(dateObject) {
 // propio portal. Mismo remedio que Movimientos Locales (ml-fecha-portal) y
 // CeldaEditable (celda-fecha-portal); react-datepicker crea el nodo solo si no
 // existe. Id propio de esta página: los demás DatePicker del sistema no se tocan.
+// El coordinador sale de los empleados con ese cargo. El filtro lo resuelve el
+// backend (EmpleadoViewSet.get_queryset): la lista va paginada y filtrar en el
+// navegador solo miraría los 60 primeros.
+const ENDPOINT_COORDINADORES = "/empleados/?cargo=Coordinador";
+
 const FECHA_PORTAL_ID = "vacios-fecha-portal";
 
 // react-datepicker aplica flip() y offset(), pero NO shift(). flip solo voltea
@@ -74,6 +82,7 @@ const FECHA_MIDDLEWARE = [shift({ padding: 8 })];
 // fecha se editan con un clic en la propia celda (ver CeldaEditable).
 const COLUMNAS = [
   { key: "contenedor",                label: "Contenedor",        max: 255 },
+  { key: "tipo_contenedor",           label: "Tipo",              max: 100 },
   { key: "patio",                     label: "Patio",             isPatio: true },
   { key: "fecha_maniobra",            label: "Fecha Maniobra",  isFecha: true },
   { key: "fecha_entrega",             label: "Fecha Entrega",   isFecha: true },
@@ -87,6 +96,7 @@ const COLUMNAS = [
   { key: "operador_entrega",          label: "Entregó",           max: 255 },
   { key: "cita",                      label: "Cita",              max: 255 },
   { key: "cd",                        label: "CD",                max: 255 },
+  { key: "coordinador",               label: "Coordinador",       isCoordinador: true },
 ];
 
 // Vista por defecto: Pendientes (primero). El filtro se resuelve en backend
@@ -138,6 +148,15 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               onSelect={(val) => onChange(col.key, val)}
               disabled={isSubmitting}
               opcionesExtra={["Tercero"]}
+            />
+          ) : col.isCoordinador ? (
+            <CatalogoSelector
+              endpoint={ENDPOINT_COORDINADORES}
+              campo="nombre_trabajador"
+              placeholder="— Asignar —"
+              currentValue={datos[col.key] || ""}
+              onSelect={(val) => onChange(col.key, val)}
+              disabled={isSubmitting}
             />
           ) : col.isPatio ? (
             <PatioSelector
@@ -226,6 +245,15 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     onSelect={(val) => onChange(col.key, val)}
                     disabled={isSubmitting}
                     opcionesExtra={["Tercero"]}
+                  />
+                ) : col.isCoordinador ? (
+                  <CatalogoSelector
+                    endpoint={ENDPOINT_COORDINADORES}
+                    campo="nombre_trabajador"
+                    placeholder="— Asignar —"
+                    currentValue={datos[col.key] || ""}
+                    onSelect={(val) => onChange(col.key, val)}
+                    disabled={isSubmitting}
                   />
                 ) : col.isPatio ? (
                   <PatioSelector
@@ -572,6 +600,14 @@ export default function VaciosPage() {
                           currentValue={vacio.operador}
                           onSelect={(nombre) => handleOperadorChange(vacio, nombre)}
                           opcionesExtra={["Tercero"]}
+                        />
+                      ) : col.isCoordinador ? (
+                        <CatalogoSelector
+                          endpoint={ENDPOINT_COORDINADORES}
+                          campo="nombre_trabajador"
+                          placeholder="— Asignar —"
+                          currentValue={vacio.coordinador || ""}
+                          onSelect={(nombre) => handleGuardarCampo(vacio, "coordinador", nombre)}
                         />
                       ) : col.isPatio ? (
                         <PatioSelector

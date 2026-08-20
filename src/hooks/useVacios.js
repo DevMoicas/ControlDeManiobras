@@ -5,6 +5,7 @@ const PAGE_SIZE = 60;
 
 export const VACIO_VACIO = {
   contenedor: "",
+  tipo_contenedor: "",
   patio: "",
   fecha_maniobra: "",
   fecha_entrega: "",
@@ -16,6 +17,7 @@ export const VACIO_VACIO = {
   operador_entrega: "",
   cita: "",
   cd: "",
+  coordinador: "",
 };
 
 // filtroStatus: "pendiente" (default) | "entregado" | "todos". El filtro se

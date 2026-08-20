@@ -4,9 +4,12 @@ import { apiClient } from "../../api/apiClient";
 import useDropdownNav from "../../hooks/useDropdownNav";
 import "./CiudadSelector.css";
 
-// Selector genérico de ciudades para catálogos cuyo registro tiene { id, ciudad }.
-// Reutilizado para orígenes (/origenes/) y destinos (/destinos/) vía la prop endpoint.
-export default function CiudadSelector({ endpoint, currentValue, onSelect, disabled, placeholder = "— Asignar —" }) {
+// Selector genérico sobre cualquier catálogo: la prop `endpoint` dice de dónde
+// leer y `campo` qué propiedad de cada registro mostrar y guardar.
+// Usos: orígenes y destinos (/origenes/, /destinos/ → campo "ciudad", el valor
+// por defecto) y el coordinador de Vacíos (/empleados/?cargo=Coordinador →
+// "nombre_trabajador"). `campo` tiene default para no tocar los usos anteriores.
+export default function CiudadSelector({ endpoint, campo = "ciudad", currentValue, onSelect, disabled, placeholder = "— Asignar —" }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState(null);
   const [ciudades, setCiudades] = useState([]);
@@ -103,12 +106,12 @@ export default function CiudadSelector({ endpoint, currentValue, onSelect, disab
             <li
               key={c.id}
               role="option"
-              aria-selected={c.ciudad === currentValue}
-              className={`cds-option ${c.ciudad === currentValue ? "cds-option--selected" : ""}`}
-              onClick={(e) => { e.stopPropagation(); handleSelect(c.ciudad); }}
+              aria-selected={c[campo] === currentValue}
+              className={`cds-option ${c[campo] === currentValue ? "cds-option--selected" : ""}`}
+              onClick={(e) => { e.stopPropagation(); handleSelect(c[campo]); }}
             >
-              {c.ciudad}
-              {c.ciudad === currentValue && <span className="cds-check">✓</span>}
+              {c[campo]}
+              {c[campo] === currentValue && <span className="cds-check">✓</span>}
             </li>
           ))}
         </ul>,
