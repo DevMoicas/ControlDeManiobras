@@ -19,8 +19,12 @@ const porId = (arr) => [...arr].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
 
 // Columnas que el backend manda como fecha ISO y aquí se leen como DD/MM/AAAA.
 // Lista explícita y no "toda clave que empiece por fecha_": `fecha_ingreso` de
-// empleados es texto libre en la base y no siempre trae una fecha.
-const COLUMNAS_FECHA = new Set(["fecha_vencimiento_poliza"]);
+// empleados es texto libre en la base y no siempre trae una fecha; estas dos sí
+// son DateField (Tracto.fecha_vencimiento_poliza, Chofer.fecha_vencimiento_licencia).
+const COLUMNAS_FECHA = new Set([
+  "fecha_vencimiento_poliza",
+  "fecha_vencimiento_licencia",
+]);
 
 // "2026-12-31" → "31/12/2026". Cualquier otra cosa (vacío, texto suelto) sale
 // tal cual: la celda nunca debe tragarse un dato por no saber interpretarlo.
