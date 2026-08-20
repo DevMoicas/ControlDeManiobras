@@ -684,6 +684,12 @@
 .react-datepicker-wrapper { width: 100%; }
 .react-datepicker-popper  { z-index: 9999; }
 
+/* El calendario en portal tiene que quedar POR ENCIMA del overlay del modal, que
+   ya está en 9999 (ver .vacios-container .modal-overlay). El contenedor del
+   portal se deja sin `position` a propósito: al posicionarlo se convierte en el
+   ancestro de referencia del popper y el calendario aparece descolocado. */
+#vacios-fecha-portal .react-datepicker-popper { z-index: 10000; }
+
 /* ── Animaciones ──────────────────────────────────────────────────────────── */
 @keyframes vp-rise {
   from { opacity: 0; transform: translateY(14px); }
