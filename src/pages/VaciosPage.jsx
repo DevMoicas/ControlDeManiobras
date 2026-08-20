@@ -14,7 +14,6 @@ import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import { useNavigate } from "react-router-dom";
 import VacioStatusSelector, { EIR_STATUSES } from "../components/VacioStatusSelector/VacioStatusSelector";
 import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
-import TransportistaSelector from "../components/TransportistaSelector/TransportistaSelector";
 import PatioSelector from "../components/PatioSelector/PatioSelector";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -67,8 +66,10 @@ const COLUMNAS = [
   { key: "status",                    label: "Status",            isStatus: true },
   { key: "status_eir",                label: "Status EIR",        isStatusEir: true },
   { key: "operador",                  label: "OP del Viaje",      isOperador: true },
-  { key: "transportista",             label: "Transportista",     isTransportista: true },
-  { key: "operador_entrega",          label: "Entregó",           isOperadorEntrega: true },
+  // Texto libre, sin catálogo detrás: se escriben a mano como Contenedor o Cita.
+  // El límite es el del modelo (Vacio.transportista / .operador_entrega, 255).
+  { key: "transportista",             label: "Transportista",     max: 255 },
+  { key: "operador_entrega",          label: "Entregó",           max: 255 },
   { key: "cita",                      label: "Cita",              max: 255 },
   { key: "cd",                        label: "CD",                max: 255 },
 ];
@@ -120,19 +121,6 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               onSelect={(val) => onChange(col.key, val)}
               disabled={isSubmitting}
               opcionesExtra={["Tercero"]}
-            />
-          ) : col.isTransportista ? (
-            <TransportistaSelector
-              currentValue={datos[col.key] || ""}
-              onSelect={(val) => onChange(col.key, val)}
-              disabled={isSubmitting}
-            />
-          ) : col.isOperadorEntrega ? (
-            <OperadorSelector
-              currentValue={datos[col.key] || ""}
-              onSelect={(val) => onChange(col.key, val)}
-              disabled={isSubmitting}
-              transportista={datos.transportista}
             />
           ) : col.isPatio ? (
             <PatioSelector
@@ -219,19 +207,6 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     onSelect={(val) => onChange(col.key, val)}
                     disabled={isSubmitting}
                     opcionesExtra={["Tercero"]}
-                  />
-                ) : col.isTransportista ? (
-                  <TransportistaSelector
-                    currentValue={datos[col.key] || ""}
-                    onSelect={(val) => onChange(col.key, val)}
-                    disabled={isSubmitting}
-                  />
-                ) : col.isOperadorEntrega ? (
-                  <OperadorSelector
-                    currentValue={datos[col.key] || ""}
-                    onSelect={(val) => onChange(col.key, val)}
-                    disabled={isSubmitting}
-                    transportista={datos.transportista}
                   />
                 ) : col.isPatio ? (
                   <PatioSelector
@@ -455,38 +430,6 @@ export default function VaciosPage() {
     }
   }, [actualizar, setVacios]);
 
-  const handleTransportistaChange = useCallback(async (vacio, nombreSeleccionado) => {
-    const prevTransportista = vacio.transportista;
-    setVacios((prev) =>
-      prev.map((v) => (v.id === vacio.id ? { ...v, transportista: nombreSeleccionado } : v))
-    );
-    try {
-      await actualizar(vacio.id, { ...vacio, transportista: nombreSeleccionado });
-      setNotif({ tipo: "ok", msg: "Transportista actualizado." });
-    } catch (err) {
-      setVacios((prev) =>
-        prev.map((v) => (v.id === vacio.id ? { ...v, transportista: prevTransportista } : v))
-      );
-      setNotif({ tipo: "error", msg: `Error al cambiar transportista: ${err.message}` });
-    }
-  }, [actualizar, setVacios]);
-
-  const handleOperadorEntregaChange = useCallback(async (vacio, nombreSeleccionado) => {
-    const prevOperadorEntrega = vacio.operador_entrega;
-    setVacios((prev) =>
-      prev.map((v) => (v.id === vacio.id ? { ...v, operador_entrega: nombreSeleccionado } : v))
-    );
-    try {
-      await actualizar(vacio.id, { ...vacio, operador_entrega: nombreSeleccionado });
-      setNotif({ tipo: "ok", msg: "Operador de entrega actualizado." });
-    } catch (err) {
-      setVacios((prev) =>
-        prev.map((v) => (v.id === vacio.id ? { ...v, operador_entrega: prevOperadorEntrega } : v))
-      );
-      setNotif({ tipo: "error", msg: `Error al cambiar operador: ${err.message}` });
-    }
-  }, [actualizar, setVacios]);
-
   // ── Filtro por búsqueda — solo sobre datos ya cargados ────────────────────
   const vaciosFiltrados = busqueda
     ? vacios.filter((v) =>
@@ -610,17 +553,6 @@ export default function VaciosPage() {
                           currentValue={vacio.operador}
                           onSelect={(nombre) => handleOperadorChange(vacio, nombre)}
                           opcionesExtra={["Tercero"]}
-                        />
-                      ) : col.isTransportista ? (
-                        <TransportistaSelector
-                          currentValue={vacio.transportista || ""}
-                          onSelect={(nombre) => handleTransportistaChange(vacio, nombre)}
-                        />
-                      ) : col.isOperadorEntrega ? (
-                        <OperadorSelector
-                          currentValue={vacio.operador_entrega || ""}
-                          onSelect={(nombre) => handleOperadorEntregaChange(vacio, nombre)}
-                          transportista={vacio.transportista}
                         />
                       ) : col.isPatio ? (
                         <PatioSelector
