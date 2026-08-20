@@ -106,6 +106,10 @@ class Maniobra(models.Model):
     status_vacio = models.CharField(max_length=100, null=True, blank=True)
     fecha_entrega_mercancia = models.DateField(max_length=50, null=True, blank=True, db_index=True)
     no_factura = models.CharField(max_length=100, null=True, blank=True)
+    # Texto libre. Va declarada junto a ccp por ser su vecina en la tabla; el
+    # orden de las columnas de Maniobras lo fija COLUMNAS en el frontend, no el
+    # serializer, así que aquí es solo cuestión de que se lea bien.
+    dd = models.CharField(max_length=100, null=True, blank=True)
     ccp = models.CharField(max_length=100, null=True, blank=True)
     ruta_inicio = models.DateTimeField(null=True, blank=True)
     ruta_fin    = models.DateTimeField(null=True, blank=True)
