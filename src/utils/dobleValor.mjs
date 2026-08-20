@@ -108,6 +108,32 @@ export function leerPar(valor, valor2, partir = partirDoble) {
 }
 
 /**
+ * El par ENTERO como texto, para la celda de la tabla cuando no se está editando.
+ *
+ * Es el contrario exacto de leerPar(): lee las dos columnas y las vuelve a unir.
+ * Sin esto la celda pintaba solo `valor`, así que un Full ya migrado a la 0035
+ * —con la segunda mitad en su propia columna— enseñaba UN contenedor y al
+ * abrirlo aparecían dos. Los registros del formato viejo no lo notaban: los dos
+ * valores vivían en la primera columna y se veían de casualidad.
+ *
+ * Reconstruye con el separador ORIGINAL, igual que cargaDeParte("ambos"): la
+ * celda tiene que enseñar lo mismo que se imprime en el documento.
+ *
+ * @param {string} valor   columna 1
+ * @param {string} valor2  columna 2
+ * @param {boolean} [esTipo=false] TIPO DE CARGA usa su propio formato ("20 / DC")
+ * @returns {string}
+ */
+export function textoDelPar(valor, valor2, esTipo = false) {
+  if (esTipo) {
+    const [a, b] = leerPar(valor, valor2, partirTipoFull);
+    return unirTipoFull(a, b);
+  }
+  const [a, b, sep] = leerPar(valor, valor2);
+  return unirDoble(a, b, sep);
+}
+
+/**
  * ¿La carga de este folio trae un segundo contenedor que se pueda acotar?
  *
  * Sirve para decidir si el modal ofrece el desplegable 1 / 2 / Los dos. Cuando

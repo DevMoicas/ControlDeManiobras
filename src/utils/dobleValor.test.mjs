@@ -1,7 +1,7 @@
 // node --test src/utils/dobleValor.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { partirDoble, unirDoble, leerPar, partirTipoFull, unirTipoFull, cargaDeParte, tieneDosContenedores } from "./dobleValor.mjs";
+import { partirDoble, unirDoble, leerPar, partirTipoFull, unirTipoFull, textoDelPar, cargaDeParte, tieneDosContenedores } from "./dobleValor.mjs";
 
 test("parte por guion, que es la forma canónica", () => {
   assert.deepEqual(partirDoble("23412 - 22000"), ["23412", "22000", " - "]);
@@ -168,4 +168,40 @@ test("dos operadores sobre un registro VIEJO: cada folio se lleva su mitad", () 
                    { tipo: "20 / DC", peso: "23412", contenedor: "WHLU5591210" });
   assert.deepEqual(cargaDeParte(viejo, "2"),
                    { tipo: "40 / HC", peso: "22000", contenedor: "WHSU6575360" });
+});
+
+// ── textoDelPar: lo que enseña la celda de Maniobras sin estar en edición ────
+
+test("textoDelPar enseña las DOS mitades de un Full ya migrado (el fallo)", () => {
+  // Formato nuevo (migración 0035): cada mitad en su columna. La celda enseñaba
+  // solo "WHLU5591210" y al abrirla aparecían los dos contenedores.
+  assert.equal(
+    textoDelPar("WHLU5591210", "WHSU6575360"),
+    "WHLU5591210 - WHSU6575360"
+  );
+  assert.equal(textoDelPar("23412", "22000"), "23412 - 22000");
+});
+
+test("textoDelPar conserva el separador original del formato viejo", () => {
+  // Las dos mitades dentro de la columna 1: sale TAL CUAL, sin convertir "/" en
+  // " - ", porque es lo que se imprime en la celda C17 del documento.
+  assert.equal(textoDelPar("WHLU5591210/WHSU6575360", ""), "WHLU5591210/WHSU6575360");
+  assert.equal(textoDelPar("CAAU6047386 / MRKU4485916", null), "CAAU6047386 / MRKU4485916");
+  assert.equal(textoDelPar("23412 - 22000", ""), "23412 - 22000");
+});
+
+test("textoDelPar con un solo valor no deja el separador colgando", () => {
+  assert.equal(textoDelPar("TLLU2899885", ""), "TLLU2899885");
+  assert.equal(textoDelPar("", ""), "");
+  assert.equal(textoDelPar(null, undefined), "");
+});
+
+test("textoDelPar respeta el formato propio de TIPO DE CARGA", () => {
+  // Formato nuevo: una mitad por columna.
+  assert.equal(textoDelPar("20 / DC", "40 / HC", true), "20 - 40 / DC - HC");
+  // Formato viejo: las dos en la columna 1. Converge al MISMO texto, que es lo
+  // que hace que la tabla se vea igual antes y después de migrar una fila.
+  assert.equal(textoDelPar("20 - 40 / DC - HC", "", true), "20 - 40 / DC - HC");
+  // Sencillo: sin segunda mitad, sin separador colgando.
+  assert.equal(textoDelPar("20 / DC", "", true), "20 / DC");
 });

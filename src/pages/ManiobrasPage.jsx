@@ -31,7 +31,7 @@ import { registerLocale } from "react-datepicker";
 import es from "date-fns/locale/es";
 import FotoModal from "../components/FotoModal/FotoModal";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
-import { partirDoble, partirTipoFull, leerPar } from "../utils/dobleValor.mjs";
+import { partirDoble, partirTipoFull, leerPar, textoDelPar } from "../utils/dobleValor.mjs";
 registerLocale("es", es);
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -1033,7 +1033,15 @@ const FilaManiobra = memo(function FilaManiobra({
       :                           null;
 
     if (EditorCompuesto) {
-      if (celdaEditando !== col.key) return celdaClicable(col, maniobra[col.key]);
+      if (celdaEditando !== col.key) {
+        // Las DOS mitades, no solo la columna 1: desde la 0035 la segunda vive
+        // en su propia columna y la celda enseñaba un solo contenedor mientras
+        // que al abrirla salían los dos. Misma condición que usa el editor.
+        const texto = dosColumnas(col)
+          ? textoDelPar(maniobra[col.key], maniobra[col.key2], col.isTipo)
+          : maniobra[col.key];
+        return celdaClicable(col, texto);
+      }
       return (
         <div
           ref={enfocarPrimerInput}
