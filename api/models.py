@@ -233,6 +233,13 @@ class Gasto(models.Model):
 
 class Vacio(models.Model):
     contenedor = models.CharField(max_length=255, null=True, blank=True)
+    # Tipo del contenedor (40HC, 20DC…). Texto libre: no hay catálogo de tipos y
+    # el histórico de Maniobra.tipo tampoco lo tiene.
+    tipo_contenedor = models.CharField(max_length=100, null=True, blank=True)
+    # Empleado con cargo 'Coordinador' que lleva el vacío. Se guarda el NOMBRE y
+    # no una FK, igual que operador/transportista en esta misma tabla: `vacios`
+    # es managed=False y el resto de sus referencias a personas ya son por texto.
+    coordinador = models.CharField(max_length=255, null=True, blank=True)
     patio = models.CharField(max_length=255, null=True, blank=True)
     fecha_maniobra = models.DateField(null=True, blank=True)
     fecha_entrega = models.DateField(null=True, blank=True)

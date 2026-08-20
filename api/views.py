@@ -890,6 +890,21 @@ class EmpleadoViewSet(viewsets.ModelViewSet):
     ordering_fields = ["id"]
     ordering = ["id"]
 
+    def get_queryset(self):
+        """?cargo= filtra por cargo (lo usa el selector de Coordinador en Vacíos).
+
+        Mismo patrón que UnidadTerceroViewSet con ?transportista. En el servidor y
+        no en el cliente porque la lista va paginada: filtrando en el navegador
+        solo se mirarían los 60 primeros empleados.
+
+        iexact y no exact: el cargo se guarda como texto en `empleados` (tabla
+        managed=False) y una mayúscula de más escrita a mano dejaría al empleado
+        fuera del desplegable sin que nadie entienda por qué.
+        """
+        cargo = self.request.query_params.get('cargo')
+        qs = super().get_queryset()
+        return qs.filter(cargo__iexact=cargo) if cargo else qs
+
     def destroy(self, request, *args, **kwargs):
         if not request.user.is_staff:
             return Response(
