@@ -95,9 +95,12 @@ const COLUMNAS = [
   { key: "status_eir",                label: "Status EIR",        isStatusEir: true },
   { key: "coordinador",               label: "Coordinador",       isCoordinador: true },
   { key: "operador",                  label: "OP del Viaje",      isOperador: true },
-  // Texto libre, sin catálogo detrás: se escriben a mano como Contenedor o Cita.
-  // El límite es el del modelo (Vacio.transportista / .operador_entrega, 255).
-  { key: "transportista",             label: "Transportista",     max: 255 },
+  // Texto libre, sin catálogo detrás: se escribe a mano como Contenedor o Cita.
+  // El límite es el del modelo (Vacio.operador_entrega, 255).
+  //
+  // La columna Transportista se retiró de la vista (no resultó útil en la
+  // práctica). El campo Vacio.transportista SIGUE existiendo en la base con sus
+  // datos: quitarlo de aquí no borra nada y volver a mostrarlo es esta línea.
   { key: "operador_entrega",          label: "Entregó",           max: 255 },
   { key: "cita",                      label: "Cita",              max: 255 },
   { key: "cd",                        label: "CD",                max: 255 },

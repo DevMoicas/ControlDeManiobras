@@ -13,7 +13,6 @@ export const VACIO_VACIO = {
   status: "",
   status_eir: "",
   operador: "",
-  transportista: "",
   operador_entrega: "",
   cita: "",
   cd: "",
