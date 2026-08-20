@@ -264,6 +264,7 @@ const COLUMNAS = [
   { key: "status_vacio", label: "Status Vacío", isStatusVacio: true },
   { key: "fecha_entrega_mercancia", label: "Entrega Mercancía", sortable: true },
   { key: "no_factura", label: "No. Factura", inline: true, max: 100 },
+  { key: "dd", label: "DD", inline: true, max: 100 },
   { key: "ccp", label: "CCP", inline: true, max: 100 },
   // El CCP va emparejado al folio: la remisión del documento es "folio / ccp",
   // así que el operador 2 necesita el suyo. Oculto hasta que se le asigna uno,
@@ -290,7 +291,7 @@ const MANIOBRA_VACIA = {
   // catálogo apunta. El id es lo único que distingue dos clientes homónimos.
   cliente: "", cliente_id: null, origen: "", destino: "", transportista: "", tercero: "", asignacion_operador_status: "",
   unidad: "", remolque: "", remolque_2: "", folio: "", vacio_patio: "", status_vacio: "",
-  fecha_entrega_mercancia: "", no_factura: "", ccp: "", ruta_inicio: "", ruta_fin: "",
+  fecha_entrega_mercancia: "", no_factura: "", dd: "", ccp: "", ruta_inicio: "", ruta_fin: "",
   // Segundo operador y su carga (migración 0035)
   operador_2: "", unidad_2: "", folio_2: "", remolque_3: "", remolque_4: "",
   tipo_2: "", peso_2: "", contenedor_2: "", ccp_2: "",
