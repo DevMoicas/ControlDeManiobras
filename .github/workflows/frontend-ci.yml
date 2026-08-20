@@ -1,8 +1,14 @@
 name: frontend-ci
 
+# paths-ignore: un cambio que SOLO toca documentación no reconstruye la imagen ni
+# redespliega producción. Un commit mixto (código + documentos) sí dispara el
+# workflow, que es lo correcto: GitHub solo lo salta si TODOS los archivos del push
+# encajan en la lista. La documentación transversal vive en `main`, que no tiene
+# workflow (ver docs/README.md en esa rama).
 on:
   push:
     branches: [feature/inicio-botones]
+    paths-ignore: ['**.md', 'docs/**']
   workflow_dispatch:
 
 permissions:
