@@ -856,7 +856,10 @@ class VacioViewSet(AuditoriaMixin, viewsets.ModelViewSet):
     # ?status=pendiente|entregado filtra en el backend (la página de Vacíos tiene
     # scroll infinito paginado: filtrar en cliente solo cubriría lo ya cargado).
     filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ["status"]
+    # `reprogramado` alimenta la vista REPROGRAMADOS (?reprogramado=true). Va como
+    # filtro propio y no como un valor de ?status porque es un estado paralelo:
+    # un vacío entregado puede estar reprogramado.
+    filterset_fields = ["status", "reprogramado"]
     ordering_fields = ["id"]
     ordering = ["-id"]
 

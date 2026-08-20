@@ -258,6 +258,15 @@ class Vacio(models.Model):
     status_eir = models.CharField(
         max_length=20, choices=STATUS_EIR_CHOICES, null=True, blank=True
     )
+    # Reprogramación. Columna PROPIA y no un valor más de `status`: es un estado
+    # INDEPENDIENTE de Pendiente/Entregado, no los sustituye. Un vacío entregado
+    # puede estar reprogramado y al quitarle la reprogramación su Entregado sigue
+    # intacto — con un solo campo compartido, ese valor se habría perdido.
+    # Por eso el filtro REPROGRAMADOS pregunta por esta columna y no por status.
+    reprogramado = models.BooleanField(default=False)
+    # Solo tiene sentido con reprogramado=True; la UI oculta el campo si no lo
+    # está. NO se borra al desmarcar: es un dato que escribió una persona.
+    fecha_reprogramacion = models.DateField(null=True, blank=True)
     operador = models.CharField(max_length=255, null=True, blank=True)
     # Vacíos: transportista del vacío y segundo operador ("Entregó"), que se filtra
     # por ese transportista (mismo patrón que Maniobra). Nullable → las filas
