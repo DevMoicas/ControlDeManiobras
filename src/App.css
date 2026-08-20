@@ -360,9 +360,14 @@ html, body, #root {
   box-sizing: border-box;
 }
 
-/* En pantalla estrecha no hay hueco al lado del logo: la columna vuelve al flujo,
-   encima del logo y a todo el ancho, en vez de taparlo. */
-@media (max-width: 760px) {
+/* Por debajo de 1200px no hay hueco al lado del logo: la columna vuelve al flujo,
+   encima del logo y a todo el ancho, en vez de taparlo.
+   El corte estaba en 760px y era demasiado tarde: entre 760 y 1200 la columna
+   seguía absoluta con `right: calc(50% - 50vw + 100px)`, que a esos anchos la
+   mete DENTRO del contenido y se comía el logo y el título.
+   Va emparejado con el mismo corte en Seguimientos.css: si solo cambiara uno,
+   el panel volvería al flujo pero clavado a 320px. */
+@media (max-width: 1200px) {
   .home-lateral {
     position: static;
     align-items: stretch;

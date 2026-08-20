@@ -69,9 +69,10 @@
   color: #b42318;
 }
 
-/* En pantalla estrecha la columna vuelve al flujo (ver .home-lateral) y el panel
-   ocupa todo el ancho disponible. */
-@media (max-width: 760px) {
+/* Por debajo de 1200px la columna vuelve al flujo (ver .home-lateral en App.css)
+   y el panel ocupa todo el ancho disponible. El corte TIENE que ser el mismo que
+   allí: con 320px fijos, un panel ya en flujo se quedaría corto y descolgado. */
+@media (max-width: 1200px) {
   .seg-panel {
     width: 100%;
   }
