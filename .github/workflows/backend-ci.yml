@@ -2,11 +2,18 @@ name: Backend CI
 
 # Corre en la rama del backend. El frontend vive en otra rama del mismo repo y
 # tiene (tendrá) su propio workflow.
+# paths-ignore: un cambio que SOLO toca documentación no reconstruye la imagen ni
+# redespliega producción. Un commit mixto (código + documentos) sí dispara el
+# workflow, que es lo correcto: GitHub solo lo salta si TODOS los archivos del push
+# encajan en la lista. La documentación transversal vive en `main`, que no tiene
+# workflow (ver docs/README.md en esa rama).
 on:
   push:
     branches: [backend/api]
+    paths-ignore: ['**.md', 'docs/**']
   pull_request:
     branches: [backend/api]
+    paths-ignore: ['**.md', 'docs/**']
   workflow_dispatch:
 
 jobs:
