@@ -13,6 +13,10 @@ class Tracto(models.Model):
     placas = models.CharField(max_length=255, unique=True, validators=[MinLengthValidator(6)])
     tipo = models.CharField(max_length=255)
     tag = models.CharField(max_length=100, null=True, blank=True)
+    # Número de póliza, alfanumérico. Declarado JUSTO antes de su fecha a
+    # propósito: el serializer usa fields='__all__' y CatalogosPage pinta las
+    # columnas en el orden que llegan, así que este orden ES el de la tabla.
+    poliza = models.CharField(max_length=100, null=True, blank=True)
     fecha_vencimiento_poliza = models.DateField(null=True, blank=True)
 
     def __str__(self):
