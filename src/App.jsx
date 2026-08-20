@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, Hash, ChevronRight } from 'lucide-react';
+import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, Hash, PiggyBank, ListChecks, ChevronRight } from 'lucide-react';
 import './App.css';
 import { useAuthContext } from './context/AuthContext';
 import { useInactivityTimer } from './hooks/useInactivityTimer';
@@ -18,6 +18,9 @@ import AdminVaciosPage from './pages/AdminVaciosPage';
 import PerfilPage from './pages/PerfilPage';
 import MovimientosLocalesPage from './pages/MovimientosLocalesPage';
 import FoliosPage from './pages/FoliosPage';
+import FinanzasPage from './pages/FinanzasPage';
+import CostosExtraPage from './pages/CostosExtraPage';
+import PendientesPage from './pages/PendientesPage';
 import { useAlertasVencimiento } from './hooks/useAlertasVencimiento';
 import AlertaVencimiento from './components/AlertaVencimiento/AlertaVencimiento';
 import Seguimientos from './components/Seguimientos/Seguimientos';
@@ -29,6 +32,8 @@ const HOME_MODULES = [
   { to: 'folios',          icon: Hash,        title: 'Folios',              desc: 'Genera y administra los folios de Manzanillo y Lázaro Cárdenas.' },
   { to: 'catalogos',       icon: Library,     title: 'Catálogos',           desc: 'Gestiona operadores, placas, patios, unidades, etc.' },
   { to: 'documentos-viaje',icon: FileText,    title: 'Documentos de viaje', desc: 'Genera la documentación de cada viaje.' },
+  { to: 'finanzas',        icon: PiggyBank,   title: 'Finanzas',            desc: 'Costos extra, nómina, facturación y estados de cuenta.' },
+  { to: 'pendientes',      icon: ListChecks,  title: 'Pendientes',          desc: 'Listas de pendientes por persona.' },
 ];
 
 function Home() {
@@ -118,6 +123,13 @@ function AppRoutes() {
   const { user, logout } = useAuthContext();
 
   const showBackButton = location.pathname !== '/home' && location.pathname !== '/home/';
+  // Dentro de una subpágina de Finanzas hay DOS niveles a los que volver, así
+  // que se añade el atajo al hub. En el hub mismo no: desde ahí solo se sube.
+  const enSubpaginaFinanzas = location.pathname.startsWith('/home/finanzas/');
+  // El hub de Finanzas es la única página con barra superior propia
+  // (.home-topbar), y el botón flotante le caería justo encima. Ahí baja por
+  // debajo de la barra; en el resto se queda donde ha estado siempre.
+  const enHubFinanzas = /^\/home\/finanzas\/?$/.test(location.pathname);
 
   // Al cambiar de página, volver arriba. React Router NO reposiciona el scroll:
   // se conserva el de la página anterior, así que entrar a una página desde una
@@ -166,14 +178,31 @@ function AppRoutes() {
       <div style={{ flex: 1, position: 'relative', paddingBottom: '40px' }}>
 
         {showBackButton && (
-          <button
-            onClick={() => navigate('/home')}
-            className="home-back"
-            title="Regresar al inicio"
-          >
-            <span className="home-back-icon"><HomeIcon size={24} /></span>
-            <span className="home-back-label">Inicio</span>
-          </button>
+          /* Los botones se apilan en una zona con flex en vez de posicionarse
+             uno a uno: así el segundo no depende del ancho del primero, que
+             cambia al ocultarse la etiqueta en pantallas angostas.
+             Orden de migas: Inicio (arriba del todo) y luego Finanzas. */
+          <div className={`home-back-zona${enHubFinanzas ? ' home-back-zona--bajo' : ''}`}>
+            <button
+              onClick={() => navigate('/home')}
+              className="home-back"
+              title="Regresar al inicio"
+            >
+              <span className="home-back-icon"><HomeIcon size={24} /></span>
+              <span className="home-back-label">Inicio</span>
+            </button>
+
+            {enSubpaginaFinanzas && (
+              <button
+                onClick={() => navigate('/home/finanzas')}
+                className="home-back"
+                title="Regresar a Finanzas"
+              >
+                <span className="home-back-icon"><PiggyBank size={24} /></span>
+                <span className="home-back-label">Finanzas</span>
+              </button>
+            )}
+          </div>
         )}
 
         <Routes>
@@ -185,6 +214,15 @@ function AppRoutes() {
           <Route path="folios" element={<FoliosPage />} />
           <Route path="catalogos" element={<CatalogosPage />} />
           <Route path="documentos-viaje" element={<DocumentosViajePage />} />
+          <Route path="pendientes" element={<PendientesPage />} />
+
+          {/* Finanzas: hub con sus cuatro subpáginas. Solo Costos extra tiene
+              contenido; las otras tres esperan a tenerlo. */}
+          <Route path="finanzas" element={<FinanzasPage />} />
+          <Route path="finanzas/costos-extra" element={<CostosExtraPage />} />
+          <Route path="finanzas/nomina" element={<BlankPage title="NÓMINA" />} />
+          <Route path="finanzas/facturacion" element={<BlankPage title="FACTURACIÓN" />} />
+          <Route path="finanzas/estados-cuenta" element={<BlankPage title="ESTADOS DE CUENTA" />} />
           <Route path="perfil" element={<PerfilPage />} />
 
 

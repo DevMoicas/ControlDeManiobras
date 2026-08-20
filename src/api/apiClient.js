@@ -93,7 +93,13 @@ function sanitizarPayload(body) {
         k.replace(/[^a-zA-Z0-9_]/g, ""),
         // "" o null → null explícito: permite LIMPIAR campos (deseleccionar) y
         // evita errores de formato en campos date/number que rechazan "".
-        v === null || v === "" ? null : String(v).trim(),
+        // Las listas se dejan pasar como lista de ENTEROS (costos_extra_ids):
+        // sin esto, String([3,7]) las aplastaría a "3,7". Solo enteros a
+        // propósito — es el único tipo de array que manda el sistema y así no
+        // se abre un hueco para colar objetos en el cuerpo de la petición.
+        v === null || v === "" ? null
+          : Array.isArray(v) ? v.map(Number).filter(Number.isInteger)
+          : String(v).trim(),
       ])
   );
 }

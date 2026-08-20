@@ -1,0 +1,268 @@
+/* Pendientes: cinco tableros en 2 + 2 + 1. Usa los mismos tokens que el resto
+   del sistema (--primary, --text, borde #e6ecf5, radio 14px) para que no
+   parezca una página de otra aplicación, pero con marcado de lista: un to-do es
+   un <ul>, no una tabla de datos. */
+
+.pd-container {
+  min-height: 100vh;
+  padding: 78px 24px 60px;
+  background:
+    radial-gradient(900px 420px at 100% -10%, #e8f0ff 0%, transparent 60%),
+    var(--bg);
+}
+
+/* ── Cabecera ─────────────────────────────────────────────────────────────── */
+
+.pd-header {
+  text-align: center;
+  margin-bottom: 34px;
+}
+
+.pd-eyebrow {
+  margin: 0 0 6px;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.pd-title {
+  margin: 0;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 2.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pd-lead {
+  margin: 6px 0 0;
+  color: var(--text-light);
+  font-size: 0.95rem;
+}
+
+/* ── Rejilla: 2 + 2 + 1 ───────────────────────────────────────────────────── */
+
+.pd-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 480px));
+  justify-content: center;
+  align-items: start;
+  gap: 150px;
+}
+
+/* El quinto ocupa las dos columnas y se centra dentro, conservando el ancho de
+   los demás para que no parezca otro tipo de tablero. */
+.pd-tablero--solo {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: 100%;
+  max-width: 480px;
+}
+
+@media (max-width: 1040px) {
+  .pd-grid {
+    grid-template-columns: minmax(0, 480px);
+  }
+}
+
+/* ── Tablero ──────────────────────────────────────────────────────────────── */
+
+.pd-tablero {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e6ecf5;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
+  overflow: hidden;
+}
+
+/* Mismo azul pizarra que la cabecera de todas las tablas del sistema
+   (.custom-table thead th en CatalogosPage.css, y las de Maniobras, Vacíos,
+   Folios, Gastos y Movimientos locales): #2b3e50 sobre blanco. */
+.pd-tablero-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #2b3e50;
+  border-bottom: 1px solid #1e2b38;
+}
+
+.pd-tablero-head h2 {
+  margin: 0;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.pd-cuenta {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  /* Blanco atenuado, no gris: sobre el azul oscuro el --text-light no se lee. */
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* ── Lista ────────────────────────────────────────────────────────────────── */
+
+.pd-lista {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* Un tablero muy largo no puede estirar la fila entera y descolocar al de al
+     lado; a partir de aquí se desplaza dentro. */
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.pd-vacio {
+  padding: 22px 10px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+.pd-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff;
+  transition: background 0.15s ease;
+}
+
+.pd-item:hover {
+  background: #f8fafc;
+}
+
+/* Verde pastel solo al marcar; sin marcar no se pinta. */
+.pd-item--hecho,
+.pd-item--hecho:hover {
+  background: #dcfce7;
+}
+
+.pd-check {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pd-check:hover {
+  border-color: var(--primary);
+}
+
+.pd-check:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.pd-item--hecho .pd-check {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+/* Hueco del mismo tamaño en la línea de alta, para que el input arranque
+   alineado con el texto de los pendientes que ya existen. */
+.pd-check--fantasma {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.pd-texto {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.4;
+  cursor: text;
+  overflow-wrap: anywhere;
+}
+
+.pd-item--hecho .pd-texto {
+  color: #166534;
+  text-decoration: line-through;
+  text-decoration-color: rgba(22, 101, 52, 0.45);
+}
+
+.pd-texto:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.pd-input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: #fff;
+}
+
+.pd-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* ── Agregar ──────────────────────────────────────────────────────────────── */
+
+.pd-agregar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 0;
+  padding: 11px;
+  border: none;
+  border-top: 1px solid #e6ecf5;
+  background: #fff;
+  color: var(--primary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background 0.15s ease;
+}
+
+.pd-agregar:hover {
+  background: var(--primary-light);
+}
+
+.pd-agregar:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-item,
+  .pd-check,
+  .pd-agregar {
+    transition: none;
+  }
+}

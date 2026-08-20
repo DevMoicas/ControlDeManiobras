@@ -200,11 +200,27 @@
 
 /* Botón "Regresar al inicio" — píldora vidrio presente en cada subpágina.
    Reusa el lenguaje de la Home: glass de la topbar + azul del brand-mark + Oswald. */
-.home-back {
+/* La zona lleva la posición; los botones solo se alinean dentro. Antes la
+   posición vivía en .home-back, y con dos botones el segundo habría necesitado
+   un `left` calculado a mano que se rompe al ocultarse las etiquetas en móvil. */
+.home-back-zona {
   position: absolute;
   top: 14px;
   left: 20px;
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Por debajo de la barra superior (14 + 36 del brand-mark + 14 + 1 de borde =
+   65px) en las páginas que la tienen, para no taparle el rótulo. */
+.home-back-zona--bajo {
+  top: 80px;
+}
+
+.home-back {
   display: inline-flex;
   align-items: center;
   gap: 10px;

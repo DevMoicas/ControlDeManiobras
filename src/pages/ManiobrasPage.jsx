@@ -19,6 +19,7 @@ import FolioDisponibleSelector from "../components/FolioDisponibleSelector/Folio
 import VacioStatusSelector from "../components/VacioStatusSelector/VacioStatusSelector";
 import TerceroSelector from "../components/TerceroSelector/TerceroSelector";
 import TipoServicioSelector, { esServicioFull } from "../components/TipoServicioSelector/TipoServicioSelector";
+import CostosExtraSelector from "../components/CostosExtraSelector/CostosExtraSelector";
 import "./ManiobrasPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
 import { useAlerta } from "../components/Alertas/Alertas";
@@ -270,7 +271,17 @@ const COLUMNAS = [
   { key: "ccp_2", label: "CCP 2", inline: true, max: 100, requiereOperador2: true },
   { key: "ruta_inicio", label: "Ruta Inicio", isFechaHora: true },
   { key: "ruta_fin",    label: "Ruta Fin",    isFechaHora: true },
+  // Costos extra: la ÚNICA columna cuya key no es la del backend. Se LEE de
+  // `costos_extra` (lista con el importe congelado) y se ESCRIBE en
+  // `costos_extra_ids` (solo ids). La key es la de escritura para que el aviso
+  // de guardado encuentre su etiqueta sin caso especial.
+  { key: "costos_extra_ids", label: "Costos Extra", isCostosExtra: true },
 ];
+
+// Ids del catálogo que tiene marcados una maniobra. Se filtra el null: un costo
+// borrado del catálogo deja su enlace huérfano (conserva el importe cobrado)
+// pero ya no hay casilla que marcar.
+const idsDeCostos = (m) => (m?.costos_extra ?? []).map((c) => c.id).filter((id) => id != null);
 
 const MANIOBRA_VACIA = {
   solicita: "", agencia: "", codigo_pis: "", terminal: "", placas_pis: "", saca: "",
@@ -283,6 +294,8 @@ const MANIOBRA_VACIA = {
   // Segundo operador y su carga (migración 0035)
   operador_2: "", unidad_2: "", folio_2: "", remolque_3: "", remolque_4: "",
   tipo_2: "", peso_2: "", contenedor_2: "", ccp_2: "",
+  // Lista, no cadena: viaja tal cual en el POST (ver sanitizarPayload).
+  costos_extra_ids: [],
 };
 
 const MODAL_CERRADO = { abierto: false, datos: null };
@@ -402,6 +415,12 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               placeholderText="DD/MM/YYYY"
               className="date-picker-input"
               isClearable
+            />
+          ) : col.isCostosExtra ? (
+            <CostosExtraSelector
+              seleccionados={datos.costos_extra_ids ?? []}
+              onChange={(ids) => onChange(col.key, ids)}
+              disabled={isSubmitting}
             />
           ) : col.isPlacas ? (
             <PlacasSelector
@@ -605,6 +624,14 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     placeholderText="DD/MM/YYYY"
                     className="date-picker-input"
                     isClearable
+                  />
+                ) : col.isCostosExtra ? (
+                  /* Sin tocar nada, `datos.costos_extra_ids` no existe aún: se
+                     parte de lo que ya tiene guardado la maniobra. */
+                  <CostosExtraSelector
+                    seleccionados={datos.costos_extra_ids ?? idsDeCostos(datos)}
+                    onChange={(ids) => onChange(col.key, ids)}
+                    disabled={isSubmitting}
                   />
                 ) : col.isPlacas ? (
                   <PlacasSelector
@@ -896,6 +923,13 @@ const FilaManiobra = memo(function FilaManiobra({
     // ── Selectores: montados siempre, igual que Status Vacío y Tercero ya lo
     // estaban. Cerrados solo cuestan un <button>: ninguno pide su catálogo hasta
     // que se abre (ver el `if (!open) return` de sus useEffect).
+    if (col.isCostosExtra) return (
+      <CostosExtraSelector
+        seleccionados={idsDeCostos(maniobra)}
+        onChange={(ids) => guardar({ costos_extra_ids: ids })}
+        disabled={isSubmitting}
+      />
+    );
     if (col.isPlacas) return (
       <PlacasSelector
         currentValue={maniobra[col.key]}
@@ -1304,7 +1338,11 @@ export default function ManiobrasPage() {
       setNotif({
         tipo: "ok",
         msg: COLUMNAS.find((c) => c.key === campo)?.label ?? campo,
-        dato: valor || "(vacío)",
+        // Los costos extra viajan como lista de ids: pintarlos crudos en el
+        // aviso ("37") no dice nada. Se resume por cantidad.
+        dato: Array.isArray(valor)
+          ? (valor.length ? `${valor.length} seleccionado${valor.length > 1 ? "s" : ""}` : "(ninguno)")
+          : (valor || "(vacío)"),
       });
     } catch (err) {
       setNotif({ tipo: "error", msg: err.message || "Error al actualizar el campo." });
@@ -1367,8 +1405,12 @@ export default function ManiobrasPage() {
   const maniobrasFiltradas = useMemo(() => (
     maniobras.filter((m) =>
       !busqueda ||
+      // `costos_extra` es una lista de objetos: sin este caso, String() la
+      // aplasta a "[object Object]" y buscar "object" casaría con media tabla.
+      // De paso, los conceptos se vuelven buscables por su nombre.
       Object.values(m).some((v) =>
-        String(v).toLowerCase().includes(busqueda.toLowerCase())
+        (Array.isArray(v) ? v.map((c) => c?.movimiento ?? "").join(" ") : String(v))
+          .toLowerCase().includes(busqueda.toLowerCase())
       )
     )
   ), [maniobras, busqueda]);

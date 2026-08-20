@@ -1,0 +1,154 @@
+/* Mismo lenguaje visual que PatioSelector/VacioStatusSelector: píldora en la
+   celda + lista en portal con position:fixed. Solo cambia la paleta (ámbar, por
+   ser dinero) y que las opciones llevan casilla. */
+
+.cxs-container {
+  position: relative;
+  display: inline-block;
+}
+
+.cxs-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+  font-family: inherit;
+  max-width: 160px;
+}
+
+.cxs-trigger span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cxs-trigger--empty {
+  background: #f9fafb;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+}
+
+.cxs-trigger:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+.cxs-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cxs-chevron {
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+.cxs-dropdown {
+  /* position: fixed + coords (JSX) → portal fuera de la tabla para que el
+     overflow no lo recorte. `top`/`left` los pone el JSX. */
+  position: fixed;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  z-index: 9999;
+  min-width: 260px;
+  max-height: 260px;
+  overflow-y: auto;
+  animation: cxs-fadeIn 0.12s ease;
+}
+
+@keyframes cxs-fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cxs-state {
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.cxs-state--error {
+  color: #ef4444;
+}
+
+.cxs-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: background 0.1s ease;
+}
+
+.cxs-option:hover {
+  background: #fffbeb;
+}
+
+.cxs-option--selected {
+  background: #fef3c7;
+  font-weight: 600;
+}
+
+.cxs-marca {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  color: #92400e;
+}
+
+.cxs-movimiento {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tabular para que los importes queden alineados en columna al leerlos rápido. */
+.cxs-costo {
+  flex-shrink: 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  color: #92400e;
+  font-variant-numeric: tabular-nums;
+}
+
+.cxs-pie {
+  position: sticky;
+  bottom: -4px;
+  background: white;
+  padding: 4px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.cxs-listo {
+  width: 100%;
+  padding: 5px 10px;
+  background: #92400e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.cxs-listo:hover {
+  filter: brightness(1.1);
+}
