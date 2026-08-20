@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { PiggyBank, UserCircle, CirclePlus, Users, Receipt, Landmark, ChevronRight } from "lucide-react";
+import { Bitcoin, UserCircle, CirclePlus, Users, Receipt, Landmark, ChevronRight } from "lucide-react";
 import "./FinanzasPage.css";
 
 // Mismo contrato que HOME_MODULES en App.jsx: la rejilla de tarjetas es la de la
@@ -23,7 +23,7 @@ export default function FinanzasPage() {
 
       <header className="home-topbar">
         <div className="home-brand">
-          <span className="home-brand-mark"><PiggyBank size={20} /></span>
+          <span className="home-brand-mark"><Bitcoin size={20} /></span>
           <span className="home-brand-name">Finanzas</span>
         </div>
         <button className="home-profile" onClick={() => navigate("/home/perfil")} title="Ver perfil">

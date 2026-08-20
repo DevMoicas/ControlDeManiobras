@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, Hash, PiggyBank, ListChecks, ChevronRight } from 'lucide-react';
+import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, Hash, Bitcoin, ListChecks, ChevronRight } from 'lucide-react';
 import './App.css';
 import { useAuthContext } from './context/AuthContext';
 import { useInactivityTimer } from './hooks/useInactivityTimer';
@@ -32,7 +32,7 @@ const HOME_MODULES = [
   { to: 'folios',          icon: Hash,        title: 'Folios',              desc: 'Genera y administra los folios de Manzanillo y Lázaro Cárdenas.' },
   { to: 'catalogos',       icon: Library,     title: 'Catálogos',           desc: 'Gestiona operadores, placas, patios, unidades, etc.' },
   { to: 'documentos-viaje',icon: FileText,    title: 'Documentos de viaje', desc: 'Genera la documentación de cada viaje.' },
-  { to: 'finanzas',        icon: PiggyBank,   title: 'Finanzas',            desc: 'Costos extra, nómina, facturación y estados de cuenta.' },
+  { to: 'finanzas',        icon: Bitcoin,   title: 'Finanzas',            desc: 'Costos extra, nómina, facturación y estados de cuenta.' },
   { to: 'pendientes',      icon: ListChecks,  title: 'Pendientes',          desc: 'Listas de pendientes por persona.' },
 ];
 
@@ -198,7 +198,7 @@ function AppRoutes() {
                 className="home-back"
                 title="Regresar a Finanzas"
               >
-                <span className="home-back-icon"><PiggyBank size={24} /></span>
+                <span className="home-back-icon"><Bitcoin size={24} /></span>
                 <span className="home-back-label">Finanzas</span>
               </button>
             )}
