@@ -18,11 +18,18 @@ export const VACIO_VACIO = {
   cita: "",
   cd: "",
   coordinador: "",
+  reprogramado: false,
+  fecha_reprogramacion: "",
 };
 
-// filtroStatus: "pendiente" (default) | "entregado" | "todos". El filtro se
-// resuelve en el backend (?status=…): la página tiene scroll infinito paginado,
+// filtroStatus: "pendiente" (default) | "entregado" | "reprogramado" | "todos".
+// El filtro se resuelve en el backend: la página tiene scroll infinito paginado,
 // así que filtrar en cliente solo cubriría lo ya cargado. "todos" no filtra.
+//
+// "reprogramado" NO es un valor de `status`: es una columna propia, porque un
+// vacío entregado también puede estar reprogramado. Por eso va por ?reprogramado
+// y no por ?status — mismo caso que "tercero" en useManiobras.
+const STATUS_BACKEND = ["pendiente", "entregado"];
 export function useVacios(filtroStatus = "pendiente") {
   const [vacios,      setVacios]      = useState([]);
   const [loading,     setLoading]     = useState(true);
@@ -39,7 +46,11 @@ export function useVacios(filtroStatus = "pendiente") {
       page_size: PAGE_SIZE,
       ordering: "-id",
     });
-    if (filtroStatus && filtroStatus !== "todos") params.set("status", filtroStatus);
+    if (STATUS_BACKEND.includes(filtroStatus)) {
+      params.set("status", filtroStatus);
+    } else if (filtroStatus === "reprogramado") {
+      params.set("reprogramado", "true");
+    }
     return `/vacios/?${params.toString()}`;
   }, [filtroStatus]);
 

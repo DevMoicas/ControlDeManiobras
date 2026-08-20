@@ -88,7 +88,12 @@ const COLUMNAS = [
   { key: "fecha_entrega",             label: "Fecha Entrega",   isFecha: true },
   { key: "fecha_notificacion_cliente",label: "Cometarios",        max: 50 },
   { key: "status",                    label: "Status",            isStatus: true },
+  { key: "reprogramado",              label: "Reprogramado",      isReprogramado: true },
+  // Siempre presente en la cabecera; la celda queda vacía si el vacío no está
+  // reprogramado (mismo patrón que `requiereOperador2` en Maniobras).
+  { key: "fecha_reprogramacion",      label: "Fecha Reprogramación", isFecha: true, requiereReprogramado: true },
   { key: "status_eir",                label: "Status EIR",        isStatusEir: true },
+  { key: "coordinador",               label: "Coordinador",       isCoordinador: true },
   { key: "operador",                  label: "OP del Viaje",      isOperador: true },
   // Texto libre, sin catálogo detrás: se escriben a mano como Contenedor o Cita.
   // El límite es el del modelo (Vacio.transportista / .operador_entrega, 255).
@@ -96,16 +101,29 @@ const COLUMNAS = [
   { key: "operador_entrega",          label: "Entregó",           max: 255 },
   { key: "cita",                      label: "Cita",              max: 255 },
   { key: "cd",                        label: "CD",                max: 255 },
-  { key: "coordinador",               label: "Coordinador",       isCoordinador: true },
 ];
 
 // Vista por defecto: Pendientes (primero). El filtro se resuelve en backend
 // (useVacios → ?status=…). "todos" no filtra.
 const FILTROS = [
-  { id: "pendiente", label: "Pendientes" },
-  { id: "todos",     label: "Todos" },
-  { id: "entregado", label: "Entregados" },
+  { id: "pendiente",    label: "Pendientes" },
+  { id: "todos",        label: "Todos" },
+  { id: "entregado",    label: "Entregados" },
+  // No es un valor de `status`: filtra por la columna propia (ver useVacios).
+  { id: "reprogramado", label: "Reprogramados" },
 ];
+
+// Sí / No de la columna REPROGRAMADO. Se reutiliza VacioStatusSelector, que ya
+// acepta su juego de opciones por prop: mismo aspecto y mismo portal que las
+// demás columnas de estado, sin un componente nuevo.
+const REPROGRAMADO_OPCIONES = [
+  { id: "si", label: "Sí", bg: "#ffedd5", fg: "#9a3412" },
+  { id: "no", label: "No", bg: "#f3f4f6", fg: "#6b7280" },
+];
+
+// El selector manda "" al reelegir la misma opción (deseleccionar). Para un sí/no
+// eso es simplemente "no": la columna es NOT NULL y no admite un tercer estado.
+const aBooleano = (valor) => valor === "si";
 
 const MODAL_CERRADO = { abierto: false, datos: null };
 
@@ -116,7 +134,14 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
     <tr>
       {COLUMNAS.map((col) => (
         <td key={col.key}>
-          {col.isFecha ? (
+          {col.requiereReprogramado && !datos.reprogramado ? null : col.isReprogramado ? (
+            <VacioStatusSelector
+              opciones={REPROGRAMADO_OPCIONES}
+              currentStatus={datos[col.key] ? "si" : "no"}
+              onSelect={(val) => onChange(col.key, aBooleano(val))}
+              loading={false}
+            />
+          ) : col.isFecha ? (
             <DatePicker
               locale="es"
               dateFormat="dd/MM/yyyy"
@@ -213,7 +238,14 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
             {COLUMNAS.map((col) => (
               <div key={col.key} className="modal-campo">
                 <label htmlFor={`edit-${col.key}`}>{col.label}</label>
-                {col.isFecha ? (
+                {col.requiereReprogramado && !datos.reprogramado ? null : col.isReprogramado ? (
+                  <VacioStatusSelector
+                    opciones={REPROGRAMADO_OPCIONES}
+                    currentStatus={datos[col.key] ? "si" : "no"}
+                    onSelect={(val) => onChange(col.key, aBooleano(val))}
+                    loading={false}
+                  />
+                ) : col.isFecha ? (
                   <DatePicker
                     id={`edit-${col.key}`}
                     locale="es"
@@ -398,7 +430,9 @@ export default function VaciosPage() {
       setNotif({
         tipo: "ok",
         msg: COLUMNAS.find((c) => c.key === campo)?.label ?? campo,
-        dato: valor || "(vacío)",
+        // Reprogramado guarda un booleano: React no pinta `true` y `false` caería
+        // en "(vacío)", así que el aviso diría lo contrario de lo que se guardó.
+        dato: typeof valor === "boolean" ? (valor ? "Sí" : "No") : (valor || "(vacío)"),
       });
     } catch (err) {
       setNotif({ tipo: "error", msg: err.message || "Error al actualizar el campo." });
@@ -582,7 +616,13 @@ export default function VaciosPage() {
                 <tr key={vacio.id}>
                   {COLUMNAS.map((col) => (
                     <td key={col.key}>
-                      {col.isStatus ? (
+                      {col.requiereReprogramado && !vacio.reprogramado ? null : col.isReprogramado ? (
+                        <VacioStatusSelector
+                          opciones={REPROGRAMADO_OPCIONES}
+                          currentStatus={vacio[col.key] ? "si" : "no"}
+                          onSelect={(val) => handleGuardarCampo(vacio, col.key, aBooleano(val))}
+                        />
+                      ) : col.isStatus ? (
                         <VacioStatusSelector
                           currentStatus={vacio.status}
                           onSelect={(nuevoStatus) => handleStatusChange(vacio, nuevoStatus)}
