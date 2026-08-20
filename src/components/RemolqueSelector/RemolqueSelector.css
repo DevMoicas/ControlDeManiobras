@@ -79,7 +79,9 @@
   margin: 0;
   padding: 4px;
   z-index: 9999;
-  min-width: 200px;
+  /* 200 → 300: la opción lleva ahora tipo Y color, y los tipos largos
+     ("40/20/20 PLANA") romperían la línea en dos. */
+  min-width: 300px;
   max-height: 220px;
   overflow-y: auto;
   animation: rs-fadeIn 0.12s ease;
@@ -122,10 +124,25 @@
   font-weight: 600;
 }
 
+.rs-placas {
+  flex-shrink: 0;
+}
+
 .rs-tipo {
   font-size: 0.75rem;
   color: #6b7280;
   flex: 1;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+/* El color, alineado a la derecha del bloque de metadatos: así queda en columna
+   entre opciones y se compara de un vistazo, que es para lo que se pidió. */
+.rs-color {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #4b5563;
 }
 
 .rs-check {

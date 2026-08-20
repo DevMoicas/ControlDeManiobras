@@ -121,8 +121,11 @@ export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
               className={`rs-option ${r.placas === currentValue ? "rs-option--selected" : ""}`}
               onClick={(e) => { e.stopPropagation(); handleSelect(r); }}
             >
-              <span>{r.placas}</span>
-              <span className="rs-tipo">Tipo: {r.tipo}</span>
+              <span className="rs-placas">{r.placas}</span>
+              <span className="rs-tipo">
+                Tipo: {r.tipo}
+                {r.color && <span className="rs-color">Color: {r.color}</span>}
+              </span>
               {r.placas === currentValue && <span className="rs-check">✓</span>}
             </li>
           ))}

@@ -17,6 +17,19 @@ import TransportistaSelector from "../components/TransportistaSelector/Transport
 // Todas las tablas de catálogos se muestran estrictamente por id ascendente.
 const porId = (arr) => [...arr].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
 
+// Columnas que el backend manda como fecha ISO y aquí se leen como DD/MM/AAAA.
+// Lista explícita y no "toda clave que empiece por fecha_": `fecha_ingreso` de
+// empleados es texto libre en la base y no siempre trae una fecha.
+const COLUMNAS_FECHA = new Set(["fecha_vencimiento_poliza"]);
+
+// "2026-12-31" → "31/12/2026". Cualquier otra cosa (vacío, texto suelto) sale
+// tal cual: la celda nunca debe tragarse un dato por no saber interpretarlo.
+function valorParaMostrar(clave, valor) {
+  if (!COLUMNAS_FECHA.has(clave)) return valor;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(valor ?? ""));
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : valor;
+}
+
 export default function NoEcoPage() {
   const alerta = useAlerta();
   const preguntar = useConfirmacion();
@@ -60,6 +73,7 @@ export default function NoEcoPage() {
     colonia: "Colonia",
     ciudad: "Ciudad",
     fecha_vencimiento_licencia: "Fecha Vencimiento Licencia",
+    poliza: "Póliza",
     fecha_vencimiento_poliza: "Fecha Vencimiento Póliza",
     tag: "Tag",
     cargo: "Cargo",
@@ -75,6 +89,7 @@ export default function NoEcoPage() {
       { name: "anio", label: "Año", type: "number" },
       { name: "placas", label: "Placas", type: "text" },
       { name: "tipo", label: "Tipo", type: "text" },
+      { name: "poliza", label: "Póliza", type: "text", required: false },
       { name: "fecha_vencimiento_poliza", label: "Fecha Vencimiento Póliza", type: "date", required: false }
     ],
     remolques: [
@@ -532,8 +547,8 @@ export default function NoEcoPage() {
                 ) : (
                   dataOrigenesFiltrada.map((item) => (
                     <tr key={item.id}>
-                      {Object.values(item).map((val, i) => (
-                        <td key={i}>{val}</td>
+                      {Object.entries(item).map(([clave, val]) => (
+                        <td key={clave}>{valorParaMostrar(clave, val)}</td>
                       ))}
                       <td>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
@@ -601,8 +616,8 @@ export default function NoEcoPage() {
                 ) : (
                   dataDestinosFiltrada.map((item) => (
                     <tr key={item.id}>
-                      {Object.values(item).map((val, i) => (
-                        <td key={i}>{val}</td>
+                      {Object.entries(item).map(([clave, val]) => (
+                        <td key={clave}>{valorParaMostrar(clave, val)}</td>
                       ))}
                       <td>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
@@ -672,8 +687,8 @@ export default function NoEcoPage() {
                 ) : (
                   dataUnidadesFiltrada.map((item) => (
                     <tr key={item.id}>
-                      {Object.values(item).map((val, i) => (
-                        <td key={i}>{val}</td>
+                      {Object.entries(item).map(([clave, val]) => (
+                        <td key={clave}>{valorParaMostrar(clave, val)}</td>
                       ))}
                       <td>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
@@ -741,8 +756,8 @@ export default function NoEcoPage() {
                 ) : (
                   dataOperadoresFiltrada.map((item) => (
                     <tr key={item.id}>
-                      {Object.values(item).map((val, i) => (
-                        <td key={i}>{val}</td>
+                      {Object.entries(item).map(([clave, val]) => (
+                        <td key={clave}>{valorParaMostrar(clave, val)}</td>
                       ))}
                       <td>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
@@ -808,8 +823,8 @@ export default function NoEcoPage() {
               ) : (
                 dataFiltrada.map((item) => (
                   <tr key={item.id}>
-                    {Object.values(item).map((val, i) => (
-                      <td key={i}>{val}</td>
+                    {Object.entries(item).map(([clave, val]) => (
+                      <td key={clave}>{valorParaMostrar(clave, val)}</td>
                     ))}
                     <td>
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
