@@ -1,8 +1,28 @@
 # PLAN — Torre de control
 
-Fecha: 2026-08-21 · Estado: **hecho y probado en local, sin desplegar.**
-158/158 pruebas del backend (9 nuevas), 15/15 de la lógica del frontend, `npm run build` en verde,
-migraciones `0045` y `0046` aplicadas en la base local con sus permisos verificados.
+Fecha: 2026-08-21 · Estado: **✅ desplegado en producción el 2026-08-21.**
+
+| Repo | Commit | Contenido |
+|---|---|---|
+| backend | `48eb7baa` | Modelo, viewset, ruta `/torre-control/`, migraciones `0045`–`0048` y 19 pruebas |
+| frontend | `28e3887` | Pantalla, arrastre táctil y 23 pruebas de lógica pura |
+
+Un solo commit por repo, no dos: `models.py` y `Serializers.py` llevaban cambios de la torre **y**
+del color de fila (ver `PLAN_COLOR_DE_FILA.md`), que se desplegaron juntos, y separarlos por archivo
+no era posible.
+
+Orden seguido, el de siempre: migraciones `0045`–`0048` contra prod por la vía oficial
+(`migrar_prod.sh`) → backend en verde → frontend. 168/168 pruebas del backend y 23/23 de la lógica
+del frontend.
+
+**La comprobación que de verdad cerró la migración** no fue el `401` de la API: eso no prueba que una
+columna exista, porque la petición se rechaza antes de tocar la base. Fue cargar Maniobras y Vacíos en
+producción con el frontend **viejo** ya hablando con el backend **nuevo** — que serializa `color`. Si
+la migración no hubiera llegado, esas dos páginas habrían dado `500` en ese momento exacto. Cargaron.
+
+Verificado después del frontend: assets con su MIME correcto y del tamaño del build local, los deep
+links `/torre-control`, `/maniobras` y `/vacios` en `200`, `/api/torre-control/` en `401` JSON, un
+asset inexistente en `404`, y el ETag rotado de `"76416003"` a `"28960995"` (cachés curadas solas).
 
 Un tablero de ocupación de las unidades propias de FRABA. Una rejilla de un mes, y una bolita
 por unidad que está o en el cajón **UNIDADES LIBRES** o pegada a un día del calendario. Una
