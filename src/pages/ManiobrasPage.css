@@ -373,6 +373,26 @@
 .maniobras-container .maniobras-table tbody tr.row-status--por-salir td:first-child { border-left-color: #6b21a8; }
 .maniobras-container .maniobras-table tbody tr.row-status--por-salir:hover td { background: #bba1ca; }
 
+/* ── Color de fila puesto a mano (el balde) ───────────────────────────────────
+   Gana al color del status por ORDEN, no por especificidad: estas reglas tienen
+   la misma que las de arriba y van después, así que no hace falta !important ni
+   inflar selectores. Si alguien mueve este bloque por encima, deja de mandar.
+
+   Sin color no hay clase `row-pintada`, así que las reglas del status vuelven a
+   aplicar solas — restablecer no tiene que recordar ningún color anterior.
+
+   Las dos variables las pone la fila en su atributo style (ver ManiobrasPage.jsx).
+   `--texto-fila` existe porque la paleta de Sheets llega hasta el negro: sin
+   cambiar el texto a blanco, las filas oscuras quedarían ilegibles. */
+.maniobras-container .maniobras-table tbody tr.row-pintada td {
+  background: var(--color-fila);
+  color: var(--texto-fila);
+}
+
+.maniobras-container .maniobras-table tbody tr.row-pintada:hover td {
+  filter: brightness(0.94);
+}
+
 /* ── Inputs ───────────────────────────────────────────────────────────────── */
 .maniobras-container .maniobras-table input,
 .maniobras-container .date-picker-input {

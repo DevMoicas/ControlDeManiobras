@@ -23,6 +23,8 @@ import CostosExtraSelector from "../components/CostosExtraSelector/CostosExtraSe
 import "./ManiobrasPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
 import { useAlerta } from "../components/Alertas/Alertas";
+import ColorSelector from "../components/ColorSelector/ColorSelector";
+import { esColorValido, textoSobre } from "../utils/colorFila.mjs";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import { useAuthContext } from "../context/AuthContext";
 import DatePicker from "react-datepicker";
@@ -806,6 +808,9 @@ const FilaManiobra = memo(function FilaManiobra({
   onStatusChange, onVacioStatusChange, onTerceroChange, onGuardarCampos, onEditar, onVerFotos, onEliminar,
 }) {
   const statusConfig = getStatusConfig(maniobra.status);
+  // El color manual manda sobre el del status. Un valor guardado que no sea
+  // "#rrggbb" se ignora en vez de acabar dentro del CSS de la tabla.
+  const pintado = esColorValido(maniobra.color) ? maniobra.color : null;
   const esFull = esServicioFull(maniobra);
   const preguntar = useConfirmacion();
 
@@ -1152,18 +1157,29 @@ const FilaManiobra = memo(function FilaManiobra({
   };
 
   return (
-    <tr className={statusConfig?.rowClass ?? ""}>
+    <tr
+      className={`${statusConfig?.rowClass ?? ""}${pintado ? " row-pintada" : ""}`}
+      // Sin color no hay ni clase ni variables: la fila vuelve sola a lo que
+      // pinte su status, sin tener que recordar cuál era.
+      style={pintado ? { "--color-fila": pintado, "--texto-fila": textoSobre(pintado) } : undefined}
+    >
       {COLUMNAS.map((col) => (
         <td key={col.key} style={col.style ?? {}}>
           {renderCelda(col)}
         </td>
       ))}
       <td style={{ whiteSpace: "nowrap" }}>
-        <StatusSelector
-          currentStatus={maniobra.status}
-          onSelect={(newStatus) => onStatusChange(maniobra, newStatus)}
-          loading={isUpdating}
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <StatusSelector
+            currentStatus={maniobra.status}
+            onSelect={(newStatus) => onStatusChange(maniobra, newStatus)}
+            loading={isUpdating}
+          />
+          <ColorSelector
+            color={maniobra.color}
+            onSelect={(valor) => guardar({ color: valor })}
+          />
+        </div>
       </td>
       <td>
         <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>

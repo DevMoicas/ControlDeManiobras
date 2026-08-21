@@ -303,6 +303,26 @@
 .vacios-container .vacios-table tbody tr { transition: background 0.12s; }
 .vacios-container .vacios-table tbody tr:hover td { background: var(--paper-deep); }
 
+/* ── Color de fila puesto a mano (el balde) ───────────────────────────────────
+   Va DESPUÉS del hover a propósito: tiene la misma especificidad, así que gana
+   por orden y el color elegido no desaparece al pasar el ratón. El hover sobre
+   una fila pintada se resuelve oscureciendo su propio color, no sustituyéndolo.
+
+   Sin color no hay clase `row-pintada` y la fila vuelve al fondo normal: aquí no
+   hay color por status que recuperar, las filas de Vacíos no se pintan solas.
+
+   `--texto-fila` existe porque la paleta de Sheets llega hasta el negro: sin
+   cambiar el texto a blanco, las filas oscuras quedarían ilegibles. */
+.vacios-container .vacios-table tbody tr.row-pintada td {
+  background: var(--color-fila);
+  color: var(--texto-fila);
+}
+
+.vacios-container .vacios-table tbody tr.row-pintada:hover td {
+  background: var(--color-fila);
+  filter: brightness(0.94);
+}
+
 /* ── El talón ─────────────────────────────────────────────────────────────────
    En un impreso, el talón es la franja izquierda que identifica el registro y va
    separada del cuerpo por una regla vertical. Aquí es la primera columna, que

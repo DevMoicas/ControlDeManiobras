@@ -1,0 +1,262 @@
+/* Torre de control: rejilla mensual arriba, cajón de unidades libres abajo.
+   Mismos tokens que el resto del sistema (--primary, --text, --bg, borde
+   #e6ecf5, radio 14px) para que no parezca una página de otra aplicación. */
+
+.tc-container {
+  min-height: 100vh;
+  padding: 78px 24px 60px;
+  background:
+    radial-gradient(900px 420px at 100% -10%, #e8f0ff 0%, transparent 60%),
+    var(--bg);
+}
+
+.tc-estado {
+  text-align: center;
+  color: var(--text);
+  margin-top: 40px;
+}
+
+/* ── Cabecera y navegación ────────────────────────────────────────────────── */
+
+.tc-header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.tc-eyebrow {
+  margin: 0 0 6px;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--primary);
+}
+
+.tc-navegacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.tc-mes {
+  margin: 0;
+  min-width: 260px;
+  font-size: 1.6rem;
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+.tc-flecha {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e6ecf5;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.tc-flecha:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ── Aviso de meses anteriores ────────────────────────────────────────────── */
+
+.tc-aviso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 980px;
+  margin: 0 auto 20px;
+  padding: 12px 16px;
+  border: 1px solid #f0c36d;
+  border-left: 4px solid #e0a020;
+  border-radius: 14px;
+  background: #fff8e8;
+  color: #6b4c00;
+}
+
+.tc-aviso-ir {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 6px 12px;
+  border: 1px solid #e0a020;
+  border-radius: 999px;
+  background: #fff;
+  color: #6b4c00;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── Rejilla del mes ──────────────────────────────────────────────────────── */
+
+/* Desplaza en horizontal dentro de su contenedor en vez de encoger las
+   columnas: siete días con bolitas dentro no caben en un móvil sin volverse
+   ilegibles. Mismo recurso que las tablas del sistema. */
+.tc-rejilla-scroll {
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.tc-rejilla {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(116px, 1fr));
+  gap: 6px;
+  min-width: 812px;   /* 7 × 116 */
+}
+
+.tc-dia-nombre {
+  padding: 9px 0;
+  margin-bottom: 2px;
+  border-radius: 10px;
+  background: #e4ecfa;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-align: center;
+  /* Iban en --primary a 0.78rem: un azul claro y fino sobre fondo claro que
+     apenas se leía. Texto principal sobre pastilla, que es lo que ya usa el
+     resto del sistema para las cabeceras de tabla. */
+  color: var(--text);
+}
+
+.tc-celda {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 104px;
+  padding: 6px;
+  border: 1px solid #e6ecf5;
+  border-radius: 14px;
+  background: #fff;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.tc-celda-hueca {
+  border: none;
+  background: transparent;
+}
+
+/* Resalta la casilla bajo el puntero, para saber en cuál se va a soltar. El
+   :not() deja fuera los huecos anteriores al día 1: no son destino válido y
+   marcarlos prometería un sitio donde no se puede soltar nada.
+   El fantasma que sigue al ratón lleva pointer-events: none, así que el :hover
+   sigue cayendo en la casilla de debajo también mientras se arrastra. */
+.tc-celda:not(.tc-celda-hueca):hover {
+  border-color: var(--primary);
+  background: #f4f8ff;
+}
+
+.tc-celda-hoy {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary) inset;
+}
+
+.tc-numero {
+  font-size: 0.8rem;
+  color: #8a97ab;
+}
+
+.tc-celda-bolitas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* ── Unidades libres ──────────────────────────────────────────────────────── */
+
+.tc-libres {
+  max-width: 980px;
+  margin: 26px auto 0;
+  padding: 14px 16px 18px;
+  border: 1px solid #e6ecf5;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.tc-libres-titulo {
+  margin: 0 0 14px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-align: center;
+  /* Era 0.9rem en --primary: el mismo problema de contraste que tenían los días
+     de la semana. Es el título de una de las dos zonas de la pantalla, así que
+     va en texto principal y a un tamaño que se lea de un vistazo. */
+  color: var(--text);
+}
+
+/* Orden de lectura normal: el No. Eco menor a la izquierda, creciendo hacia la
+   derecha. El DOM ya viene ascendente, así que el orden visual y el del
+   tabulador coinciden sin trucos de dirección. */
+.tc-libres-fila {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.tc-libres-vacio {
+  margin: 0;
+  color: #8a97ab;
+}
+
+/* ── La bolita ────────────────────────────────────────────────────────────── */
+
+.tc-bolita {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 62px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: grab;
+  /* Los dos imprescindibles para arrastrar:
+     · touch-action: none — sin esto el navegador se queda el gesto del dedo
+       para hacer scroll y el arrastre se cancela nada más mover.
+     · user-select: none — sin esto el ratón selecciona el texto al arrastrar. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tc-bolita-atenuada {
+  opacity: 0.3;
+}
+
+/* La copia que sigue al dedo o al ratón. pointer-events: none es obligatorio:
+   si capturara el puntero, elementFromPoint leería el fantasma en vez de la
+   casilla que hay debajo y no se podría soltar en ningún sitio. */
+.tc-fantasma {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  position: fixed;
+  z-index: 1000;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}

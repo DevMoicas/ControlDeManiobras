@@ -13,6 +13,8 @@ import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import { useNavigate } from "react-router-dom";
 import VacioStatusSelector, { EIR_STATUSES } from "../components/VacioStatusSelector/VacioStatusSelector";
+import ColorSelector from "../components/ColorSelector/ColorSelector";
+import { esColorValido, textoSobre } from "../utils/colorFila.mjs";
 import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
 import PatioSelector from "../components/PatioSelector/PatioSelector";
 // Mismo componente que usan Origen y Destino en Maniobras; el alias es para que
@@ -115,6 +117,16 @@ const FILTROS = [
   // No es un valor de `status`: filtra por la columna propia (ver useVacios).
   { id: "reprogramado", label: "Reprogramados" },
 ];
+
+// Props de pintado de una fila. Mismo contrato que Maniobras: sin un color
+// válido no hay clase ni variables, así que la fila vuelve al fondo normal y
+// restablecer no tiene que recordar nada.
+const propsPintado = (color) => (esColorValido(color)
+  ? {
+      className: "row-pintada",
+      style: { "--color-fila": color, "--texto-fila": textoSobre(color) },
+    }
+  : {});
 
 // Sí / No de la columna REPROGRAMADO. Se reutiliza VacioStatusSelector, que ya
 // acepta su juego de opciones por prop: mismo aspecto y mismo portal que las
@@ -616,7 +628,7 @@ export default function VaciosPage() {
               </tr>
             ) : (
               vaciosFiltrados.map((vacio) => (
-                <tr key={vacio.id}>
+                <tr key={vacio.id} {...propsPintado(vacio.color)}>
                   {COLUMNAS.map((col) => (
                     <td key={col.key}>
                       {col.requiereReprogramado && !vacio.reprogramado ? null : col.isReprogramado ? (
@@ -626,11 +638,17 @@ export default function VaciosPage() {
                           onSelect={(val) => handleGuardarCampo(vacio, col.key, aBooleano(val))}
                         />
                       ) : col.isStatus ? (
-                        <VacioStatusSelector
-                          currentStatus={vacio.status}
-                          onSelect={(nuevoStatus) => handleStatusChange(vacio, nuevoStatus)}
-                          loading={updatingId === vacio.id}
-                        />
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <VacioStatusSelector
+                            currentStatus={vacio.status}
+                            onSelect={(nuevoStatus) => handleStatusChange(vacio, nuevoStatus)}
+                            loading={updatingId === vacio.id}
+                          />
+                          <ColorSelector
+                            color={vacio.color}
+                            onSelect={(valor) => handleGuardarCampo(vacio, "color", valor)}
+                          />
+                        </div>
                       ) : col.isStatusEir ? (
                         <VacioStatusSelector
                           opciones={EIR_STATUSES}
