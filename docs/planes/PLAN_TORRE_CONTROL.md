@@ -1,6 +1,8 @@
 # PLAN — Torre de control
 
-Fecha: 2026-08-21 · Estado: **sin empezar**. Especificación cerrada con el usuario; nada escrito todavía.
+Fecha: 2026-08-21 · Estado: **hecho y probado en local, sin desplegar.**
+158/158 pruebas del backend (9 nuevas), 15/15 de la lógica del frontend, `npm run build` en verde,
+migraciones `0045` y `0046` aplicadas en la base local con sus permisos verificados.
 
 Un tablero de ocupación de las unidades propias de FRABA. Una rejilla de un mes, y una bolita
 por unidad que está o en el cajón **UNIDADES LIBRES** o pegada a un día del calendario. Una
@@ -79,10 +81,11 @@ solo se dan por buenos contra una base real.
 
 | Archivo | Cambio |
 |---|---|
-| `api/models.py` | `class TorreControl` con `managed = False`, `db_table = 'torre_control'`, FK a `Tracto` |
+| `api/models.py` | `class TorreControl` con `managed = True` y la constante `BOLITAS_POR_UNIDAD`, FK a `Tracto` |
 | `api/Serializers.py` | Expone `no_eco` de solo lectura (`source='tracto.no_eco'`) para que el frontend no cruce dos listas |
 | viewset + urls | `ModelViewSet` con `IsAuthenticated`, registrado como `/torre-control/` igual que el resto de catálogos |
-| `api/test_torre_control.py` | Un segundo POST del mismo `(tracto, indice)` devuelve 400 sin crear fila; un usuario `standard` puede mover |
+| `api/migrations/` | `0045_torrecontrol` crea la tabla y `0046_grant_torrecontrol_to_standard_role` concede permisos y RLS |
+| `api/test_torre_control.py` | 9 pruebas: unicidad como 400 legible, `indice` fuera de rango, mover sin duplicar, liberar y volver a ocupar, `no_eco` en el listado, sin paginar y sin sesión |
 
 `indice` se valida en el servidor contra el máximo permitido y `fecha` la valida ya `DateField`.
 La interfaz no es una defensa: cualquiera con la consola del navegador abierta manda lo que quiera.
@@ -103,8 +106,9 @@ se va a usar en tabletas y móviles. Un hook propio, `src/hooks/useArrastre.js`:
 
 - `onPointerDown` en la bolita captura el puntero y guarda `tracto_id:indice`.
 - `onPointerMove` mueve una copia flotante siguiendo el dedo o el ratón.
-- `onPointerUp` resuelve el destino con `document.elementFromPoint(x, y)` y busca el
-  `data-fecha` de la casilla que haya debajo.
+- `onPointerUp` resuelve el destino con `document.elementFromPoint(x, y)` y sube al
+  `[data-destino]` más cercano: la fecha en una casilla, `"libres"` en el cajón. El destino lo
+  declara el HTML, así que el hook no sabe nada de calendarios ni de bolitas.
 - La bolita lleva `touch-action: none` en CSS: sin eso, el navegador se queda el gesto para
   hacer scroll y el arrastre nunca empieza en un móvil.
 
@@ -112,8 +116,12 @@ Un mismo camino para ratón y dedo, sin dependencia nueva. Si el arrastre a mano
 scroll de la página más de lo previsto, la salida es `@dnd-kit/core`, que trae sensores de
 puntero y de toque — pero solo si hace falta, no de entrada.
 
-**La rejilla con `date-fns`**, que ya es dependencia: `startOfMonth`, `endOfMonth`,
-`eachDayOfInterval`, `getDay` y el locale `es`. Nada de calcular días a mano.
+**La rejilla sin `date-fns`, y sin `Date` sobre textos.** Se planteó usar `date-fns`, que ya es
+dependencia, pero las tres líneas que hacen falta —primer día del mes, su día de la semana y
+cuántos días tiene— salen con `new Date(anio, mes, dia)`, que es hora local. Lo importante no es
+ahorrarse el import: es que **nada parsea "2026-08-21"**. `new Date("2026-08-21")` es medianoche
+UTC y en México (UTC-6) se pinta como el día 20. Todo se compara como texto, así que el día que
+guarda el backend es el día que se ve. Hay prueba para eso.
 
 **El orden del cajón necesita orden natural, no alfabético.** Los datos reales mezclan
 `'NO. 01'` (con espacio) y `'NO.10'` (sin él). Un `sort()` de texto acierta con los 11 tractos
