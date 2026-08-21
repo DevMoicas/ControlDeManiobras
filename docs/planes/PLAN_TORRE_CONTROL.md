@@ -24,15 +24,20 @@ unidad ocupada **no se libera sola**: se queda donde la dejaron hasta que alguie
 
 ## Modelo de datos
 
-```sql
-CREATE TABLE torre_control (
-    id        SERIAL   PRIMARY KEY,
-    tracto_id INTEGER  NOT NULL REFERENCES tractos(id) ON DELETE CASCADE,
-    indice    SMALLINT NOT NULL DEFAULT 1 CHECK (indice BETWEEN 1 AND 2),
-    fecha     DATE     NOT NULL,
-    UNIQUE (tracto_id, indice)
-);
+Tabla `api_torrecontrol`, **`managed = True` con migración** — la convención vigente del repo:
+solo las tablas heredadas (`tractos`, `vacios`, `maniobras`, `empleados`) son `managed = False`.
+Así la crea `migrate` en local y en producción, y no hay DDL a mano que se olvide en un entorno.
+
 ```
+tracto  FK → tractos, CASCADE, db_constraint=False
+indice  PositiveSmallInteger, por defecto 1
+fecha   Date
+UNIQUE (tracto, indice)  ·  CHECK (indice entre 1 y 2)
+```
+
+`db_constraint=False` en la FK por el mismo motivo que `ManiobraCostoExtra.maniobra`: `api` corre
+sin migraciones en la base de test, donde `tractos` (managed=False) no existe, y un constraint
+contra ella rompería la creación de la BD de pruebas. El CASCADE del ORM sigue actuando.
 
 **Una fila es una bolita ocupada. Sin fila, la unidad está libre.** No hay columna `ocupada`
 que pueda desincronizarse del calendario: colocar o mover es `INSERT`/`UPDATE fecha`, liberar
@@ -48,22 +53,27 @@ el aviso de mes anterior se deriva de `fecha`. Se añade cuando alguien pregunte
 ### Trampa: los permisos del rol `standard`
 
 El backend enruta las consultas a **dos usuarios de Postgres distintos** según el rol de quien
-entra (`RoleBasedRouter` en `api/routers.py`, alias `default` y `standard`, credenciales en
-`DB_ADMIN_USER` y `DB_STANDARD_USER`). Una tabla nueva nace sin permisos para el segundo:
+entra (`RoleBasedRouter` en `api/routers.py`, alias `default` y `standard`). Una tabla nueva nace
+sin permisos para el segundo, y su secuencia se crea después del `GRANT ON ALL SEQUENCES` de la
+migración 0005, así que aquella concesión tampoco la alcanza. Sin esto, la torre funcionaría con
+una cuenta admin y daría `permission denied` a todos los demás — que son justo quienes la usan.
+
+El repo ya tiene resuelto el patrón y **no hace falta SQL a mano**: una migración aparte que
+concede los permisos y habilita RLS, como `0038` (costos extra) y `0040` (pendientes). Aquí es
+`0046_grant_torrecontrol_to_standard_role`, con las cuatro operaciones —DELETE incluido, porque
+en este tablero borrar la fila *es* liberar la unidad— y políticas `USING (true)`, que gatean por
+rol y no por dueño de la fila: la torre es un tablero compartido por toda la empresa.
+
+Verificación tras migrar, la misma que se usa en producción:
 
 ```sql
-GRANT SELECT, INSERT, UPDATE, DELETE ON torre_control TO <DB_STANDARD_USER>;
-GRANT USAGE, SELECT ON SEQUENCE torre_control_id_seq TO <DB_STANDARD_USER>;
+SELECT privilege_type FROM information_schema.role_table_grants
+ WHERE table_name = 'api_torrecontrol' AND grantee = 'django_standard_role';
 ```
 
-Sin esto la torre funciona con una cuenta admin y falla con `permission denied for table
-torre_control` para todos los demás — que son justo los que la van a usar. No hay ningún
-`GRANT` versionado en el repo: los permisos se aplicaron a mano en producción, así que este
-paso es manual y fácil de olvidar.
-
-**Pendiente de comprobar antes de escribir el SQL:** si las tablas existentes tienen RLS
-activo (`SELECT relname, relrowsecurity FROM pg_class WHERE relname IN ('tractos','vacios')`),
-hay que decidir si `torre_control` replica el criterio o queda fuera a propósito.
+⚠️ `settings_test` se salta las migraciones de `api`, así que **en la base de pruebas no existen
+ni los GRANT ni la RLS** y no hay separación de roles. Las pruebas cubren lógica; los permisos
+solo se dan por buenos contra una base real.
 
 ## Backend
 
@@ -165,7 +175,7 @@ buena la pantalla.
 
 El de siempre, y los dos saltos ya han fallado antes:
 
-1. **SQL contra la base de producción**: `CREATE TABLE`, los dos `GRANT` y la comprobación de RLS. Lo corre el usuario.
+1. **Migrar la base de producción**: `0045_torrecontrol` (crea la tabla) y `0046_grant_torrecontrol_to_standard_role` (permisos y RLS). Por la vía oficial de siempre: cortafuegos temporal, `migrate` en local contra prod, cerrar el cortafuegos. Lo corre el usuario. Nada de SQL a mano — la tabla la crea la migración, y crearla antes haría fallar la 0045.
 2. **Backend** a `backend/api`, esperar el CI en verde. Presupuestar que el gate de `pip-audit` puede tumbar el despliegue por CVE nuevas sin relación con este cambio.
 3. **Frontend** a `feature/inicio-botones`, que publica en producción sin PR ni staging.
 
