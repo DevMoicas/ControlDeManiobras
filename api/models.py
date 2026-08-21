@@ -177,6 +177,13 @@ class Maniobra(models.Model):
     # 0017 vía RunSQL porque la tabla es managed=False (vive en pgAdmin).
     tercero = models.CharField(max_length=20, null=True, blank=True)
 
+    # Color de relleno de la fila, elegido a mano como en una hoja de cálculo.
+    # Manda sobre el color que pinta `status`, y NULL significa "sin pintar": la
+    # fila vuelve al color de su status sin que haya que recordar cuál era.
+    # Formato "#rrggbb" — el serializer lo valida, porque este valor acaba en el
+    # CSS de la tabla. Columna real en la migración 0047 (tabla managed=False).
+    color = models.CharField(max_length=7, null=True, blank=True)
+
     # ── Auditoría (quién/cuándo). editable=False / auto_now → read_only en el
     # serializer; created_by/updated_by se rellenan en perform_create/update. ──
     created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
@@ -279,6 +286,13 @@ class Vacio(models.Model):
     operador_entrega = models.CharField(max_length=255, null=True, blank=True)
     cita = models.CharField(max_length=255, null=True, blank=True)
     cd = models.CharField(max_length=255, null=True, blank=True)
+
+    # Color de relleno de la fila, elegido a mano. Mismo contrato que
+    # Maniobra.color: "#rrggbb" o NULL, validado en el serializer porque el valor
+    # acaba en el CSS de la tabla. Aquí no hay color por status que sobreescribir
+    # —las filas de Vacios no se pintan solas—, así que NULL devuelve la fila al
+    # fondo normal. Columna real en la migracion 0048 (tabla managed=False).
+    color = models.CharField(max_length=7, null=True, blank=True)
 
     # ── Auditoría (quién/cuándo) ──
     created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
@@ -693,3 +707,59 @@ class DispositivoConfianza(models.Model):
             )
             .first()
         )
+
+
+# Cuántas bolitas se ofrecen por unidad. Hoy 1; subirla a 2 activa la segunda
+# sin tocar el esquema — el CHECK de TorreControl ya admite las dos. El frontend
+# tiene su propia copia en src/utils/torreControl.mjs: son dos repositorios
+# distintos y un valor que cambia una vez en la vida no justifica un endpoint
+# de configuración. Si se cambia aquí, cambiar allí.
+BOLITAS_POR_UNIDAD = 1
+
+
+class TorreControl(models.Model):
+    """Una bolita ocupada del tablero de la torre de control.
+
+    Una fila es una unidad ocupada, pegada a un día del calendario. Sin fila, la
+    unidad está libre. No hay columna `ocupada` que pueda contradecir al tablero:
+    colocar o mover una bolita es un UPDATE de `fecha` y liberarla es borrar la
+    fila, así que los dos estados no pueden desincronizarse.
+
+    La ocupación NO caduca. Nada la libera al cambiar de día ni de mes: se queda
+    donde la dejaron hasta que alguien arrastre la bolita a UNIDADES LIBRES. Lo
+    que quedó en un mes pasado lo delata el aviso del frontend, que lo deriva de
+    `fecha` — por eso aquí no hace falta ninguna columna de estado ni de caducidad.
+    """
+    # db_constraint=False por el mismo motivo que ManiobraCostoExtra.maniobra:
+    # `api` corre sin migraciones en la base de test, donde las tablas
+    # managed=False (tractos) no existen, y un constraint contra ellas rompería
+    # la creación de la BD de pruebas. El CASCADE del ORM sigue actuando.
+    tracto = models.ForeignKey(
+        Tracto, on_delete=models.CASCADE,
+        related_name='bolitas', db_constraint=False,
+    )
+    # 1 hoy, 2 cuando se suba BOLITAS_POR_UNIDAD. El CHECK deja el esquema listo
+    # para las dos; quien decide cuántas se pintan es la constante, no la base.
+    indice = models.PositiveSmallIntegerField(default=1)
+    fecha  = models.DateField()
+
+    class Meta:
+        managed  = True
+        ordering = ['id']
+        constraints = [
+            # "Una bolita por unidad" vive aquí y no en el código: dos peticiones
+            # simultáneas no pueden colar una bolita duplicada.
+            models.UniqueConstraint(
+                fields=['tracto', 'indice'],
+                name='uniq_torre_control_tracto_indice',
+            ),
+            # De paso acota la tabla a nº de tractos × 2 filas: nadie puede
+            # inflarla mandando índices arbitrarios.
+            models.CheckConstraint(
+                condition=models.Q(indice__gte=1, indice__lte=2),
+                name='torre_control_indice_1_o_2',
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.tracto.no_eco}#{self.indice} → {self.fecha}"

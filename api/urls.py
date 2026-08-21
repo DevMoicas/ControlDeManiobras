@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenRefreshView, TokenBlacklistView
 
 from .views import (
     TractoViewSet,
+    TorreControlViewSet,
     RemolqueViewSet,
     ChoferViewSet,
     EmpleadoViewSet,
@@ -55,6 +56,7 @@ router.register(r'dispositivos-confianza', DispositivoConfianzaViewSet, basename
 router.register(r'folios', FolioViewSet, basename='folios')
 router.register(r'costos-extra', CostoExtraViewSet, basename='costos-extra')
 router.register(r'pendientes', PendienteViewSet, basename='pendientes')
+router.register(r'torre-control', TorreControlViewSet, basename='torre-control')
 
 urlpatterns = [
     path('', include(router.urls)),

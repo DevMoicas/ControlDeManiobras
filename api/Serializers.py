@@ -1,5 +1,6 @@
+import re
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, BOLITAS_POR_UNIDAD
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
@@ -94,6 +95,23 @@ class ManiobraCostoExtraSerializer(serializers.ModelSerializer):
         fields = ('id', 'movimiento', 'costo')
 
 
+def validar_color_de_fila(valor):
+    """Color de relleno de una fila: solo "#rrggbb", o vacío para no pintar.
+
+    Compartido por Maniobras y Vacíos: es una comprobación de seguridad y
+    duplicarla es pedir que las dos copias se separen con el tiempo.
+
+    Se valida en el servidor y no solo en la paleta del frontend porque este
+    valor acaba dentro del CSS de la tabla: lo que llegue aquí es lo que se pinta
+    para todos los usuarios, y la interfaz no es una defensa.
+    """
+    if not valor:
+        return None
+    if not re.fullmatch(r'#[0-9a-fA-F]{6}', valor):
+        raise serializers.ValidationError('Color inválido: se espera "#rrggbb".')
+    return valor.lower()
+
+
 class ManiobraSerializer(serializers.ModelSerializer):
     # Único campo obligatorio para registrar una maniobra.
     solicita = serializers.CharField(required=True, allow_blank=False, allow_null=False, max_length=30)
@@ -124,6 +142,9 @@ class ManiobraSerializer(serializers.ModelSerializer):
         exclude = ('cliente_fk',)
 
     # ponytail: codigo_pis acepta cualquier texto; el max_length=100 del modelo evita error de columna.
+
+    def validate_color(self, valor):
+        return validar_color_de_fila(valor)
 
     def validate(self, data):
         # Longitud máxima por campo para evitar payloads enormes
@@ -392,6 +413,9 @@ class VacioSerializer(serializers.ModelSerializer):
         model = Vacio
         fields = '__all__'
 
+    def validate_color(self, valor):
+        return validar_color_de_fila(valor)
+
 class PatioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Patio
@@ -491,3 +515,23 @@ class FolioSerializer(serializers.ModelSerializer):
 
         attrs['codigo'] = codigo
         return attrs
+
+
+class TorreControlSerializer(serializers.ModelSerializer):
+    # La bolita se pinta con su No. Eco. Va aquí para que el frontend no tenga
+    # que cruzar esta lista con la de tractos en cada render.
+    no_eco = serializers.CharField(source='tracto.no_eco', read_only=True)
+
+    class Meta:
+        model  = TorreControl
+        fields = ('id', 'tracto', 'indice', 'fecha', 'no_eco')
+
+    def validate_indice(self, valor):
+        """El CHECK de la base admite 1 y 2; cuántas se ofrecen HOY lo dice la
+        constante. Sin esto, un cliente podría crear la segunda bolita antes de
+        que exista en la interfaz — la interfaz no es una defensa."""
+        if not 1 <= valor <= BOLITAS_POR_UNIDAD:
+            raise serializers.ValidationError(
+                f"Solo hay {BOLITAS_POR_UNIDAD} bolita(s) por unidad."
+            )
+        return valor

@@ -2,12 +2,12 @@ import base64
 import re
 import django_filters
 from rest_framework import viewsets, mixins
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, PENDIENTE_VIDA, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, PENDIENTE_VIDA, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer, CostoExtraSerializer, PendienteSerializer
+from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer, CostoExtraSerializer, PendienteSerializer, TorreControlSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .Serializers import CustomTokenObtainPairSerializer, DispositivoConfianzaSerializer
@@ -1110,6 +1110,27 @@ class PendienteViewSet(mixins.ListModelMixin,
     def list(self, request, *args, **kwargs):
         Pendiente.objects.filter(creado_en__lt=self._limite()).delete()
         return super().list(request, *args, **kwargs)
+
+
+class TorreControlViewSet(viewsets.ModelViewSet):
+    """Las bolitas ocupadas del tablero de la torre de control.
+
+    Una fila es una unidad ocupada; la ausencia de fila es la unidad libre. Por
+    eso las cuatro operaciones son de uso normal y ninguna está reservada:
+    colocar es POST, mover es PATCH de `fecha` y soltar en UNIDADES LIBRES es
+    DELETE. Aquí borrar no es destruir un registro de negocio —no hay historia
+    que perder— sino devolver una unidad a disponible, así que no lleva el
+    candado de admin de los catálogos: el tablero lo maneja quien opera.
+    """
+    queryset               = TorreControl.objects.select_related('tracto')
+    serializer_class       = TorreControlSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+    # Sin paginar: el tablero deduce las unidades libres restando las ocupadas,
+    # así que una lista a medias inventaría unidades libres que no lo están. Con
+    # el tope de la tabla (nº de tractos × 2) nunca se acerca al PAGE_SIZE=60.
+    pagination_class       = None
 
 
 class CostoExtraViewSet(viewsets.ModelViewSet):
