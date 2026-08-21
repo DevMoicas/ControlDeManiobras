@@ -20,7 +20,7 @@ unidad ocupada **no se libera sola**: se queda donde la dejaron hasta que alguie
 | ¿Quién puede arrastrar? | Todos los usuarios autenticados. Solo existen los roles `admin` y `standard` |
 | ¿Dónde se usa? | PC, tabletas y móviles. El arrastre tiene que funcionar con el dedo |
 | ¿Bolitas por unidad? | 1, con el código preparado para 2 |
-| ¿Orden del cajón? | No. Eco ascendente, el menor pegado al borde derecho |
+| ¿Orden del cajón? | No. Eco ascendente de izquierda a derecha. Se pidió al revés al principio (el menor pegado al borde derecho) y se cambió al verlo funcionando el 2026-08-21 |
 
 ## Modelo de datos
 
@@ -127,9 +127,9 @@ y además tocar datos de producción. `ordenPorNoEco()` extrae el número y orde
 tres líneas que funcionan con cualquiera de los tres formatos y no dependen de que nadie
 recuerde una convención. Uniformar el texto queda como cambio cosmético aparte, si se quiere.
 
-El pintado de derecha a izquierda
-se hace con `flex-direction: row-reverse`, que deja el DOM en orden ascendente —correcto para
-lector de pantalla y tabulador— y coloca el menor a la derecha.
+Se pinta de izquierda a derecha,
+así que el orden del DOM, el visual y el del tabulador son el mismo y no hace falta ningún truco
+de dirección en el CSS.
 
 **El aviso se deriva, no se guarda.** `pendientesMesAnterior(bolitas, hoy)` devuelve los No. Eco
 con `fecha` en un mes anterior al actual. Si la lista está vacía no hay aviso; si tiene algo,
