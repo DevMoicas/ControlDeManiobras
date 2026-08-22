@@ -316,6 +316,12 @@
 .vacios-container .vacios-table tbody tr.row-pintada td {
   background: var(--color-fila);
   color: var(--texto-fila);
+  /* Solo en las filas pintadas a mano, nunca en las de status: sobre un relleno
+     elegido a dedo el texto tiene que leerse igual de bien que sobre el blanco,
+     y el color por si solo no basta en los tonos medios. `--texto-fila` ya elige
+     entre tinta y blanco por contraste (ver colorFila.mjs); esto le anade el
+     peso. */
+  font-weight: 600;
 }
 
 .vacios-container .vacios-table tbody tr.row-pintada:hover td {

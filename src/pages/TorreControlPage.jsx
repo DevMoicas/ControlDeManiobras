@@ -1,11 +1,16 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { ChevronLeft, ChevronRight, TriangleAlert, Truck } from "lucide-react";
+import {
+  ChevronLeft, ChevronRight, TriangleAlert, Truck, X, ArrowRight, RotateCcw,
+} from "lucide-react";
 import { useTorreControl } from "../hooks/useTorreControl";
 import { useArrastre } from "../hooks/useArrastre";
 import { useAlerta } from "../components/Alertas/Alertas";
+import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
+import FolioSelector from "../components/FolioSelector/FolioSelector";
 import {
-  BOLITAS_POR_UNIDAD, ordenPorNoEco, mesHoy, desplazarMes, celdasDelMes,
-  pendientesDeMesesAnteriores, mesMinimoNavegable, mesDe, fechaHoy,
+  BOLITAS_POR_UNIDAD, INDICE_INICIO, INDICE_FIN, ordenPorNoEco, mesHoy,
+  desplazarMes, celdasDelMes, pendientesDeMesesAnteriores, mesMinimoNavegable,
+  mesDe, fechaHoy, primerNombre, diaDeFechaHora,
 } from "../utils/torreControl.mjs";
 import "./TorreControlPage.css";
 
@@ -15,8 +20,7 @@ const DIAS = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
 // petición: es comparar dos textos. Mismo intervalo que el resto del sistema.
 const TICK_MS = 60_000;
 
-// Identidad de una bolita a lo largo del arrastre. Lleva el índice porque el día
-// que BOLITAS_POR_UNIDAD sea 2, la misma unidad tendrá dos bolitas distintas.
+// Identidad de una bolita a lo largo del arrastre.
 const claveDe = (tractoId, indice) => `${tractoId}:${indice}`;
 
 const nombreDelMes = (mes) => {
@@ -25,16 +29,24 @@ const nombreDelMes = (mes) => {
     .toLocaleDateString("es-MX", { month: "long", year: "numeric" });
 };
 
-function Bolita({ noEco, alPresionar, atenuada }) {
+const MESES_CORTO = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const diaLegible = (dia) =>
+  dia ? `${Number(dia.slice(8))} ${MESES_CORTO[Number(dia.slice(5, 7)) - 1]}` : "";
+
+/** Una bolita: verde la de salida (índice 1), roja la de regreso (índice 2). */
+function Bolita({ noEco, indice, alPresionar, atenuada }) {
+  const esInicio = indice === INDICE_INICIO;
   return (
     <span
-      className={`tc-bolita${atenuada ? " tc-bolita-atenuada" : ""}`}
+      className={[
+        "tc-bolita",
+        esInicio ? "tc-bolita-inicio" : "tc-bolita-fin",
+        atenuada ? "tc-bolita-atenuada" : "",
+      ].filter(Boolean).join(" ")}
       onPointerDown={alPresionar}
-      title={noEco}
+      title={`${noEco} · ${esInicio ? "salida" : "regreso"}`}
     >
-      {/* El mismo Truck que ya identifica a Maniobras y a la marca de la
-          cabecera: la unidad se reconoce igual en toda la aplicación. */}
-      <Truck size={14} aria-hidden="true" />
+      <Truck size={13} aria-hidden="true" />
       {noEco}
     </span>
   );
@@ -42,17 +54,18 @@ function Bolita({ noEco, alPresionar, atenuada }) {
 
 export default function TorreControlPage() {
   const alerta = useAlerta();
-  const { unidades, bolitas, cargando, error, mover, liberar } = useTorreControl();
+  const preguntar = useConfirmacion();
+  const {
+    unidades, bolitas, asignaciones,
+    cargando, error, mover, liberar, liberarTodas, asignarFolio, quitarFolio,
+  } = useTorreControl();
 
-  // `hoy` es el mes real; `mes` es el que se está mirando. Son distintos en
-  // cuanto alguien retrocede con la flecha.
   const [hoy, setHoy] = useState(mesHoy);
   const [mes, setMes] = useState(mesHoy);
 
   // El calendario se actualiza solo: si la pestaña lleva abierta desde agosto y
   // ya es septiembre, salta al mes nuevo. Solo arrastra la vista si estaba
-  // mirando el mes que acaba de terminar — a quien esté revisando un mes pasado
-  // no se le mueve la pantalla debajo.
+  // mirando el mes que acaba de terminar.
   useEffect(() => {
     const id = setInterval(() => {
       const ahora = mesHoy();
@@ -63,7 +76,6 @@ export default function TorreControlPage() {
     return () => clearInterval(id);
   }, [hoy]);
 
-  // Se recalcula al cambiar de mes, que es cuando puede quedar obsoleta.
   const fechaDeHoy = useMemo(() => fechaHoy(), [hoy]);
 
   const pendientes = useMemo(
@@ -71,12 +83,8 @@ export default function TorreControlPage() {
     [bolitas, hoy],
   );
 
-  // Hasta dónde llega la flecha atrás: el mes de la bolita más antigua. Sin
-  // pendientes no hay hacia dónde ir, y así ninguna unidad queda inalcanzable.
   const mesMinimo = useMemo(() => mesMinimoNavegable(bolitas, hoy), [bolitas, hoy]);
 
-  // El No. Eco de cada bolita, por clave. Lo usa el fantasma que sigue al dedo:
-  // mientras se arrastra, la bolita puede estar en el calendario o en libres.
   const etiquetas = useMemo(() => {
     const mapa = new Map();
     for (const unidad of unidades) {
@@ -93,22 +101,30 @@ export default function TorreControlPage() {
       if (!mapa.has(bolita.fecha)) mapa.set(bolita.fecha, []);
       mapa.get(bolita.fecha).push(bolita);
     }
+    // Dentro del día, la de salida antes que la de regreso.
+    for (const delDia of mapa.values()) delDia.sort((a, b) => a.indice - b.indice);
     return mapa;
   }, [bolitas]);
 
-  // Libres = las que no están ocupadas. No se guardan en ningún sitio: se restan.
+  // Libres = las bolitas que no están puestas en ningún día.
   const libres = useMemo(() => {
-    const ocupadas = new Set(bolitas.map((b) => claveDe(b.tracto, b.indice)));
+    const puestas = new Set(bolitas.map((b) => claveDe(b.tracto, b.indice)));
     const sueltas = [];
     for (const unidad of ordenPorNoEco(unidades)) {
       for (let indice = 1; indice <= BOLITAS_POR_UNIDAD; indice++) {
-        if (!ocupadas.has(claveDe(unidad.id, indice))) {
-          sueltas.push({ clave: claveDe(unidad.id, indice), no_eco: unidad.no_eco });
+        if (!puestas.has(claveDe(unidad.id, indice))) {
+          sueltas.push({ clave: claveDe(unidad.id, indice), no_eco: unidad.no_eco, indice });
         }
       }
     }
     return sueltas;
   }, [unidades, bolitas]);
+
+  const asignacionPorTracto = useMemo(
+    () => new Map(asignaciones.map((a) => [a.tracto, a])),
+    [asignaciones],
+  );
+
 
   const alSoltar = useCallback((clave, destino) => {
     const [tracto, indice] = clave.split(":").map(Number);
@@ -121,6 +137,61 @@ export default function TorreControlPage() {
   }, [mover, liberar, alerta]);
 
   const { arrastrando, alPresionar } = useArrastre(alSoltar);
+
+  /**
+   * Asigna el folio y, si la maniobra ya tiene fechas de ruta, ACOMODA las
+   * bolitas: la verde en Ruta Inicio y la roja en Ruta Fin.
+   *
+   * Acomodar no es fijar. Las bolitas se siguen moviendo a mano después, y si
+   * la maniobra no tiene esas fechas no se toca ninguna — se colocan a mano
+   * como siempre.
+   */
+  const elegirFolio = useCallback(async (unidad, maniobra) => {
+    try {
+      await asignarFolio(unidad.id, maniobra.folio);
+
+      const salida  = diaDeFechaHora(maniobra.ruta_inicio);
+      const regreso = diaDeFechaHora(maniobra.ruta_fin);
+      if (salida)  await mover(unidad.id, INDICE_INICIO, salida);
+      if (regreso) await mover(unidad.id, INDICE_FIN, regreso);
+
+      alerta({
+        tipo: "ok",
+        msg: `${unidad.no_eco} · folio ${maniobra.folio}`,
+        dato: salida || regreso
+          ? `bolitas acomodadas ${diaLegible(salida)}${regreso ? " → " + diaLegible(regreso) : ""}`
+          : "sin fechas de ruta: coloca las bolitas a mano",
+      });
+    } catch (err) {
+      alerta({ tipo: "error", msg: err.message || "No se pudo asignar el folio." });
+    }
+  }, [asignarFolio, mover, alerta]);
+
+  /** Devuelve todas las bolitas al cajón. Pregunta antes: un clic de más
+   *  borraría la colocación de todo el mes y no hay deshacer. */
+  const vaciarCalendario = useCallback(async () => {
+    if (!await preguntar({
+      titulo: "Regresar las bolitas al cajón",
+      mensaje: "Se quitarán del calendario todas las bolitas colocadas, del mes que sea. Los folios asignados no se tocan.",
+      dato: `${bolitas.length} bolita${bolitas.length === 1 ? "" : "s"} colocada${bolitas.length === 1 ? "" : "s"}`,
+      accion: "Regresar",
+      peligro: true,
+    })) return;
+
+    try {
+      await liberarTodas();
+    } catch (err) {
+      alerta({ tipo: "error", msg: err.message || "No se pudieron regresar las bolitas." });
+    }
+  }, [preguntar, liberarTodas, bolitas.length, alerta]);
+
+  const soltarFolio = useCallback(async (asignacion) => {
+    try {
+      await quitarFolio(asignacion.id);
+    } catch (err) {
+      alerta({ tipo: "error", msg: err.message || "No se pudo quitar el folio." });
+    }
+  }, [quitarFolio, alerta]);
 
   if (cargando) return <div className="tc-container"><p className="tc-estado">Cargando la torre…</p></div>;
   if (error) {
@@ -163,7 +234,7 @@ export default function TorreControlPage() {
 
       {/* El aviso no se puede cerrar: se va solo cuando esas bolitas dejan de
           estar en un mes anterior. Un aviso que se descarta se olvida, y la
-          unidad seguiría bloqueada sin que nadie lo supiera. */}
+          unidad seguiría ocupada sin que nadie lo supiera. */}
       {pendientes.length > 0 && (
         <div className="tc-aviso" role="status">
           <TriangleAlert size={18} />
@@ -172,71 +243,169 @@ export default function TorreControlPage() {
             {pendientes.length === 1 ? " sigue ocupada" : " siguen ocupadas"} en
             {" "}{[...new Set(pendientes.map((b) => nombreDelMes(mesDe(b.fecha))))].join(", ")}.
           </span>
-          <button
-            className="tc-aviso-ir"
-            onClick={() => setMes(mesDe(pendientes[0].fecha))}
-          >
+          <button className="tc-aviso-ir" onClick={() => setMes(mesDe(pendientes[0].fecha))}>
             Ir <ChevronLeft size={16} />
           </button>
         </div>
       )}
 
-      <div className="tc-rejilla-scroll">
-        <div className="tc-rejilla">
-          {DIAS.map((dia) => (
-            <div key={dia} className="tc-dia-nombre">{dia}</div>
-          ))}
+      <div className="tc-columnas">
+        {/* ── Reporte: una fila por unidad ───────────────────────────────── */}
+        <section className="tc-reporte">
+          <div className="tc-reporte-cabecera">
+            <h2 className="tc-reporte-titulo">Unidades y su viaje</h2>
+            <button
+              type="button"
+              className="tc-vaciar"
+              onClick={vaciarCalendario}
+              disabled={bolitas.length === 0}
+              title={bolitas.length === 0
+                ? "No hay ninguna bolita en el calendario"
+                : "Regresar todas las bolitas al cajón"}
+            >
+              <RotateCcw size={15} />
+              Regresar al cajón
+            </button>
+          </div>
 
-          {celdas.map((fecha, i) => (
-            fecha === null
-              ? <div key={`hueco-${i}`} className="tc-celda tc-celda-hueca" />
-              : (
-                <div
-                  key={fecha}
-                  className={`tc-celda${fecha === fechaDeHoy ? " tc-celda-hoy" : ""}`}
-                  data-destino={fecha}
-                >
-                  <span className="tc-numero">{Number(fecha.slice(8))}</span>
-                  <div className="tc-celda-bolitas">
-                    {(bolitasPorDia.get(fecha) ?? []).map((bolita) => (
-                      <Bolita
-                        key={bolita.id}
-                        noEco={bolita.no_eco}
-                        atenuada={arrastrando?.clave === claveDe(bolita.tracto, bolita.indice)}
-                        alPresionar={alPresionar(claveDe(bolita.tracto, bolita.indice))}
+          <ul className="tc-reporte-lista">
+            {ordenPorNoEco(unidades).map((unidad) => {
+              const asignacion = asignacionPorTracto.get(unidad.id);
+              const servicio = asignacion?.servicio;
+              const salida  = diaDeFechaHora(servicio?.ruta_inicio);
+              const regreso = diaDeFechaHora(servicio?.ruta_fin);
+
+              return (
+                <li key={unidad.id} className="tc-reporte-fila">
+                  <div className="tc-reporte-cabeza">
+                    <span className="tc-reporte-eco">{unidad.no_eco}</span>
+
+                    <div className="tc-reporte-acciones">
+                      {/* El mismo selector que usan CTA Port y los demás
+                          documentos: folio, ruta, operador y cliente. Se deja
+                          siempre visible para poder reasignar sin quitar antes.
+                          `placas` lo acota a los folios de ESTA unidad. */}
+                      <FolioSelector
+                        currentValue={asignacion?.folio}
+                        placas={unidad.placas}
+                        onSelect={(maniobra) => elegirFolio(unidad, maniobra)}
                       />
-                    ))}
+                      {asignacion && (
+                        <button
+                          type="button"
+                          className="tc-reporte-quitar"
+                          onClick={() => soltarFolio(asignacion)}
+                          title="Quitar el folio y liberar la unidad de este viaje"
+                          aria-label={`Quitar el folio ${asignacion.folio} de ${unidad.no_eco}`}
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Si el folio no tiene maniobra, o la maniobra no tiene un
+                      dato, no se enseña nada en su lugar. */}
+                  {servicio && (
+                    <div className="tc-reporte-datos">
+                      {(servicio.origen || servicio.destino) && (
+                        <span className="tc-reporte-ruta">
+                          {servicio.origen}
+                          <ArrowRight size={13} aria-hidden="true" />
+                          {servicio.destino}
+                        </span>
+                      )}
+                      {servicio.cliente && <span>{servicio.cliente}</span>}
+                      {servicio.operador && (
+                        <span className="tc-reporte-operador">{primerNombre(servicio.operador)}</span>
+                      )}
+                      {(salida || regreso) && (
+                        <span className="tc-reporte-fechas">
+                          {diaLegible(salida)}
+                          {regreso && <> <ArrowRight size={12} aria-hidden="true" /> {diaLegible(regreso)}</>}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        {/* ── Calendario ─────────────────────────────────────────────────── */}
+        <div className="tc-calendario">
+          <div className="tc-rejilla-scroll">
+            <div className="tc-rejilla">
+              {DIAS.map((dia) => (
+                <div key={dia} className="tc-dia-nombre">{dia}</div>
+              ))}
+
+              {celdas.map((fecha, i) => (
+                fecha === null
+                  ? <div key={`hueco-${i}`} className="tc-celda tc-celda-hueca" />
+                  : (
+                    <div
+                      key={fecha}
+                      className={`tc-celda${fecha === fechaDeHoy ? " tc-celda-hoy" : ""}`}
+                      data-destino={fecha}
+                    >
+                      <span className="tc-numero">{Number(fecha.slice(8))}</span>
+                      <div className="tc-celda-bolitas">
+                        {(bolitasPorDia.get(fecha) ?? []).map((bolita) => (
+                          <Bolita
+                            key={bolita.id}
+                            noEco={bolita.no_eco}
+                            indice={bolita.indice}
+                            atenuada={arrastrando?.clave === claveDe(bolita.tracto, bolita.indice)}
+                            alPresionar={alPresionar(claveDe(bolita.tracto, bolita.indice))}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )
+              ))}
+            </div>
+          </div>
+
+          <section className="tc-libres" data-destino="libres">
+            <h2 className="tc-libres-titulo">Unidades libres</h2>
+            <p className="tc-libres-pista">
+              <span className="tc-punto tc-punto-inicio" /> salida
+              <span className="tc-punto tc-punto-fin" /> regreso
+            </p>
+            {/* Una fila por color: las verdes arriba y las rojas debajo. Las dos
+                con el mismo criterio, No. Eco ascendente de izquierda a derecha,
+                así que las dos bolitas de una unidad quedan una sobre otra y se
+                localizan mirando a la misma altura. */}
+            {[INDICE_INICIO, INDICE_FIN].map((indice) => {
+              const delColor = libres.filter((b) => b.indice === indice);
+              return (
+                <div key={indice} className="tc-libres-fila">
+                  {delColor.map(({ clave, no_eco }) => (
+                    <Bolita
+                      key={clave}
+                      noEco={no_eco}
+                      indice={indice}
+                      atenuada={arrastrando?.clave === clave}
+                      alPresionar={alPresionar(clave)}
+                    />
+                  ))}
                 </div>
-              )
-          ))}
+              );
+            })}
+            {libres.length === 0 && (
+              <p className="tc-libres-vacio">Todas las bolitas están puestas.</p>
+            )}
+          </section>
         </div>
       </div>
-
-      <section className="tc-libres" data-destino="libres">
-        <h2 className="tc-libres-titulo">Unidades libres</h2>
-        {/* Ascendente de izquierda a derecha: el orden del DOM, el visual y el
-            del tabulador son el mismo. */}
-        <div className="tc-libres-fila">
-          {libres.map(({ clave, no_eco }) => (
-            <Bolita
-              key={clave}
-              noEco={no_eco}
-              atenuada={arrastrando?.clave === clave}
-              alPresionar={alPresionar(clave)}
-            />
-          ))}
-          {libres.length === 0 && (
-            <p className="tc-libres-vacio">Todas las unidades están ocupadas.</p>
-          )}
-        </div>
-      </section>
 
       {/* La copia que sigue al dedo o al ratón. pointer-events: none en el CSS,
           o taparía justo el punto que elementFromPoint tiene que leer. */}
       {arrastrando && (
         <span
-          className="tc-fantasma"
+          className={`tc-fantasma${arrastrando.clave.endsWith(`:${INDICE_FIN}`) ? " tc-fantasma-fin" : ""}`}
           style={{ left: arrastrando.x, top: arrastrando.y }}
         >
           <Truck size={14} aria-hidden="true" />

@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   numeroDeNoEco, ordenPorNoEco, mesDe, mesHoy, desplazarMes,
   celdasDelMes, pendientesDeMesesAnteriores, mesMinimoNavegable, fechaHoy,
+  BOLITAS_POR_UNIDAD, INDICE_INICIO, INDICE_FIN, primerNombre, diaDeFechaHora,
 } from "./torreControl.mjs";
 
 const bolita = (no_eco, fecha) => ({ no_eco, fecha });
@@ -105,4 +106,35 @@ test("sin bolitas ocupadas no se puede retroceder", () => {
 test("una bolita del mes en curso no abre la flecha atrás", () => {
   const bolitas = [bolita("NO.7", "2026-09-03")];
   assert.equal(mesMinimoNavegable(bolitas, "2026-09"), "2026-09");
+});
+
+
+// ── Bolita verde y roja, y lo que se lee del folio ───────────────────────────
+
+test("hay dos bolitas por unidad: verde el inicio, roja el fin", () => {
+  assert.equal(BOLITAS_POR_UNIDAD, 2);
+  assert.equal(INDICE_INICIO, 1);
+  assert.equal(INDICE_FIN, 2);
+});
+
+test("del operador solo se queda el primer nombre", () => {
+  assert.equal(primerNombre("ANTONIO FRANCO"), "ANTONIO");
+  assert.equal(primerNombre("  JUAN  PABLO  "), "JUAN");
+  assert.equal(primerNombre("FIDEL"), "FIDEL");
+  assert.equal(primerNombre(""), "");
+  assert.equal(primerNombre(null), "");
+});
+
+test("el día de una fecha-hora sale en horario local", () => {
+  // La cadena trae su huso, así que el día es el del calendario de aquí.
+  assert.equal(diaDeFechaHora("2026-08-03T08:00:00-06:00"), "2026-08-03");
+  // Y el caso que delata un desfase de huso: las 23:00 locales siguen siendo
+  // el día 3, aunque en UTC ya sea el 4.
+  assert.equal(diaDeFechaHora("2026-08-03T23:00:00-06:00"), "2026-08-03");
+});
+
+test("sin fecha-hora no hay día que acomodar", () => {
+  assert.equal(diaDeFechaHora(null), null);
+  assert.equal(diaDeFechaHora(""), null);
+  assert.equal(diaDeFechaHora("no es una fecha"), null);
 });

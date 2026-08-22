@@ -53,15 +53,28 @@ export function luminancia(hex) {
   return 0.2126 * canales[0] + 0.7152 * canales[1] + 0.0722 * canales[2];
 }
 
+/** Contraste WCAG entre dos luminancias: de 1 (invisible) a 21 (negro sobre blanco). */
+export function contraste(unaLuminancia, otraLuminancia) {
+  const claro = Math.max(unaLuminancia, otraLuminancia);
+  const oscuro = Math.min(unaLuminancia, otraLuminancia);
+  return (claro + 0.05) / (oscuro + 0.05);
+}
+
 /**
- * Qué color de texto se lee sobre ese relleno.
+ * Qué color de texto se lee MEJOR sobre ese relleno.
  *
- * La paleta de Sheets llega hasta el negro, así que sin esto las tres filas de
- * sombras dejarían la maniobra ilegible: texto oscuro sobre fondo oscuro. El
- * umbral 0.4 es donde el contraste con el texto oscuro del sistema deja de
- * cumplir 4.5:1.
+ * Se prueban los dos y gana el de más contraste. Antes había un umbral fijo de
+ * luminancia (0.4) y erraba justo donde más se nota: en los tonos medios de la
+ * paleta —un #6d9eeb, un #93c47d— elegía blanco cuando la tinta oscura contrasta
+ * casi el doble. Comparar los dos no tiene umbral que ajustar y siempre acierta.
+ *
+ * Hace falta porque la paleta de Sheets llega hasta el negro: sin esto, las tres
+ * filas de sombras dejarían la fila ilegible.
  */
 export function textoSobre(hex) {
   if (!esColorValido(hex)) return TEXTO_OSCURO;
-  return luminancia(hex) > 0.4 ? TEXTO_OSCURO : TEXTO_CLARO;
+  const fondo = luminancia(hex);
+  return contraste(fondo, luminancia(TEXTO_OSCURO)) >= contraste(fondo, luminancia(TEXTO_CLARO))
+    ? TEXTO_OSCURO
+    : TEXTO_CLARO;
 }

@@ -13,8 +13,12 @@ import "./FolioSelector.css";
  *   currentValue  string   — folio actualmente seleccionado (para mostrar en botón)
  *   onSelect      function — callback recibe el objeto maniobra completo
  *   disabled      boolean  — deshabilita el selector
+ *   placas        string   — opcional: acota a los folios de ESA unidad. Sin él,
+ *                            el selector se comporta como siempre (todos). Lo usa
+ *                            la torre de control, donde en la fila de una unidad
+ *                            solo tienen sentido los folios que hizo ella.
  */
-export default function FolioSelector({ currentValue, onSelect, disabled }) {
+export default function FolioSelector({ currentValue, onSelect, disabled, placas }) {
   const [abierto, setAbierto]     = useState(false);
   const [folios,  setFolios]      = useState([]);
   const [cargando, setCargando]   = useState(false);
@@ -42,12 +46,18 @@ export default function FolioSelector({ currentValue, onSelect, disabled }) {
     if (!abierto) return;
     setCargando(true);
     setError(null);
+    // El filtro va en la URL y no aquí: el endpoint corta a 30 al final, así que
+    // filtrar en el cliente dejaría sin folios a una unidad que lleve días sin
+    // salir. Cada URL tiene su propia entrada de caché.
+    const ruta = placas
+      ? `/maniobras/folios-recientes/?placas=${encodeURIComponent(placas)}`
+      : "/maniobras/folios-recientes/";
     apiClient
-      .getCatalogo("/maniobras/folios-recientes/")
+      .getCatalogo(ruta)
       .then((data) => setFolios(data || []))
       .catch(() => setError("Error al cargar folios"))
       .finally(() => setCargando(false));
-  }, [abierto]);
+  }, [abierto, placas]);
 
   // Cerrar con Escape o clic fuera
   useEffect(() => {
@@ -97,7 +107,9 @@ export default function FolioSelector({ currentValue, onSelect, disabled }) {
           {cargando && <div className="fsl-msg">Cargando...</div>}
           {error && <div className="fsl-msg fsl-error">{error}</div>}
           {!cargando && !error && folios.length === 0 && (
-            <div className="fsl-msg">Sin folios registrados</div>
+            <div className="fsl-msg">
+              {placas ? "Esta unidad no tiene folios recientes" : "Sin folios registrados"}
+            </div>
           )}
           {folios.map((m) => (
             <button

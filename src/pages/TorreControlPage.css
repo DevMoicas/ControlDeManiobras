@@ -93,6 +93,171 @@
   white-space: nowrap;
 }
 
+/* ── Dos columnas: reporte a la izquierda, calendario a la derecha ────────── */
+
+.tc-columnas {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+/* Por debajo de esto el calendario ya no cabe al lado sin encogerse: el reporte
+   pasa arriba y la rejilla debajo, cada uno a su ancho. */
+@media (max-width: 1080px) {
+  .tc-columnas { grid-template-columns: 1fr; }
+}
+
+/* ── Reporte: una fila por unidad ─────────────────────────────────────────── */
+
+.tc-reporte {
+  padding: 14px 16px 16px;
+  border: 1px solid #e6ecf5;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.tc-reporte-cabecera {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tc-vaciar {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid #d9e2ef;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tc-vaciar:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.tc-vaciar:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.tc-reporte-titulo {
+  margin: 0;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: center;
+  color: var(--text);
+}
+
+.tc-reporte-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tc-reporte-fila {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px 11px;
+  border: 1px solid #eef2f8;
+  border-radius: 11px;
+  background: #fbfcfe;
+}
+
+.tc-reporte-cabeza {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tc-reporte-eco {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.tc-reporte-acciones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  min-width: 0;
+}
+
+/* Quita el folio y libera la unidad de ese viaje. En rojo apagado: no borra
+   nada de la maniobra, solo deshace la asignación. */
+.tc-reporte-quitar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #f0c9c9;
+  border-radius: 50%;
+  background: #fff;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+.tc-reporte-quitar:hover { background: #fdeeee; border-color: #b91c1c; }
+
+/* El botón del FolioSelector es compartido con los documentos: aquí solo se
+   ajusta el ancho para que quepa en la columna sin empujar la X. */
+.tc-reporte-acciones .fsl-wrapper { min-width: 0; }
+
+.tc-reporte-acciones .fsl-btn {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Lo que dice la maniobra del folio. Nada de esto se guarda aquí: se lee cada
+   vez, y un dato vacío simplemente no aparece. */
+.tc-reporte-datos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 0.79rem;
+  color: #5c6b85;
+}
+
+.tc-reporte-ruta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tc-reporte-operador { font-style: italic; }
+
+.tc-reporte-fechas {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: var(--primary);
+  font-weight: 600;
+}
+
 /* ── Rejilla del mes ──────────────────────────────────────────────────────── */
 
 /* Desplaza en horizontal dentro de su contenedor en vez de encoger las
@@ -203,8 +368,12 @@
   justify-content: center;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
+  /* Mantiene su alto aunque se quede vacía: si la fila desapareciera, colocar
+     la última bolita de un color haría saltar el cajón entero. */
+  min-height: 34px;
 }
+
+.tc-libres-fila + .tc-libres-fila { margin-top: 8px; }
 
 .tc-libres-vacio {
   margin: 0;
@@ -221,7 +390,6 @@
   min-width: 62px;
   padding: 7px 10px;
   border-radius: 999px;
-  background: var(--primary);
   color: #fff;
   font-size: 0.76rem;
   font-weight: 600;
@@ -236,9 +404,37 @@
   -webkit-user-select: none;
 }
 
+/* Verde el día en que sale, roja el día en que vuelve. Son los mismos tonos
+   que ya usan los lomos de status en Maniobras, para no estrenar vocabulario de
+   color en una pantalla nueva. */
+.tc-bolita-inicio { background: #15803d; }
+.tc-bolita-fin    { background: #b91c1c; }
+
 .tc-bolita-atenuada {
   opacity: 0.3;
 }
+
+/* Leyenda del cajón: sin esto, verde y rojo son dos colores sin significado. */
+.tc-libres-pista {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  gap: 6px;
+  margin: -6px 0 12px;
+  color: #8a97ab;
+  font-size: 1rem;
+}
+
+.tc-punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.tc-punto-inicio { background: #15803d; }
+.tc-punto-fin    { background: #b91c1c; margin-left: 10px; }
 
 /* La copia que sigue al dedo o al ratón. pointer-events: none es obligatorio:
    si capturara el puntero, elementFromPoint leería el fantasma en vez de la
@@ -253,10 +449,15 @@
   pointer-events: none;
   padding: 7px 10px;
   border-radius: 999px;
-  background: var(--primary);
+  background: #15803d;
   color: #fff;
   font-size: 0.76rem;
   font-weight: 600;
   white-space: nowrap;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
 }
+
+/* Va DESPUÉS de .tc-fantasma a propósito: las dos son un solo selector de clase,
+   así que con la misma especificidad manda la última. Puesta antes, la copia de
+   la bolita roja se arrastraría en verde. */
+.tc-fantasma-fin { background: #b91c1c; }

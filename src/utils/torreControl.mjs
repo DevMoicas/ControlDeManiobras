@@ -6,11 +6,39 @@
 // el día que guardó el backend es el día que se ve. Los únicos Date que se
 // construyen aquí llevan (año, mes, día) por separado, que sí es hora local.
 
-// Cuántas bolitas se ofrecen por unidad. Copia de BOLITAS_POR_UNIDAD en
-// api/models.py del backend: son dos repositorios distintos y un valor que
-// cambia una vez en la vida no justifica un endpoint de configuración.
-// Si se cambia aquí, cambiar allí.
-export const BOLITAS_POR_UNIDAD = 1;
+// Dos bolitas por unidad: la VERDE marca el día en que sale y la ROJA el día en
+// que vuelve. Copia de BOLITAS_POR_UNIDAD en api/models.py del backend: son dos
+// repositorios distintos y un valor que cambia una vez en la vida no justifica
+// un endpoint de configuración. Si se cambia aquí, cambiar allí.
+export const BOLITAS_POR_UNIDAD = 2;
+
+export const INDICE_INICIO = 1;   // bolita verde
+export const INDICE_FIN    = 2;   // bolita roja
+
+/**
+ * El primer nombre de un operador: "ANTONIO FRANCO" → "ANTONIO".
+ *
+ * En la tabla de la torre no cabe el nombre completo y el apellido no distingue
+ * nada entre once operadores.
+ */
+export function primerNombre(nombre) {
+  return String(nombre ?? "").trim().split(/\s+/)[0] ?? "";
+}
+
+/**
+ * El día local de una fecha-hora del backend: "2026-08-03T08:00:00-06:00" → "2026-08-03".
+ *
+ * Aquí SÍ se construye un Date a partir del texto, y es correcto: la cadena trae
+ * su huso horario explícito, así que Date la sitúa bien y los getters locales
+ * devuelven el día del calendario de aquí. La trampa de la que se avisa arriba
+ * es otra —parsear un "AAAA-MM-DD" pelado, que se interpreta como UTC—.
+ */
+export function diaDeFechaHora(fechaHora) {
+  if (!fechaHora) return null;
+  const d = new Date(fechaHora);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 const PRIMER_NUMERO = /\d+/;
 

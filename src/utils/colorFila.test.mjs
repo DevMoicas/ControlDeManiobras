@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   PALETA_SHEETS, TEXTO_OSCURO, TEXTO_CLARO,
-  esColorValido, luminancia, textoSobre,
+  esColorValido, luminancia, textoSobre, contraste,
 } from "./colorFila.mjs";
 
 test("la paleta es la rejilla de Sheets: 8 filas de 10", () => {
@@ -56,4 +56,33 @@ test("un color inválido no rompe: se asume texto oscuro", () => {
   // Una fila guardada antes de la validación no debe reventar la tabla.
   assert.equal(textoSobre("basura"), TEXTO_OSCURO);
   assert.equal(textoSobre(null), TEXTO_OSCURO);
+});
+
+
+test("en los tonos medios gana la tinta oscura, que es donde fallaba el umbral fijo", () => {
+  // Con el umbral de 0.4 estos salían en blanco. La tinta oscura contrasta casi
+  // el doble sobre ellos.
+  for (const medio of ["#6d9eeb", "#93c47d", "#f6b26b", "#76a5af", "#c27ba0"]) {
+    assert.equal(textoSobre(medio), TEXTO_OSCURO, `fallo en ${medio}`);
+  }
+});
+
+test("el texto elegido siempre contrasta al menos tanto como el otro", () => {
+  for (const fila of PALETA_SHEETS) {
+    for (const color of fila) {
+      const fondo = luminancia(color);
+      const elegido = luminancia(textoSobre(color));
+      const otro = luminancia(textoSobre(color) === TEXTO_OSCURO ? TEXTO_CLARO : TEXTO_OSCURO);
+      assert.ok(
+        contraste(fondo, elegido) >= contraste(fondo, otro),
+        `${color}: se eligió el texto con menos contraste`,
+      );
+    }
+  }
+});
+
+test("contraste: los extremos conocidos de la escala WCAG", () => {
+  // Negro sobre blanco es 21:1, el máximo. Un color consigo mismo, 1:1.
+  assert.equal(Math.round(contraste(luminancia("#000000"), luminancia("#ffffff"))), 21);
+  assert.equal(contraste(luminancia("#808080"), luminancia("#808080")), 1);
 });
