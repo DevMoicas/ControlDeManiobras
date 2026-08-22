@@ -223,3 +223,82 @@ El arrastre en sí no lleva prueba automática: es interacción de navegador y s
 con ratón y con dedo, en un móvil de verdad.
 
 En el backend, `api/test_torre_control.py` cubre la unicidad y que un usuario `standard` pueda escribir.
+
+---
+
+# Segunda entrega — el folio como vínculo con Maniobras
+
+Fecha: 2026-08-21 · Estado: **hecho y probado en local, SIN desplegar.**
+Commits `84a53889` (backend) y `090c012` (frontend). Migraciones `0049` y `0050` pendientes de prod.
+
+La torre pasó de "una bolita por unidad en un día" a **dos bolitas —verde la salida, roja el
+regreso— y un folio por unidad** que trae la información del viaje.
+
+## Cómo saber el rango y el servicio: tres caminos, dos descartados
+
+La pregunta era de qué día a qué día está ocupada cada unidad y qué servicio lleva. Se
+construyeron y se probaron las tres opciones antes de elegir.
+
+**A — La torre se pinta sola desde Maniobras.** Cruzando `Maniobra.unidad` (que guarda las placas)
+con el catálogo, y pintando de `ruta_inicio` a `ruta_fin`. Cero captura doble, cero columnas
+nuevas, imposible que la torre contradiga a Maniobras. **Descartada:** apuesta todo el tablero a
+que esas dos columnas se llenen, y hoy están vacías en las 409 maniobras de la base local. Además
+no cabe lo que no es un viaje —taller, mantenimiento— y una maniobra sin `ruta_fin` deja la unidad
+ocupada para siempre.
+
+**B — La bolita gana un `fecha_fin` y se estira arrastrando su borde.** El servicio se deducía
+cruzando placas y solape de fechas. **Descartada por el usuario tras probarla.**
+
+**C — El folio, que es la elegida.** El vínculo lo pone una persona eligiendo un folio de una
+lista, y de ahí sale todo lo demás. Funciona hoy porque el folio **ya se captura siempre**, al
+contrario que las fechas de ruta. Y no renuncia al tablero manual: las bolitas se siguen moviendo
+a mano para lo que no es un viaje.
+
+⚠️ Lo que esto significa: **`ruta_inicio` y `ruta_fin` se quedan por fines operativos, pero la
+torre NO decide nada con ellas.** Solo las usa para acomodar las bolitas al asignar un folio.
+
+## Decisiones
+
+**El folio bloquea.** `api_torrefolio` es un OneToOne con Tracto y su `folio` es `unique`: un Eco
+lleva un folio a la vez y un folio no puede estar en dos Ecos. Las dos reglas viven en la base, no
+en el código, así que dos peticiones simultáneas no pueden colarse. El error dice **qué unidad** lo
+tiene — "ya está asignado" a secas obliga a ir a buscarlo.
+
+**La torre no copia nada de la maniobra.** Ruta, cliente y operador se leen del folio en cada
+carga. Editar la maniobra se refleja en la torre sin sincronizar nada, y no hay una segunda copia
+que se quede vieja. Hay una prueba que lo fija.
+
+**Reasignar es una sola petición.** Un "borra y crea" desde el frontend deja un instante en el que
+la unidad no tiene folio y otro usuario podría llevarse el suyo.
+
+**Acomodar no es fijar.** Al asignar un folio con fechas de ruta, la verde va a `ruta_inicio` y la
+roja a `ruta_fin`. Después se mueven libremente y nada las devuelve a su sitio. Sin fechas, no se
+toca ninguna bolita.
+
+**El filtro de folios va antes del corte, no después.** `folios-recientes` acepta `?placas=` y
+acota a los folios de esa unidad. Si se filtrara después del corte a 30, una unidad que llevara
+días sin salir se quedaría sin ningún folio que ofrecer. En un Full, cada unidad ve solo el suyo:
+si se colara el del otro operador, se le asignaría el viaje equivocado.
+
+**Se reutilizó `FolioSelector`, no se copió.** Es el mismo componente de las cartas porte, con un
+parámetro `placas` **opcional**. Sin él se comporta igual que siempre — eso es lo que protege a los
+documentos que ya dependen de él, y hay prueba de ello.
+
+## Contraste al pintar (afecta también a Maniobras y Vacíos)
+
+`textoSobre()` elegía la tinta con un umbral fijo de luminancia (0.4) y erraba en los tonos medios
+de la paleta: en `#6d9eeb`, `#93c47d` o `#f6b26b` ponía blanco cuando la tinta oscura contrasta
+casi el doble. Ahora compara los dos contrastes WCAG y gana el mayor — sin umbral que ajustar. Una
+prueba recorre los 80 colores y comprueba que en ninguno se eligió el peor. Las filas pintadas van
+además en semibold. **Solo en `.row-pintada`:** los colores de status no cambian.
+
+## Pendiente
+
+1. **Desplegar.** Migrar prod (`0049`, `0050`) → backend → frontend. Nada de esto está en producción.
+2. **`torre_control` guarda bolitas de la versión de un solo color.** Al subir `BOLITAS_POR_UNIDAD` a
+   2, las filas existentes con `indice = 1` pasan a ser bolitas verdes. Es lo correcto, pero conviene
+   saberlo antes de mirar producción y preguntarse por qué solo hay verdes.
+3. **La trampa que sigue viva:** el folio es texto. Renombrar un folio en su tabla no arrastra la
+   asignación de la torre, que se quedaría apuntando a un código que ya no existe y mostraría la
+   unidad sin servicio. `FolioViewSet.perform_update` ya arrastra el renombrado a la maniobra; la
+   torre no está contemplada ahí.
