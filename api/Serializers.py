@@ -1,6 +1,6 @@
 import re
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, BOLITAS_POR_UNIDAD
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
@@ -515,6 +515,54 @@ class FolioSerializer(serializers.ModelSerializer):
 
         attrs['codigo'] = codigo
         return attrs
+
+
+class TorreFolioSerializer(serializers.ModelSerializer):
+    """La unidad, su folio y lo que dice la maniobra de ese folio."""
+    no_eco   = serializers.CharField(source='tracto.no_eco', read_only=True)
+    servicio = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = TorreFolio
+        fields = ('id', 'tracto', 'folio', 'no_eco', 'servicio')
+
+    def get_servicio(self, asignacion):
+        """Lo que dice la maniobra de ese folio. Se LEE cada vez, nunca se copia.
+
+        Por eso editar el destino o el operador en Maniobras se refleja aquí sin
+        que nadie sincronice nada: no hay una segunda copia que pueda quedarse
+        vieja.
+
+        Un Full repartido gasta un folio por operador, así que el folio puede
+        estar en `folio` o en `folio_2` — y de eso depende cuál de los dos
+        operadores lo lleva.
+
+        ponytail: una consulta por unidad asignada, acotado al número de tractos
+        (11 hoy). Si algún día pesa, resolverlas todas de golpe en el list().
+        """
+        folio = asignacion.folio
+        maniobra = (
+            Maniobra.objects
+            .filter(Q(folio=folio) | Q(folio_2=folio))
+            .order_by('-id')
+            .first()
+        )
+        if maniobra is None:
+            return None
+
+        es_segundo = maniobra.folio_2 == folio
+        return {
+            'id':          maniobra.id,
+            'origen':      maniobra.origen or '',
+            'destino':     maniobra.destino or '',
+            'cliente':     maniobra.cliente or '',
+            'operador':    (maniobra.operador_2 if es_segundo
+                            else maniobra.asignacion_operador_status) or '',
+            # Se mandan tal cual: el frontend decide si las pinta y si acomoda
+            # las bolitas con ellas. Vacías, no muestra nada.
+            'ruta_inicio': maniobra.ruta_inicio,
+            'ruta_fin':    maniobra.ruta_fin,
+        }
 
 
 class TorreControlSerializer(serializers.ModelSerializer):

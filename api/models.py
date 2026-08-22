@@ -709,12 +709,17 @@ class DispositivoConfianza(models.Model):
         )
 
 
-# Cuántas bolitas se ofrecen por unidad. Hoy 1; subirla a 2 activa la segunda
-# sin tocar el esquema — el CHECK de TorreControl ya admite las dos. El frontend
-# tiene su propia copia en src/utils/torreControl.mjs: son dos repositorios
-# distintos y un valor que cambia una vez en la vida no justifica un endpoint
-# de configuración. Si se cambia aquí, cambiar allí.
-BOLITAS_POR_UNIDAD = 1
+# Dos bolitas por unidad: la 1 es la VERDE (día en que sale) y la 2 la ROJA
+# (día en que vuelve). El CHECK de TorreControl ya admitía las dos, así que
+# pasar de 1 a 2 no tocó el esquema — para eso estaba.
+#
+# El frontend tiene su propia copia en src/utils/torreControl.mjs: son dos
+# repositorios distintos y un valor que cambia una vez en la vida no justifica
+# un endpoint de configuración. Si se cambia aquí, cambiar allí.
+BOLITAS_POR_UNIDAD = 2
+
+INDICE_INICIO = 1   # bolita verde
+INDICE_FIN    = 2   # bolita roja
 
 
 class TorreControl(models.Model):
@@ -763,3 +768,36 @@ class TorreControl(models.Model):
 
     def __str__(self):
         return f"{self.tracto.no_eco}#{self.indice} → {self.fecha}"
+
+
+class TorreFolio(models.Model):
+    """El folio de la maniobra que está haciendo una unidad, puesto a mano.
+
+    Es el ÚNICO vínculo entre la torre y Maniobras. Se descartó cruzar por las
+    placas y por `ruta_inicio`/`ruta_fin`: esas columnas hoy están vacías y el
+    tablero no puede depender de un hábito que todavía no existe. El folio, en
+    cambio, ya se captura siempre.
+
+    No guarda nada de la maniobra —ni cliente, ni destino, ni fechas—. Todo eso
+    se lee del folio cada vez, así que editar la maniobra se refleja aquí solo y
+    no hay dos copias que puedan contradecirse.
+    """
+    # OneToOne y no FK: un Eco lleva un folio a la vez. La unicidad la pone la
+    # base, no el codigo, asi que dos peticiones simultaneas no pueden colar dos.
+    # db_constraint=False por lo mismo que TorreControl.tracto: `tractos` es
+    # managed=False y no existe en la base de pruebas.
+    tracto = models.OneToOneField(
+        Tracto, on_delete=models.CASCADE,
+        related_name='folio_torre', db_constraint=False,
+    )
+    # unique: al asignar un folio a un Eco queda bloqueado para los demas
+    # (decision del usuario, 2026-08-21). Un folio es una maniobra y la maniobra
+    # ya tiene su unidad: repetirlo es un error de dedo, no un caso de uso.
+    folio = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        managed  = True
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.tracto.no_eco} → folio {self.folio}"

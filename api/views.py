@@ -2,12 +2,12 @@ import base64
 import re
 import django_filters
 from rest_framework import viewsets, mixins
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, PENDIENTE_VIDA, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl
+from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, PENDIENTE_VIDA, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .Serializers import TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer, CostoExtraSerializer, PendienteSerializer, TorreControlSerializer
+from .Serializers import TorreFolioSerializer, TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer, CostoExtraSerializer, PendienteSerializer, TorreControlSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .Serializers import CustomTokenObtainPairSerializer, DispositivoConfianzaSerializer
@@ -610,12 +610,23 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
         quién es el documento — no hace falta un selector de operador aparte."""
         con_folio   = Q(folio__isnull=False)   & ~Q(folio='')
         con_folio_2 = Q(folio_2__isnull=False) & ~Q(folio_2='')
-        maniobras = (
-            Maniobra.objects
-            .filter(con_folio | con_folio_2)
-            .select_related('cliente_fk')
-            .order_by('-id')[:30]
-        )
+        consulta = Maniobra.objects.filter(con_folio | con_folio_2)
+
+        # `?placas=` acota a los folios de UNA unidad. Lo usa la torre de control:
+        # en la fila del NO. 01 solo tienen sentido los folios que hizo el NO. 01.
+        #
+        # El filtro va aquí y no en el navegador a propósito: el corte de 30 es lo
+        # último que se aplica, así que filtrando después, una unidad que llevara
+        # días sin salir se quedaría sin ningún folio que ofrecer. Filtrando antes,
+        # cada unidad tiene sus 30.
+        #
+        # Sin el parámetro, el endpoint se comporta igual que siempre: es lo que
+        # siguen usando los documentos.
+        placas = (request.query_params.get('placas') or '').strip()
+        if placas:
+            consulta = consulta.filter(Q(unidad=placas) | Q(unidad_2=placas))
+
+        maniobras = consulta.select_related('cliente_fk').order_by('-id')[:30]
         # Mapa placas → tracto: resuelve Tipo de Unidad y Modelo sin N consultas.
         # Incluye los dos tractos: la Bitácora de Sueño del operador 2 necesita
         # el suyo igual que la del 1.
@@ -691,9 +702,15 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
                 'cliente_domicilio': (cliente.domicilio if cliente else '') or '',
                 'cliente_colonia':   (cliente.colonia   if cliente else '') or '',
                 'cliente_ciudad':    (cliente.ciudad    if cliente else '') or '',
+                # Fechas del viaje. Van aquí para que la torre de control pueda
+                # acomodar sus bolitas al elegir el folio, sin una segunda
+                # petición. Vacías si la maniobra aún no las tiene — entonces la
+                # torre no acomoda nada y las bolitas se colocan a mano.
+                'ruta_inicio': m.ruta_inicio.isoformat() if m.ruta_inicio else '',
+                'ruta_fin':    m.ruta_fin.isoformat() if m.ruta_fin else '',
             }
 
-            if m.folio:
+            if m.folio and (not placas or (m.unidad or '').strip() == placas):
                 tracto = tractos.get(m.unidad)
                 data.append({
                     **comun,
@@ -714,7 +731,7 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
                     'parte': '1' if dos_operadores else 'ambos',
                 })
 
-            if m.folio_2:
+            if m.folio_2 and (not placas or (m.unidad_2 or '').strip() == placas):
                 tracto_2 = tractos.get(m.unidad_2)
                 data.append({
                     **comun,
@@ -1131,6 +1148,54 @@ class TorreControlViewSet(viewsets.ModelViewSet):
     # así que una lista a medias inventaría unidades libres que no lo están. Con
     # el tope de la tabla (nº de tractos × 2) nunca se acerca al PAGE_SIZE=60.
     pagination_class       = None
+
+
+class TorreFolioViewSet(mixins.ListModelMixin,
+                        mixins.DestroyModelMixin,
+                        viewsets.GenericViewSet):
+    """Qué folio lleva cada unidad en la torre de control.
+
+    Sin `update`: reasignar es un POST que sustituye. Y sin `retrieve`: la torre
+    siempre las quiere todas de una vez para pintar su tabla.
+    """
+    queryset               = TorreFolio.objects.select_related('tracto')
+    serializer_class       = TorreFolioSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+    # Sin paginar: son como mucho tantas filas como tractos.
+    pagination_class       = None
+
+    def create(self, request, *args, **kwargs):
+        """Asigna un folio a una unidad, sustituyendo el que tuviera.
+
+        Es un upsert y no un "borra y crea" desde el frontend a propósito: dos
+        peticiones dejarían una ventana en la que la unidad no tiene folio y
+        otro usuario podría llevarse el suyo.
+        """
+        tracto_id = request.data.get('tracto')
+        folio     = (request.data.get('folio') or '').strip()
+        if not tracto_id or not folio:
+            return Response({'detail': 'Faltan la unidad o el folio.'}, status=400)
+
+        tracto = Tracto.objects.filter(id=tracto_id).first()
+        if tracto is None:
+            return Response({'detail': 'Unidad desconocida.'}, status=400)
+
+        # Un folio asignado queda bloqueado para las demás unidades. El error
+        # dice CUÁL lo tiene: "ya está asignado" a secas obliga a ir a buscarlo.
+        ocupado = TorreFolio.objects.filter(folio=folio).exclude(tracto=tracto).first()
+        if ocupado is not None:
+            return Response(
+                {'detail': f'El folio {folio} ya está asignado a {ocupado.tracto.no_eco}.'},
+                status=400,
+            )
+
+        with transaction.atomic():
+            TorreFolio.objects.filter(tracto=tracto).delete()
+            asignacion = TorreFolio.objects.create(tracto=tracto, folio=folio)
+
+        return Response(TorreFolioSerializer(asignacion).data, status=201)
 
 
 class CostoExtraViewSet(viewsets.ModelViewSet):
