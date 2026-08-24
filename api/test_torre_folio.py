@@ -18,7 +18,7 @@ from django.db import connections
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from api.models import Tracto, Maniobra, TorreFolio
+from api.models import Tracto, Maniobra, TorreFolio, Folio
 
 URL = '/api/torre-folios/'
 
@@ -230,3 +230,90 @@ class FoliosDeUnaUnidadTests(BaseFolios):
         fila = self.cliente.get(self.RECIENTES).data[0]
         self.assertEqual(fila['fecha_pis'], '')
         self.assertEqual(fila['horario'], '')
+
+
+class RenombrarUnFolioArrastraLaTorreTests(BaseFolios):
+    """Renombrar un folio en el catalogo tiene que mover tambien la torre.
+
+    `TorreFolio.folio` guarda la CADENA, y es el unico vinculo entre el tablero y
+    Maniobras. Si el catalogo cambia y la torre no, get_servicio() ya no encuentra
+    la maniobra: la unidad sale con su folio y sin viaje, sin error visible.
+
+    Antes era raro porque renombrar era una accion manual. Con el "-2" automatico
+    de los Full pasa en cada maniobra que se marca.
+    """
+
+    def crear_folio(self, codigo='F-2279'):
+        return Folio.objects.create(tabla='manzanillo', numero=2279,
+                                    letra='F', codigo=codigo)
+
+    def renombrar(self, folio, nuevo):
+        return self.cliente.patch(f'/api/folios/{folio.id}/',
+                                  {'codigo': nuevo}, format='json')
+
+    def test_renombrar_arrastra_la_asignacion_de_la_torre(self):
+        folio = self.crear_folio()
+        asignacion = TorreFolio.objects.create(tracto=self.uno, folio='F-2279')
+
+        r = self.renombrar(folio, 'F-2279-2')
+
+        self.assertEqual(r.status_code, 200, r.data)
+        asignacion.refresh_from_db()
+        self.assertEqual(asignacion.folio, 'F-2279-2')
+
+    def test_la_unidad_sigue_viendo_su_viaje_despues_del_renombrado(self):
+        """Lo que de verdad importa: que get_servicio() siga encontrando la
+        maniobra. Sin el arrastre, la unidad sale con folio y sin viaje."""
+        folio = self.crear_folio()
+        Maniobra.objects.create(solicita='P', folio='F-2279', destino='MONTERREY')
+        TorreFolio.objects.create(tracto=self.uno, folio='F-2279')
+
+        self.renombrar(folio, 'F-2279-2')
+
+        servicio = self.cliente.get(URL).data[0]['servicio']
+        self.assertIsNotNone(servicio, 'la torre perdio el viaje al renombrar')
+        self.assertEqual(servicio['destino'], 'MONTERREY')
+
+    def test_no_toca_las_asignaciones_de_otras_unidades(self):
+        folio = self.crear_folio()
+        otra = TorreFolio.objects.create(tracto=self.dos, folio='R-2280')
+
+        self.renombrar(folio, 'F-2279-2')
+
+        otra.refresh_from_db()
+        self.assertEqual(otra.folio, 'R-2280')
+
+    def test_si_el_codigo_nuevo_ya_esta_en_la_torre_se_rechaza_con_mensaje(self):
+        """`TorreFolio.folio` es unique: sin esta comprobacion el UPDATE saldria
+        con un IntegrityError, que el usuario ve como un 500 sin motivo."""
+        folio = self.crear_folio()
+        TorreFolio.objects.create(tracto=self.uno, folio='F-2279')
+        TorreFolio.objects.create(tracto=self.dos, folio='F-2279-2')
+
+        r = self.renombrar(folio, 'F-2279-2')
+
+        self.assertEqual(r.status_code, 400, r.data)
+        # El mensaje dice CUAL unidad lo tiene, o hay que ir a buscarla a mano.
+        self.assertIn('NO. 02', str(r.data.get('detail', '')))
+
+    def test_al_rechazarse_no_se_renombra_nada(self):
+        """El atomic() deshace el save() del folio: si el rechazo dejara el
+        codigo cambiado, el catalogo y la torre quedarian peor que antes."""
+        folio = self.crear_folio()
+        Maniobra.objects.create(solicita='P', folio='F-2279')
+        TorreFolio.objects.create(tracto=self.dos, folio='F-2279-2')
+
+        self.renombrar(folio, 'F-2279-2')
+
+        folio.refresh_from_db()
+        self.assertEqual(folio.codigo, 'F-2279')
+        self.assertEqual(Maniobra.objects.get().folio, 'F-2279')
+
+    def test_sin_nada_en_la_torre_el_renombrado_sigue_funcionando(self):
+        folio = self.crear_folio()
+
+        r = self.renombrar(folio, 'F-2279-2')
+
+        self.assertEqual(r.status_code, 200, r.data)
+        folio.refresh_from_db()
+        self.assertEqual(folio.codigo, 'F-2279-2')

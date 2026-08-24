@@ -19,6 +19,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 import os
 import subprocess
 import tempfile
@@ -1273,12 +1274,38 @@ class FolioViewSet(viewsets.ModelViewSet):
         with transaction.atomic(using=get_db_alias()):
             folio = serializer.save()
             if folio.codigo != anterior:
+                # La torre bloquea su folio con un `unique`, asi que hay que
+                # mirar ANTES de escribir: si el codigo nuevo ya se lo tiene
+                # asignado otra unidad, el UPDATE de abajo reventaria con un
+                # IntegrityError que el usuario ve como un 500 sin motivo. El
+                # atomic() deshace el save() de arriba, asi que el folio se queda
+                # como estaba. Mismo mensaje que TorreFolioViewSet.create: dice
+                # CUAL unidad lo tiene, o hay que ir a buscarla a mano.
+                ocupado = TorreFolio.objects.filter(folio=folio.codigo).first()
+                if ocupado is not None:
+                    # values_list con JOIN se comeria una fila huerfana (la FK va
+                    # con db_constraint=False), y entonces la colision pasaria
+                    # desapercibida. Se resuelve el No. Eco aparte.
+                    eco = (Tracto.objects.filter(pk=ocupado.tracto_id)
+                           .values_list('no_eco', flat=True).first())
+                    raise ValidationError({
+                        'detail': f'No se puede renombrar a "{folio.codigo}": la torre '
+                                  f'ya se lo tiene asignado a {eco or "otra unidad"}. '
+                                  f'Quitaselo en la torre y repite.'
+                    })
+
                 # Las DOS columnas: un Full repartido gasta un folio por operador
                 # y el renombrado puede caer en cualquiera de ellas. Dejar fuera
                 # folio_2 deja esa maniobra apuntando a un codigo que ya no
                 # existe, y disponibles() vuelve a ofrecer el numero como libre.
                 Maniobra.objects.filter(folio=anterior).update(folio=folio.codigo)
                 Maniobra.objects.filter(folio_2=anterior).update(folio_2=folio.codigo)
+                # Y la torre. Es el UNICO vinculo entre el tablero y Maniobras:
+                # sin esto, la fila se queda con el codigo viejo, get_servicio()
+                # no encuentra la maniobra y la unidad aparece con su folio y sin
+                # viaje. Antes era raro —renombrar era manual—, pero con el "-2"
+                # automatico de los Full pasa en cada maniobra que se marca.
+                TorreFolio.objects.filter(folio=anterior).update(folio=folio.codigo)
 
     @action(detail=False, methods=['get'], url_path='disponibles')
     def disponibles(self, request):
