@@ -17,7 +17,10 @@ from django.test import TestCase
 from openpyxl import load_workbook
 from rest_framework.test import APIClient
 
-from api.models import ReporteViaje, CargaCombustible, CARGAS_POR_REPORTE
+from django.db import connections
+
+from api.models import (ReporteViaje, CargaCombustible, CARGAS_POR_REPORTE,
+                        Maniobra, Gasto)
 from api.views import _TEMPLATE_REPORTE
 
 URL = '/api/reportes-viaje/'
@@ -27,6 +30,24 @@ class BaseReporte(TestCase):
     # Obligatorio en toda prueba con BD de este proyecto: RoleBasedRouter enruta
     # por el alias del hilo. Ver test_infra_bd.py.
     databases = {'default', 'standard'}
+
+    @classmethod
+    def setUpClass(cls):
+        # `maniobras` y `gastos` son managed=False y settings_test no las crea,
+        # pero guardar un reporte las CONSULTA: el total del diesel se vuelca al
+        # gasto del folio (ReporteViaje.volcar_diesel_al_gasto). Sin ellas, todas
+        # las pruebas de escritura de este archivo revientan.
+        super().setUpClass()
+        with connections['standard'].schema_editor() as editor:
+            editor.create_model(Maniobra)
+            editor.create_model(Gasto)
+
+    @classmethod
+    def tearDownClass(cls):
+        with connections['standard'].schema_editor() as editor:
+            editor.delete_model(Gasto)
+            editor.delete_model(Maniobra)
+        super().tearDownClass()
 
     def setUp(self):
         self.usuario = get_user_model().objects.create_user('reporte_user', password='x')

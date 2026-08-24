@@ -714,8 +714,9 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
         with transaction.atomic(using=get_db_alias()):
             reporte = ReporteViaje.objects.create(**validated_data)
             self._guardar_cargas(reporte, cargas)
-            # Después de las cargas: el rendimiento las necesita.
+            # Después de las cargas: las dos cosas las necesitan.
             reporte.refrescar_rendimiento()
+            reporte.volcar_diesel_al_gasto(self._usuario())
         return reporte
 
     def update(self, instance, validated_data):
@@ -731,4 +732,9 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
             # En CADA escritura, vengan cargas o no: el rendimiento también
             # cambia al tocar el kilometraje.
             instance.refrescar_rendimiento()
+            instance.volcar_diesel_al_gasto(self._usuario())
         return instance
+
+    def _usuario(self):
+        peticion = self.context.get('request')
+        return getattr(getattr(peticion, 'user', None), 'username', '') or ''

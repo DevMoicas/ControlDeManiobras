@@ -469,6 +469,50 @@ class AuditoriaMixin:
         serializer.save(updated_by=usuario)
 
 
+# ── Gasto automatico al asignar el folio ─────────────────────────────────────
+# Ver docs/planes/PLAN_GASTO_AUTOMATICO.md (rama main).
+_TRANSPORTISTA_PROPIO = 'FRABA CONTAINER'
+
+
+def _es_de_fraba(maniobra):
+    """Si el viaje lo hace FRABA y no un tercero.
+
+    Vacio cuenta como propio: es como lo interpreta ya todo el sistema (ver
+    OperadorSelector en el frontend) y es lo que tienen 367 de las 409 maniobras.
+    Se normalizan espacios y mayusculas porque `transportista` es texto escrito a
+    mano; lo que no hace es adivinar variantes ("FRABA" a secas cuenta como
+    tercero, y eso se arregla en el catalogo, no aqui).
+    """
+    return (maniobra.transportista or '').strip().upper() in ('', _TRANSPORTISTA_PROPIO)
+
+
+def _crear_gasto_del_folio(maniobra, usuario):
+    """Crea el gasto del viaje al asignarle su folio. Devuelve si lo creo.
+
+    Solo para maniobras de FRABA, y solo si no hay gasto todavia: get_or_create
+    se apoya en el UNIQUE de gastos.maniobra_id, que es lo que impide que dos
+    peticiones simultaneas cuelen dos.
+
+    Nace en ceros; los importes se capturan despues, como siempre. El folio, el
+    operador y el destino NO se copian: GastoSerializer los lee de la maniobra
+    enlazada, asi que se mantienen al dia solos.
+    """
+    if not _es_de_fraba(maniobra):
+        return False
+    _, creado = Gasto.objects.get_or_create(
+        maniobra=maniobra,
+        defaults={
+            # str() y no .isoformat(): el modelo dice DateField pero la columna
+            # real es TEXT (mismo caso documentado en folios_recientes). Sobre un
+            # str, isoformat() revienta.
+            'fecha_entrega_mercancia': str(maniobra.fecha_entrega_mercancia or ''),
+            'created_by': usuario,
+            'updated_by': usuario,
+        },
+    )
+    return creado
+
+
 class TractoViewSet(viewsets.ModelViewSet):
     queryset = Tracto.objects.all().order_by('id')
     serializer_class = TractoSerializer
@@ -585,6 +629,39 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
             if not es_valido:
                 return Response({'detail': mensaje}, status=400)
         return super().update(request, *args, **kwargs)
+
+    # ── Gasto automatico ────────────────────────────────────────────────
+    # Va aqui y no en el frontend aunque el folio se elija alli: se asigna desde
+    # cuatro sitios de la pantalla de Maniobras (fila nueva, modal, celda de la
+    # tabla y el vaciado al cambiar de plaza) y cada uno tendria que acordarse.
+    # Aqui es un punto solo, y cubre cualquier via futura.
+    #
+    # atomic con las dos escrituras juntas: si la del gasto fallara, el folio
+    # tampoco se asigna. Asi reintentar vuelve a disparar la regla — si la
+    # maniobra quedara guardada, el folio ya no pasaria "de vacio a lleno" y el
+    # gasto no se crearia nunca.
+
+    def perform_create(self, serializer):
+        with transaction.atomic(using=get_db_alias()):
+            super().perform_create(serializer)
+            maniobra = serializer.instance
+            if (maniobra.folio or '').strip():
+                _crear_gasto_del_folio(maniobra, self._usuario())
+
+    def perform_update(self, serializer):
+        # El folio de ANTES: hasta el save(), serializer.instance trae la fila
+        # como esta en la base.
+        folio_antes = (serializer.instance.folio or '').strip()
+        with transaction.atomic(using=get_db_alias()):
+            super().perform_update(serializer)
+            maniobra = serializer.instance
+            # Solo al pasar de vacio a lleno. Cambiar un folio por otro no crea
+            # nada: el gasto sigue enlazado a la maniobra y lee el folio de ella.
+            if not folio_antes and (maniobra.folio or '').strip():
+                _crear_gasto_del_folio(maniobra, self._usuario())
+
+    def _usuario(self):
+        return getattr(self.request.user, 'username', '') or ''
 
     @action(detail=False, methods=['get'], url_path='resumen-status')
     def resumen_status(self, request):

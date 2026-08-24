@@ -940,6 +940,54 @@ class ReporteViaje(models.Model):
         return (Decimal(km) / litros).quantize(Decimal('0.01'),
                                                rounding=ROUND_HALF_UP)
 
+    def total_diesel(self):
+        """Lo que costo el diesel del viaje: suma de litros x precio de las cinco
+        cargas. None si ninguna tiene los dos datos — no es lo mismo que cero.
+
+        Cuenta solo el diesel. La urea tiene su propio total en el papel y no es
+        combustible de traccion.
+        """
+        total = Decimal('0')
+        for carga in self.cargas.exclude(litros_diesel__isnull=True).exclude(
+                precio_litro__isnull=True):
+            total += carga.litros_diesel * carga.precio_litro
+        if not total:
+            return None
+        return total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    def volcar_diesel_al_gasto(self, usuario=''):
+        """Escribe el costo del diesel en el gasto del folio. Devuelve si escribio.
+
+        El reporte es el dueno de esa cifra: trae el detalle por parada, y como se
+        captura por etapas tiene que poder pisar lo que hubiera — si respetara lo
+        anterior, la primera carga fijaria el valor y las cuatro siguientes nunca
+        llegarian al gasto. El campo sigue siendo editable a mano en Gastos
+        (decision del usuario, 2026-08-24): lo que se escriba ahi aguanta hasta
+        que alguien vuelva a guardar el reporte.
+
+        Si no hay gasto no se crea ninguno: los folios antiguos son manuales y los
+        viajes de terceros no llevan gasto. El reporte se guarda igual.
+        """
+        total = self.total_diesel()
+        if total is None:
+            return False
+        # El folio puede estar en cualquiera de las dos columnas: un Full
+        # repartido gasta un folio por operador. Mismo criterio que la torre.
+        maniobra = Maniobra.objects.filter(
+            models.Q(folio=self.folio) | models.Q(folio_2=self.folio)).first()
+        if maniobra is None:
+            return False
+        gasto = Gasto.objects.filter(maniobra=maniobra).first()
+        if gasto is None or gasto.gasto_diesel == total:
+            return False
+        gasto.gasto_diesel = total
+        if usuario:
+            gasto.updated_by = usuario
+        # save() completo y no update(): gastos_totales se recalcula en
+        # Gasto.save(), asi que un UPDATE directo dejaria el total desfasado.
+        gasto.save()
+        return True
+
     def refrescar_rendimiento(self):
         """Recalcula y guarda. Va DESPUÉS de escribir las cargas: en un alta las
         filas hijas todavía no existen cuando se guarda el reporte."""
