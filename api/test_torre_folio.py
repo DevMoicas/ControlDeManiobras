@@ -211,3 +211,22 @@ class FoliosDeUnaUnidadTests(BaseFolios):
     def test_una_unidad_sin_folios_devuelve_lista_vacia(self):
         Maniobra.objects.create(solicita='P', folio='A-1', unidad='21AX4Y')
         self.assertEqual(self.folios('XX0000X'), [])
+
+    # ── La cita del reporte de viaje ─────────────────────────────────────
+    def test_el_endpoint_manda_fecha_pis_y_horario_por_separado(self):
+        """El reporte de viaje arma su CITA con los dos juntos. Se mandan
+        separados porque unirlos exige decidir la zona horaria, y `horario` es
+        la hora LOCAL a la que se capturo: eso lo resuelve el navegador."""
+        Maniobra.objects.create(solicita='P', folio='A-1', unidad='21AX4Y',
+                                fecha_pis='2026-08-24', horario='9:00')
+        fila = self.cliente.get(self.RECIENTES).data[0]
+        self.assertEqual(fila['fecha_pis'], '2026-08-24')
+        self.assertEqual(fila['horario'], '9:00')
+
+    def test_una_maniobra_sin_cita_los_manda_vacios_y_no_revienta(self):
+        """str() y no isoformat(): `maniobras` es managed=False y ya hubo una
+        columna declarada DateField que en la base era TEXT."""
+        Maniobra.objects.create(solicita='P', folio='A-1', unidad='21AX4Y')
+        fila = self.cliente.get(self.RECIENTES).data[0]
+        self.assertEqual(fila['fecha_pis'], '')
+        self.assertEqual(fila['horario'], '')

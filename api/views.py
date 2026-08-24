@@ -1,13 +1,15 @@
 import base64
 import re
+from decimal import Decimal
+from zoneinfo import ZoneInfo
 import django_filters
 from rest_framework import viewsets, mixins
-from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, PENDIENTE_VIDA, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl
+from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, PENDIENTE_VIDA, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_POR_REPORTE
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .Serializers import TorreFolioSerializer, TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer, CostoExtraSerializer, PendienteSerializer, TorreControlSerializer
+from .Serializers import ReporteViajeSerializer, TorreFolioSerializer, TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer, CostoExtraSerializer, PendienteSerializer, TorreControlSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .Serializers import CustomTokenObtainPairSerializer, DispositivoConfianzaSerializer
@@ -29,6 +31,9 @@ from django.utils import timezone
 from django.db.models import Q
 from django.http import FileResponse, HttpResponse
 from openpyxl import load_workbook
+from openpyxl.worksheet.page import PageMargins
+from openpyxl.worksheet.properties import PageSetupProperties
+from openpyxl.styles import Alignment
 from PIL import Image
 from rest_framework.views import APIView
 
@@ -666,6 +671,21 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
                 'origen':      m.origen or '',
                 'destino':     m.destino or '',
                 'pedimento':   m.pedimento or '',
+                # La CITA del reporte de viaje sale de estos dos juntos: el dia
+                # de fecha_pis y la hora de horario. Se mandan por separado y los
+                # une el frontend (citaDesdeManiobra en utils/reporteViaje.mjs),
+                # porque juntarlos aqui exigiria decidir la zona horaria en el
+                # servidor y el horario es la hora LOCAL a la que se capturo.
+                #
+                # str() y no .isoformat(): `maniobras` es managed=False y ya hubo
+                # una columna que el modelo declaraba DateField siendo TEXT en la
+                # base (ver fecha_entrega_mercancia, mas abajo). str() da
+                # 'YYYY-MM-DD' con un date y deja la cadena igual si algun dia
+                # resulta ser texto; isoformat() reventaria sobre un str y se
+                # llevaria por delante todo el endpoint.
+                'fecha_pis':   str(m.fecha_pis or ''),
+                # Texto libre: en la base hay '14:00' y tambien '9:00'.
+                'horario':     m.horario or '',
                 'referencia':  m.referencia or '',
                 'tipo_servicio': m.tipo_servicio or '',
                 'dos_operadores': dos_operadores,
@@ -1224,7 +1244,10 @@ class FolioViewSet(viewsets.ModelViewSet):
     permission_classes     = [IsAuthenticated]
     throttle_classes       = [UserRateThrottle, AnonRateThrottle]
     filter_backends        = [DjangoFilterBackend]
-    filterset_fields       = ['tabla']
+    # 'codigo' lo usa Maniobras para localizar el id del folio que va a renombrar
+    # al marcar/desmarcar un Full: sin él habria que descargarse la tabla entera
+    # (sin paginar, crece 14 filas por lote) para sacar un id.
+    filterset_fields       = ['tabla', 'codigo']
     # Sin paginar a propósito: Folio crece sin límite (14 filas por lote, para
     # siempre) y el frontend necesita SIEMPRE la lista completa de una tabla
     # para reconstruir los lotes en columnas. Con PAGE_SIZE=60 global, el
@@ -1250,7 +1273,12 @@ class FolioViewSet(viewsets.ModelViewSet):
         with transaction.atomic(using=get_db_alias()):
             folio = serializer.save()
             if folio.codigo != anterior:
+                # Las DOS columnas: un Full repartido gasta un folio por operador
+                # y el renombrado puede caer en cualquiera de ellas. Dejar fuera
+                # folio_2 deja esa maniobra apuntando a un codigo que ya no
+                # existe, y disponibles() vuelve a ofrecer el numero como libre.
                 Maniobra.objects.filter(folio=anterior).update(folio=folio.codigo)
+                Maniobra.objects.filter(folio_2=anterior).update(folio_2=folio.codigo)
 
     @action(detail=False, methods=['get'], url_path='disponibles')
     def disponibles(self, request):
@@ -1836,3 +1864,288 @@ class AlertasVencimientoView(APIView):
         alertas.sort(key=lambda a: a['fecha_raw'])
 
         return Response(alertas)
+
+
+
+# ── Reporte de viaje: el documento ───────────────────────────────────────────
+_TEMPLATE_REPORTE = (
+    settings.BASE_DIR / 'api' / 'documentos' / 'templates' / 'REPORTE COORDINADORES.xlsx'
+)
+
+# Las horas se guardan en UTC (USE_TZ=True, TIME_ZONE='UTC') y el navegador las
+# pinta en la del usuario. Este documento lo arma el SERVIDOR, así que hay que
+# convertir aquí o el papel saldría seis horas corrido. tzdata está en
+# requirements, así que ZoneInfo también funciona en Windows.
+_ZONA_OPERACION = ZoneInfo('America/Mexico_City')
+
+
+def _fecha_doc(valor):
+    """Fecha suelta → DD/MM/YYYY. Cadena vacía si no hay."""
+    return valor.strftime('%d/%m/%Y') if valor else ''
+
+
+def _fecha_hora_doc(valor):
+    """Instante → DD/MM/YYYY HH:MM en la hora de operación."""
+    if not valor:
+        return ''
+    return timezone.localtime(valor, _ZONA_OPERACION).strftime('%d/%m/%Y %H:%M')
+
+
+def _numero_doc(valor):
+    """Los calculados llegan del serializer como cadena (ver get_total). En la
+    hoja tienen que ser NÚMEROS o Excel no los suma."""
+    return Decimal(valor) if valor not in (None, '') else ''
+
+
+def _marcar_si_no(ws, celda, valor):
+    """Escribe SI o NO encima de la etiqueta "SI / NO" que trae el papel.
+
+    Sin contestar (None) la etiqueta se queda intacta, para rodearla a mano: es
+    justo lo que distingue "no" de "todavía no se sabe" en un formato que se
+    llena a lo largo de varios días.
+    """
+    if valor is not None:
+        ws[celda] = 'SI' if valor else 'NO'
+
+
+def _dejar_solo_la_elegida(ws, celda_si, celda_no, elegida_si):
+    """Dos palabras impresas en celdas distintas (el SI/NO de estadías): se borra
+    la que no aplica. Si no hay respuesta se dejan las dos, por el mismo motivo
+    que en _marcar_si_no."""
+    if elegida_si is not None:
+        ws[celda_no if elegida_si else celda_si] = ''
+
+
+def _marcar_casilla(ws, celda):
+    """Una X en la casilla que sigue a la palabra impresa.
+
+    RECOLECCIÓN EN PUERTO trae las dos opciones escritas (I3 PROPIO, K3 TERCERO)
+    y una casilla detrás de cada una (J3, L3). Se marca la que toca y las dos
+    palabras se quedan, que es como se llena el papel.
+    """
+    ws[celda] = 'X'
+
+
+# La casilla de OPERADOR O TERCERO (I4:J4) mide unos 26.5 caracteres de ancho, y
+# la plantilla le dio alto para DOS líneas (la fila 4 está a 30.75, el doble que
+# las demás). Con el wrap_text que ya trae, un nombre normal cabe a tamaño
+# completo repartido en dos renglones, que es como se lee mejor en el papel.
+#
+# ponytail: umbral fijo, medido sobre la plantilla — 2 líneas × ~26.5. Si alguien
+# cambia el ancho de I/J o el alto de la fila 4, este número hay que rehacerlo.
+_MAX_OPERADOR_EN_DOS_LINEAS = 53
+
+# El doble del alto normal de la plantilla (16.5), o sea dos renglones.
+_ALTO_FILA_OPERADOR = 33.0
+
+
+def _encoger_para_caber(ws, celda):
+    """Último recurso: encoge la letra hasta que el texto quepa.
+
+    Solo para lo que ni siquiera entra en las dos líneas que tiene la casilla.
+    Hace falta porque una celda COMBINADA no autoajusta su alto —ni en Excel ni
+    en LibreOffice—, así que un texto más largo de la cuenta se corta en silencio
+    en vez de empujar la fila.
+
+    shrinkToFit es incompatible con wrap_text, así que hay que apagarlo: por eso
+    no se aplica siempre, o los nombres normales saldrían en una sola línea
+    diminuta pudiendo salir en dos a tamaño completo.
+    """
+    actual = ws[celda].alignment
+    ws[celda].alignment = Alignment(
+        horizontal=actual.horizontal, vertical=actual.vertical,
+        wrap_text=False, shrink_to_fit=True,
+    )
+
+
+def _ajustar_a_una_hoja(ws):
+    """Una sola hoja, horizontal.
+
+    El formato son 12 columnas anchas: en vertical no cabe a lo ancho, así que
+    LibreOffice lo parte y saca una segunda página con el pico derecho, ilegible
+    y sin encabezados.
+    """
+    ws.page_setup.orientation = 'landscape'
+    ws.page_setup.paperSize = ws.PAPERSIZE_LETTER
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 1
+    # fitToWidth/fitToHeight no hacen NADA sin este interruptor: el escalado a
+    # página vive en <sheetPr><pageSetUpPr fitToPage="1"/>, no en <pageSetup>.
+    ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+    # Sin área de impresión, cualquier celda con formato fuera del formato
+    # arrastraría una página en blanco detrás.
+    ws.print_area = 'A1:L25'
+    ws.page_margins = PageMargins(left=0.25, right=0.25, top=0.25, bottom=0.25,
+                                  header=0, footer=0)
+    # Doble alto en la fila de OPERADOR O TERCERO: la casilla I4:J4 mide unos
+    # 26.5 caracteres y los nombres completos no caben en una línea. Con el
+    # wrap_text que trae la plantilla, dos líneas los meten a tamaño completo.
+    #
+    # Va aquí y no en el .xlsx a propósito: es un requisito del documento, y en
+    # el archivo se pierde en cuanto alguien lo reedita o lo reemplaza. Aquí lo
+    # sujeta una prueba.
+    ws.row_dimensions[4].height = _ALTO_FILA_OPERADOR
+
+
+def _llenar_reporte_viaje(ws, reporte, datos):
+    """Vuelca un ReporteViaje sobre la plantilla del papel.
+
+    El mapa de celdas está en docs/planes/PLAN_REPORTE_COORDINADORES.md. Las
+    etiquetas viven en una celda y el valor en la siguiente; donde hay celdas
+    combinadas se escribe SIEMPRE en la esquina superior izquierda, que es la
+    única que openpyxl deja tocar.
+
+    `datos` es el serializer ya resuelto: de ahí salen KM TOTALES, RENDIMIENTO y
+    el TOTAL de cada carga. La plantilla no trae fórmulas y el serializer es el
+    único dueño de esos cálculos — recalcularlos aquí sería una segunda copia.
+    """
+    def escribir(celda, valor):
+        # MAYÚSCULAS y anti-inyección de fórmulas, igual que en las cartas porte.
+        ws[celda] = _sin_formula(_mayus(valor))
+
+    # ── Identificación ──
+    escribir('C2', _fecha_doc(reporte.fecha))
+    escribir('G2', reporte.coordinador)
+    escribir('J2', reporte.folio)
+    # 'carga_suelta' → "CARGA SUELTA": el guion bajo es del modelo, no del papel.
+    escribir('B3', (reporte.servicio or '').replace('_', ' '))
+    escribir('E3', reporte.cliente)
+    if reporte.recoleccion:
+        _marcar_casilla(ws, 'J3' if reporte.recoleccion == 'propio' else 'L3')
+    escribir('B4', reporte.origen)
+    escribir('E4', reporte.destino)
+    escribir('I4', reporte.operador)
+    # El wrap_text de la plantilla reparte el nombre en las dos líneas de la
+    # casilla. Solo lo que no cabe ni así se encoge.
+    if len(reporte.operador or '') > _MAX_OPERADOR_EN_DOS_LINEAS:
+        _encoger_para_caber(ws, 'I4')
+    escribir('D5', _fecha_hora_doc(reporte.cita))
+    escribir('I5', _fecha_hora_doc(reporte.salida_puerto))
+    escribir('D6', _fecha_hora_doc(reporte.inicio_pactado))
+    escribir('I6', _fecha_hora_doc(reporte.salida_real))
+
+    # ── Información del viaje ──
+    # "UNIDAD Y PORTAS" es una sola celda para tracto y remolques: se concatena
+    # con el mismo helper que las cartas porte, para que el papel se lea igual.
+    escribir('D8', _concat_placas_remolques(
+        reporte.unidad or '', reporte.remolque_1 or '', reporte.remolque_2 or ''))
+    escribir('H8', reporte.km_inicial if reporte.km_inicial is not None else '')
+    escribir('K8', datos.get('km_totales') if datos.get('km_totales') is not None else '')
+    escribir('D9', reporte.operador)
+    escribir('H9', reporte.km_final if reporte.km_final is not None else '')
+    escribir('K9', _numero_doc(datos.get('rendimiento')))
+    escribir('D10', _fecha_hora_doc(reporte.llegada_cliente))
+    escribir('I10', _fecha_hora_doc(reporte.descarga))
+
+    # ── En trayecto: los cinco renglones, fila 12 = orden 1 ──
+    por_orden = {c['orden']: c for c in datos.get('cargas', [])}
+    for orden in range(1, CARGAS_POR_REPORTE + 1):
+        fila = 11 + orden
+        carga = por_orden.get(orden)
+        if not carga:
+            continue
+        # Todo por _numero_doc: estos valores llegan del serializer y ahí los
+        # decimales son CADENA. Escribirlos tal cual dejaría celdas de texto que
+        # el Excel no suma ni formatea.
+        escribir(f'C{fila}', _numero_doc(carga.get('litros_diesel')))
+        escribir(f'E{fila}', _numero_doc(carga.get('precio_litro')))
+        escribir(f'G{fila}', _numero_doc(carga.get('total')))
+        escribir(f'I{fila}', _numero_doc(carga.get('litros_urea')))
+        escribir(f'K{fila}', _numero_doc(carga.get('total_urea')))
+
+    escribir('C17', reporte.litros_aceite if reporte.litros_aceite is not None else '')
+    escribir('E17', reporte.precio_aceite if reporte.precio_aceite is not None else '')
+    _marcar_si_no(ws, 'G17', reporte.reparacion)
+    escribir('I17', reporte.reparacion_que)
+    escribir('K17', reporte.reparacion_costo if reporte.reparacion_costo is not None else '')
+    _marcar_si_no(ws, 'C18', reporte.rescate)
+    escribir('G18', reporte.rescate_unidad)
+    escribir('J18', reporte.rescate_operador)
+
+    # ── Regreso ──
+    escribir('E20', _fecha_hora_doc(reporte.llegada_manzanillo))
+    _marcar_si_no(ws, 'J20', reporte.maniobra_vacio)
+    escribir('C21', reporte.patio_entrega)
+    escribir('E21', _fecha_hora_doc(reporte.cita_vacio))
+    escribir('H21', reporte.unidad_vacio)
+    escribir('J21', reporte.operador_vacio)
+    _dejar_solo_la_elegida(ws, 'E22', 'F22', reporte.estadias)
+    escribir('I22', reporte.estadias_horas if reporte.estadias_horas is not None else '')
+
+    # ── Pie. F25:L25 (el espacio de la firma) se deja vacío a propósito: se
+    # firma en papel. ──
+    escribir('A24', reporte.comentarios)
+
+
+class ReporteViajeViewSet(viewsets.ModelViewSet):
+    """Reportes de viaje de los coordinadores. Uno por folio.
+
+    Sin candado de rol para leer, crear ni editar: lo llena y lo ve cualquier
+    usuario autenticado (decisión del usuario, 2026-08-24). `destroy` sí se
+    reserva a admin, como en el resto del proyecto — un reporte es un documento
+    que se firma, y borrarlo no es una corrección, es tirar el registro.
+
+    Paginado (el PAGE_SIZE=60 global): a diferencia de Folios o Pendientes, esta
+    tabla crece sin techo y la pantalla la recorre con buscador, no de una vez.
+
+    `?folio=` para preguntar si un folio ya tiene reporte antes de abrir uno
+    nuevo, y no descubrirlo con un 400 al guardar.
+    """
+    queryset               = ReporteViaje.objects.prefetch_related('cargas')
+    serializer_class       = ReporteViajeSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+    filter_backends        = [DjangoFilterBackend]
+    filterset_fields       = ['folio']
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response({'detail': 'No tienes permisos para eliminar reportes.'},
+                            status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=['get'], url_path='documento')
+    def documento(self, request, pk=None):
+        """GET /api/reportes-viaje/{id}/documento/?formato=excel|pdf
+
+        Rellena la plantilla del papel con lo capturado y la devuelve para
+        descargar. `formato=excel` entrega el .xlsx tal cual; cualquier otro
+        valor lo pasa por LibreOffice y devuelve el PDF — el mismo camino que las
+        cartas porte, con los mismos modos de fallo.
+
+        GET y no POST como los demás documentos: aquí no se manda nada, se pide
+        un reporte que ya está guardado.
+        """
+        reporte = self.get_object()
+        datos   = self.get_serializer(reporte).data
+        formato = request.query_params.get('formato', 'pdf')
+
+        # El folio va en el nombre del archivo: se limpia por si un registro
+        # viejo trae un folio de texto libre con barras, acentos o espacios.
+        seguro = re.sub(r'[^A-Za-z0-9_-]+', '_', reporte.folio).strip('_') or 'reporte'
+
+        try:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                wb = load_workbook(str(_TEMPLATE_REPORTE))
+                # worksheets[0] y no wb['Table 1']: el nombre de la hoja es el que
+                # traía el archivo original y renombrarla no debe tumbar esto.
+                hoja = wb.worksheets[0]
+                _llenar_reporte_viaje(hoja, reporte, datos)
+                _ajustar_a_una_hoja(hoja)
+                return _responder_documento(
+                    wb, tmp_dir, f'reporte_viaje_{seguro}', formato)
+
+        except FileNotFoundError:
+            return Response(
+                {'detail': 'No se encontró la plantilla del reporte. Contacte al administrador.'},
+                status=500)
+        except subprocess.TimeoutExpired:
+            return Response(
+                {'detail': 'La conversión a PDF tardó demasiado. Intente de nuevo.'},
+                status=500)
+        except Exception:
+            logger.exception('Error inesperado al generar el reporte de viaje')
+            return Response(
+                {'detail': 'No se pudo generar el documento. Contacte al administrador.'},
+                status=500)

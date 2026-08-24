@@ -1,11 +1,12 @@
 import re
+from decimal import Decimal, ROUND_HALF_UP
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD, ReporteViaje, CargaCombustible, CARGAS_POR_REPORTE
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
 from django.core.validators import RegexValidator, MinLengthValidator, MaxLengthValidator
-from django.db import transaction
+from django.db import transaction, models
 from django.db.models import Q
 from django_otp import devices_for_user, match_token
 from .db_context import get_db_alias
@@ -583,3 +584,151 @@ class TorreControlSerializer(serializers.ModelSerializer):
                 f"Solo hay {BOLITAS_POR_UNIDAD} bolita(s) por unidad."
             )
         return valor
+
+class CargaCombustibleSerializer(serializers.ModelSerializer):
+    """Un renglón del bloque EN TRAYECTO.
+
+    `total` es el del diésel y sale calculado (litros × precio). El de la urea NO:
+    el papel no trae precio por litro para ella, así que `total_urea` se captura.
+    """
+    total = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = CargaCombustible
+        fields = ('orden', 'litros_diesel', 'precio_litro',
+                  'litros_urea', 'total_urea', 'total')
+        # `reporte` no viaja: las cargas siempre entran anidadas dentro de su
+        # reporte, que es quien las asigna. Sin esto DRF montaría el validador de
+        # UNIQUE(reporte, orden) sobre un campo que el cliente no manda.
+        validators = []
+
+    def get_total(self, carga):
+        if carga.litros_diesel is None or carga.precio_litro is None:
+            return None
+        # str y no Decimal: los demás decimales del payload viajan como cadena
+        # (COERCE_DECIMAL_TO_STRING, el valor por defecto de DRF, que settings no
+        # toca). Devolver un número aquí mezclaría los dos tipos en el mismo JSON,
+        # que es justo lo que se descubre tarde y en el navegador.
+        return str((carga.litros_diesel * carga.precio_litro)
+                   .quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
+
+    def validate_orden(self, value):
+        """El CHECK de la base rechaza esto igual, pero con un IntegrityError que
+        el usuario ve como un 500. Aquí sale un 400 que dice qué pasó."""
+        if not 1 <= value <= CARGAS_POR_REPORTE:
+            raise serializers.ValidationError(
+                f'El renglón debe estar entre 1 y {CARGAS_POR_REPORTE}.'
+            )
+        return value
+
+
+class ReporteViajeSerializer(serializers.ModelSerializer):
+    """El reporte de viaje del coordinador, con sus cargas de combustible.
+
+    Las cargas viajan anidadas: el frontend manda el reporte entero (o un PATCH
+    parcial con `cargas`) en UNA escritura, y aquí se hace upsert por `orden`.
+    Sin esto haría falta una petición por renglón y una pantalla a medio guardar
+    dejaría el reporte descuadrado.
+    """
+    cargas      = CargaCombustibleSerializer(many=True, required=False)
+    km_totales  = serializers.SerializerMethodField()
+    # rendimiento NO es un SerializerMethodField: es una columna de verdad, que
+    # el modelo recalcula en cada escritura. read_only para que nadie la mande
+    # desde fuera — el frontend manda el reporte entero y ahí viaja su copia
+    # calculada en vivo, que aquí se ignora.
+    # validators=[] desactiva el UniqueValidator automático de `folio`: su mensaje
+    # viaja bajo la clave del campo y el apiClient del frontend solo lee 'detail'.
+    # La comprobación se hace en validate(), con un mensaje legible. Mismo motivo
+    # que en FolioSerializer.codigo.
+    # allow_blank: sin esto DRF rechaza la cadena vacia a nivel de campo y el
+    # mensaje sale bajo la clave 'folio', que el frontend no lee. Se deja pasar
+    # para que validate() la rechace con un 'detail' legible.
+    folio = serializers.CharField(max_length=100, allow_blank=True, validators=[])
+
+    class Meta:
+        model  = ReporteViaje
+        fields = '__all__'
+        read_only_fields = ('creado_en', 'actualizado_en', 'rendimiento')
+
+    # Los CharField/TextField del modelo son blank=True, default='': NOT NULL en
+    # la base. Se derivan del modelo y no se listan a mano para que añadir un
+    # campo de texto mañana no obligue a acordarse de esta lista.
+    _TEXTOS = tuple(
+        f.name for f in ReporteViaje._meta.get_fields()
+        if isinstance(f, (models.CharField, models.TextField))
+    )
+
+    def to_internal_value(self, data):
+        """Un null en un campo de texto es vacío, no un error.
+
+        Ninguno de estos campos es obligatorio: hay viajes que no los usan y hay
+        datos que no se saben hasta días después, así que el reporte se guarda a
+        medias y se completa luego (usuario, 2026-08-24). Además el apiClient del
+        frontend convierte "" en null al escribir, así que limpiar un campo llega
+        aquí como null. Mismo criterio que Folio.asignacion.
+        """
+        if isinstance(data, dict):
+            data = {clave: ('' if clave in self._TEXTOS and valor is None else valor)
+                    for clave, valor in data.items()}
+        return super().to_internal_value(data)
+
+    # ── Calculados. No se guardan: ver el docstring del modelo ──────────────
+    def get_km_totales(self, reporte):
+        # Este sí se calcula al vuelo: es una resta de dos columnas de la misma
+        # fila, así que no puede quedarse desfasado de sus operandos.
+        return reporte.km_totales()
+
+    # ── Un reporte por folio ────────────────────────────────────────────────
+    def validate(self, attrs):
+        if 'folio' not in attrs:
+            return attrs
+        folio = (attrs['folio'] or '').strip()
+        if not folio:
+            raise serializers.ValidationError({'detail': 'El folio no puede quedar vacío.'})
+        otros = ReporteViaje.objects.filter(folio=folio)
+        if self.instance is not None:
+            otros = otros.exclude(pk=self.instance.pk)
+        if otros.exists():
+            raise serializers.ValidationError(
+                {'detail': f'El folio "{folio}" ya tiene un reporte de viaje.'}
+            )
+        attrs['folio'] = folio
+        return attrs
+
+    # ── Escritura anidada ───────────────────────────────────────────────────
+    @staticmethod
+    def _guardar_cargas(reporte, cargas):
+        """Upsert por `orden`: mandar el renglón 2 lo crea o lo pisa, y no toca
+        los otros cuatro. Es lo que necesita una pantalla que se llena por etapas
+        —el coordinador captura una parada hoy y otra pasado mañana."""
+        for carga in cargas:
+            datos = dict(carga)
+            CargaCombustible.objects.update_or_create(
+                reporte=reporte, orden=datos.pop('orden'), defaults=datos,
+            )
+
+    def create(self, validated_data):
+        cargas = validated_data.pop('cargas', [])
+        # atomic con el alias del router: el reporte y sus cargas son una sola
+        # escritura, como en FolioViewSet.perform_update.
+        with transaction.atomic(using=get_db_alias()):
+            reporte = ReporteViaje.objects.create(**validated_data)
+            self._guardar_cargas(reporte, cargas)
+            # Después de las cargas: el rendimiento las necesita.
+            reporte.refrescar_rendimiento()
+        return reporte
+
+    def update(self, instance, validated_data):
+        # pop con None y no con []: "no mandó cargas" (PATCH de otro campo) no es
+        # lo mismo que "mandó una lista vacía".
+        cargas = validated_data.pop('cargas', None)
+        with transaction.atomic(using=get_db_alias()):
+            for campo, valor in validated_data.items():
+                setattr(instance, campo, valor)
+            instance.save()
+            if cargas is not None:
+                self._guardar_cargas(instance, cargas)
+            # En CADA escritura, vengan cargas o no: el rendimiento también
+            # cambia al tocar el kilometraje.
+            instance.refrescar_rendimiento()
+        return instance

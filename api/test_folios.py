@@ -317,6 +317,21 @@ class FoliosEnManiobrasTests(BaseFolios):
         maniobra.refresh_from_db()
         self.assertEqual(maniobra.folio, 'F-2279-2')
 
+    def test_renombrar_un_folio_arrastra_tambien_el_folio_2(self):
+        """El folio renombrado puede estar en la columna del segundo operador.
+        Sin arrastrarlo, esa maniobra apunta a un codigo que ya no existe y
+        disponibles() vuelve a ofrecer el numero como libre."""
+        lote = self.generar('manzanillo').data
+        maniobra = Maniobra.objects.create(solicita='prueba', folio='R-2280', folio_2='F-2279')
+        r = self.cliente.patch(f'/api/folios/{lote[0]["id"]}/',
+                               {'codigo': 'F-2279-2'}, format='json')
+        self.assertEqual(r.status_code, 200)
+        maniobra.refresh_from_db()
+        self.assertEqual(maniobra.folio_2, 'F-2279-2')
+        self.assertEqual(maniobra.folio, 'R-2280')
+        self.assertNotIn('F-2279-2',
+                         [f['codigo'] for f in self.disponibles('manzanillo').data])
+
     def test_renombrar_no_toca_las_maniobras_con_otro_folio(self):
         lote = self.generar('manzanillo').data
         otra = Maniobra.objects.create(solicita='prueba', folio='R-2280')

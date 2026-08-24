@@ -1,5 +1,5 @@
 from datetime import timedelta
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.conf import settings
 from django.core.validators import MinLengthValidator, MinValueValidator
@@ -801,3 +801,191 @@ class TorreFolio(models.Model):
 
     def __str__(self):
         return f"{self.tracto.no_eco} → folio {self.folio}"
+
+
+# ── Reporte de viaje (coordinadores) ─────────────────────────────────────────
+# El formato en papel que llena el coordinador por cada viaje. Ver
+# docs/planes/PLAN_REPORTE_COORDINADORES.md (rama main) y la plantilla
+# api/documentos/templates/REPORTE COORDINADORES.xlsx.
+
+class ReporteViaje(models.Model):
+    """Un reporte de viaje. Uno por folio.
+
+    Al revés que TorreFolio —que lee la maniobra en vivo y nunca copia—, aquí lo
+    que viene del folio se COPIA al crear el reporte y desde ese momento vive
+    aquí. El motivo es que el reporte se FIRMA: si leyera en vivo y alguien
+    corrigiera la maniobra la semana siguiente, el papel firmado y la pantalla
+    dejarían de decir lo mismo, y el que vale es el papel. Un reporte es una foto
+    de lo que pasó, no una vista de lo que hay.
+
+    Los Sí/No van como BooleanField(null=True) y no con default=False: "todavía
+    no contestado" no es "No", y este formato se llena por etapas a lo largo de
+    varios días. Ese null es además lo que deja el "SI / NO" impreso intacto en
+    el Excel, para rodearlo a mano.
+
+    Sin columnas calculadas: KM TOTALES, RENDIMIENTO y el TOTAL de cada carga
+    salen del serializer. Guardar un dato al lado de sus operandos es garantizar
+    que algún día se contradigan.
+    """
+    RECOLECCION_CHOICES = [
+        ('propio',  'Propio'),
+        ('tercero', 'Tercero'),
+    ]
+
+    # unique: la regla "un reporte por folio" la pone la base y no el código, así
+    # que dos peticiones simultáneas no pueden colar dos. Sin db_index aparte:
+    # unique ya crea el suyo.
+    folio       = models.CharField(max_length=100, unique=True)
+    fecha       = models.DateField(null=True, blank=True)
+    coordinador = models.CharField(max_length=255, blank=True, default='')
+
+    # ── Identificación. Lo marcado ← lo precarga el folio, pero es editable ──
+    servicio    = models.CharField(max_length=20, blank=True, default='')   # ← tipo_servicio
+    cliente     = models.CharField(max_length=255, blank=True, default='')  # ←
+    recoleccion = models.CharField(max_length=10, choices=RECOLECCION_CHOICES,
+                                   blank=True, default='')
+    origen      = models.CharField(max_length=100, blank=True, default='')  # ←
+    destino     = models.CharField(max_length=100, blank=True, default='')  # ←
+    operador    = models.CharField(max_length=255, blank=True, default='')  # ←
+
+    cita           = models.DateTimeField(null=True, blank=True)
+    salida_puerto  = models.DateTimeField(null=True, blank=True)
+    inicio_pactado = models.DateTimeField(null=True, blank=True)  # ← ruta_inicio
+    salida_real    = models.DateTimeField(null=True, blank=True)
+
+    # ── Información del viaje ──
+    unidad          = models.CharField(max_length=100, blank=True, default='')  # ←
+    remolque_1      = models.CharField(max_length=255, blank=True, default='')  # ←
+    remolque_2      = models.CharField(max_length=255, blank=True, default='')  # ←
+    km_inicial      = models.PositiveIntegerField(null=True, blank=True)
+    km_final        = models.PositiveIntegerField(null=True, blank=True)
+    llegada_cliente = models.DateTimeField(null=True, blank=True)
+    descarga        = models.DateTimeField(null=True, blank=True)
+
+    # ── En trayecto. Las 5 cargas de combustible viven en CargaCombustible ──
+    litros_aceite    = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    precio_aceite    = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    reparacion       = models.BooleanField(null=True)
+    reparacion_que   = models.CharField(max_length=255, blank=True, default='')
+    reparacion_costo = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    rescate          = models.BooleanField(null=True)
+    rescate_unidad   = models.CharField(max_length=100, blank=True, default='')
+    rescate_operador = models.CharField(max_length=255, blank=True, default='')
+
+    # ── Regreso ──
+    llegada_manzanillo = models.DateTimeField(null=True, blank=True)  # ← ruta_fin
+    maniobra_vacio     = models.BooleanField(null=True)
+    # Cita y patio van SEPARADOS aunque en el papel compartan renglón
+    # (confirmado con el usuario, 2026-08-24).
+    patio_entrega  = models.CharField(max_length=100, blank=True, default='')
+    cita_vacio     = models.DateTimeField(null=True, blank=True)
+    unidad_vacio   = models.CharField(max_length=100, blank=True, default='')
+    operador_vacio = models.CharField(max_length=255, blank=True, default='')
+    estadias       = models.BooleanField(null=True)
+    estadias_horas = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    comentarios = models.TextField(blank=True, default='')
+
+    # ── El rendimiento SÍ se guarda ──────────────────────────────────────
+    # Es la excepción a la regla de no guardar calculados, y es a propósito: los
+    # informes que vendrán después necesitan agregar rendimientos de muchos
+    # viajes, y recalcularlos en cada consulta obligaría a arrastrar las cargas
+    # de combustible de cada reporte (decisión del usuario, 2026-08-24).
+    #
+    # El riesgo asumido es el de siempre con un calculado guardado: si alguien
+    # corrige el kilometraje, la cifra vieja se queda. Se acota recalculando en
+    # CADA escritura —nadie escribe este campo a mano, es read_only en el
+    # serializer— y el usuario planea cerrar el resto con permisos por rol.
+    #
+    # max_digits=6: hasta 9999.99 km/lt. Un camión real anda por 2-4.
+    rendimiento = models.DecimalField(max_digits=6, decimal_places=2,
+                                      null=True, blank=True, editable=False)
+
+    creado_en      = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed  = True
+        ordering = ['-id']
+
+    def __str__(self):
+        return f"Reporte de viaje {self.folio}"
+
+    # ── Los cálculos viven aquí, no en el serializer ─────────────────────
+    # Así el recálculo al guardar y lo que se sirve por la API salen del MISMO
+    # sitio: dos copias de esta división acabarían dando cifras distintas.
+    def km_totales(self):
+        if self.km_inicial is None or self.km_final is None:
+            return None
+        return self.km_final - self.km_inicial
+
+    def calcular_rendimiento(self):
+        """Kilómetros por litro de diésel del viaje entero. None si falta algo.
+
+        Se suman los litros de las cinco cargas: el rendimiento es de todo el
+        diésel cargado, no del de una parada. La urea no cuenta — no es
+        combustible de tracción y el papel tampoco la mete en el cálculo.
+        """
+        km = self.km_totales()
+        # .exclude() y no .all(): el ViewSet trae el reporte con prefetch_related
+        # ('cargas'), y sobre un prefetch, .all() devuelve la CACHÉ — o sea las
+        # cargas de antes de la escritura. Con eso, añadir un renglón dejaba el
+        # rendimiento con el valor viejo, sin fallar. Cualquier método distinto
+        # de .all() construye una consulta nueva y lee lo que hay ahora.
+        litros = (self.cargas.exclude(litros_diesel__isnull=True)
+                      .aggregate(total=models.Sum('litros_diesel'))['total']
+                  or Decimal('0'))
+        if km is None or not litros:
+            return None
+        return (Decimal(km) / litros).quantize(Decimal('0.01'),
+                                               rounding=ROUND_HALF_UP)
+
+    def refrescar_rendimiento(self):
+        """Recalcula y guarda. Va DESPUÉS de escribir las cargas: en un alta las
+        filas hijas todavía no existen cuando se guarda el reporte."""
+        nuevo = self.calcular_rendimiento()
+        if nuevo != self.rendimiento:
+            self.rendimiento = nuevo
+            self.save(update_fields=['rendimiento', 'actualizado_en'])
+
+
+# Los renglones que trae el papel. Cambiar esto pide migración por el CHECK.
+CARGAS_POR_REPORTE = 5
+
+
+class CargaCombustible(models.Model):
+    """Un renglón del bloque EN TRAYECTO: el diésel y la urea de una parada.
+
+    Tabla hija y no 20 columnas `litros_diesel_1..5` dentro de ReporteViaje: son
+    5 "de momento" (usuario, 2026-08-24), y operador_2 / remolque_3 / remolque_4
+    ya enseñaron adónde lleva numerar columnas. Un sexto renglón aquí es una fila.
+
+    `total_urea` se captura, no se calcula: el papel trae PRECIO X LITRO solo
+    para el diésel, así que el total de la urea no es derivable de lo que hay.
+    """
+    reporte = models.ForeignKey(ReporteViaje, on_delete=models.CASCADE,
+                                related_name='cargas')
+    orden   = models.PositiveSmallIntegerField()
+
+    litros_diesel = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    precio_litro  = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    litros_urea   = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    total_urea    = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        managed  = True
+        ordering = ['orden']
+        constraints = [
+            models.UniqueConstraint(fields=['reporte', 'orden'],
+                                    name='uniq_carga_reporte_orden'),
+            # Mismo criterio que TorreControl.indice: el rango vive en la base, así
+            # una carga con orden 9 no puede entrar y quedarse invisible en la
+            # pantalla, que solo pinta cinco renglones.
+            models.CheckConstraint(
+                condition=models.Q(orden__gte=1, orden__lte=CARGAS_POR_REPORTE),
+                name='carga_orden_en_rango',
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.reporte.folio} · carga {self.orden}"
