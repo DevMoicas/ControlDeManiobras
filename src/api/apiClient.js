@@ -128,17 +128,27 @@ export const apiClient = {
 put:   (endpoint, body) => request(endpoint, { method: "PUT",   body: JSON.stringify(sanitizarPayload(body)) }),
 patch: (endpoint, body) => request(endpoint, { method: "PATCH", body: JSON.stringify(sanitizarPayload(body)) }),
   delete: (endpoint)        => request(endpoint, { method: "DELETE" }),
+  // POST/PATCH SIN sanitizar, para cuerpos con estructura anidada.
+  // sanitizarPayload() está pensado para payloads planos: convierte toda lista
+  // en lista de enteros (aplastaría `cargas`, que son objetos, a []) y todo
+  // valor en cadena. Quien use estos dos construye el cuerpo él mismo y se hace
+  // cargo de normalizarlo — ver paraGuardar() en utils/reporteViaje.mjs.
+  postAnidado:  (endpoint, body) => request(endpoint, { method: "POST",  body: JSON.stringify(body) }),
+  patchAnidado: (endpoint, body) => request(endpoint, { method: "PATCH", body: JSON.stringify(body) }),
   // Subir archivos: FormData directo, sin sanitizar ni forzar Content-Type
   upload: (endpoint, formData) => request(endpoint, { method: "POST", body: formData, isUpload: true }),
-  // POST que devuelve un Blob (descarga de archivos binarios como PDFs)
-  download: async (endpoint, body) => {
+  // Descarga de archivos binarios (PDFs, Excel). POST por defecto, que es como
+  // los piden los documentos de viaje: mandan el formulario en el cuerpo. El
+  // reporte de viaje ya está guardado y solo hace falta su id en la URL, así que
+  // ese va por GET — y un GET no lleva cuerpo ni Content-Type.
+  download: async (endpoint, body, metodo = "POST") => {
     const hacerFetch = (tok) => fetch(`${BASE_URL}${endpoint}`, {
-      method: "POST",
+      method: metodo,
       headers: {
-        "Content-Type": "application/json",
+        ...(metodo === "GET" ? {} : { "Content-Type": "application/json" }),
         ...(tok ? { Authorization: `Bearer ${tok}` } : {}),
       },
-      body: JSON.stringify(body),
+      ...(metodo === "GET" ? {} : { body: JSON.stringify(body) }),
     });
 
     let response = await hacerFetch(sessionStorage.getItem("accessToken"));

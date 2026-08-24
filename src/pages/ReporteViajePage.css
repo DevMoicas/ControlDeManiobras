@@ -1,0 +1,292 @@
+/* ── Reportes de viaje ───────────────────────────────────────────────────────
+   Mismo lenguaje visual que Maniobras, Vacíos, Gastos y Movimientos Locales:
+   shell azul del app, hoja crema para la tabla, cabecera oscura #2b3e50, Oswald
+   display, IBM Plex Mono para etiquetas e Inter para el cuerpo.
+
+   Todo cuelga de .rv-page y las clases van prefijadas rv-, así que esta hoja no
+   se filtra a las demás páginas.
+
+   Las fuentes vienen de index.html — sin @import, que bloquea el render. */
+
+/* ── Tokens (locales: no ensucian :root) ──────────────────────────────────── */
+.rv-page {
+  --primary-blue:  var(--primary, #2563eb);
+  --primary-hover: #1d4ed8;
+  --card-bg:       #faf8f3;                 /* la hoja */
+  --paper-deep:    #f3ede1;                 /* hover de fila y de control */
+  --paper-line:    #e6dfd1;                 /* borde de los controles de papel */
+  --text-main:     var(--text, #1f2937);
+  --text-muted:    var(--text-light, #6b7280);
+  --danger:        #dc2626;
+  --danger-soft:   #fef2f2;
+  /* Cromo del tablero. Tinta cálida: sobre crema, una línea azulada se ve como
+     un arañazo frío. */
+  --ink:           #23201c;                 /* tinta de imprenta */
+  --grid-line:     rgba(74, 58, 34, 0.10);  /* filetes entre columnas */
+  --row-line:      rgba(74, 58, 34, 0.13);  /* renglones */
+  --sheet-edge:    #e3dccd;                 /* canto de la hoja */
+
+  min-height: calc(100vh - 40px);
+  padding: 52px 28px 64px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--text-main);
+  background:
+    radial-gradient(900px 420px at 100% -8%, #e8f0ff 0%, transparent 58%),
+    var(--bg, #f4f7fb);
+}
+
+.rv-contenido { max-width: 1180px; margin: 0 auto; }
+
+/* ── Intro ────────────────────────────────────────────────────────────────── */
+.rv-intro { text-align: center; margin-bottom: 26px; }
+.rv-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; font-weight: 500; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--primary-blue); margin: 0 0 12px;
+}
+.rv-title {
+  font-family: 'Oswald', sans-serif; text-transform: uppercase;
+  letter-spacing: 0.02em; font-weight: 600; font-size: 2.45rem; line-height: 1.02;
+  color: var(--text-main); margin: 0;
+}
+/* En el formulario el título va en línea con los botones, no centrado. */
+.rv-title--fila { font-size: 1.6rem; display: inline-flex; align-items: center; gap: 10px; }
+.rv-folio-chip {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; letter-spacing: 0;
+  background: var(--paper-deep); border: 1px solid var(--sheet-edge);
+  border-radius: 5px; padding: 3px 9px; color: var(--ink);
+}
+
+/* ── Barra de herramientas ────────────────────────────────────────────────── */
+.rv-barra {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.rv-barra > :first-child { flex: 1 1 260px; min-width: 0; }
+/* SearchBar trae su propio margen inferior (Tailwind mb-4): aquí estorba. */
+.rv-barra .w-full { margin-bottom: 0; }
+
+.rv-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 22px;
+}
+.rv-head-izq { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* ── Botones ──────────────────────────────────────────────────────────────── */
+/* Primario: el mismo .btn-agregar de Maniobras y Vacíos. */
+.rv-btn--primario {
+  font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 0.9rem;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 10px 20px; border: none; border-radius: 9px;
+  background: var(--primary-blue); color: #fff; cursor: pointer;
+  transition: background 0.18s ease;
+}
+.rv-btn--primario:hover:not(:disabled) { background: var(--primary-hover); }
+
+/* Secundario: papel en reposo, para lo que no es la acción principal. */
+.rv-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 0.72rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 9px 14px; border: 1px solid var(--sheet-edge); border-radius: 8px;
+  background: var(--card-bg); color: var(--ink); cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.rv-btn:hover:not(:disabled) { background: #2b3e50; border-color: #2b3e50; color: #fff; }
+.rv-btn:disabled, .rv-btn--primario:disabled { opacity: 0.5; cursor: not-allowed; }
+.rv-btn:focus-visible, .rv-btn--primario:focus-visible {
+  outline: 2px solid var(--primary-blue); outline-offset: 2px;
+}
+
+.rv-btn--mini {
+  padding: 5px 9px; font-size: 0.64rem; letter-spacing: 0.1em; gap: 5px;
+  border-radius: 6px;
+}
+
+.rv-acciones { display: flex; align-items: center; gap: 8px; }
+.rv-icono {
+  display: inline-flex; padding: 6px; border: 1px solid var(--sheet-edge);
+  border-radius: 7px; background: var(--card-bg); color: var(--ink); cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.rv-icono:hover:not(:disabled) { background: #2b3e50; border-color: #2b3e50; color: #fff; }
+.rv-icono:disabled { opacity: 0.45; cursor: not-allowed; }
+.rv-icono--peligro { color: var(--danger); }
+.rv-icono--peligro:hover:not(:disabled) { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+/* ── La hoja ──────────────────────────────────────────────────────────────── */
+/* Radio corto y canto cálido en vez de tarjeta de 16px: un documento apoyado
+   sobre el escritorio, no un widget. La sombra larga lo despega; la corta es el
+   grosor del papel. Mismos valores que .table-responsive de Maniobras. */
+.rv-hoja {
+  background: var(--card-bg);
+  border: 1px solid var(--sheet-edge);
+  border-radius: 6px;
+  box-shadow:
+    0 1px 2px rgba(74, 58, 34, 0.07),
+    0 18px 34px -24px rgba(74, 58, 34, 0.45);
+  overflow: hidden;
+}
+
+.rv-tabla-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── Tablas ───────────────────────────────────────────────────────────────── */
+.rv-tabla, .rv-cargas {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--ink);
+  /* Cifras de ancho fijo: fechas, folios y litros caen en columna al leer en
+     vertical. Es la diferencia entre una tabla y una hoja de cálculo. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cabecera: una sola pieza de color, la misma barra oscura de Maniobras,
+   Vacíos y Movimientos Locales. Sin filete vertical: la retícula empieza en el
+   cuerpo. Sin min-width en las celdas — esta tabla tiene 7 columnas, no 30, y
+   forzarlo la mandaría a scroll horizontal sin necesidad. */
+.rv-tabla th, .rv-cargas th {
+  font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 0.74rem;
+  letter-spacing: 0.1em; text-transform: uppercase; text-align: left;
+  white-space: nowrap; padding: 14px 16px;
+  background: #2b3e50; color: #fff; border-bottom: 1px solid #1e2b38;
+}
+.rv-tabla td, .rv-cargas td {
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--row-line);
+  /* Hairline vertical: sin retícula la vista se pierde entre celdas. Tinta
+     translúcida para que se lea igual sobre cualquier fondo. */
+  border-right: 1px solid var(--grid-line);
+  color: var(--text-main);
+  vertical-align: middle;
+  background: var(--card-bg);
+}
+.rv-tabla td:last-child, .rv-cargas td:last-child { border-right: none; }
+.rv-tabla tbody tr:last-child td, .rv-cargas tbody tr:last-child td { border-bottom: none; }
+.rv-tabla tbody tr { transition: background 0.12s; cursor: pointer; }
+.rv-tabla tbody tr:hover td { background: var(--paper-deep); }
+
+.rv-folio { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+.rv-estado {
+  text-align: center !important; padding: 28px !important;
+  color: var(--text-muted); font-style: italic;
+}
+
+/* Un punto por bloque del formato. El VACÍO importa tanto como el lleno: es lo
+   que dice cuánto falta. Con el borde en --sheet-edge sobre la hoja crema no se
+   veía, así que va con tinta propia y relleno blanco, que contrasta contra la
+   hoja y contra el hover. */
+.rv-avance { display: inline-flex; gap: 5px; }
+.rv-punto {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 1.5px solid rgba(74, 58, 34, 0.42);
+  background: #fff;
+  box-sizing: border-box;
+}
+.rv-punto--on { background: #2b3e50; border-color: #2b3e50; }
+
+/* ── Formulario ───────────────────────────────────────────────────────────── */
+.rv-bloque {
+  background: var(--card-bg);
+  border: 1px solid var(--sheet-edge);
+  border-radius: 6px;
+  box-shadow:
+    0 1px 2px rgba(74, 58, 34, 0.07),
+    0 18px 34px -24px rgba(74, 58, 34, 0.45);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.rv-bloque > *:not(.rv-bloque-titulo) { margin-left: 16px; margin-right: 16px; }
+.rv-bloque > *:last-child { margin-bottom: 16px; }
+.rv-bloque-titulo {
+  /* Misma tipografía y misma barra que un encabezado de tabla: los bloques del
+     formato se leen como las cabeceras del tablero, no como otra cosa. */
+  font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 0.74rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  background: #2b3e50; color: #fff;
+  margin: 0 0 14px; padding: 12px 16px;
+}
+
+/* auto-fit para que en móvil caiga a una columna sin media queries. */
+.rv-rejilla {
+  display: grid; gap: 12px 16px;
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+}
+.rv-campo { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.rv-campo--doble { grid-column: span 2; }
+.rv-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.66rem; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted);
+}
+.rv-campo input,
+.rv-comentarios {
+  width: 100%; box-sizing: border-box;
+  font-family: 'Inter', sans-serif; font-size: 0.875rem; color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  padding: 8px 10px; border: 1px solid var(--paper-line); border-radius: 7px;
+  background: #fff;
+  transition: border-color 0.15s ease;
+}
+.rv-campo input:hover:not(:disabled), .rv-comentarios:hover { border-color: #cec4b0; }
+/* Deshabilitado: papel apagado, no un input en blanco que invite a escribir. */
+.rv-campo input:disabled {
+  background: var(--paper-deep); color: var(--text-muted); cursor: not-allowed;
+}
+.rv-campo input:focus, .rv-comentarios:focus {
+  outline: none; border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* Lo calculado se enseña a la misma altura que un input pero sin borde de campo
+   editable: tiene que leerse como resultado, no como hueco por llenar. */
+.rv-calc {
+  display: block; padding: 8px 10px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem;
+  color: var(--ink); background: var(--paper-deep);
+  border: 1px dashed var(--paper-line); border-radius: 7px; min-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Los cinco renglones de combustible ───────────────────────────────────── */
+.rv-cargas { margin-bottom: 16px; }
+.rv-cargas th { padding: 10px 12px; font-size: 0.68rem; }
+.rv-cargas td { padding: 5px 8px; }
+.rv-cargas tbody tr:hover td { background: var(--card-bg); }  /* no es clicable */
+.rv-cargas input {
+  width: 100%; box-sizing: border-box;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  padding: 6px 8px; border: 1px solid var(--paper-line); border-radius: 6px;
+  background: #fff; color: var(--text-main);
+}
+.rv-cargas input:focus {
+  outline: none; border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.rv-orden {
+  font-family: 'Oswald', sans-serif; font-weight: 600; color: var(--text-muted);
+  width: 26px; text-align: center;
+}
+.rv-celda-calc {
+  font-family: 'IBM Plex Mono', monospace; text-align: right;
+  color: var(--ink); background: var(--paper-deep) !important; white-space: nowrap;
+}
+
+.rv-comentarios { resize: vertical; }
+.rv-nota {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem;
+  color: var(--text-muted); margin: 10px 0 0; letter-spacing: 0.04em;
+}
+
+/* react-datepicker envuelve el input en un div propio, que por defecto no
+   hereda el ancho del campo. */
+.rv-campo .react-datepicker-wrapper { width: 100%; }
+
+@media (max-width: 640px) {
+  .rv-page { padding: 36px 14px 48px; }
+  .rv-title { font-size: 2rem; }
+  .rv-campo--doble { grid-column: span 1; }
+}

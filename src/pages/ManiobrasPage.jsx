@@ -34,6 +34,8 @@ import es from "date-fns/locale/es";
 import FotoModal from "../components/FotoModal/FotoModal";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
 import { partirDoble, partirTipoFull, leerPar, textoDelPar } from "../utils/dobleValor.mjs";
+import { codigoFolioFull, sinSufijoFull } from "../utils/folioFull.mjs";
+import { apiClient } from "../api/apiClient";
 registerLocale("es", es);
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -159,6 +161,51 @@ function aplicarCambioPlaza(datos, onChange, key, valor) {
     onChange("folio", "");
     onChange("folio_2", "");
   }
+}
+
+// ── Folio de un Full: el "-2" se pone renombrando el folio del catálogo ───────
+// Se engancha en los TRES puntos de escritura (fila nueva, modal y tabla) y no
+// en los selectores: así una sola llamada cubre elegir folio, quitarlo, marcar
+// Full, desmarcarlo, repartirlo entre dos operadores y cambiar de plaza (que
+// libera el folio), en vez de repetir la regla en seis sitios.
+
+// Devuelve si el folio se renombró de verdad.
+async function renombrarFolio(actual, nuevo) {
+  if (!actual || actual === nuevo) return false;
+  // `codigo` es unique en la BD, así que no hace falta filtrar también por tabla.
+  const res = await apiClient.get(`/folios/?codigo=${encodeURIComponent(actual)}`);
+  // find() y no [0]: si el backend todavía no filtra por codigo, DRF ignora el
+  // parámetro y devuelve la tabla entera — coger el primero renombraría un folio
+  // ajeno. Así el orden de despliegue deja de importar.
+  const folio = (Array.isArray(res) ? res : (res?.results ?? [])).find((f) => f.codigo === actual);
+  // Un folio que no está en el catálogo (texto libre de la época anterior al
+  // desplegable) no se puede renombrar: la maniobra se guarda igual.
+  if (!folio) return false;
+  // El backend arrastra el nuevo código a la maniobra que lo tuviera asignado
+  // (FolioViewSet.perform_update), así que aquí no hay que propagar nada.
+  await apiClient.patch(`/folios/${folio.id}/`, { codigo: nuevo });
+  return true;
+}
+
+// Deja el catálogo en su sitio y devuelve los campos ya corregidos.
+// ponytail: dos escrituras sin transacción — hacerlas atómicas pide un endpoint
+// nuevo en el backend. Si la segunda falla, el folio queda renombrado y la
+// maniobra no; se arregla volviendo a tocar la fila. Endpoint dedicado si eso
+// llega a pasar de verdad.
+async function sincronizarFolioFull(antes, campos) {
+  const despues = { ...antes, ...campos };
+  // El folio que se suelta vuelve a su código base: si no, el "-2" se queda
+  // pegado al talonario aunque el folio ya esté libre para otra maniobra.
+  if (antes.folio && antes.folio !== despues.folio) {
+    await renombrarFolio(antes.folio, sinSufijoFull(antes.folio));
+  }
+  const deseado = codigoFolioFull(despues);
+  if (!despues.folio || despues.folio === deseado) return campos;
+  // Si no se renombró (folio de texto libre, anterior al desplegable), el campo
+  // se queda como está: maniobra y catálogo tienen que decir SIEMPRE lo mismo o
+  // /folios/disponibles/ vuelve a ofrecer el número base como libre.
+  if (!(await renombrarFolio(despues.folio, deseado))) return campos;
+  return { ...campos, folio: deseado };
 }
 
 // Full: dos inputs "TIPO DE CARGA" apilados, uno por contenedor.
@@ -827,7 +874,7 @@ const FilaManiobra = memo(function FilaManiobra({
   // se toca (y aplicarCambioTipoServicio ya la vacía al salir de Full).
   const dosColumnas = (col) => Boolean(col.key2) && esFull;
 
-  const guardar = (campos) => onGuardarCampos(maniobra.id, campos);
+  const guardar = (campos) => onGuardarCampos(maniobra.id, campos, maniobra);
 
   const iniciarEdicion = (col) => {
     setCeldaEditando(col.key);
@@ -1332,7 +1379,7 @@ export default function ManiobrasPage() {
     }
   }, [eliminar, isAdmin]);
 
-  const handleAbrirEdicion  = useCallback((m) => setModal({ abierto: true, datos: { ...m } }), []);
+  const handleAbrirEdicion  = useCallback((m) => setModal({ abierto: true, datos: { ...m }, original: m }), []);
   const handleCambioModal   = useCallback((key, value) =>
     setModal((prev) => ({ ...prev, datos: { ...prev.datos, [key]: value } })), []);
 
@@ -1340,7 +1387,7 @@ export default function ManiobrasPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await actualizar(modal.datos.id, modal.datos);
+      await actualizar(modal.datos.id, await sincronizarFolioFull(modal.original ?? {}, modal.datos));
       setNotif({ tipo: "ok", msg: "Maniobra actualizada correctamente." });
       setModal(MODAL_CERRADO);
     } catch (err) {
@@ -1348,18 +1395,19 @@ export default function ManiobrasPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [modal.datos, actualizar]);
+  }, [modal.datos, modal.original, actualizar]);
 
   // Guardado desde la tabla: PATCH parcial. Recibe un objeto y no un solo campo
   // porque hay dos casos de dos campos a la vez (cliente + cliente_id, y plaza +
   // folio liberado) que tienen que viajar en la MISMA escritura.
   // useCallback porque la referencia viaja a las ~2000 filas memoizadas.
-  const handleGuardarCampos = useCallback(async (id, campos) => {
+  const handleGuardarCampos = useCallback(async (id, campos, maniobra = {}) => {
     try {
-      await actualizar(id, campos);
+      const finales = await sincronizarFolioFull(maniobra, campos);
+      await actualizar(id, finales);
       // Se confirma QUÉ se escribió, no "campo actualizado": el valor va en la
       // línea monoespaciada del aviso porque es un código que hay que verificar.
-      const [campo, valor] = Object.entries(campos)[0];
+      const [campo, valor] = Object.entries(finales)[0];
       setNotif({
         tipo: "ok",
         msg: COLUMNAS.find((c) => c.key === campo)?.label ?? campo,
@@ -1380,7 +1428,7 @@ export default function ManiobrasPage() {
   const handleGuardarNueva = useCallback(async () => {
     setIsSubmitting(true);
     try {
-      await agregar(nuevaManiobra);
+      await agregar(await sincronizarFolioFull({}, nuevaManiobra));
       setNuevaManiobra(MANIOBRA_VACIA);
       setModoAgregar(false);
       setNotif({ tipo: "ok", msg: "Maniobra agregada correctamente." });

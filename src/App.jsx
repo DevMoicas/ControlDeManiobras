@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, Hash, Bitcoin, ListChecks, TowerControl, ChevronRight } from 'lucide-react';
+import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, Hash, Bitcoin, ListChecks, TowerControl, ClipboardList, ChevronRight } from 'lucide-react';
 import './App.css';
 import { useAuthContext } from './context/AuthContext';
 import { useInactivityTimer } from './hooks/useInactivityTimer';
@@ -22,6 +22,7 @@ import FinanzasPage from './pages/FinanzasPage';
 import CostosExtraPage from './pages/CostosExtraPage';
 import PendientesPage from './pages/PendientesPage';
 import TorreControlPage from './pages/TorreControlPage';
+import ReporteViajePage from './pages/ReporteViajePage';
 import { useAlertasVencimiento } from './hooks/useAlertasVencimiento';
 import AlertaVencimiento from './components/AlertaVencimiento/AlertaVencimiento';
 import Seguimientos from './components/Seguimientos/Seguimientos';
@@ -36,6 +37,7 @@ const HOME_MODULES = [
   { to: 'finanzas',        icon: Bitcoin,   title: 'Finanzas',            desc: 'Costos extra, nómina, facturación y estados de cuenta.' },
   { to: 'pendientes',      icon: ListChecks,  title: 'Pendientes',          desc: 'Listas de pendientes por persona.' },
   { to: 'torre-control',   icon: TowerControl, title: 'Torre de control',    desc: 'Tablero de unidades ocupadas por día.' },
+  { to: 'reportes-viaje',  icon: ClipboardList, title: 'Reportes de viaje',   desc: 'El reporte del coordinador por cada folio.' },
 ];
 
 function Home() {
@@ -218,6 +220,7 @@ function AppRoutes() {
           <Route path="documentos-viaje" element={<DocumentosViajePage />} />
           <Route path="pendientes" element={<PendientesPage />} />
           <Route path="torre-control" element={<TorreControlPage />} />
+          <Route path="reportes-viaje" element={<ReporteViajePage />} />
 
           {/* Finanzas: hub con sus cuatro subpáginas. Solo Costos extra tiene
               contenido; las otras tres esperan a tenerlo. */}
