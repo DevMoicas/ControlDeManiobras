@@ -24,7 +24,14 @@ export function useManiobras(filtroStatus = "todos", ordenFecha = "desc") {
   // paginación de 60 en 60 puede repetir o saltarse filas. Las maniobras sin
   // fecha van al final (lo pone el backend, ver OrdenNullsLast).
   // desc = de la fecha más próxima hacia atrás. El status no influye.
-  const ordenCampo = ordenFecha === "asc" ? "fecha_pis,id" : "-fecha_pis,-id";
+  //
+  // sin_entrega va SIEMPRE primero y no se invierte con la flecha: las que aún
+  // no tienen FECHA DE ENTREGA están pendientes de que se la pongan y en medio
+  // de la lista se pierden. Es un campo de orden virtual del backend (0 sin
+  // fecha, 1 con ella), no una columna de la tabla.
+  const ordenCampo = ordenFecha === "asc"
+    ? "sin_entrega,fecha_pis,id"
+    : "sin_entrega,-fecha_pis,-id";
   const params = new URLSearchParams({
     page,
     page_size: PAGE_SIZE,

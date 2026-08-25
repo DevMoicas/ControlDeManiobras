@@ -109,7 +109,11 @@
 .seg-modal {
   display: flex;
   flex-direction: column;
-  width: min(1100px, 100%);
+  /* Ancho para que las nueve columnas quepan sin scroll horizontal en desktop:
+     la más larga es CONTENEDOR, que en un Full lleva los dos códigos. En
+     pantallas menores el 96vw manda y la tabla vuelve a scrollar sola
+     (.seg-modal-scroll), que es lo correcto en portátil o tablet. */
+  width: min(1680px, 96vw);
   max-height: 85vh;
   background: #fff;
   border-radius: 10px;
