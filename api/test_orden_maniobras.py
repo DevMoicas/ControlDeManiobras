@@ -67,15 +67,17 @@ class OrdenPorFechaPisTests(TestCase):
 
         self.assertEqual(self.listar()[0], 'NUEVA')
 
-    def test_las_maniobras_sin_fecha_van_al_final(self):
-        """Postgres pone los NULL PRIMERO en DESC: sin nulls_last estas
-        encabezarian la tabla."""
+    def test_las_maniobras_sin_fecha_pis_van_arriba_del_todo(self):
+        """Estan pendientes de que les pongan la fecha. Con el orden anterior
+        caian al fondo de su grupo y aparecian a media tabla."""
         self.crear('SIN-FECHA')
         self.crear('CON-FECHA', '2026-08-25')
 
-        self.assertEqual(self.listar(), ['CON-FECHA', 'SIN-FECHA'])
+        self.assertEqual(self.listar(), ['SIN-FECHA', 'CON-FECHA'])
 
-    def test_invertir_el_orden_deja_las_sin_fecha_igualmente_al_final(self):
+    def test_quien_no_pide_sin_pis_las_sigue_teniendo_al_final(self):
+        """El desglose de PENDIENTES pide ordering=fecha_pis,id y NO quiere este
+        criterio. Ahi manda OrdenNullsLast: sin fecha, al final."""
         self.crear('SIN-FECHA')
         self.crear('VIEJA', '2026-01-01')
         self.crear('NUEVA', '2026-12-31')
@@ -121,6 +123,15 @@ class SinFechaDeEntregaArribaTests(OrdenPorFechaPisTests):
 
         self.assertEqual(self.listar('sin_entrega,fecha_pis,id'),
                          ['SIN-ENTREGA', 'CON-ENTREGA'])
+
+    def test_sin_fecha_pis_gana_a_sin_fecha_de_entrega(self):
+        """Hoy no existe el caso mixto en produccion (las 18 sin FECHA PIS no
+        tienen entrega tampoco), pero el criterio queda fijado: sin PIS manda."""
+        self.crear('SIN-PIS-CON-ENTREGA', None)
+        self.crear('CON-PIS-SIN-ENTREGA', '2026-08-25', fecha_entrega_mercancia=None)
+
+        self.assertEqual(self.listar(),
+                         ['SIN-PIS-CON-ENTREGA', 'CON-PIS-SIN-ENTREGA'])
 
     def test_quien_no_lo_pide_no_lo_sufre(self):
         """El desglose de PENDIENTES pega al mismo endpoint y NO quiere este
