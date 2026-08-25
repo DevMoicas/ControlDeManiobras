@@ -19,8 +19,12 @@ export function useManiobras(filtroStatus = "todos", ordenFecha = "desc") {
 
   // Construye la query string según el filtro activo
   const buildUrl = useCallback((page) => {
-  // Orden por id (= orden de creación). El status no influye. desc = más reciente primero.
-  const ordenCampo = ordenFecha === "asc" ? "id" : "-id";
+  // Orden por FECHA PIS, que es la columna de la que cuelga la flecha. El id
+  // desempata dentro del mismo día: sin él el orden es arbitrario y la
+  // paginación de 60 en 60 puede repetir o saltarse filas. Las maniobras sin
+  // fecha van al final (lo pone el backend, ver OrdenNullsLast).
+  // desc = de la fecha más próxima hacia atrás. El status no influye.
+  const ordenCampo = ordenFecha === "asc" ? "fecha_pis,id" : "-fecha_pis,-id";
   const params = new URLSearchParams({
     page,
     page_size: PAGE_SIZE,

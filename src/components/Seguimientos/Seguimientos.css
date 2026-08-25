@@ -72,6 +72,129 @@
 /* Por debajo de 1200px la columna vuelve al flujo (ver .home-lateral en App.css)
    y el panel ocupa todo el ancho disponible. El corte TIENE que ser el mismo que
    allí: con 320px fijos, un panel ya en flujo se quedaría corto y descolgado. */
+/* Las dos filas son botones: abren su desglose. Se resetea la apariencia de
+   <button> para que sigan viéndose exactamente igual que antes. */
+.seg-fila--boton {
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 10px 6px;
+  margin: 0 -6px;                /* compensa el padding: la fila no se desplaza */
+  transition: background 0.12s ease;
+}
+
+.seg-fila--boton:hover,
+.seg-fila--boton:focus-visible {
+  background: #f2f6fc;
+}
+
+/* ── Desglose (modal) ─────────────────────────────────────────────────────── */
+
+/* Mismo overlay que el resto de modales de la app (ver BitacoraGastosModal.css). */
+.seg-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.seg-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(1100px, 100%);
+  max-height: 85vh;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.24);
+  font-family: 'Inter', sans-serif;
+}
+
+.seg-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #2b3e50;
+  color: #fff;
+}
+
+.seg-modal-titulo {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.seg-modal-cerrar {
+  margin-left: auto;
+  display: flex;
+  border: 0;
+  background: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.seg-modal-cerrar:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.seg-modal-body {
+  padding: 12px 14px 14px;
+  overflow: auto;
+}
+
+.seg-modal-estado {
+  margin: 0;
+  padding: 18px 4px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: #667085;
+}
+
+.seg-modal-estado--error {
+  color: #b42318;
+}
+
+/* La tabla es más ancha que el modal en pantallas estrechas: scrolla ella, no
+   la página (misma regla que las tablas de las pantallas grandes). */
+.seg-modal-scroll {
+  overflow-x: auto;
+}
+
+.seg-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.seg-th {
+  padding: 7px 10px;
+  background: #f2f6fc;
+  color: #344054;
+  text-align: left;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid #e6ecf5;
+}
+
+.seg-td {
+  padding: 7px 10px;
+  color: #101828;
+  border-bottom: 1px solid #f0f3f8;
+}
+
 @media (max-width: 1200px) {
   .seg-panel {
     width: 100%;

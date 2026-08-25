@@ -265,8 +265,12 @@
   border-collapse: separate;
   border-spacing: 0;
   font-family: 'Inter', sans-serif;
-  font-size: 0.875rem;
-  line-height: 1.35;
+  /* Densidad compacta (pedida el 2026-08-25): caben ~18 filas donde antes 12.
+     Las tres palancas son el padding del td, el del input que va dentro y el
+     min-width de columna. Para volver atrás: 0.875rem / td 9px 13px /
+     input 7px 10px / min-width 120px. */
+  font-size: 0.8rem;
+  line-height: 1.3;
   color: var(--ink);
   /* Cifras de ancho fijo: fechas, pesos y folios caen en columna al leer en
      vertical. Es la diferencia entre una tabla y una hoja de cálculo. */
@@ -284,16 +288,16 @@
 .maniobras-container .maniobras-table th {
   font-family: 'Oswald', sans-serif;
   font-weight: 600;
-  font-size: 0.74rem;
-  letter-spacing: 0.1em;
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   text-align: left;
   white-space: nowrap;
-  padding: 14px 16px;
+  padding: 8px 10px;
   background: #2b3e50;
   color: #fff;
   border-bottom: 1px solid #1e2b38;
-  min-width: 120px;
+  min-width: 96px;
 }
 
 /* Header fijo al scrollear dentro del wrapper */
@@ -304,14 +308,14 @@
 }
 
 .maniobras-container .maniobras-table td {
-  padding: 9px 13px;
+  padding: 4px 8px;
   border-bottom: 1px solid var(--row-line);
   /* Hairline vertical: con 30 columnas, sin retícula la vista se pierde entre
      celdas. Tinta translúcida para que se lea igual sobre cualquier status. */
   border-right: 1px solid var(--grid-line);
   color: var(--text-main);
   vertical-align: middle;
-  min-width: 120px;
+  min-width: 96px;
   /* Opaco por defecto — lo exige la columna congelada de abajo, que si no deja
      ver el contenido pasar por debajo. Los status lo sobrescriben. */
   background: var(--card-bg);
@@ -405,10 +409,10 @@
   font-family: 'Inter', sans-serif;
   width: 100%;
   box-sizing: border-box;
-  padding: 7px 10px;
+  padding: 4px 8px;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 0.88rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
   background: #fff;
   color: var(--text-main);
 }
