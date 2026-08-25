@@ -55,6 +55,8 @@ const COLUMNAS_PENDIENTES = [
 const COLUMNAS_ACTIVOS = [
   { key: "contenedor",                 label: "Contenedor",       key2: "contenedor_2" },
   { key: "tipo",                       label: "Tipo",             key2: "tipo_2", esTipo: true },
+  // Misma posición relativa que en pendientes: justo antes de ORIGEN.
+  { key: "status_piso",                label: "Status Piso" },
   { key: "origen",                     label: "Origen" },
   { key: "destino",                    label: "Destino" },
   { key: "asignacion_operador_status", label: "Operador",         operador: true },
