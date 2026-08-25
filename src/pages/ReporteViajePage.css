@@ -290,3 +290,25 @@
   .rv-title { font-size: 2rem; }
   .rv-campo--doble { grid-column: span 1; }
 }
+
+/* Pie de la tabla de cargas: el botón de añadir renglón y el aviso de que el
+   papel solo lleva cinco. */
+.rv-cargas-pie {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+/* Celda de urea en un renglón añadido a mano: no se captura ahí. */
+.rv-celda-na {
+  text-align: center;
+  color: #b0b8c4;
+}
+
+.rv-nota {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #667085;
+}

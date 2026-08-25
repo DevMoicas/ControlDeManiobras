@@ -17,6 +17,7 @@ import {
   REPORTE_VACIO, SI_NO_OPCIONES, RECOLECCION_OPCIONES,
   aTriEstado, deTriEstado, desdeFolio,
   kmTotales, rendimiento, totalCarga, avance, NOMBRES_BLOQUES,
+  CARGAS_EN_EL_PAPEL, cargaNueva,
 } from "../utils/reporteViaje.mjs";
 import "./ReporteViajePage.css";
 
@@ -141,14 +142,26 @@ export default function ReporteViajePage() {
     }));
 
   /** El backend no manda los renglones vacíos (no existen en la base): se
-   *  rellenan aquí para que el formulario siempre pinte sus cinco. */
+   *  rellenan aquí para que el formulario siempre pinte los cinco del papel.
+   *  Los añadidos a mano (orden > 5) solo aparecen si el reporte los trae. */
   const normalizar = (reporte) => {
-    const porOrden = new Map((reporte.cargas || []).map((c) => [c.orden, c]));
+    const recibidas = reporte.cargas || [];
+    const porOrden = new Map(recibidas.map((c) => [c.orden, c]));
+    const extra = recibidas
+      .filter((c) => c.orden > CARGAS_EN_EL_PAPEL)
+      .sort((a, b) => a.orden - b.orden)
+      .map((c) => ({ litros_diesel: "", precio_litro: "", ...c }));
     return {
       ...REPORTE_VACIO, ...reporte,
-      cargas: REPORTE_VACIO.cargas.map((vacia) => ({ ...vacia, ...porOrden.get(vacia.orden) })),
+      cargas: [
+        ...REPORTE_VACIO.cargas.map((vacia) => ({ ...vacia, ...porOrden.get(vacia.orden) })),
+        ...extra,
+      ],
     };
   };
+
+  const anadirCarga = () =>
+    setAbierto((prev) => ({ ...prev, cargas: [...prev.cargas, cargaNueva(prev.cargas)] }));
 
   /** Al elegir folio: si ya tiene reporte se abre ESE, en vez de dejar que el
    *  usuario llene una pantalla entera para chocar con un 400 al guardar. */
@@ -472,15 +485,42 @@ export default function ReporteViajePage() {
                              onChange={(e) => cambiarCarga(c.orden, "precio_litro", e.target.value)} /></td>
                   {/* Calculado: litros × precio */}
                   <td className="rv-celda-calc">{mostrarNumero(totalCarga(c))}</td>
-                  <td><input type="number" step="0.01" min="0" value={c.litros_urea ?? ""}
-                             onChange={(e) => cambiarCarga(c.orden, "litros_urea", e.target.value)} /></td>
-                  {/* Se captura: el papel no trae precio por litro para la urea */}
-                  <td><input type="number" step="0.01" min="0" value={c.total_urea ?? ""}
-                             onChange={(e) => cambiarCarga(c.orden, "total_urea", e.target.value)} /></td>
+                  {/* La urea solo en los cinco del papel: los renglones que se
+                      añaden a mano son de diésel y nada más. */}
+                  {c.orden > CARGAS_EN_EL_PAPEL ? (
+                    <>
+                      <td className="rv-celda-na" aria-hidden="true">—</td>
+                      <td className="rv-celda-na" aria-hidden="true">—</td>
+                    </>
+                  ) : (
+                    <>
+                      <td><input type="number" step="0.01" min="0" value={c.litros_urea ?? ""}
+                                 onChange={(e) => cambiarCarga(c.orden, "litros_urea", e.target.value)} /></td>
+                      {/* Se captura: el papel no trae precio por litro para la urea */}
+                      <td><input type="number" step="0.01" min="0" value={c.total_urea ?? ""}
+                                 onChange={(e) => cambiarCarga(c.orden, "total_urea", e.target.value)} /></td>
+                    </>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="rv-cargas-pie">
+          <button type="button" className="rv-btn rv-btn--mini" onClick={anadirCarga}>
+            + Añadir carga de diésel
+          </button>
+          {/* El Excel/PDF tiene cinco renglones fijos (fila 12 a 16; la 17 ya es
+              el aceite). Lo que se capture de más cuenta para el total y el
+              rendimiento, pero no sale impreso — mejor decirlo que descubrirlo
+              al abrir el documento. */}
+          {abierto.cargas.length > CARGAS_EN_EL_PAPEL && (
+            <p className="rv-nota">
+              El documento imprime los primeros {CARGAS_EN_EL_PAPEL} renglones; el resto
+              cuenta para el total y el rendimiento.
+            </p>
+          )}
         </div>
 
         <div className="rv-rejilla">

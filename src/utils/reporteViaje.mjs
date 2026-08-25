@@ -6,9 +6,11 @@
 //
 // Ver docs/planes/PLAN_REPORTE_COORDINADORES.md (rama main).
 
-// Los cinco renglones de EN TRAYECTO. Espejo de CARGAS_POR_REPORTE del backend,
-// donde además hay un CHECK en la base que lo hace cumplir.
-export const CARGAS_POR_REPORTE = 5;
+// Los renglones de EN TRAYECTO que trae el papel, y con los que arranca el
+// formulario. NO es un tope: desde el 2026-08-25 se pueden añadir más con un
+// botón, y todos cuentan para el total del diésel y el rendimiento. Espejo de
+// CARGAS_EN_EL_PAPEL del backend, que es lo que cabe en la plantilla del Excel.
+export const CARGAS_EN_EL_PAPEL = 5;
 
 // Para VacioStatusSelector, que acepta sus opciones por prop. Mismo truco que
 // REPROGRAMADO_OPCIONES en VaciosPage: ningún componente nuevo.
@@ -111,9 +113,16 @@ export function totalCarga(carga) {
 }
 
 // ── Estado inicial ───────────────────────────────────────────────────────────
-export const CARGAS_VACIAS = Array.from({ length: CARGAS_POR_REPORTE }, (_, i) => ({
+export const CARGAS_VACIAS = Array.from({ length: CARGAS_EN_EL_PAPEL }, (_, i) => ({
   orden: i + 1, litros_diesel: "", precio_litro: "", litros_urea: "", total_urea: "",
 }));
+
+// Un renglón añadido con el botón: SOLO diésel. La urea no se amplía — el papel
+// no la lleva más allá de sus cinco y no se pidió (usuario, 2026-08-25).
+export function cargaNueva(cargas) {
+  const ultimo = (cargas || []).reduce((max, c) => Math.max(max, c?.orden ?? 0), 0);
+  return { orden: ultimo + 1, litros_diesel: "", precio_litro: "" };
+}
 
 export const REPORTE_VACIO = {
   folio: "", fecha: null, coordinador: "",

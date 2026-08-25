@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  CARGAS_POR_REPORTE, REPORTE_VACIO,
+  CARGAS_EN_EL_PAPEL, REPORTE_VACIO, cargaNueva,
   aTriEstado, deTriEstado, desdeFolio,
   kmTotales, litrosDiesel, rendimiento, totalCarga,
   cargasConDatos, paraGuardar, avance, NOMBRES_BLOQUES, citaDesdeManiobra,
@@ -136,7 +136,7 @@ test("el total de un renglón es litros por precio", () => {
 
 // ── Qué se manda al guardar ─────────────────────────────────────────────────
 test("los renglones vacíos no se mandan", () => {
-  assert.equal(REPORTE_VACIO.cargas.length, CARGAS_POR_REPORTE);
+  assert.equal(REPORTE_VACIO.cargas.length, CARGAS_EN_EL_PAPEL);
   assert.equal(cargasConDatos(REPORTE_VACIO.cargas).length, 0);
   const conUno = [...REPORTE_VACIO.cargas];
   conUno[1] = { ...conUno[1], litros_diesel: "300" };
@@ -190,4 +190,26 @@ test("un Sí/No contestado con NO cuenta como capturado", () => {
   // false no es "vacío": alguien contestó. Si no contara, el avance mentiría.
   assert.deepEqual(avance({ ...REPORTE_VACIO, rescate: false }),
                    [false, false, true, false]);
+});
+
+// ── cargaNueva: el renglón que añade el botón de EN TRAYECTO ────────────────
+
+test("cargaNueva continúa la numeración del último renglón", () => {
+  assert.equal(cargaNueva(REPORTE_VACIO.cargas).orden, CARGAS_EN_EL_PAPEL + 1);
+});
+
+test("cargaNueva sobre una lista vacía empieza en 1", () => {
+  assert.equal(cargaNueva([]).orden, 1);
+  assert.equal(cargaNueva(undefined).orden, 1);
+});
+
+test("cargaNueva mira el orden MÁS ALTO, no cuántos hay", () => {
+  // Con huecos, contar daría un orden repetido y el upsert por `orden` del
+  // backend pisaría un renglón que ya existe.
+  assert.equal(cargaNueva([{ orden: 1 }, { orden: 7 }]).orden, 8);
+});
+
+test("cargaNueva no trae campos de urea: solo se amplía el diésel", () => {
+  const nueva = cargaNueva(REPORTE_VACIO.cargas);
+  assert.deepEqual(Object.keys(nueva).sort(), ["litros_diesel", "orden", "precio_litro"]);
 });
