@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
 import { overlayMotion, contentMotion } from "../../animations/modalMotion";
 import { apiClient } from "../../api/apiClient";
+import { textoDelPar } from "../../utils/dobleValor.mjs";
 import { STATUS_MAP } from "../../config/statusConfig";
 import "./Seguimientos.css";
 
@@ -29,17 +30,32 @@ const fechaParaMostrar = (valor) => {
 };
 
 // El desglose de PENDIENTES, en el orden pedido por el usuario (2026-08-25).
+//
+// key2 marca las tres columnas de un Full, que desde la migración 0035 guardan
+// cada mitad en SU columna: sin leer la segunda, un Full enseñaba un solo
+// contenedor. textoDelPar() las une venga el dato en el formato que venga
+// (ver utils/dobleValor.mjs) — es la misma función que usa la tabla de
+// Maniobras, que tuvo este mismo fallo.
 const COLUMNAS_PENDIENTES = [
   { key: "fecha_pis",               label: "Fecha PIS",       fecha: true },
   { key: "horario",                 label: "Horario" },
-  { key: "contenedor",              label: "Contenedor" },
-  { key: "tipo",                    label: "Tipo de carga" },
-  { key: "peso",                    label: "Peso" },
+  { key: "contenedor",              label: "Contenedor",      key2: "contenedor_2" },
+  { key: "tipo",                    label: "Tipo de carga",   key2: "tipo_2", esTipo: true },
+  { key: "peso",                    label: "Peso",            key2: "peso_2" },
   { key: "origen",                  label: "Origen" },
   { key: "destino",                 label: "Destino" },
   { key: "cliente",                 label: "Cliente" },
   { key: "fecha_entrega_mercancia", label: "Fecha de entrega", fecha: true },
 ];
+
+// Lo que se pinta en una celda del desglose.
+function celda(maniobra, col) {
+  if (col.fecha) return fechaParaMostrar(maniobra[col.key]);
+  const valor = col.key2
+    ? textoDelPar(maniobra[col.key], maniobra[col.key2], col.esTipo)
+    : maniobra[col.key];
+  return valor || "—";
+}
 
 /**
  * Lista de las maniobras pendientes que siguen en piso.
@@ -86,9 +102,7 @@ function ListaPendientes() {
           {filas.map((m) => (
             <tr key={m.id}>
               {COLUMNAS_PENDIENTES.map((col) => (
-                <td key={col.key} className="seg-td">
-                  {col.fecha ? fechaParaMostrar(m[col.key]) : (m[col.key] || "—")}
-                </td>
+                <td key={col.key} className="seg-td">{celda(m, col)}</td>
               ))}
             </tr>
           ))}
