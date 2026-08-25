@@ -82,10 +82,6 @@ function Pendiente({ pendiente, onGuardar, onMarcar, onEliminar }) {
         </span>
       )}
 
-      {/* Se revela al pasar por encima (ver .pd-borrar en el CSS): la lista se
-          lee mucho más de lo que se borra, y un icono por línea siempre visible
-          la convierte en una fila de papeleras. Sigue siendo alcanzable con el
-          teclado, que es lo que importa para quien no usa ratón. */}
       <button
         type="button"
         className="pd-borrar"
