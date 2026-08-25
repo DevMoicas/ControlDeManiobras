@@ -50,8 +50,33 @@ const COLUMNAS_PENDIENTES = [
   { key: "fecha_entrega_mercancia", label: "Fecha de entrega", fecha: true, hora: "hora_entrega" },
 ];
 
+// El desglose de ACTIVOS: lo que ya va en camino. Aquí la fecha y la hora de
+// entrega van en columnas separadas, tal y como se pidieron.
+const COLUMNAS_ACTIVOS = [
+  { key: "contenedor",                 label: "Contenedor",       key2: "contenedor_2" },
+  { key: "tipo",                       label: "Tipo",             key2: "tipo_2", esTipo: true },
+  { key: "origen",                     label: "Origen" },
+  { key: "destino",                    label: "Destino" },
+  { key: "asignacion_operador_status", label: "Operador",         operador: true },
+  { key: "unidad",                     label: "Unidad" },
+  { key: "fecha_entrega_mercancia",    label: "Fecha de entrega", fecha: true },
+  { key: "hora_entrega",               label: "Hora de entrega" },
+];
+
+// Quién lleva el viaje. Un tercero no tiene chofer nuestro: lo que identifica
+// al servicio es SU empresa. Mismo criterio de "es de FRABA" que usa
+// OperadorSelector para decidir a qué catálogo pedir los operadores, y que
+// _es_de_fraba() en el backend: sin transportista cuenta como propio.
+function operadorDe(maniobra) {
+  const transportista = (maniobra.transportista || "").trim();
+  return transportista && transportista.toUpperCase() !== "FRABA CONTAINER"
+    ? `TERCERO ${transportista}`
+    : maniobra.asignacion_operador_status;
+}
+
 // Lo que se pinta en una celda del desglose.
 function celda(maniobra, col) {
+  if (col.operador) return operadorDe(maniobra) || "—";
   if (col.fecha) {
     const fecha = fechaParaMostrar(maniobra[col.key]);
     // La hora vive en su propia columna (ver models.Maniobra.hora_entrega). Aquí
@@ -69,43 +94,56 @@ function celda(maniobra, col) {
   return col.sufijo ? conUnidad(valor, col.sufijo) : valor;
 }
 
-/**
- * Lista de las maniobras pendientes que siguen en piso.
- *
- * sin_asignar=1 es el criterio: sin transportista y sin operador. Con
- * cualquiera de los dos puesto ya hay quien la mueva y sale de viaje, así que
- * no tiene sentido verla aquí.
- *
- * Orden por fecha_pis ascendente — arriba la que lleva más tiempo esperando,
- * al revés que la tabla de Maniobras. El id desempata dentro del mismo día.
- */
-function ListaPendientes() {
+// Los dos desgloses. Misma tabla, distinta consulta y distintas columnas.
+const VISTAS = {
+  // PENDIENTES: las que siguen en piso. sin_asignar=1 es el criterio — sin
+  // transportista y sin operador; con cualquiera de los dos ya hay quien la
+  // mueva y sale de viaje. Por fecha_pis ascendente: arriba la que lleva más
+  // tiempo esperando. El id desempata dentro del mismo día.
+  pendiente: {
+    titulo: "Pendientes en piso",
+    url: "/maniobras/?status=pendiente&sin_asignar=1&ordering=fecha_pis,id",
+    columnas: COLUMNAS_PENDIENTES,
+    vacio: "No hay pendientes en piso.",
+  },
+  // ACTIVOS: lo que ya va en camino, por fecha de entrega más próxima primero.
+  // Las que aún no la tienen quedan al final — lo hace OrdenNullsLast en el
+  // backend, sin necesidad de pedir nada más.
+  activo: {
+    titulo: "Servicios activos",
+    url: "/maniobras/?status=activo&ordering=fecha_entrega_mercancia,id",
+    columnas: COLUMNAS_ACTIVOS,
+    vacio: "No hay servicios activos.",
+  },
+};
+
+function Lista({ vista }) {
   const [filas, setFilas] = useState(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
     apiClient
-      .get("/maniobras/?status=pendiente&sin_asignar=1&ordering=fecha_pis,id")
+      .get(vista.url)
       .then((datos) => { if (!cancelado) setFilas(datos.results ?? datos); })
       // Un fallo no puede parecerse a "no hay ninguna": misma lección que los
       // conteos de arriba.
       .catch(() => { if (!cancelado) setError(true); });
     return () => { cancelado = true; };
-  }, []);
+  }, [vista.url]);
 
   if (error)  return <p className="seg-modal-estado seg-modal-estado--error">No se pudo cargar la lista.</p>;
   if (!filas) return <p className="seg-modal-estado">Cargando…</p>;
-  if (filas.length === 0) return <p className="seg-modal-estado">No hay pendientes en piso.</p>;
+  if (filas.length === 0) return <p className="seg-modal-estado">{vista.vacio}</p>;
 
   return (
-    // ponytail: se ven los que quepan en una página de la API (60). Hoy hay 2;
-    // si algún día pasan de 60, paginar aquí.
+    // ponytail: se ven los que quepan en una página de la API (60). Si algún día
+    // pasan de 60, paginar aquí.
     <div className="seg-modal-scroll">
       <table className="seg-tabla">
         <thead>
           <tr>
-            {COLUMNAS_PENDIENTES.map((col) => (
+            {vista.columnas.map((col) => (
               <th key={col.key} className="seg-th">{col.label}</th>
             ))}
           </tr>
@@ -113,7 +151,7 @@ function ListaPendientes() {
         <tbody>
           {filas.map((m) => (
             <tr key={m.id}>
-              {COLUMNAS_PENDIENTES.map((col) => (
+              {vista.columnas.map((col) => (
                 <td key={col.key} className="seg-td">{celda(m, col)}</td>
               ))}
             </tr>
@@ -132,7 +170,8 @@ function ModalDesglose({ tipo, onCerrar }) {
     return () => document.removeEventListener("keydown", alPulsar);
   }, [onCerrar]);
 
-  const titulo = tipo === "activo" ? "Servicios activos" : "Pendientes en piso";
+  const vista = VISTAS[tipo];
+  const titulo = vista.titulo;
 
   return (
     <motion.div
@@ -156,9 +195,7 @@ function ModalDesglose({ tipo, onCerrar }) {
           </button>
         </div>
         <div className="seg-modal-body">
-          {tipo === "pendiente"
-            ? <ListaPendientes />
-            : <p className="seg-modal-estado">El desglose de activos está pendiente.</p>}
+          <Lista vista={vista} />
         </div>
       </motion.div>
     </motion.div>
