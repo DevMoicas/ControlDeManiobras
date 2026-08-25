@@ -278,7 +278,7 @@ const COLUMNAS = [
   { key: "terminal", label: "Terminal", inline: true, max: 30 },
   { key: "placas_pis", label: "Placas PIS", isPlacas: true },
   { key: "saca", label: "SACA", inline: true, max: 100 },
-  { key: "fecha_pis", label: "Fecha PIS", sortable: true },
+  { key: "fecha_pis", label: "Fecha PIS", esFecha: true, sortable: true },
   { key: "horario", label: "Horario", isHora: true },
   { key: "tipo_servicio", label: "TIPO DE SERVICIO", isTipoServicio: true },
   // key2 = la columna del segundo contenedor. La celda sigue viéndose igual (dos
@@ -313,7 +313,7 @@ const COLUMNAS = [
   { key: "folio_2", label: "Folio 2", isFolio: true, requiereOperador2: true },
   { key: "vacio_patio", label: "Vacio Patio", isPatio: true },
   { key: "status_vacio", label: "Status Vacío", isStatusVacio: true },
-  { key: "fecha_entrega_mercancia", label: "Entrega Mercancía", sortable: true },
+  { key: "fecha_entrega_mercancia", label: "Entrega Mercancía", esFecha: true },
   // La hora va aparte de la fecha, como Horario acompaña a Fecha PIS: la fecha
   // viaja a la Carta Porte y al gasto, y un timestamp en UTC la desplazaría.
   { key: "hora_entrega", label: "Hora Entrega", isHora: true },
@@ -461,7 +461,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
     <tr>
       {COLUMNAS.map((col) => (
         <td key={col.key}>
-          {col.requiereOperador2 && !datos.operador_2 ? null : col.sortable ? (
+          {col.requiereOperador2 && !datos.operador_2 ? null : col.esFecha ? (
             <DatePicker
               locale="es"
               dateFormat="dd/MM/yyyy"
@@ -669,7 +669,7 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
             {COLUMNAS.filter((col) => !col.requiereOperador2 || datos.operador_2).map((col) => (
               <div key={col.key} className="modal-campo">
                 <label htmlFor={`edit-${col.key}`}>{col.label}</label>
-                {col.sortable ? (
+                {col.esFecha ? (
                   <DatePicker
                     id={`edit-${col.key}`}
                     locale="es"
@@ -1133,9 +1133,9 @@ const FilaManiobra = memo(function FilaManiobra({
     // así que montarlo con autoFocus lo deja abierto con UN clic. Mientras no se
     // edita, la celda enseña texto — que es lo que se lee de un vistazo en una
     // tabla de 30 columnas.
-    if (col.sortable || col.isHora || col.isFechaHora) {
+    if (col.esFecha || col.isHora || col.isFechaHora) {
       if (celdaEditando !== col.key) {
-        const texto = col.sortable    ? fechaParaMostrar(maniobra[col.key])
+        const texto = col.esFecha     ? fechaParaMostrar(maniobra[col.key])
                     : col.isFechaHora ? fechaHoraParaMostrar(maniobra[col.key])
                     :                   maniobra[col.key];
         return celdaClicable(col, texto);
@@ -1147,7 +1147,7 @@ const FilaManiobra = memo(function FilaManiobra({
         onClickOutside: () => cerrarFecha(col),
         onCalendarClose: () => cerrarFecha(col),
       };
-      if (col.sortable) return (
+      if (col.esFecha) return (
         <DatePicker
           {...comunes}
           locale="es"
