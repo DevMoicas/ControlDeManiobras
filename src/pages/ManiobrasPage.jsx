@@ -292,6 +292,8 @@ const COLUMNAS = [
   { key: "cliente", label: "Cliente", isCliente: true },
   { key: "origen", label: "Origen", isOrigen: true },
   { key: "destino", label: "Destino", isDestino: true },
+  // Texto libre: en qué situación está la carga mientras sigue en piso.
+  { key: "status_piso", label: "Status Piso", inline: true, max: 255 },
   { key: "transportista", label: "Transportista", isTransportista: true },
   { key: "tercero", label: "Tercero", isTercero: true },
   { key: "asignacion_operador_status", label: "Operador", isOperador: true },
@@ -338,7 +340,7 @@ const MANIOBRA_VACIA = {
   fecha_pis: "", horario: "", tipo_servicio: "sencillo", tipo: "", peso: "", contenedor: "", referencia: "", pedimento: "",
   // cliente = nombre (lo que se ve en la tabla); cliente_id = a cuál fila del
   // catálogo apunta. El id es lo único que distingue dos clientes homónimos.
-  cliente: "", cliente_id: null, origen: "", destino: "", transportista: "", tercero: "", asignacion_operador_status: "",
+  cliente: "", cliente_id: null, origen: "", destino: "", status_piso: "", transportista: "", tercero: "", asignacion_operador_status: "",
   unidad: "", remolque: "", remolque_2: "", folio: "", vacio_patio: "", status_vacio: "",
   fecha_entrega_mercancia: "", no_factura: "", dd: "", ccp: "", ruta_inicio: "", ruta_fin: "",
   // Segundo operador y su carga (migración 0035)

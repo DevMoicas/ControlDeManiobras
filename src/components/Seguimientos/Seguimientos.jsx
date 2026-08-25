@@ -39,9 +39,11 @@ const fechaParaMostrar = (valor) => {
 const COLUMNAS_PENDIENTES = [
   { key: "fecha_pis",               label: "Fecha PIS",       fecha: true },
   { key: "horario",                 label: "Horario" },
+  { key: "terminal",                label: "Terminal" },
   { key: "contenedor",              label: "Contenedor",      key2: "contenedor_2" },
   { key: "tipo",                    label: "Tipo de carga",   key2: "tipo_2", esTipo: true },
   { key: "peso",                    label: "Peso",            key2: "peso_2" },
+  { key: "status_piso",             label: "Status Piso" },
   { key: "origen",                  label: "Origen" },
   { key: "destino",                 label: "Destino" },
   { key: "cliente",                 label: "Cliente" },
