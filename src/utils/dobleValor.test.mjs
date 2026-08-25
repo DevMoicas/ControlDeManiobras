@@ -1,7 +1,7 @@
 // node --test src/utils/dobleValor.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { partirDoble, unirDoble, leerPar, partirTipoFull, unirTipoFull, textoDelPar, cargaDeParte, tieneDosContenedores } from "./dobleValor.mjs";
+import { partirDoble, unirDoble, leerPar, partirTipoFull, unirTipoFull, textoDelPar, conUnidad, cargaDeParte, tieneDosContenedores } from "./dobleValor.mjs";
 
 test("parte por guion, que es la forma canónica", () => {
   assert.deepEqual(partirDoble("23412 - 22000"), ["23412", "22000", " - "]);
@@ -204,4 +204,24 @@ test("textoDelPar respeta el formato propio de TIPO DE CARGA", () => {
   assert.equal(textoDelPar("20 - 40 / DC - HC", "", true), "20 - 40 / DC - HC");
   // Sencillo: sin segunda mitad, sin separador colgando.
   assert.equal(textoDelPar("20 / DC", "", true), "20 / DC");
+});
+
+// ── conUnidad: el "KG" que acompaña al peso en la tabla y en el desglose ─────
+
+test("conUnidad etiqueta las DOS cifras de un Full, no solo la primera", () => {
+  assert.equal(conUnidad("23412 - 22000", "KG"), "23412 KG - 22000 KG");
+});
+
+test("conUnidad respeta el separador que traía el dato", () => {
+  assert.equal(conUnidad("23412/22000", "KG"), "23412 KG/22000 KG");
+});
+
+test("conUnidad con una sola cifra la etiqueta una vez", () => {
+  assert.equal(conUnidad("23412", "KG"), "23412 KG");
+});
+
+test("conUnidad no etiqueta una celda vacía: 'KG' a secas no es un peso", () => {
+  assert.equal(conUnidad("", "KG"), "");
+  assert.equal(conUnidad(null, "KG"), "");
+  assert.equal(conUnidad(undefined, "KG"), "");
 });

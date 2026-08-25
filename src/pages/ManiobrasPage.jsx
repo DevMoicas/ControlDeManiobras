@@ -33,7 +33,7 @@ import { registerLocale } from "react-datepicker";
 import es from "date-fns/locale/es";
 import FotoModal from "../components/FotoModal/FotoModal";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
-import { partirDoble, partirTipoFull, leerPar, textoDelPar } from "../utils/dobleValor.mjs";
+import { partirDoble, partirTipoFull, leerPar, textoDelPar, conUnidad } from "../utils/dobleValor.mjs";
 import { codigoFolioFull, sinSufijoFull } from "../utils/folioFull.mjs";
 import { apiClient } from "../api/apiClient";
 registerLocale("es", es);
@@ -965,17 +965,11 @@ const FilaManiobra = memo(function FilaManiobra({
       onClick={() => iniciarEdicion(col)}
       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); iniciarEdicion(col); } }}
     >
-      {texto ? (
-        <>
-          {texto}
-          {/* Unidad meramente decorativa: se pinta FUERA del valor, así que no
-              entra en el input al editar ni viaja al backend. Los documentos
-              siguen imprimiendo el peso tal cual está guardado. */}
-          {col.sufijo && <span className="mp-sufijo"> {col.sufijo}</span>}
-        </>
-      ) : (
-        <em className="mp-placeholder">—</em>
-      )}
+      {/* La unidad (KG) se añade AL PINTAR, no al dato: iniciarEdicion lee
+          maniobra[col.key], así que el input se abre limpio y el backend nunca
+          la ve. Los documentos siguen imprimiendo el peso tal cual. */}
+      {(col.sufijo ? conUnidad(texto, col.sufijo) : texto)
+        || <em className="mp-placeholder">—</em>}
     </span>
   );
 

@@ -134,6 +134,27 @@ export function textoDelPar(valor, valor2, esTipo = false) {
 }
 
 /**
+ * El texto de una celda con su unidad pegada a CADA cifra.
+ *
+ * "23412 - 22000" + "KG" → "23412 KG - 22000 KG". Un Full lleva dos pesos y
+ * cada uno es su propia cantidad, así que la unidad va en los dos.
+ *
+ * Es SOLO presentación: quien llama pinta el resultado, nunca lo guarda. El
+ * valor de la base no se toca — los documentos imprimen el peso tal cual está.
+ *
+ * Se conserva el separador original, igual que textoDelPar().
+ *
+ * @param {string} texto   el par ya compuesto (lo que enseña la celda)
+ * @param {string} unidad  "KG"
+ * @returns {string} "" si no hay nada que etiquetar
+ */
+export function conUnidad(texto, unidad) {
+  const [a, b, sep] = partirDoble(texto);
+  if (!a) return "";
+  return b ? `${a} ${unidad}${sep}${b} ${unidad}` : `${a} ${unidad}`;
+}
+
+/**
  * ¿La carga de este folio trae un segundo contenedor que se pueda acotar?
  *
  * Sirve para decidir si el modal ofrece el desplegable 1 / 2 / Los dos. Cuando

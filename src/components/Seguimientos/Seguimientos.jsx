@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
 import { overlayMotion, contentMotion } from "../../animations/modalMotion";
 import { apiClient } from "../../api/apiClient";
-import { textoDelPar } from "../../utils/dobleValor.mjs";
+import { textoDelPar, conUnidad } from "../../utils/dobleValor.mjs";
 import { STATUS_MAP } from "../../config/statusConfig";
 import "./Seguimientos.css";
 
@@ -57,11 +57,9 @@ function celda(maniobra, col) {
     ? textoDelPar(maniobra[col.key], maniobra[col.key2], col.esTipo)
     : maniobra[col.key];
   if (!valor) return "—";
-  // La unidad va aparte del valor: es decorativa, igual que en la tabla de
-  // Maniobras. Aquí la lista es de solo lectura, así que no hay nada que romper.
-  return col.sufijo
-    ? <>{valor}<span className="seg-sufijo"> {col.sufijo}</span></>
-    : valor;
+  // La unidad se añade al pintar, igual que en la tabla de Maniobras: en un Full
+  // cada cifra lleva la suya.
+  return col.sufijo ? conUnidad(valor, col.sufijo) : valor;
 }
 
 /**
