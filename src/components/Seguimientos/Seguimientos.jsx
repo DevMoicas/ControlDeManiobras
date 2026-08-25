@@ -42,7 +42,7 @@ const COLUMNAS_PENDIENTES = [
   { key: "terminal",                label: "Terminal" },
   { key: "contenedor",              label: "Contenedor",      key2: "contenedor_2" },
   { key: "tipo",                    label: "Tipo de carga",   key2: "tipo_2", esTipo: true },
-  { key: "peso",                    label: "Peso",            key2: "peso_2" },
+  { key: "peso",                    label: "Peso",            key2: "peso_2", sufijo: "KG" },
   { key: "status_piso",             label: "Status Piso" },
   { key: "origen",                  label: "Origen" },
   { key: "destino",                 label: "Destino" },
@@ -56,7 +56,12 @@ function celda(maniobra, col) {
   const valor = col.key2
     ? textoDelPar(maniobra[col.key], maniobra[col.key2], col.esTipo)
     : maniobra[col.key];
-  return valor || "—";
+  if (!valor) return "—";
+  // La unidad va aparte del valor: es decorativa, igual que en la tabla de
+  // Maniobras. Aquí la lista es de solo lectura, así que no hay nada que romper.
+  return col.sufijo
+    ? <>{valor}<span className="seg-sufijo"> {col.sufijo}</span></>
+    : valor;
 }
 
 /**

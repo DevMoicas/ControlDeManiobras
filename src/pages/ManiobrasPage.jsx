@@ -285,7 +285,7 @@ const COLUMNAS = [
   // huecos en Full), pero cada hueco guarda en la suya para que facturación
   // sepa qué se llevó cada operador sin partir texto en SQL.
   { key: "tipo",  label: "TIPO DE CARGA", isTipo: true, key2: "tipo_2" },
-  { key: "peso",  label: "Peso", isDoble: true, max: 50, key2: "peso_2" },
+  { key: "peso",  label: "Peso", isDoble: true, max: 50, key2: "peso_2", sufijo: "KG" },
   { key: "contenedor", label: "Contenedor", isDoble: true, max: 255, key2: "contenedor_2" },
   { key: "referencia", label: "Referencia", inline: true, max: 255 },
   { key: "pedimento", label: "Pedimento", inline: true, max: 255 },
@@ -965,7 +965,17 @@ const FilaManiobra = memo(function FilaManiobra({
       onClick={() => iniciarEdicion(col)}
       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); iniciarEdicion(col); } }}
     >
-      {texto || <em className="mp-placeholder">—</em>}
+      {texto ? (
+        <>
+          {texto}
+          {/* Unidad meramente decorativa: se pinta FUERA del valor, así que no
+              entra en el input al editar ni viaja al backend. Los documentos
+              siguen imprimiendo el peso tal cual está guardado. */}
+          {col.sufijo && <span className="mp-sufijo"> {col.sufijo}</span>}
+        </>
+      ) : (
+        <em className="mp-placeholder">—</em>
+      )}
     </span>
   );
 
