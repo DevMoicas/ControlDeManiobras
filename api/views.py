@@ -29,7 +29,7 @@ from datetime import date
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from django.db.models import F, Q
+from django.db.models import Case, F, IntegerField, Q, Value, When
 from django.http import FileResponse, HttpResponse
 from openpyxl import load_workbook
 from openpyxl.worksheet.page import PageMargins
@@ -694,11 +694,32 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     filter_backends = [DjangoFilterBackend, OrdenNullsLast]
     filterset_class = ManiobraFilter
-    ordering_fields = ["id", "fecha_pis", "fecha_entrega_mercancia"]
-    # Por FECHA PIS, de la mas proxima hacia atras. El id desempata: sin el, dos
-    # maniobras del mismo dia salen en orden arbitrario y la paginacion de 60 en
-    # 60 puede repetir o saltarse filas entre paginas.
-    ordering = ["-fecha_pis", "-id"]
+    ordering_fields = ["id", "fecha_pis", "fecha_entrega_mercancia", "sin_entrega"]
+    # Primero las que estan pendientes de que les pongan FECHA DE ENTREGA: en
+    # medio de la lista se pierden de vista. Debajo, por FECHA PIS de la mas
+    # proxima hacia atras. El id desempata: sin el, dos maniobras del mismo dia
+    # salen en orden arbitrario y la paginacion de 60 en 60 puede repetir o
+    # saltarse filas entre paginas.
+    ordering = ["sin_entrega", "-fecha_pis", "-id"]
+
+    def get_queryset(self):
+        """Anade `sin_entrega`, un campo de orden virtual: 0 sin fecha de
+        entrega, 1 con ella. Existe para poder pedirlo desde ?ordering= como un
+        campo mas, en vez de imponer el criterio a todas las consultas de
+        maniobras — el desglose de PENDIENTES pega al mismo endpoint y NO lo
+        quiere (decidido con el usuario, 2026-08-26).
+
+        Solo __isnull: la columna es DATE de verdad en Postgres (no TEXT como
+        otras fechas de esta tabla), asi que "" no es un valor posible y
+        compararlo reventaria la consulta.
+        """
+        return super().get_queryset().annotate(
+            sin_entrega=Case(
+                When(fecha_entrega_mercancia__isnull=True, then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            )
+        )
 
     def create(self, request, *args, **kwargs):
         es_valido, mensaje = _validar_operador_vigente(request.data.get('asignacion_operador_status', ''))

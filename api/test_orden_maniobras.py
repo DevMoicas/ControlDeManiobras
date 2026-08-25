@@ -40,8 +40,12 @@ class OrdenPorFechaPisTests(TestCase):
         self.cliente = APIClient()
         self.cliente.force_authenticate(user=self.usuario)
 
-    def crear(self, solicita, fecha_pis=None):
-        return Maniobra.objects.create(solicita=solicita, fecha_pis=fecha_pis)
+    def crear(self, solicita, fecha_pis=None, fecha_entrega_mercancia='2026-01-01'):
+        # Con fecha de entrega por defecto: sin ella todas subirian al primer
+        # grupo y las pruebas de orden por FECHA PIS no probarian nada.
+        return Maniobra.objects.create(
+            solicita=solicita, fecha_pis=fecha_pis,
+            fecha_entrega_mercancia=fecha_entrega_mercancia)
 
     def listar(self, orden=None):
         url = URL if orden is None else '%s?ordering=%s' % (URL, orden)
@@ -85,3 +89,44 @@ class OrdenPorFechaPisTests(TestCase):
         self.crear('SEGUNDA', '2026-08-25')
 
         self.assertEqual(self.listar(), ['SEGUNDA', 'PRIMERA'])
+
+
+class SinFechaDeEntregaArribaTests(OrdenPorFechaPisTests):
+    """Las que estan pendientes de que les pongan FECHA DE ENTREGA van primero.
+
+    En medio de la lista se pierden de vista, y son justo las que hay que
+    atender (77 de 412 hoy).
+    """
+
+    def test_una_sin_fecha_de_entrega_sube_aunque_su_fecha_pis_sea_vieja(self):
+        self.crear('CON-ENTREGA', '2026-12-31')
+        self.crear('SIN-ENTREGA', '2026-01-01', fecha_entrega_mercancia=None)
+
+        self.assertEqual(self.listar(), ['SIN-ENTREGA', 'CON-ENTREGA'])
+
+    def test_dentro_de_cada_grupo_sigue_mandando_la_fecha_pis(self):
+        self.crear('SIN-VIEJA',  '2026-01-01', fecha_entrega_mercancia=None)
+        self.crear('SIN-NUEVA',  '2026-12-31', fecha_entrega_mercancia=None)
+        self.crear('CON-VIEJA',  '2026-02-01')
+        self.crear('CON-NUEVA',  '2026-11-30')
+
+        self.assertEqual(
+            self.listar(),
+            ['SIN-NUEVA', 'SIN-VIEJA', 'CON-NUEVA', 'CON-VIEJA'])
+
+    def test_la_flecha_invierte_la_fecha_pis_pero_no_saca_de_arriba_a_las_sin_entrega(self):
+        """sin_entrega no se invierte con el toggle: la flecha es de FECHA PIS."""
+        self.crear('CON-ENTREGA', '2026-01-01')
+        self.crear('SIN-ENTREGA', '2026-12-31', fecha_entrega_mercancia=None)
+
+        self.assertEqual(self.listar('sin_entrega,fecha_pis,id'),
+                         ['SIN-ENTREGA', 'CON-ENTREGA'])
+
+    def test_quien_no_lo_pide_no_lo_sufre(self):
+        """El desglose de PENDIENTES pega al mismo endpoint y NO quiere este
+        criterio: pide ordering=fecha_pis,id y debe seguir mandando la fecha."""
+        self.crear('SIN-ENTREGA', '2026-12-31', fecha_entrega_mercancia=None)
+        self.crear('CON-ENTREGA', '2026-01-01')
+
+        self.assertEqual(self.listar('fecha_pis,id'),
+                         ['CON-ENTREGA', 'SIN-ENTREGA'])
