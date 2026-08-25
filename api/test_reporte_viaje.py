@@ -19,7 +19,7 @@ from rest_framework.test import APIClient
 
 from django.db import connections
 
-from api.models import (ReporteViaje, CargaCombustible, CARGAS_POR_REPORTE,
+from api.models import (ReporteViaje, CargaCombustible, CARGAS_EN_EL_PAPEL,
                         Maniobra, Gasto)
 from api.views import _TEMPLATE_REPORTE
 
@@ -189,13 +189,37 @@ class ReporteViajeTests(BaseReporte):
         self.cliente.patch(f'{URL}{rid}/', {'coordinador': 'Ali'}, format='json')
         self.assertEqual(CargaCombustible.objects.count(), 1)
 
-    def test_un_renglon_fuera_de_rango_se_rechaza_con_400_y_no_con_500(self):
+    def test_el_renglon_cero_se_rechaza_con_400_y_no_con_500(self):
         """El CHECK de la base lo rechaza igual, pero como IntegrityError, que el
-        usuario ve como un 500 sin explicación."""
-        for fuera in (0, CARGAS_POR_REPORTE + 1):
-            ReporteViaje.objects.all().delete()
-            r = self.crear(cargas=[{'orden': fuera, 'litros_diesel': '300'}])
-            self.assertEqual(r.status_code, 400, f'orden {fuera}: {r.data}')
+        usuario ve como un 500 sin explicación. `ordering` lo colaría además
+        delante del primer renglón."""
+        r = self.crear(cargas=[{'orden': 0, 'litros_diesel': '300'}])
+        self.assertEqual(r.status_code, 400, r.data)
+
+    def test_se_pueden_guardar_mas_renglones_de_los_que_caben_en_el_papel(self):
+        """El boton de la pantalla los anade sin tope (usuario, 2026-08-25).
+        Antes el sexto se rechazaba con un 400."""
+        cargas = [{'orden': n, 'litros_diesel': '100', 'precio_litro': '25'}
+                  for n in range(1, CARGAS_EN_EL_PAPEL + 4)]
+
+        r = self.crear(cargas=cargas)
+
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(CargaCombustible.objects.count(), len(cargas))
+
+    def test_el_diesel_de_los_renglones_extra_cuenta_para_el_total(self):
+        """Es para lo que se pidieron: el total se vuelca al gasto del viaje. Si
+        solo contaran los cinco del papel, el boton no serviria de nada."""
+        cargas = [{'orden': n, 'litros_diesel': '100', 'precio_litro': '25'}
+                  for n in range(1, CARGAS_EN_EL_PAPEL + 3)]
+
+        self.crear(cargas=cargas)
+
+        # 7 renglones x 100 lt x 25 = 17 500, no 12 500 (los cinco del papel).
+        self.assertEqual(
+            sum(c.litros_diesel * c.precio_litro
+                for c in CargaCombustible.objects.all()),
+            Decimal('17500.00'))
 
     # ── Permisos ─────────────────────────────────────────────────────────
     def test_cualquier_usuario_autenticado_crea_y_edita(self):

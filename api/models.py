@@ -997,8 +997,11 @@ class ReporteViaje(models.Model):
             self.save(update_fields=['rendimiento', 'actualizado_en'])
 
 
-# Los renglones que trae el papel. Cambiar esto pide migración por el CHECK.
-CARGAS_POR_REPORTE = 5
+# Los renglones que caben en la plantilla del Excel: fila 12 = orden 1, y la 17
+# ya es el aceite. NO es el máximo de cargas de un reporte — en pantalla se
+# pueden añadir las que hagan falta y todas cuentan para el total del diésel y
+# el rendimiento; simplemente, de la sexta en adelante no salen impresas.
+CARGAS_EN_EL_PAPEL = 5
 
 
 class CargaCombustible(models.Model):
@@ -1006,7 +1009,8 @@ class CargaCombustible(models.Model):
 
     Tabla hija y no 20 columnas `litros_diesel_1..5` dentro de ReporteViaje: son
     5 "de momento" (usuario, 2026-08-24), y operador_2 / remolque_3 / remolque_4
-    ya enseñaron adónde lleva numerar columnas. Un sexto renglón aquí es una fila.
+    ya enseñaron adónde lleva numerar columnas. Un sexto renglón aquí es una fila
+    — y desde el 2026-08-25 se pueden añadir desde la pantalla, sin tope.
 
     `total_urea` se captura, no se calcula: el papel trae PRECIO X LITRO solo
     para el diésel, así que el total de la urea no es derivable de lo que hay.
@@ -1026,11 +1030,12 @@ class CargaCombustible(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['reporte', 'orden'],
                                     name='uniq_carga_reporte_orden'),
-            # Mismo criterio que TorreControl.indice: el rango vive en la base, así
-            # una carga con orden 9 no puede entrar y quedarse invisible en la
-            # pantalla, que solo pinta cinco renglones.
+            # Sin tope superior (decidido con el usuario el 2026-08-25): la
+            # pantalla ya deja añadir renglones, así que un orden alto no puede
+            # quedarse invisible. Se conserva el mínimo: un orden 0 o negativo
+            # no es un renglón, y `ordering` lo colaría delante del primero.
             models.CheckConstraint(
-                condition=models.Q(orden__gte=1, orden__lte=CARGAS_POR_REPORTE),
+                condition=models.Q(orden__gte=1),
                 name='carga_orden_en_rango',
             ),
         ]

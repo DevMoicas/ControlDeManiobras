@@ -1,7 +1,7 @@
 import re
 from decimal import Decimal, ROUND_HALF_UP
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD, ReporteViaje, CargaCombustible, CARGAS_POR_REPORTE
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD, ReporteViaje, CargaCombustible
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
@@ -608,12 +608,11 @@ class CargaCombustibleSerializer(serializers.ModelSerializer):
                    .quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
 
     def validate_orden(self, value):
-        """El CHECK de la base rechaza esto igual, pero con un IntegrityError que
-        el usuario ve como un 500. Aquí sale un 400 que dice qué pasó."""
-        if not 1 <= value <= CARGAS_POR_REPORTE:
-            raise serializers.ValidationError(
-                f'El renglón debe estar entre 1 y {CARGAS_POR_REPORTE}.'
-            )
+        """Sin tope superior: los renglones se añaden desde la pantalla. El CHECK
+        de la base rechaza el 0 igual, pero con un IntegrityError que el usuario
+        ve como un 500; aquí sale un 400 que dice qué pasó."""
+        if value < 1:
+            raise serializers.ValidationError('El renglón empieza en 1.')
         return value
 
 

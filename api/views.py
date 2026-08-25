@@ -4,7 +4,7 @@ from decimal import Decimal
 from zoneinfo import ZoneInfo
 import django_filters
 from rest_framework import viewsets, mixins
-from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_POR_REPORTE
+from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_EN_EL_PAPEL
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
@@ -2249,9 +2249,12 @@ def _llenar_reporte_viaje(ws, reporte, datos):
     escribir('D10', _fecha_hora_doc(reporte.llegada_cliente))
     escribir('I10', _fecha_hora_doc(reporte.descarga))
 
-    # ── En trayecto: los cinco renglones, fila 12 = orden 1 ──
+    # ── En trayecto: los cinco renglones del papel, fila 12 = orden 1 ──
+    # De la sexta carga en adelante NO se imprime: la fila 17 ya es el aceite y
+    # escribir ahí lo pisaria. Se capturan y cuentan para el total del diesel y
+    # el rendimiento, que es para lo que se pidieron (usuario, 2026-08-25).
     por_orden = {c['orden']: c for c in datos.get('cargas', [])}
-    for orden in range(1, CARGAS_POR_REPORTE + 1):
+    for orden in range(1, CARGAS_EN_EL_PAPEL + 1):
         fila = 11 + orden
         carga = por_orden.get(orden)
         if not carga:
