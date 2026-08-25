@@ -29,7 +29,7 @@ from datetime import date
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import F, Q
 from django.http import FileResponse, HttpResponse
 from openpyxl import load_workbook
 from openpyxl.worksheet.page import PageMargins
@@ -513,6 +513,54 @@ def _crear_gasto_del_folio(maniobra, usuario):
     return creado
 
 
+# ── Asignacion automatica del folio ──────────────────────────────────────────
+# La columna ASIGNACION de la pagina de Folios dice quien lleva ese folio. Se
+# escribia a mano; ahora la deriva la maniobra que lo tiene puesto.
+#
+#   FRABA (o sin transportista) -> las dos primeras palabras del operador.
+#   Tercero                     -> "TERCERO <transportista>".
+#
+# Mismo criterio de "de quien es el viaje" que el gasto automatico (_es_de_fraba)
+# para no tener dos definiciones de tercero que puedan discrepar.
+def _asignacion_del_folio(maniobra, operador):
+    """Lo que va escrito en el folio que lleva `operador`. "" si aun no se sabe.
+
+    Recortado a 40, que es lo que admite Folio.asignacion: un nombre largo se
+    corta en vez de reventar el guardado de la maniobra.
+    """
+    if not _es_de_fraba(maniobra):
+        return ('TERCERO ' + (maniobra.transportista or '').strip())[:40]
+    return ' '.join((operador or '').split()[:2])[:40]
+
+
+def _sincronizar_asignacion_folios(maniobra, antes):
+    """Escribe en cada folio quien lo lleva y limpia el que se acaba de soltar.
+
+    `antes` trae folio/folio_2 como estaban en la base. Limpiar el anterior no
+    es cosmetico: disponibles() da por ocupado todo folio con algo escrito en
+    ASIGNACION, asi que un nombre olvidado lo retiraria del talonario para
+    siempre aunque nadie lo estuviera usando.
+
+    Corre en CADA guardado, no solo cuando el folio pasa de vacio a lleno: el
+    caso normal es asignar el folio antes de saber quien lo llevara, y al
+    capturar el operador o el transportista despues tiene que rellenarse solo.
+    Con la maniobra sin folio no hace ni una consulta.
+
+    El vinculo es el CODIGO y no una FK (maniobras es managed=False): un folio
+    de texto libre que no este en el catalogo no casa con ninguna fila y el
+    update no toca nada.
+    """
+    for campo, operador in (('folio',   maniobra.asignacion_operador_status),
+                            ('folio_2', maniobra.operador_2)):
+        actual = (getattr(maniobra, campo) or '').strip()
+        previo = (antes.get(campo) or '').strip()
+        if previo and previo != actual:
+            Folio.objects.filter(codigo=previo).update(asignacion='')
+        if actual:
+            Folio.objects.filter(codigo=actual).update(
+                asignacion=_asignacion_del_folio(maniobra, operador))
+
+
 class TractoViewSet(viewsets.ModelViewSet):
     queryset = Tracto.objects.all().order_by('id')
     serializer_class = TractoSerializer
@@ -576,16 +624,31 @@ class ManiobraFilter(django_filters.FilterSet):
     # quiere ver únicamente los registros marcados, así que la presencia del
     # parámetro basta — devolvemos los que tienen la marca puesta (no NULL / no "").
     tercero = django_filters.CharFilter(method="filter_tercero")
+    # "Sigue en piso": ni transportista ni operador. Basta con tener CUALQUIERA
+    # de los dos para que ya haya quien la mueva y deje de estar esperando en el
+    # puerto (decidido con el usuario, 2026-08-25). Alimenta el desglose de
+    # PENDIENTES del panel de seguimientos.
+    sin_asignar = django_filters.CharFilter(method="filter_sin_asignar")
 
     class Meta:
         model = Maniobra
-        fields = ["status", "tercero"]
+        fields = ["status", "tercero", "sin_asignar"]
 
     def filter_status(self, queryset, name, value):
         return queryset.filter(filtro_status(value))
 
     def filter_tercero(self, queryset, name, value):
         return queryset.exclude(tercero__isnull=True).exclude(tercero="")
+
+    def filter_sin_asignar(self, queryset, name, value):
+        # Sin Trim: los dos campos salen de un desplegable (TransportistaSelector
+        # y OperadorSelector guardan el nombre del catalogo), no de texto libre,
+        # y hoy no hay ni una fila con solo espacios.
+        return queryset.filter(
+            (Q(transportista__isnull=True) | Q(transportista=""))
+            & (Q(asignacion_operador_status__isnull=True)
+               | Q(asignacion_operador_status=""))
+        )
 
 
 def _resolver_cliente(maniobra, clientes_por_nombre):
@@ -605,16 +668,37 @@ def _resolver_cliente(maniobra, clientes_por_nombre):
 
 
 # --- NUEVA VISTA ---
+class OrdenNullsLast(OrderingFilter):
+    """OrderingFilter con las filas sin dato al final, ordene como ordene.
+
+    Postgres pone los NULL PRIMERO en DESC, asi que ordenar por FECHA PIS
+    descendente encabezaria la tabla con las maniobras a las que todavia no se
+    les ha puesto (18 de 412 hoy): justo las que menos se estan mirando.
+    """
+    def filter_queryset(self, request, queryset, view):
+        orden = self.get_ordering(request, queryset, view)
+        if not orden:
+            return queryset
+        return queryset.order_by(*[
+            F(campo[1:]).desc(nulls_last=True) if campo.startswith('-')
+            else F(campo).asc(nulls_last=True)
+            for campo in orden
+        ])
+
+
 class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
     # prefetch_related: la columna Costos Extra necesita los enlaces de cada
     # fila. Sin esto, una página de 60 maniobras hace 60 consultas extra.
     queryset = Maniobra.objects.all().prefetch_related('costos_extra_links').order_by("-id")
     serializer_class = ManiobraSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filter_backends = [DjangoFilterBackend, OrdenNullsLast]
     filterset_class = ManiobraFilter
     ordering_fields = ["id", "fecha_pis", "fecha_entrega_mercancia"]
-    ordering = ["-id"]
+    # Por FECHA PIS, de la mas proxima hacia atras. El id desempata: sin el, dos
+    # maniobras del mismo dia salen en orden arbitrario y la paginacion de 60 en
+    # 60 puede repetir o saltarse filas entre paginas.
+    ordering = ["-fecha_pis", "-id"]
 
     def create(self, request, *args, **kwargs):
         es_valido, mensaje = _validar_operador_vigente(request.data.get('asignacion_operador_status', ''))
@@ -647,11 +731,14 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
             maniobra = serializer.instance
             if (maniobra.folio or '').strip():
                 _crear_gasto_del_folio(maniobra, self._usuario())
+            _sincronizar_asignacion_folios(maniobra, {})
 
     def perform_update(self, serializer):
-        # El folio de ANTES: hasta el save(), serializer.instance trae la fila
+        # Los folios de ANTES: hasta el save(), serializer.instance trae la fila
         # como esta en la base.
-        folio_antes = (serializer.instance.folio or '').strip()
+        antes = {'folio':   serializer.instance.folio,
+                 'folio_2': serializer.instance.folio_2}
+        folio_antes = (antes['folio'] or '').strip()
         with transaction.atomic(using=get_db_alias()):
             super().perform_update(serializer)
             maniobra = serializer.instance
@@ -659,6 +746,9 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
             # nada: el gasto sigue enlazado a la maniobra y lee el folio de ella.
             if not folio_antes and (maniobra.folio or '').strip():
                 _crear_gasto_del_folio(maniobra, self._usuario())
+            # La asignacion, en cambio, se recalcula siempre: el folio suele
+            # ponerse antes de saber quien lo llevara.
+            _sincronizar_asignacion_folios(maniobra, antes)
 
     def _usuario(self):
         return getattr(self.request.user, 'username', '') or ''
