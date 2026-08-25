@@ -4,7 +4,7 @@ from decimal import Decimal
 from zoneinfo import ZoneInfo
 import django_filters
 from rest_framework import viewsets, mixins
-from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, PENDIENTE_VIDA, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_POR_REPORTE
+from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_POR_REPORTE
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
@@ -1308,38 +1308,31 @@ class OperadorTerceroViewSet(viewsets.ModelViewSet):
 class PendienteViewSet(mixins.ListModelMixin,
                         mixins.CreateModelMixin,
                         mixins.UpdateModelMixin,
+                        mixins.DestroyModelMixin,
                         viewsets.GenericViewSet):
     """Listas de pendientes de los cinco tableros.
 
-    SIN `destroy` a propósito, y por eso no hereda de ModelViewSet: la ruta de
-    borrado no existe, así que nadie puede borrar un pendiente — tampoco un
-    admin. No es un permiso que se pueda saltar, es una URL que no está.
+    Se borran a mano y NO caducan solos (decidido con el usuario el 2026-08-25;
+    antes se iban a las 28 horas y el borrado no existía para nadie). El DELETE
+    lo puede usar cualquier usuario autenticado, sin candado de admin: un
+    pendiente es una nota de una lista compartida, no un registro de negocio con
+    historia que perder, igual que soltar una unidad en la torre de control.
 
-    Caducan a las 28 horas y se van solos. El barrido es perezoso, en el listado:
-    la página se abre varias veces al día, así que no hace falta cron ni Celery
-    para una tabla que nunca pasará de unas decenas de filas.
+    Sin `retrieve`: nadie pide un pendiente suelto, la página los trae todos.
+
+    ponytail: el borrado es definitivo y esta tabla no lleva auditoría, así que
+    no queda rastro de quién borró qué. Si algún día importa, es el mismo bloque
+    de created_by/updated_by que ya llevan Maniobra, Gasto y Vacio.
     """
+    queryset               = Pendiente.objects.all()
     serializer_class       = PendienteSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes     = [IsAuthenticated]
     throttle_classes       = [UserRateThrottle, AnonRateThrottle]
-    # Sin paginar: son cinco tableros de una lista que se vacía cada 28 horas y
-    # el front los necesita TODOS de una vez para repartirlos. Con el PAGE_SIZE=60
-    # global, los tableros de abajo se quedarían a medias sin avisar.
+    # Sin paginar: son cinco tableros y el front los necesita TODOS de una vez
+    # para repartirlos. Con el PAGE_SIZE=60 global, los tableros de abajo se
+    # quedarían a medias sin avisar.
     pagination_class       = None
-
-    @staticmethod
-    def _limite():
-        return timezone.now() - PENDIENTE_VIDA
-
-    def get_queryset(self):
-        # El filtro va aquí y no solo en el barrido: entre dos listados, un
-        # pendiente ya caducado no debe poder leerse ni editarse.
-        return Pendiente.objects.filter(creado_en__gte=self._limite())
-
-    def list(self, request, *args, **kwargs):
-        Pendiente.objects.filter(creado_en__lt=self._limite()).delete()
-        return super().list(request, *args, **kwargs)
 
 
 class TorreControlViewSet(viewsets.ModelViewSet):

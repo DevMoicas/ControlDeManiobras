@@ -2,12 +2,13 @@
 
 Lo que se cubre es lo que rompe en silencio:
 
-  · Que nadie pueda borrar un pendiente, tampoco un admin. Es el requisito
-    explícito de la función y aquí no lo sostiene un permiso, sino la ausencia
-    de la ruta: si alguien convierte el ViewSet en ModelViewSet, esta prueba cae.
-  · La caducidad a las 28 horas: que lo caducado desaparezca del listado, se
-    borre de verdad y no se pueda editar por la puerta de atrás.
-  · Que editar NO reinicie el reloj.
+  · Que un usuario ESTÁNDAR pueda borrar. No basta con que el ViewSet monte la
+    ruta: el rol de Postgres con el que corre necesita DELETE sobre la tabla
+    (grant de la 0040), y sin él fallaría solo en producción y solo para quien
+    no es admin.
+  · Que borrar uno no se lleve a los demás por delante.
+  · Que ya NO caduquen: un pendiente viejo sigue en la lista y se puede editar.
+    Antes se borraban solos a las 28 horas (cambiado el 2026-08-25).
   · El orden de la lista: primero arriba, último abajo.
 
 Solo corre con:  Manage.py test api --settings=config.settings_test
@@ -19,7 +20,7 @@ from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from api.models import Pendiente, PENDIENTE_VIDA
+from api.models import Pendiente
 
 
 class BasePendientes(TestCase):
@@ -90,61 +91,63 @@ class AltaYEdicionTests(BasePendientes):
                                     format='json').status_code, 200)
 
 
-class SinBorradoTests(BasePendientes):
+class BorradoTests(BasePendientes):
+    """Se borran a mano. Antes no se podía borrar en absoluto."""
 
-    def test_nadie_puede_borrar_ni_el_admin(self):
+    def test_un_usuario_estandar_puede_borrar(self):
+        """El caso que se romperia solo en produccion: la ruta existe, pero el
+        rol de Postgres del usuario estandar tiene que tener DELETE sobre la
+        tabla (grant de la 0040). Con un admin no se notaria."""
         pid = self.crear().data['id']
 
-        # 405: la ruta de borrado NO existe en el router, no es un permiso.
-        self.assertEqual(self.cliente.delete(f'/api/pendientes/{pid}/').status_code, 405)
+        respuesta = self.cliente.delete('/api/pendientes/%s/' % pid)
 
-        admin = get_user_model().objects.create_user('pend_admin', password='x', is_staff=True)
-        sesion_admin = APIClient()
-        sesion_admin.force_authenticate(user=admin)
-        self.assertEqual(sesion_admin.delete(f'/api/pendientes/{pid}/').status_code, 405)
+        self.assertEqual(respuesta.status_code, 204)
+        self.assertFalse(Pendiente.objects.filter(id=pid).exists())
 
-        self.assertTrue(Pendiente.objects.filter(id=pid).exists())
+    def test_borrar_uno_no_toca_a_los_demas(self):
+        sobrevive = self.crear('sobrevive').data['id']
+        condenado = self.crear('condenado').data['id']
 
+        self.cliente.delete('/api/pendientes/%s/' % condenado)
 
-class CaducidadTests(BasePendientes):
+        self.assertEqual([p['id'] for p in self.cliente.get('/api/pendientes/').data],
+                         [sobrevive])
 
-    def test_a_las_28_horas_desaparece_y_se_borra(self):
-        vivo = self.crear('vivo').data['id']
-        muerto = self.crear('muerto').data['id']
-        self.envejecer(muerto, 29)
-
-        lista = self.cliente.get('/api/pendientes/').data
-        self.assertEqual([p['id'] for p in lista], [vivo])
-        # El listado no solo lo oculta: lo barre de la tabla.
-        self.assertFalse(Pendiente.objects.filter(id=muerto).exists())
-
-    def test_justo_por_debajo_del_limite_sigue_vivo(self):
+    def test_borrar_uno_que_ya_no_existe_responde_404(self):
+        """Dos personas mirando el mismo tablero: la segunda no debe ver un 500."""
         pid = self.crear().data['id']
-        self.envejecer(pid, 27)
+        self.cliente.delete('/api/pendientes/%s/' % pid)
+
+        self.assertEqual(self.cliente.delete('/api/pendientes/%s/' % pid).status_code, 404)
+
+
+class NoCaducanTests(BasePendientes):
+    """Ya no se van solos: se quedan hasta que alguien los borra."""
+
+    def test_un_pendiente_viejo_sigue_en_la_lista(self):
+        pid = self.crear('de anteayer').data['id']
+        self.envejecer(pid, 100)
+
         self.assertEqual([p['id'] for p in self.cliente.get('/api/pendientes/').data], [pid])
         self.assertTrue(Pendiente.objects.filter(id=pid).exists())
 
-    def test_caducado_no_se_puede_editar_aunque_no_se_haya_barrido(self):
+    def test_un_pendiente_viejo_se_puede_seguir_editando(self):
+        """Antes el queryset lo dejaba fuera y devolvia 404."""
         pid = self.crear().data['id']
-        self.envejecer(pid, 29)
-        # Sin pasar por el listado (que es quien barre): el filtro del queryset
-        # tiene que dejarlo fuera igualmente.
-        self.assertEqual(
-            self.cliente.patch(f'/api/pendientes/{pid}/', {'texto': 'zombi'},
-                               format='json').status_code, 404)
+        self.envejecer(pid, 100)
 
-    def test_editar_no_reinicia_el_reloj(self):
+        respuesta = self.cliente.patch('/api/pendientes/%s/' % pid,
+                                       {'texto': 'retocado'}, format='json')
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(Pendiente.objects.get(id=pid).texto, 'retocado')
+
+    def test_listar_ya_no_barre_nada(self):
+        """El listado borraba lo caducado de la tabla. Ahora solo lee."""
         pid = self.crear().data['id']
-        self.envejecer(pid, 27)
-        self.cliente.patch(f'/api/pendientes/{pid}/', {'texto': 'retocado'}, format='json')
-        self.envejecer(pid, 29)   # dos horas más de las 27 anteriores
-        self.assertEqual(self.cliente.get('/api/pendientes/').data, [])
+        self.envejecer(pid, 100)
 
-    def test_expira_en_va_28_horas_despues_de_creado(self):
-        """El front oculta lo caducado comparando con esta fecha: si el servidor
-        la calcula mal, una pestaña abierta enseña pendientes muertos."""
-        datos = self.crear().data
-        creado = timezone.datetime.fromisoformat(datos['creado_en'].replace('Z', '+00:00'))
-        expira = timezone.datetime.fromisoformat(datos['expira_en'].replace('Z', '+00:00'))
-        self.assertEqual(expira - creado, PENDIENTE_VIDA)
-        self.assertEqual(PENDIENTE_VIDA, timedelta(hours=28))
+        self.cliente.get('/api/pendientes/')
+
+        self.assertTrue(Pendiente.objects.filter(id=pid).exists())

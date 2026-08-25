@@ -596,12 +596,6 @@ class ManiobraCostoExtra(models.Model):
         return f"Maniobra #{self.maniobra_id} · {self.movimiento} (${self.costo})"
 
 
-# Vida de un pendiente. Única definición de la regla: el serializer publica
-# `expira_en` calculado con esto, y el frontend solo compara esa fecha con el
-# reloj — así las 28 horas no viven duplicadas en los dos lados.
-PENDIENTE_VIDA = timedelta(hours=28)
-
-
 class Pendiente(models.Model):
     """Una línea de la lista de pendientes de un tablero.
 
@@ -611,9 +605,9 @@ class Pendiente(models.Model):
     — una tabla, su ABM y su pantalla serían andamiaje para nada. Añadir un sexto
     tablero es una línea aquí y otra en PendientesPage.jsx.
 
-    No se pueden borrar a mano: el ViewSet no monta `destroy` (ver views.py), así
-    que la ruta de borrado no existe para nadie, admin incluido. Desaparecen solos
-    a las 28 horas de crearse — el reloj NO se reinicia al editar el texto.
+    Se borran a mano, con el botón de la lista, y NO caducan solos: el borrado
+    lo puede hacer cualquier usuario autenticado (decidido con el usuario el
+    2026-08-25).
     """
     TABLERO_CHOICES = [
         ('ali',     'Ali'),
@@ -637,10 +631,6 @@ class Pendiente(models.Model):
 
     def __str__(self):
         return f"[{self.tablero}] {self.texto[:40]}"
-
-    @property
-    def expira_en(self):
-        return self.creado_en + PENDIENTE_VIDA
 
 
 # ── 9.1 fase 3: dispositivo de confianza ────────────────────────────────────

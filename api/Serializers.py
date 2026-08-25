@@ -65,15 +65,10 @@ class EmpleadoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PendienteSerializer(serializers.ModelSerializer):
-    # `expira_en` sale calculado del servidor para que la regla de las 28 horas
-    # tenga UN solo dueño. El front no la conoce: solo compara esta fecha con su
-    # reloj para ocultar lo caducado en una pestaña que lleve horas abierta.
-    expira_en = serializers.DateTimeField(read_only=True)
-
     class Meta:
         model  = Pendiente
-        fields = ('id', 'tablero', 'texto', 'hecho', 'creado_en', 'expira_en')
-        read_only_fields = ('creado_en', 'expira_en')
+        fields = ('id', 'tablero', 'texto', 'hecho', 'creado_en')
+        read_only_fields = ('creado_en',)
 
 
 class CostoExtraSerializer(serializers.ModelSerializer):
