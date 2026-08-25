@@ -47,12 +47,19 @@ const COLUMNAS_PENDIENTES = [
   { key: "origen",                  label: "Origen" },
   { key: "destino",                 label: "Destino" },
   { key: "cliente",                 label: "Cliente" },
-  { key: "fecha_entrega_mercancia", label: "Fecha de entrega", fecha: true },
+  { key: "fecha_entrega_mercancia", label: "Fecha de entrega", fecha: true, hora: "hora_entrega" },
 ];
 
 // Lo que se pinta en una celda del desglose.
 function celda(maniobra, col) {
-  if (col.fecha) return fechaParaMostrar(maniobra[col.key]);
+  if (col.fecha) {
+    const fecha = fechaParaMostrar(maniobra[col.key]);
+    // La hora vive en su propia columna (ver models.Maniobra.hora_entrega). Aquí
+    // se pegan porque la lista es de solo lectura y una columna más estrecharía
+    // las nueve que ya hay; en Maniobras van separadas porque se editan aparte.
+    const hora = col.hora ? (maniobra[col.hora] || "").trim() : "";
+    return hora && fecha !== "—" ? `${fecha} ${hora}` : fecha;
+  }
   const valor = col.key2
     ? textoDelPar(maniobra[col.key], maniobra[col.key2], col.esTipo)
     : maniobra[col.key];
