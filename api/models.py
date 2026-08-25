@@ -94,6 +94,9 @@ class Maniobra(models.Model):
     )
     origen = models.CharField(max_length=100, null=True, blank=True)
     destino = models.CharField(max_length=100, null=True, blank=True)
+    # Texto libre: en que situacion esta la carga mientras sigue en piso.
+    # Columna real anadida por la 0054 (maniobras es managed=False).
+    status_piso = models.CharField(max_length=255, null=True, blank=True)
     transportista = models.CharField(max_length=255, null=True, blank=True)
     asignacion_operador_status = models.CharField(max_length=100, null=True, blank=True)
 
