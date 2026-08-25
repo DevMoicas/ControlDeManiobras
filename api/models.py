@@ -108,6 +108,13 @@ class Maniobra(models.Model):
     vacio_patio = models.CharField(max_length=255, null=True, blank=True)
     status_vacio = models.CharField(max_length=100, null=True, blank=True)
     fecha_entrega_mercancia = models.DateField(max_length=50, null=True, blank=True, db_index=True)
+    # Hora de la entrega, aparte de la fecha y como TEXTO 'HH:mm' — mismo par que
+    # fecha_pis + horario. Separadas a proposito: la fecha viaja como 'YYYY-MM-DD'
+    # al autollenado de la Carta Porte y al gasto automatico, y meterla en un
+    # timestamp obligaria a decidir la zona horaria en el servidor (USE_TZ=True,
+    # TIME_ZONE='UTC'), con lo que una entrega de la tarde se registraria como del
+    # dia siguiente. Columna real anadida por la 0055 (maniobras es managed=False).
+    hora_entrega = models.CharField(max_length=50, null=True, blank=True)
     no_factura = models.CharField(max_length=100, null=True, blank=True)
     # Texto libre. Va declarada junto a ccp por ser su vecina en la tabla; el
     # orden de las columnas de Maniobras lo fija COLUMNAS en el frontend, no el
