@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, Check } from "lucide-react";
+import { Plus, Check, Trash2 } from "lucide-react";
 import { apiClient } from "../api/apiClient";
 import { useAlerta } from "../components/Alertas/Alertas";
+import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
 import "./PendientesPage.css";
 
@@ -17,18 +18,13 @@ const TABLEROS = [
   { id: "edson",   nombre: "Edson" },
 ];
 
-// Cada cuánto se vuelve a mirar el reloj. No es una petición: solo fuerza un
-// repintado para que una pestaña abierta toda la noche deje de enseñar
-// pendientes ya caducados. El borrado real lo hace el servidor al listar.
-const TICK_MS = 60_000;
-
 // ── Una línea de la lista ────────────────────────────────────────────────────
 // El estado de edición vive AQUÍ y no en la página: subirlo haría que cada tecla
 // re-montara la lista entera y el input perdería el foco a media palabra.
 // ponytail: sin React.memo — cinco listas de unas pocas líneas, no las ~2000 filas
 // de Maniobras. Memoizar obligaría además a un ref para que la callback de
 // guardado no cambiara de identidad, a cambio de nada medible.
-function Pendiente({ pendiente, onGuardar, onMarcar }) {
+function Pendiente({ pendiente, onGuardar, onMarcar, onEliminar }) {
   const [editando, setEditando] = useState(false);
   const [valor, setValor] = useState("");
 
@@ -41,8 +37,8 @@ function Pendiente({ pendiente, onGuardar, onMarcar }) {
     setEditando(false);
     const limpio = valor.trim();
     // Vaciar el texto se descarta en vez de mandar un PATCH que el serializer
-    // va a rechazar igual: `texto` no admite blanco. Y no se puede borrar un
-    // pendiente, así que dejarlo vacío tampoco puede ser la vía para hacerlo.
+    // va a rechazar igual: `texto` no admite blanco. Para quitarlo está el botón
+    // de borrar, que además pregunta antes.
     if (limpio && limpio !== pendiente.texto) onGuardar(pendiente.id, { texto: limpio });
   };
 
@@ -85,12 +81,26 @@ function Pendiente({ pendiente, onGuardar, onMarcar }) {
           {pendiente.texto}
         </span>
       )}
+
+      {/* Se revela al pasar por encima (ver .pd-borrar en el CSS): la lista se
+          lee mucho más de lo que se borra, y un icono por línea siempre visible
+          la convierte en una fila de papeleras. Sigue siendo alcanzable con el
+          teclado, que es lo que importa para quien no usa ratón. */}
+      <button
+        type="button"
+        className="pd-borrar"
+        aria-label={`Borrar pendiente: ${pendiente.texto}`}
+        title="Borrar"
+        onClick={() => onEliminar(pendiente)}
+      >
+        <Trash2 size={14} />
+      </button>
     </li>
   );
 }
 
 // ── Un tablero ───────────────────────────────────────────────────────────────
-function Tablero({ nombre, tableroId, pendientes, onCrear, onGuardar, onMarcar, solo }) {
+function Tablero({ nombre, tableroId, pendientes, onCrear, onGuardar, onMarcar, onEliminar, solo }) {
   // Agregar es una línea vacía al final que ya viene enfocada, no un modal: es
   // el mismo gesto que editar, y para un texto suelto un diálogo sobra.
   const [nuevo, setNuevo] = useState(null);   // string | null
@@ -119,7 +129,7 @@ function Tablero({ nombre, tableroId, pendientes, onCrear, onGuardar, onMarcar, 
         )}
 
         {pendientes.map((p) => (
-          <Pendiente key={p.id} pendiente={p} onGuardar={onGuardar} onMarcar={onMarcar} />
+          <Pendiente key={p.id} pendiente={p} onGuardar={onGuardar} onMarcar={onMarcar} onEliminar={onEliminar} />
         ))}
 
         {nuevo !== null && (
@@ -153,8 +163,8 @@ function Tablero({ nombre, tableroId, pendientes, onCrear, onGuardar, onMarcar, 
 // ── Página ───────────────────────────────────────────────────────────────────
 export default function PendientesPage() {
   const alerta = useAlerta();
+  const preguntar = useConfirmacion();
   const [pendientes, setPendientes] = useState([]);
-  const [ahora, setAhora] = useState(() => Date.now());
 
   useEffect(() => {
     let cancelado = false;
@@ -168,11 +178,6 @@ export default function PendientesPage() {
       });
     return () => { cancelado = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const t = setInterval(() => setAhora(Date.now()), TICK_MS);
-    return () => clearInterval(t);
   }, []);
 
   const crear = useCallback(async (tablero, texto) => {
@@ -202,10 +207,26 @@ export default function PendientesPage() {
 
   const marcar = useCallback((id, hecho) => guardar(id, { hecho }), [guardar]);
 
-  // `expira_en` lo calcula el servidor (28 h desde el alta): aquí solo se compara
-  // con el reloj, para que la regla no viva duplicada en los dos lados.
-  const vivos = pendientes.filter((p) => !p.expira_en || new Date(p.expira_en).getTime() > ahora);
-  const de = (tableroId) => vivos.filter((p) => p.tablero === tableroId);
+  // Se pregunta antes: el borrado es definitivo y no hay papelera ni auditoría
+  // en esta tabla. No es optimista a propósito — una fila que desaparece y
+  // vuelve a aparecer es peor que medio segundo de espera.
+  const eliminar = useCallback(async (pendiente) => {
+    if (!await preguntar({
+      titulo: "Borrar pendiente",
+      mensaje: `Se borrará "${pendiente.texto}". No se puede deshacer.`,
+      accion: "Borrar",
+      peligro: true,
+    })) return;
+    try {
+      await apiClient.delete(`/pendientes/${pendiente.id}/`);
+      setPendientes((prev) => prev.filter((p) => p.id !== pendiente.id));
+    } catch (err) {
+      alerta({ tipo: "error", msg: err.message || "No se pudo borrar el pendiente." });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preguntar]);
+
+  const de = (tableroId) => pendientes.filter((p) => p.tablero === tableroId);
 
   return (
     <div className="pd-container">
@@ -213,7 +234,7 @@ export default function PendientesPage() {
         <p className="pd-eyebrow">Control de Maniobras</p>
         <h1 className="pd-title">Pendientes</h1>
         <p className="pd-lead">
-          Listas por persona. Los pendientes se borran solos 28 horas después de crearse.
+          Listas por persona. Los pendientes se quedan hasta que alguien los borra.
         </p>
       </header>
 
@@ -228,6 +249,7 @@ export default function PendientesPage() {
             onCrear={crear}
             onGuardar={guardar}
             onMarcar={marcar}
+            onEliminar={eliminar}
           />
         ))}
       </div>

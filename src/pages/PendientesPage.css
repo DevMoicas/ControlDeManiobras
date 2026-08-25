@@ -173,6 +173,42 @@
   border-color: var(--primary);
 }
 
+/* Botón de borrar: oculto hasta que el puntero entra en la línea, para que la
+   lista no se lea como una fila de papeleras. `visibility` y no `display`, para
+   que siga ocupando su hueco y el texto no baile al aparecer. Con :focus-within
+   sigue siendo alcanzable con el tabulador aunque no haya ratón. */
+.pd-borrar {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: #98a2b3;
+  cursor: pointer;
+  visibility: hidden;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pd-item:hover .pd-borrar,
+.pd-item:focus-within .pd-borrar {
+  visibility: visible;
+}
+
+.pd-borrar:hover {
+  background: #fef3f2;
+  color: #b42318;
+}
+
+.pd-borrar:focus-visible {
+  visibility: visible;
+  outline: 2px solid #b42318;
+  outline-offset: 2px;
+}
+
 .pd-check:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
