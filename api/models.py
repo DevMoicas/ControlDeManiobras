@@ -97,6 +97,18 @@ class Maniobra(models.Model):
     # Texto libre: en que situacion esta la carga mientras sigue en piso.
     # Columna real anadida por la 0054 (maniobras es managed=False).
     status_piso = models.CharField(max_length=255, null=True, blank=True)
+    # PENDIENTE DE PROGRAMAR: la casilla que se marca en el desglose de
+    # PENDIENTES de la pantalla de inicio. Se guarda en la base y no en el
+    # navegador porque el repaso es COMPARTIDO: lo que marca una persona lo
+    # tienen que ver las demas (decision del usuario, 2026-08-26).
+    #
+    # Columna propia y no un valor mas de `status`: marcarla no saca el servicio
+    # de pendiente, solo anota que ya se reviso. Meterlo en status obligaria a
+    # inventar combinaciones y perderia el estado real al desmarcar — mismo
+    # razonamiento que llevo a `vacios.reprogramado` a tener columna (ADR-0002).
+    #
+    # Columna real en la migracion 0057 (maniobras es managed=False).
+    pendiente_programar = models.BooleanField(default=False)
     transportista = models.CharField(max_length=255, null=True, blank=True)
     asignacion_operador_status = models.CharField(max_length=100, null=True, blank=True)
 
