@@ -513,6 +513,126 @@ def _crear_gasto_del_folio(maniobra, usuario):
     return creado
 
 
+# ── Vacios automaticos al asignar el folio ───────────────────────────────────
+# Mismo disparo que el gasto: el contenedor que trae el viaje hay que devolverlo,
+# asi que nace en Vacios en cuanto la maniobra tiene folio. Carga suelta no lleva
+# contenedor y no da de alta nada. A diferencia del gasto, esto NO se limita a
+# FRABA: el contenedor se devuelve lo mueva quien lo mueva (usuario, 2026-08-26).
+_SEPARADOR_CARGA = re.compile(r'\s*[-/]\s*')
+
+
+def _mitades(valor, valor2):
+    """Las dos mitades de una carga, venga en el formato que venga.
+
+    Desde la 0035 cada mitad tiene su columna; los registros anteriores guardan
+    las dos dentro de la primera ("A - B", "A/B") y no hubo backfill. Es el
+    leerPar() de utils/dobleValor.mjs recortado a lo que hace falta aqui: no
+    devuelve el separador original porque en Vacios se escribe uno nuevo.
+    """
+    segundo = (valor2 or '').strip()
+    if segundo:
+        return (valor or '').strip(), segundo
+    partes = _SEPARADOR_CARGA.split((valor or '').strip(), 1)
+    return partes[0].strip(), (partes[1].strip() if len(partes) > 1 else '')
+
+
+def _numeros_del_tipo(maniobra):
+    """Solo los numeros del TIPO DE CARGA: "20 - 40 / DC - HC" -> ("20", "40").
+
+    En Vacios el tipo se anota por el tamano ("40", "20 - 40"), sin las letras
+    (usuario, 2026-08-26). El segundo sale de tipo_2 en los registros nuevos y
+    del propio `tipo` en los viejos, igual que el contenedor.
+    """
+    numero_1, numero_2, _, _ = _parsear_tipo(maniobra.tipo or '')
+    return numero_1, numero_2 or _parsear_tipo(maniobra.tipo_2 or '')[0]
+
+
+def _unir(*partes):
+    return ' - '.join(p for p in partes if p)
+
+
+def _filas_de_vacios(maniobra):
+    """(contenedor, tipo, operador) de cada vacio que deja esta maniobra.
+
+    Un Full con un solo operador va en UNA fila con los dos contenedores; en
+    cuanto se reparte entre dos, una fila por operador con lo suyo. El tipo no
+    repite el numero: un Full de dos 40HC es "40", uno mixto "20 - 40".
+    """
+    if (maniobra.tipo_servicio or '').strip().lower() == 'carga_suelta':
+        return []
+    # Registros anteriores a tipo_servicio: la carga suelta se reconocia por el
+    # texto del contenedor, y "CARGA SUELTA" no es un contenedor que devolver.
+    if _es_carga_suelta(maniobra.contenedor):
+        return []
+    contenedor_1, contenedor_2 = _mitades(maniobra.contenedor, maniobra.contenedor_2)
+    if not contenedor_1:
+        return []
+    numero_1, numero_2 = _numeros_del_tipo(maniobra)
+    operador_1 = (maniobra.asignacion_operador_status or '').strip()
+    operador_2 = (maniobra.operador_2 or '').strip()
+    if contenedor_2 and operador_2:
+        return [(contenedor_1, numero_1, operador_1),
+                (contenedor_2, numero_2 or numero_1, operador_2)]
+    tipo = numero_1 if numero_2 == numero_1 else _unir(numero_1, numero_2)
+    return [(_unir(contenedor_1, contenedor_2), tipo, operador_1)]
+
+
+def _vacio_pendiente(contenedor):
+    """El vacio que ya esta esperando por ese contenedor, si lo hay.
+
+    icontains y no exacto para reconocer tambien la fila combinada de un Full
+    ("CONT1 - CONT2"). Solo entre los pendientes: el mismo contenedor vuelve a
+    pasar meses despues y ese viaje si necesita su fila nueva. Es lo unico que
+    impide duplicar, porque `vacios` no tiene columna que apunte a la maniobra.
+    """
+    return Vacio.objects.filter(status='pendiente', contenedor__icontains=contenedor).first()
+
+
+def _separar_full_repartido(filas, usuario):
+    """El Full dado de alta con un solo operador ocupa UNA fila con los dos
+    contenedores. Cuando aparece el segundo operador, esa fila pasa a ser la del
+    primero y la del segundo se crea despues.
+
+    Solo toca la fila si de verdad lleva los dos contenedores dentro: una que
+    alguien ya haya separado o editado a mano se queda como esta.
+    """
+    (contenedor_1, tipo_1, operador_1), (contenedor_2, _, _) = filas
+    fila = _vacio_pendiente(contenedor_1)
+    if fila is None or contenedor_2 not in (fila.contenedor or ''):
+        return
+    fila.contenedor      = contenedor_1
+    fila.tipo_contenedor = tipo_1
+    fila.operador        = operador_1
+    fila.updated_by      = usuario
+    fila.save()
+
+
+def _crear_vacios_del_folio(maniobra, usuario):
+    """Da de alta en Vacios los contenedores del viaje. Devuelve cuantos creo.
+
+    Nacen en 'pendiente' —lo que hay que hacer con ellos esta por hacer— y con
+    el operador del viaje ya puesto en OP DEL VIAJE. Lo demas (patio, fechas,
+    coordinador) se captura en Vacios como hasta ahora.
+    """
+    filas = _filas_de_vacios(maniobra)
+    if len(filas) == 2:
+        _separar_full_repartido(filas, usuario)
+    creados = 0
+    for contenedor, tipo, operador in filas:
+        if _vacio_pendiente(contenedor):
+            continue
+        Vacio.objects.create(
+            contenedor=contenedor,
+            tipo_contenedor=tipo,
+            operador=operador,
+            status='pendiente',
+            created_by=usuario,
+            updated_by=usuario,
+        )
+        creados += 1
+    return creados
+
+
 # ── Asignacion automatica del folio ──────────────────────────────────────────
 # La columna ASIGNACION de la pagina de Folios dice quien lleva ese folio. Se
 # escribia a mano; ahora la deriva la maniobra que lo tiene puesto.
@@ -756,6 +876,7 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
             maniobra = serializer.instance
             if (maniobra.folio or '').strip():
                 _crear_gasto_del_folio(maniobra, self._usuario())
+                _crear_vacios_del_folio(maniobra, self._usuario())
             _sincronizar_asignacion_folios(maniobra, {})
 
     def perform_update(self, serializer):
@@ -764,6 +885,9 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
         antes = {'folio':   serializer.instance.folio,
                  'folio_2': serializer.instance.folio_2}
         folio_antes = (antes['folio'] or '').strip()
+        # Si el viaje ya tenia segundo operador antes de esta edicion: es lo que
+        # distingue "se acaba de repartir el Full" de "ya venia repartido".
+        operador_2_antes = (serializer.instance.operador_2 or '').strip()
         with transaction.atomic(using=get_db_alias()):
             super().perform_update(serializer)
             maniobra = serializer.instance
@@ -771,6 +895,15 @@ class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
             # nada: el gasto sigue enlazado a la maniobra y lee el folio de ella.
             if not folio_antes and (maniobra.folio or '').strip():
                 _crear_gasto_del_folio(maniobra, self._usuario())
+            # Los vacios se dan de alta al asignar el folio y, ademas, el dia que
+            # aparece el segundo operador: hasta entonces el Full vive en una
+            # sola fila y ahi hay que partirla en dos. Acotado a esas dos
+            # transiciones para que editar cualquier otra cosa de una maniobra
+            # vieja no resucite vacios ya entregados.
+            if (maniobra.folio or '').strip() and (
+                    not folio_antes
+                    or (not operador_2_antes and (maniobra.operador_2 or '').strip())):
+                _crear_vacios_del_folio(maniobra, self._usuario())
             # La asignacion, en cambio, se recalcula siempre: el folio suele
             # ponerse antes de saber quien lo llevara.
             _sincronizar_asignacion_folios(maniobra, antes)
