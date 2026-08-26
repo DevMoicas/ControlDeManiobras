@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { overlayMotion, contentMotion } from "../../animations/modalMotion";
 import { apiClient } from "../../api/apiClient";
 import { textoDelPar, conUnidad } from "../../utils/dobleValor.mjs";
@@ -47,7 +47,9 @@ const COLUMNAS_PENDIENTES = [
   { key: "origen",                  label: "Origen" },
   { key: "destino",                 label: "Destino" },
   { key: "cliente",                 label: "Cliente" },
-  { key: "fecha_entrega_mercancia", label: "Fecha de entrega", fecha: true, hora: "hora_entrega" },
+  // En negrita: es la fecha que se mira primero al repasar la lista, y entre
+  // once columnas de texto plano se perdia.
+  { key: "fecha_entrega_mercancia", label: "Fecha de entrega", fecha: true, hora: "hora_entrega", fuerte: true },
 ];
 
 // El desglose de ACTIVOS: lo que ya va en camino. Aquí la fecha y la hora de
@@ -98,15 +100,28 @@ function celda(maniobra, col) {
 
 // Los dos desgloses. Misma tabla, distinta consulta y distintas columnas.
 const VISTAS = {
-  // PENDIENTES: las que siguen en piso. sin_asignar=1 es el criterio — sin
-  // transportista y sin operador; con cualquiera de los dos ya hay quien la
-  // mueva y sale de viaje. Por fecha_pis ascendente: arriba la que lleva más
-  // tiempo esperando. El id desempata dentro del mismo día.
+  // PENDIENTES: el status manda y nada más (usuario, 2026-08-26). Antes se
+  // exigía además sin_asignar=1 —ni transportista ni operador—, así que un
+  // servicio con operador puesto desaparecía de aquí aunque siguiera pendiente.
+  // Ahora sale mientras tenga el status, y deja de salir cuando se lo quitan.
+  //
+  // Efecto secundario buscado: el número del botón cuenta TODAS las pendientes
+  // (resumen-status no aplica sin_asignar), así que hasta hoy el contador y esta
+  // lista no cuadraban. Ahora sí.
+  //
+  // Ordena por FECHA DE ENTREGA ascendente: arriba lo que se entrega antes,
+  // abajo lo más lejano. Antes era por FECHA PIS; se conserva el sentido del
+  // orden, solo cambia la columna que manda. Las que aún no tienen fecha de
+  // entrega quedan al final — lo hace OrdenNullsLast en el backend, igual que en
+  // el desglose de activos. El id desempata dentro del mismo día.
   pendiente: {
-    titulo: "Pendientes en piso",
-    url: "/maniobras/?status=pendiente&sin_asignar=1&ordering=fecha_pis,id",
+    titulo: "Servicios pendientes",
+    url: "/maniobras/?status=pendiente&ordering=fecha_entrega_mercancia,id",
     columnas: COLUMNAS_PENDIENTES,
-    vacio: "No hay pendientes en piso.",
+    vacio: "No hay servicios pendientes.",
+    // La casilla PENDIENTE DE PROGRAMAR solo existe en este desglose: es el
+    // repaso de lo que sigue en piso. Un servicio activo ya está programado.
+    marcable: true,
   },
   // ACTIVOS: lo que ya va en camino, por fecha de entrega más próxima primero.
   // Las que aún no la tienen quedan al final — lo hace OrdenNullsLast en el
@@ -122,6 +137,9 @@ const VISTAS = {
 function Lista({ vista }) {
   const [filas, setFilas] = useState(null);
   const [error, setError] = useState(false);
+  // Los ids que están guardándose ahora mismo: la casilla se desactiva mientras
+  // tanto, para que dos clics seguidos no manden dos PATCH cruzados.
+  const [guardando, setGuardando] = useState([]);
 
   useEffect(() => {
     let cancelado = false;
@@ -134,6 +152,22 @@ function Lista({ vista }) {
     return () => { cancelado = true; };
   }, [vista.url]);
 
+  // Marcar es optimista: la fila se pinta al instante y se revierte si el PATCH
+  // falla. Esperar la respuesta para pintar haría que repasar una lista larga
+  // fuese un clic y una pausa, un clic y una pausa.
+  const marcar = async (maniobra, marcada) => {
+    const id = maniobra.id;
+    setGuardando((p) => [...p, id]);
+    setFilas((p) => p.map((m) => (m.id === id ? { ...m, pendiente_programar: marcada } : m)));
+    try {
+      await apiClient.patch(`/maniobras/${id}/`, { pendiente_programar: marcada });
+    } catch {
+      setFilas((p) => p.map((m) => (m.id === id ? { ...m, pendiente_programar: !marcada } : m)));
+    } finally {
+      setGuardando((p) => p.filter((x) => x !== id));
+    }
+  };
+
   if (error)  return <p className="seg-modal-estado seg-modal-estado--error">No se pudo cargar la lista.</p>;
   if (!filas) return <p className="seg-modal-estado">Cargando…</p>;
   if (filas.length === 0) return <p className="seg-modal-estado">{vista.vacio}</p>;
@@ -145,6 +179,9 @@ function Lista({ vista }) {
       <table className="seg-tabla">
         <thead>
           <tr>
+            {/* La casilla no lleva rótulo: la cabecera del checkbox sería más
+                ancha que la columna. El aria-label de cada botón la nombra. */}
+            {vista.marcable && <th className="seg-th seg-th--check" aria-label="Revisado" />}
             {vista.columnas.map((col) => (
               <th key={col.key} className="seg-th">{col.label}</th>
             ))}
@@ -152,9 +189,26 @@ function Lista({ vista }) {
         </thead>
         <tbody>
           {filas.map((m) => (
-            <tr key={m.id}>
+            <tr key={m.id} className={m.pendiente_programar ? "seg-fila--marcada" : undefined}>
+              {vista.marcable && (
+                <td className="seg-td seg-td--check">
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={Boolean(m.pendiente_programar)}
+                    aria-label={m.pendiente_programar ? "Quitar de pendiente de programar" : "Marcar como pendiente de programar"}
+                    className="seg-check"
+                    disabled={guardando.includes(m.id)}
+                    onClick={() => marcar(m, !m.pendiente_programar)}
+                  >
+                    {m.pendiente_programar && <Check size={14} strokeWidth={3} />}
+                  </button>
+                </td>
+              )}
               {vista.columnas.map((col) => (
-                <td key={col.key} className="seg-td">{celda(m, col)}</td>
+                <td key={col.key} className={`seg-td${col.fuerte ? " seg-td--fuerte" : ""}`}>
+                  {celda(m, col)}
+                </td>
               ))}
             </tr>
           ))}

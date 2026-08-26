@@ -123,8 +123,13 @@
 }
 
 .seg-modal-header {
+  /* El botón de cerrar sale del flujo (abajo) para que el título quede centrado
+     respecto al MODAL y no respecto al hueco que deja ese botón: con el título
+     en flex y la X ocupando sitio, el centro se corría ~15px a la izquierda. */
+  position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   padding: 10px 14px;
   background: #2b3e50;
@@ -136,10 +141,14 @@
   font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.04em;
+  text-align: center;
 }
 
 .seg-modal-cerrar {
-  margin-left: auto;
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   border: 0;
   background: none;
@@ -197,6 +206,63 @@
   padding: 7px 10px;
   color: #101828;
   border-bottom: 1px solid #f0f3f8;
+}
+
+/* La fecha de entrega, destacada entre once columnas de texto plano. */
+.seg-td--fuerte {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── PENDIENTE DE PROGRAMAR ───────────────────────────────────────────────── */
+/* Marcada: la fila se pinta de verde y NADA MÁS. A diferencia de la página de
+   Pendientes, el texto no se tacha (decisión del usuario, 2026-08-26): allí un
+   pendiente hecho ya no interesa, aquí el servicio sigue en piso y hay que poder
+   leerlo igual de bien después de marcarlo. */
+.seg-fila--marcada .seg-td {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.seg-th--check,
+.seg-td--check {
+  width: 34px;
+  padding-left: 10px;
+  padding-right: 0;
+}
+
+.seg-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.seg-check:hover:not(:disabled) {
+  border-color: #16a34a;
+}
+
+.seg-check:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.seg-check:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.seg-fila--marcada .seg-check {
+  background: #16a34a;
+  border-color: #16a34a;
 }
 
 @media (max-width: 1200px) {
