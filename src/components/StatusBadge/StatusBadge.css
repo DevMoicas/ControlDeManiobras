@@ -37,7 +37,10 @@
   color: #1d4ed8;
   border: 1px solid #93c5fd;
 }
-.badge-status--quemada {
+.badge-status--quemada,
+/* Cancelado comparte el color de Quemada (usuario, 2026-08-26): son status
+   distintos y se filtran por separado, pero se leen igual en la fila. */
+.badge-status--cancelado {
   background-color: #fee2e2;
   color: #b91c1c;
   border: 1px solid #fca5a5;

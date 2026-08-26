@@ -24,7 +24,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-/** @typedef {'activo' | 'pendiente' | 'quemada' | 'por_salir'} ManiobraStatus */
+/** @typedef {'activo' | 'pendiente' | 'quemada' | 'cancelado' | 'por_salir'} ManiobraStatus */
 
 /**
  * Valor tal y como viaja//se guarda: un id, dos ids separados por coma, o null.
@@ -67,6 +67,17 @@ export const STATUS_MAP = Object.freeze({
     color:      "#ff6961",
     emoji:      "🔴",
   }),
+  // Mismo color que QUEMADA a propósito (usuario, 2026-08-26): los dos son finales
+  // de viaje que no salieron bien y en la fila se leen igual. Son status distintos
+  // —se filtran por separado— pero comparten lectura visual.
+  cancelado: Object.freeze({
+    id:         "cancelado",
+    label:      "Cancelado",
+    rowClass:   "row-status--cancelado",
+    badgeClass: "badge-status--cancelado",
+    color:      "#ff6961",
+    emoji:      "🔴",
+  }),
   por_salir: Object.freeze({
     id:         "por_salir",
     label:      "Lázaro",
@@ -96,6 +107,8 @@ export const PRIORITY_ORDER = Object.freeze([
   "por_salir",  // Lázaro — gana siempre
   "activo",
   "quemada",
+  "cancelado",  // pegado a Quemada: comparten color, así que el orden entre
+                // los dos no cambia lo que se ve, solo fija la forma canónica
   "pendiente",
 ]);
 

@@ -422,6 +422,7 @@ const FILTROS = [
   { id: "activo",    label: "Activos" },
   { id: "pendiente", label: "Pendientes" },
   { id: "quemada",   label: "Quemados" },
+  { id: "cancelado", label: "Cancelados" },
   { id: "por_salir", label: "Lázaro" },
   { id: "tercero",   label: "Terceros" },
 ];

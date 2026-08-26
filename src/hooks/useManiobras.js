@@ -6,7 +6,7 @@ const PAGE_SIZE = 60;
 
 // "todos" no filtra. "tercero" no es un status: filtra por la columna `tercero`
 // vía ?tercero=1 (ver buildUrl), no por ?status. Solo estos cuatro van como ?status.
-const STATUS_BACKEND = ["activo", "pendiente", "quemada", "por_salir"];
+const STATUS_BACKEND = ["activo", "pendiente", "quemada", "cancelado", "por_salir"];
 
 export function useManiobras(filtroStatus = "todos", ordenFecha = "desc") {
   const [maniobras,   setManiobras]   = useState([]);

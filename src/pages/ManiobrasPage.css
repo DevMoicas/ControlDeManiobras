@@ -369,9 +369,12 @@
 .maniobras-container .maniobras-table tbody tr.row-status--pendiente td:first-child { border-left-color: #1d4ed8; }
 .maniobras-container .maniobras-table tbody tr.row-status--pendiente:hover td { background: #83bcda; }
 
-.maniobras-container .maniobras-table tbody tr.row-status--quemada td   { background: #ff6961; }
-.maniobras-container .maniobras-table tbody tr.row-status--quemada td:first-child   { border-left-color: #991b1b; }
-.maniobras-container .maniobras-table tbody tr.row-status--quemada:hover td   { background: #f9564c; }
+.maniobras-container .maniobras-table tbody tr.row-status--quemada td,
+.maniobras-container .maniobras-table tbody tr.row-status--cancelado td   { background: #ff6961; }
+.maniobras-container .maniobras-table tbody tr.row-status--quemada td:first-child,
+.maniobras-container .maniobras-table tbody tr.row-status--cancelado td:first-child   { border-left-color: #991b1b; }
+.maniobras-container .maniobras-table tbody tr.row-status--quemada:hover td,
+.maniobras-container .maniobras-table tbody tr.row-status--cancelado:hover td   { background: #f9564c; }
 
 .maniobras-container .maniobras-table tbody tr.row-status--por-salir td { background: #c7b0d4; }
 .maniobras-container .maniobras-table tbody tr.row-status--por-salir td:first-child { border-left-color: #6b21a8; }

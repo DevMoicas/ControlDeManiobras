@@ -17,7 +17,7 @@ import "./StatusBadge.css";
 
 /**
  * @param {Object}  props
- * @param {string}  props.statusId     - Uno de: 'activo' | 'pendiente' | 'quemada' | 'por_salir'
+ * @param {string}  props.statusId     - Uno de: 'activo' | 'pendiente' | 'quemada' | 'cancelado' | 'por_salir'
  * @param {'sm'|'md'} [props.size='md'] - Tamaño del badge
  * @param {boolean} [props.showEmoji=false] - Muestra el emoji delante del label
  */
