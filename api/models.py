@@ -162,7 +162,7 @@ class Maniobra(models.Model):
 
     # Una maniobra puede tener hasta 2 status a la vez. Se guardan en este mismo
     # campo separados por coma, SIEMPRE en orden de prioridad descendente:
-    #     por_salir > activo > quemada > pendiente
+    #     por_salir > activo > quemada > cancelado > pendiente
     # (mismo orden que PRIORITY_ORDER en el frontend, src/config/statusConfig.js).
     #
     # Ese orden canónico hace dos cosas gratis:
@@ -170,20 +170,28 @@ class Maniobra(models.Model):
     #   2. Un combo mal ordenado ("quemada,activo") no está en la lista → DRF lo
     #      rechaza con 400 automáticamente, sin escribir validación.
     #
-    # El combo más largo, "pendiente,por_salir", mide 19 caracteres: cabe en el
-    # max_length=20 que ya tenía la columna, así que no hace falta tocar el esquema.
+    # Los combos más largos, "por_salir,cancelado" y "cancelado,pendiente", miden 19
+    # caracteres: caben en el max_length=20 que ya tenía la columna, así que añadir
+    # CANCELADO tampoco necesita tocar el esquema.
     STATUS_CHOICES = [
         ("activo",    "Activo / En viaje"),
         ("pendiente", "Pendiente"),
         ("quemada",   "Quemada"),
         ("por_salir", "Por salir"),
+        # CANCELADO va junto a QUEMADA en la prioridad y comparte su color: los dos
+        # son finales de viaje que no salieron bien, y en la fila se leen igual.
+        ("cancelado", "Cancelado"),
         # Combinaciones de 2 (orden canónico: mayor prioridad primero)
         ("por_salir,activo",    "Por salir + Activo"),
         ("por_salir,quemada",   "Por salir + Quemada"),
+        ("por_salir,cancelado", "Por salir + Cancelado"),
         ("por_salir,pendiente", "Por salir + Pendiente"),
         ("activo,quemada",      "Activo + Quemada"),
+        ("activo,cancelado",    "Activo + Cancelado"),
         ("activo,pendiente",    "Activo + Pendiente"),
+        ("quemada,cancelado",   "Quemada + Cancelado"),
         ("quemada,pendiente",   "Quemada + Pendiente"),
+        ("cancelado,pendiente", "Cancelado + Pendiente"),
     ]
     status = models.CharField(
         max_length=20,
