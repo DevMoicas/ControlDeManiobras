@@ -10,7 +10,9 @@ export const VACIO_VACIO = {
   fecha_maniobra: "",
   fecha_entrega: "",
   fecha_notificacion_cliente: "",
-  status: "",
+  // Los vacios nacen pendientes, se agreguen a mano o los cree el automatismo
+  // del folio (api/views.py, _crear_vacios_del_folio).
+  status: "pendiente",
   status_eir: "",
   operador: "",
   operador_entrega: "",
