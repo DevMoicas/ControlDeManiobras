@@ -1,6 +1,6 @@
 # Pendiente
 
-Anotado el 2026-08-25 al cerrar la sesión.
+Anotado el 2026-08-25 y **actualizado el 2026-08-26** al cerrar la sesión.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
@@ -109,3 +109,59 @@ por día, hay que normalizar a `America/Mexico_City` primero.
 - La tabla de Maniobras está en densidad compacta desde el 2026-08-25 (caben ~18 filas
   donde antes 12). Los valores originales quedaron anotados en un comentario de
   `ManiobrasPage.css` por si hay que volver a medio camino.
+
+---
+
+## 5. Abierto tras la sesión del 2026-08-26
+
+### Carga masiva de servicios desde Excel — SIN EMPEZAR
+
+El usuario tiene servicios en un Excel y quiere subirlos de una vez a producción, sin
+capturarlos a mano. Se habló pero **no se hizo nada**: falta el archivo (no aparece en
+Descargas ningún `.xlsx` reciente que cuadre; los `CONTROL DE MANIOBRAS.xlsx` son de
+marzo y abril, el histórico del que salió la base).
+
+**La decisión que hay que tomar ANTES de escribir el script**, y es la razón de que no
+se empezara: si esos servicios traen folio, insertarlos dispara los tres automatismos
+—gasto por servicio, uno o dos vacíos por servicio, y la reescritura de la asignación
+del folio en el catálogo—. Con 100 servicios son 100 gastos y hasta 200 vacíos de golpe
+en producción, y ni las maniobras ni los vacíos se borran sin admin. Sirven las dos
+vías: por el ORM directo NO se disparan, por la API SÍ. Depende de si son servicios
+históricos (probablemente no se quieren) o activos (probablemente sí).
+
+**Camino previsto:** un script que lea el Excel con `openpyxl` (ya está en
+`requirements.txt`) y cree por el ORM —no con SQL directo, para respetar validaciones,
+longitudes de columna y la auditoría—, probado antes contra la base local. Para llegar
+a producción encaja como un modo más de `migrar_prod.sh`, que ya hace el ritual de la
+regla de firewall temporal y el volcado de credenciales.
+
+**Ojo al mapear:** `origen`/`destino` están topados a 30 caracteres, y varias fechas de
+`maniobras` son TEXT en Postgres aunque el modelo diga `DateField`.
+
+### Escalón de coste en Azure sin explicar — ABIERTO
+
+El **22 de agosto el gasto diario saltó de $0.462492 a $0.911292** y ahí sigue: un
+escalón limpio de **+$0.4488/día, +$13.46/mes**, justo al día siguiente de restaurar la
+suscripción caída del 21. No es una subida gradual por más uso —el gasto es plano por
+definición, ver ADR-0010—: es la firma de **un recurso encendido**.
+
+Cuesta más que cualquiera de las mejoras que se evaluaron ese día. Falta abrir el
+desglose por recurso en Azure y ver qué apareció.
+
+De paso quedó medido que **la factura real de agosto fue de $16.55**, cuando
+`PLAN_DESPLIEGUE_PRODUCCION.md` presupuesta $45–60. O ese export cubre solo parte de
+los recursos, o el plan lleva tiempo sobreestimando; conviene aclararlo antes de usar
+esa cifra para decidir nada.
+
+### El filtro `sin_asignar` quedó sin uso
+
+Lo usaba solo el desglose de PENDIENTES, que desde el 2026-08-26 filtra únicamente por
+status (ADR-0012). Sigue en `ManiobraFilter` porque la regla del proyecto es no tocar
+lo que no hace falta. Si se limpia, va en un commit aparte.
+
+### Vacíos que no se vuelven a juntar
+
+El automatismo del ADR-0011 separa la fila de un Full cuando aparece el segundo
+operador, pero **no la vuelve a juntar** si ese operador se quita. Se ajusta a mano.
+Sin decidir si merece arreglarse: hasta ahora no ha pasado.
+
