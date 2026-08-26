@@ -149,7 +149,11 @@ export default function CostosExtraSelector({ seleccionados = [], onChange, disa
               >
                 <span className="cxs-marca" aria-hidden="true">{marcado ? "☑" : "☐"}</span>
                 <span className="cxs-movimiento">{c.movimiento}</span>
-                <span className="cxs-costo">{formatearCosto(c.costo)}</span>
+                {/* Sin importe: al asignar conceptos a una maniobra solo se
+                    elige CUÁLES, y las tarifas a la vista convertían el
+                    desplegable en una lista de precios (usuario, 2026-08-26).
+                    Se siguen viendo en Finanzas → Costos extra, que es su sitio,
+                    y el importe que se cobra se congela igual al seleccionar. */}
               </li>
             );
           })}

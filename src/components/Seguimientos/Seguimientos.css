@@ -219,7 +219,10 @@
    Pendientes, el texto no se tacha (decisión del usuario, 2026-08-26): allí un
    pendiente hecho ya no interesa, aquí el servicio sigue en piso y hay que poder
    leerlo igual de bien después de marcarlo. */
-.seg-fila--marcada .seg-td {
+/* :not(--fuerte) deja la FECHA DE ENTREGA sin teñir: sobre la fila verde queda
+   en su fondo normal y en negrita, que es como el usuario la quiere destacada
+   (2026-08-26). Teñirla la igualaba al resto justo en la fila ya revisada. */
+.seg-fila--marcada .seg-td:not(.seg-td--fuerte) {
   background: #dcfce7;
   color: #14532d;
 }

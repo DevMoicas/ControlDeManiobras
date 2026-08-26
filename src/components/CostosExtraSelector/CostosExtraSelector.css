@@ -120,6 +120,9 @@
 }
 
 /* Tabular para que los importes queden alineados en columna al leerlos rápido. */
+/* Sin uso desde el 2026-08-26: el desplegable ya no enseña los importes. Se
+   conserva la regla porque volver a mostrarlos es reponer un <span>, no
+   reescribir el estilo. */
 .cxs-costo {
   flex-shrink: 0;
   font-family: "IBM Plex Mono", monospace;
