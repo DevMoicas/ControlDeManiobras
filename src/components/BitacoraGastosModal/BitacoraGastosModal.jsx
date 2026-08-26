@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { overlayMotion, contentMotion } from "../../animations/modalMotion";
-import { X, Download, Loader } from "lucide-react";
+import { X, Download, Loader, Plus } from "lucide-react";
 import { apiClient } from "../../api/apiClient";
 import OperadorSelector from "../OperadorSelector/OperadorSelector";
 import PlacasSelector from "../PlacasSelector/PlacasSelector";
@@ -9,6 +9,12 @@ import RemolqueSelector from "../RemolqueSelector/RemolqueSelector";
 import FolioSelector from "../FolioSelector/FolioSelector";
 import { sumarPeso } from "../../utils/sumarPeso.mjs";
 import "./BitacoraGastosModal.css";
+
+// Tope de folios que pueden salir empatados en un mismo documento, EL PRINCIPAL
+// INCLUIDO: uno propio más tres del empate. Decidido con el usuario el
+// 2026-08-26. El gemelo de este valor vive en el otro modal de bitácora.
+const MAX_FOLIOS = 4;
+
 
 // Solo estos campos viajan al backend: DocumentoBitacoraGastosView lee 7 y
 // descarta el resto en silencio (api/views.py:1252-1261). El folio ni siquiera
@@ -48,8 +54,9 @@ const CAMPOS_IMPRESOS = [
 export default function BitacoraGastosModal({ onCerrar }) {
   const [datos,     setDatos]     = useState(ESTADO_INICIAL);
   const [maniobra1, setManiobra1] = useState(null);
-  const [maniobra2, setManiobra2] = useState(null);
-  const [empate,    setEmpate]    = useState(false);
+  // Las maniobras empatadas, sin contar la principal. null es una casilla puesta
+  // a la que todavia no se le ha elegido folio: el boton de generar la espera.
+  const [maniobrasEmpate, setManiobrasEmpate] = useState([]);
   const [generando, setGenerando] = useState(false);
   const [error,     setError]     = useState(null);
   const [exito,     setExito]     = useState(false);
@@ -68,16 +75,27 @@ export default function BitacoraGastosModal({ onCerrar }) {
     return () => clearTimeout(t);
   }, [exito]);
 
+  const empate     = maniobrasEmpate.length > 0;
+  const empatadas  = maniobrasEmpate.filter(Boolean);
+
   // El peso se CALCULA, nunca se teclea: lo que se pinta es lo que se manda.
+  // sumarPeso acepta N pesos, justo para esto.
   const pesoTotal = sumarPeso(
     maniobra1?.peso ?? "",
-    empate ? (maniobra2?.peso ?? "") : ""
+    ...empatadas.map((m) => m.peso ?? "")
   );
 
-  const discrepancias = (empate && maniobra1 && maniobra2)
-    ? CAMPOS_IMPRESOS.filter(
-        ({ clave }) => (maniobra1[clave] || "") !== (maniobra2[clave] || "")
-      )
+  // Un campo discrepa si ALGUNA de las empatadas no coincide con la principal.
+  // Se listan los valores distintos, sin repetir: con cuatro folios, tres veces
+  // el mismo destino equivocado seria ruido.
+  const discrepancias = maniobra1
+    ? CAMPOS_IMPRESOS.flatMap(({ clave, etiqueta }) => {
+        const base   = maniobra1[clave] || "";
+        const otros  = [...new Set(
+          empatadas.map((m) => m[clave] || "").filter((v) => v !== base)
+        )];
+        return otros.length ? [{ clave, etiqueta, base, otros }] : [];
+      })
     : [];
 
   // ── Handlers ───────────────────────────────────────────────────────────────
@@ -94,14 +112,13 @@ export default function BitacoraGastosModal({ onCerrar }) {
     }));
   };
 
-  // El segundo folio SOLO aporta su peso. Se guarda entero para poder comparar.
-  const handleFolio2 = (maniobra) => setManiobra2(maniobra);
+  // Los folios del empate SOLO aportan su peso. Se guardan enteros para comparar.
+  const handleFolioEmpate = (i, maniobra) =>
+    setManiobrasEmpate((p) => p.map((m, j) => (j === i ? maniobra : m)));
 
-  const alternarEmpate = () => {
-    const siguiente = !empate;
-    setEmpate(siguiente);
-    if (!siguiente) setManiobra2(null);   // apagarlo descarta el segundo folio
-  };
+  const alternarEmpate = () => setManiobrasEmpate(empate ? [] : [null]);
+  const anadirFolio    = () => setManiobrasEmpate((p) => [...p, null]);
+  const quitarFolio    = (i) => setManiobrasEmpate((p) => p.filter((_, j) => j !== i));
 
   const cambiarCampo = (campo, valor) => {
     setDatos((p) => ({ ...p, [campo]: valor }));
@@ -157,7 +174,7 @@ export default function BitacoraGastosModal({ onCerrar }) {
     !generando &&
     Boolean(maniobra1) &&
     Boolean(datos.total_gastos) &&
-    (!empate || Boolean(maniobra2));
+    maniobrasEmpate.every(Boolean);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -203,15 +220,40 @@ export default function BitacoraGastosModal({ onCerrar }) {
             {empate && (
               <div className="bgm-campo bgm-campo--empate">
                 <label className="bgm-label">
-                  Folio del empate <span className="bgm-req">*</span>
+                  Folios del empate <span className="bgm-req">*</span>
                 </label>
-                <FolioSelector
-                  currentValue={maniobra2?.folio || ""}
-                  onSelect={handleFolio2}
-                  disabled={false}
-                />
+
+                {maniobrasEmpate.map((maniobra, i) => (
+                  // La clave es la posición y no el folio: dos casillas vacías
+                  // compartirían clave, y al borrar una React reordenaría las de
+                  // al lado en vez de quitar la que se pulsó.
+                  <div className="bgm-empate-fila" key={i}>
+                    <div className="bgm-empate-selector">
+                      <FolioSelector
+                        currentValue={maniobra?.folio || ""}
+                        onSelect={(elegida) => handleFolioEmpate(i, elegida)}
+                        disabled={false}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="bgm-btn-quitar"
+                      onClick={() => quitarFolio(i)}
+                      aria-label={`Quitar el folio ${i + 2} del empate`}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+
+                {maniobrasEmpate.length < MAX_FOLIOS - 1 && (
+                  <button type="button" className="bgm-btn-anadir" onClick={anadirFolio}>
+                    <Plus size={14} /> Añadir otro folio
+                  </button>
+                )}
+
                 <p className="bgm-hint">
-                  Solo aporta su peso. El resto de datos salen del primer folio.
+                  Solo aportan su peso. El resto de datos salen del primer folio.
                 </p>
               </div>
             )}
@@ -231,10 +273,11 @@ export default function BitacoraGastosModal({ onCerrar }) {
                 readOnly
                 placeholder="—"
               />
-              {empate && maniobra1 && maniobra2 && (
+              {empatadas.length > 0 && maniobra1 && (
                 <p className="bgm-hint">
-                  {maniobra1.folio}: {maniobra1.peso || "—"} &nbsp;+&nbsp;{" "}
-                  {maniobra2.folio}: {maniobra2.peso || "—"}
+                  {[maniobra1, ...empatadas]
+                    .map((m) => `${m.folio}: ${m.peso || "—"}`)
+                    .join("  +  ")}
                 </p>
               )}
             </div>
@@ -244,15 +287,15 @@ export default function BitacoraGastosModal({ onCerrar }) {
           {discrepancias.length > 0 && (
             <div className="bgm-aviso">
               <p className="bgm-aviso-titulo">
-                Los dos folios no coinciden en {discrepancias.length === 1 ? "un campo" : `${discrepancias.length} campos`} que se imprimen.
+                Los folios no coinciden en {discrepancias.length === 1 ? "un campo" : `${discrepancias.length} campos`} que se imprimen.
                 Se usarán los del primer folio.
               </p>
               <ul className="bgm-aviso-lista">
-                {discrepancias.map(({ clave, etiqueta }) => (
+                {discrepancias.map(({ clave, etiqueta, base, otros }) => (
                   <li key={clave}>
-                    <strong>{etiqueta}:</strong> {maniobra1[clave] || "—"}
+                    <strong>{etiqueta}:</strong> {base || "—"}
                     {" ≠ "}
-                    {maniobra2[clave] || "—"}
+                    {otros.map((v) => v || "—").join(", ")}
                   </li>
                 ))}
               </ul>

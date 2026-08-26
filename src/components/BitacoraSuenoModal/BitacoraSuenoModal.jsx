@@ -5,7 +5,7 @@ import DatePicker from "react-datepicker";
 import { registerLocale } from "react-datepicker";
 import es from "date-fns/locale/es";
 import { format } from "date-fns";
-import { X, Download, Loader } from "lucide-react";
+import { X, Download, Loader, Plus } from "lucide-react";
 import { apiClient } from "../../api/apiClient";
 import OperadorSelector from "../OperadorSelector/OperadorSelector";
 import PlacasSelector from "../PlacasSelector/PlacasSelector";
@@ -13,6 +13,12 @@ import RemolqueSelector from "../RemolqueSelector/RemolqueSelector";
 import FolioSelector from "../FolioSelector/FolioSelector";
 import "react-datepicker/dist/react-datepicker.css";
 import "./BitacoraSuenoModal.css";
+
+// Tope de folios que pueden salir empatados en un mismo documento, EL PRINCIPAL
+// INCLUIDO: uno propio más tres del empate. Decidido con el usuario el
+// 2026-08-26. El gemelo de este valor vive en el otro modal de bitácora.
+const MAX_FOLIOS = 4;
+
 
 registerLocale("es", es);
 
@@ -40,9 +46,10 @@ const ESTADO_INICIAL = {
  *   onCerrar  function — cierra el modal
  */
 export default function BitacoraSuenoModal({ onCerrar }) {
-  const [datos,      setDatos]      = useState(ESTADO_INICIAL);
-  const [empate,     setEmpate]     = useState(false);
-  const [folio2,     setFolio2]     = useState("");
+  const [datos,        setDatos]        = useState(ESTADO_INICIAL);
+  // Los folios empatados, sin contar el principal. "" es una casilla puesta a la
+  // que todavia no se le ha elegido folio: el boton de generar la espera.
+  const [foliosEmpate, setFoliosEmpate] = useState([]);
   const [generando,  setGenerando]  = useState(false);
   const [error,      setError]      = useState(null);
   const [exito,      setExito]      = useState(false);
@@ -103,16 +110,17 @@ export default function BitacoraSuenoModal({ onCerrar }) {
     }));
   };
 
-  // El empate solo aporta su folio: se une al primero en la misma casilla (U9).
-  const handleFolio2 = (maniobra) => setFolio2(maniobra.folio || "");
+  // El empate solo aporta folios: se unen al principal en la misma casilla (U9).
+  const empate = foliosEmpate.length > 0;
 
-  const alternarEmpate = () => {
-    const siguiente = !empate;
-    setEmpate(siguiente);
-    if (!siguiente) setFolio2("");   // apagarlo descarta el segundo folio
-  };
+  const handleFolioEmpate = (i, maniobra) =>
+    setFoliosEmpate((p) => p.map((f, j) => (j === i ? (maniobra.folio || "") : f)));
 
-  const folioFinal = empate && folio2 ? `${datos.folio}, ${folio2}` : datos.folio;
+  const alternarEmpate = () => setFoliosEmpate(empate ? [] : [""]);
+  const anadirFolio    = () => setFoliosEmpate((p) => [...p, ""]);
+  const quitarFolio    = (i) => setFoliosEmpate((p) => p.filter((_, j) => j !== i));
+
+  const folioFinal = [datos.folio, ...foliosEmpate].filter(Boolean).join(", ");
 
   // ── Generar PDF ────────────────────────────────────────────────────────────
 
@@ -164,7 +172,7 @@ export default function BitacoraSuenoModal({ onCerrar }) {
 
   // Con empate activo hace falta el segundo folio: si no, el documento saldría
   // con uno solo y nadie se enteraría.
-  const puedeGenerar = !generando && Boolean(datos.placas) && (!empate || Boolean(folio2));
+  const puedeGenerar = !generando && Boolean(datos.placas) && foliosEmpate.every(Boolean);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -207,15 +215,40 @@ export default function BitacoraSuenoModal({ onCerrar }) {
           {empate && (
             <div className="bsm-campo bsm-campo--empate">
               <label className="bsm-label">
-                Folio del empate <span className="bsm-req">*</span>
+                Folios del empate <span className="bsm-req">*</span>
               </label>
-              <FolioSelector
-                currentValue={folio2}
-                onSelect={handleFolio2}
-                disabled={false}
-              />
+
+              {foliosEmpate.map((folio, i) => (
+                // La clave es la posición y no el folio: dos casillas vacías
+                // compartirían clave, y al borrar una React reordenaría las de
+                // al lado en vez de quitar la que se pulsó.
+                <div className="bsm-empate-fila" key={i}>
+                  <div className="bsm-empate-selector">
+                    <FolioSelector
+                      currentValue={folio}
+                      onSelect={(maniobra) => handleFolioEmpate(i, maniobra)}
+                      disabled={false}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="bsm-btn-quitar"
+                    onClick={() => quitarFolio(i)}
+                    aria-label={`Quitar el folio ${i + 2} del empate`}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+
+              {foliosEmpate.length < MAX_FOLIOS - 1 && (
+                <button type="button" className="bsm-btn-anadir" onClick={anadirFolio}>
+                  <Plus size={14} /> Añadir otro folio
+                </button>
+              )}
+
               <p className="bsm-hint">
-                Los dos folios salen juntos en la misma casilla: {folioFinal || "—"}
+                Todos salen juntos en la misma casilla: {folioFinal || "—"}
               </p>
             </div>
           )}

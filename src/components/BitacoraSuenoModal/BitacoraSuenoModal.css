@@ -337,3 +337,66 @@
   .bsm-btn-generar,
   .bsm-btn-excel { transition: none; }
 }
+
+/* ── Empate de varios folios ──────────────────────────────────────────────── */
+/* Cada folio del empate lleva su propio botón de quitar al lado, y el de añadir
+   desaparece al llegar al tope (MAX_FOLIOS, el principal incluido). */
+.bsm-empate-fila {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.bsm-empate-selector {
+  flex: 1;
+  min-width: 0;
+}
+
+.bsm-btn-quitar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-light, #6b7280);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.bsm-btn-quitar:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+.bsm-btn-quitar:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.bsm-btn-anadir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  margin-bottom: 4px;
+  border: 1px dashed var(--primary, #2563eb);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--primary, #2563eb);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.bsm-btn-anadir:hover {
+  background: #eff6ff;
+}
+.bsm-btn-anadir:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
