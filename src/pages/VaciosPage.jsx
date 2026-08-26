@@ -128,6 +128,15 @@ const propsPintado = (color) => (esColorValido(color)
     }
   : {});
 
+// Las props de la fila: su color elegido a mano, más el parpadeo de un segundo
+// que deja el refresco automático cuando otra persona acaba de tocarla. Van
+// juntas porque las dos escriben en className y por separado se pisaban.
+const propsFila = (vacio, resaltada) => {
+  const pintado = propsPintado(vacio.color);
+  const clases  = [pintado.className, resaltada && "fila-cambiada"].filter(Boolean).join(" ");
+  return { ...pintado, className: clases || undefined };
+};
+
 // Sí / No de la columna REPROGRAMADO. Se reutiliza VacioStatusSelector, que ya
 // acepta su juego de opciones por prop: mismo aspecto y mismo portal que las
 // demás columnas de estado, sin un componente nuevo.
@@ -350,7 +359,7 @@ export default function VaciosPage() {
   const [filtroStatus, setFiltroStatus] = useState("pendiente");
   const {
     vacios, setVacios, loading, loadingMore, hasMore, error,
-    loadMore, eliminar, actualizar, agregar, VACIO_VACIO,
+    loadMore, eliminar, actualizar, agregar, VACIO_VACIO, recienCambiados,
   } = useVacios(filtroStatus);
   const { isAdmin } = useAuthContext();
   const { updatingId, updateStatus } = useVacioStatusUpdate(setVacios);
@@ -628,7 +637,7 @@ export default function VaciosPage() {
               </tr>
             ) : (
               vaciosFiltrados.map((vacio) => (
-                <tr key={vacio.id} {...propsPintado(vacio.color)}>
+                <tr key={vacio.id} {...propsFila(vacio, recienCambiados.includes(vacio.id))}>
                   {COLUMNAS.map((col) => (
                     <td key={col.key}>
                       {col.requiereReprogramado && !vacio.reprogramado ? null : col.isReprogramado ? (

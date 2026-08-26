@@ -764,3 +764,33 @@
   .vacios-container .btn-guardar,
   .vacios-container .btn-cancelar { transition: none; }
 }
+
+/* ── Refresco automático: la fila que otra persona acaba de tocar ───────────
+   Un destello de un segundo y a su color de siempre. Existe para que el cambio
+   se VEA llegar: sin él, el valor cambia solo y nadie se entera de que llegó
+   información nueva — que es el riesgo real de refrescar sin recargar.
+   El fondo va en ::after y no en la propia fila para no pelearse con
+   `row-pintada` ni con el color del status, que ya escriben ese fondo. */
+tr.fila-cambiada > td {
+  position: relative;
+}
+
+tr.fila-cambiada > td::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: currentColor;
+  opacity: 0;
+  animation: destello-cambio 1s ease-out;
+}
+
+@keyframes destello-cambio {
+  0%   { opacity: .16; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Sin animación sigue habiendo aviso: se queda quieto y se apaga de golpe. */
+  tr.fila-cambiada > td::after { animation: destello-cambio 1s steps(1, end); }
+}

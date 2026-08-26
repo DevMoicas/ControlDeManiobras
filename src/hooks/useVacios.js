@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiClient } from "../api/apiClient";
+import { useAutoRefresco } from "./useAutoRefresco";
 
 const PAGE_SIZE = 60;
 
@@ -108,7 +109,75 @@ export function useVacios(filtroStatus = "pendiente") {
     setVacios((prev) => [resultado, ...prev]);
   }, []);
 
+  // ── Refresco automático ───────────────────────────────────────────────────
+  // Lo que cambió desde la última vez, fusionado por id sobre lo que ya hay en
+  // pantalla. NO se reemplaza la lista entera: eso repintaría las 60 filas y
+  // devolvería el scroll infinito al principio.
+  const [recienCambiados, setRecienCambiados] = useState([]);
+
+  const aplicarCambios = useCallback(async ({ desde, hayBorrados }) => {
+    // Alguien borró una fila. No hay forma de saber CUÁL sin volver a preguntar
+    // —una fila borrada no aparece en ninguna lista—, así que toca recargar.
+    // ponytail: se recarga solo la primera página y se pierde el scroll de las
+    // siguientes. Los borrados exigen admin y son excepcionales; si algún día
+    // dejan de serlo, el arreglo es pedir los ids vivos y filtrar en cliente.
+    if (hayBorrados) {
+      pageRef.current = 1;
+      fetchPage(1, true);
+      return;
+    }
+
+    const params = new URLSearchParams({ page_size: PAGE_SIZE, ordering: "-id" });
+    if (desde) params.set("modificado_desde", desde);
+    if (STATUS_BACKEND.includes(filtroStatus)) params.set("status", filtroStatus);
+    else if (filtroStatus === "reprogramado") params.set("reprogramado", "true");
+
+    try {
+      const data     = await apiClient.get(`/vacios/?${params.toString()}`);
+      const cambiados = Array.isArray(data.results) ? data.results : data;
+      if (!cambiados.length) return;
+
+      setVacios((prev) => {
+        const pendientes = new Map(cambiados.map((v) => [v.id, v]));
+        // Las que ya estaban se sustituyen en su sitio; conservar el objeto
+        // original cuando no cambió deja que React se salte esa fila entera.
+        const mezclado = prev.map((v) => {
+          const nuevo = pendientes.get(v.id);
+          if (!nuevo) return v;
+          pendientes.delete(v.id);
+          return nuevo;
+        });
+        // Lo que sobra son altas: arriba, que es donde las pone ordering=-id.
+        return [...pendientes.values(), ...mezclado];
+      });
+
+      // Para que el cambio se NOTE en vez de colarse: la fila parpadea un
+      // segundo. Sin esto el riesgo no es el parpadeo, es lo contrario.
+      setRecienCambiados(cambiados.map((v) => v.id));
+    } catch {
+      // Igual que en el sondeo: se reintentará solo en el siguiente cambio.
+    }
+  }, [fetchPage, filtroStatus]);
+
+  // El resaltado se retira solo. Si la clase se quedara puesta, la MISMA fila
+  // cambiando dos veces seguidas no volveria a parpadear: la animacion solo se
+  // dispara al ENTRAR la clase, no al repetirse el valor.
+  useEffect(() => {
+    if (!recienCambiados.length) return;
+    const id = setTimeout(() => setRecienCambiados([]), 1500);
+    return () => clearTimeout(id);
+  }, [recienCambiados]);
+
+  useAutoRefresco("vacios", aplicarCambios, {
+    // El reloj mira lo mismo que la tabla: con el filtro puesto, un vacío que
+    // pasa a entregado sale de la vista y se nota como una baja del contador.
+    query: STATUS_BACKEND.includes(filtroStatus)
+      ? `status=${filtroStatus}`
+      : filtroStatus === "reprogramado" ? "reprogramado=true" : "",
+  });
+
   return {
+    recienCambiados,
     vacios,
     setVacios,
     loading,

@@ -856,7 +856,7 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
 // mantienen `false` entre renders y React.memo las salta, evitando re-renderizar
 // ~2000 filas por cada cambio de status de una sola.
 const FilaManiobra = memo(function FilaManiobra({
-  maniobra, isUpdating, isUpdatingVacio, isUpdatingTercero, isAdmin, isSubmitting,
+  maniobra, isUpdating, isUpdatingVacio, isUpdatingTercero, isAdmin, isSubmitting, recienCambiada,
   onStatusChange, onVacioStatusChange, onTerceroChange, onGuardarCampos, onEditar, onVerFotos, onEliminar,
 }) {
   const statusConfig = getStatusConfig(maniobra.status);
@@ -1214,7 +1214,10 @@ const FilaManiobra = memo(function FilaManiobra({
 
   return (
     <tr
-      className={`${statusConfig?.rowClass ?? ""}${pintado ? " row-pintada" : ""}`}
+      // `fila-cambiada` la pone el refresco automático: un parpadeo de un
+      // segundo para que el cambio de otra persona se vea llegar en vez de
+      // colarse sin que nadie lo note.
+      className={`${statusConfig?.rowClass ?? ""}${pintado ? " row-pintada" : ""}${recienCambiada ? " fila-cambiada" : ""}`}
       // Sin color no hay ni clase ni variables: la fila vuelve sola a lo que
       // pinte su status, sin tener que recordar cuál era.
       style={pintado ? { "--color-fila": pintado, "--texto-fila": textoSobre(pintado) } : undefined}
@@ -1315,7 +1318,7 @@ export default function ManiobrasPage() {
   const {
     maniobras, setManiobras,
     loading, loadingMore, hasMore, error,
-    loadMore, eliminar, actualizar, agregar,
+    loadMore, eliminar, actualizar, agregar, recienCambiadas,
   } = useManiobras(filtroStatus, ordenFecha);
 
   const { updatingId, updateStatus } = useStatusUpdate(setManiobras);
@@ -1606,6 +1609,7 @@ export default function ManiobrasPage() {
                   <FilaManiobra
                     key={maniobra.id}
                     maniobra={maniobra}
+                    recienCambiada={recienCambiadas.includes(maniobra.id)}
                     isUpdating={updatingId === maniobra.id}
                     isUpdatingVacio={updatingVacioId === maniobra.id}
                     isUpdatingTercero={updatingTerceroId === maniobra.id}

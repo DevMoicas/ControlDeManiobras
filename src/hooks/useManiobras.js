@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiClient } from "../api/apiClient";
+import { useAutoRefresco } from "./useAutoRefresco";
 
 const PAGE_SIZE = 60;
 
@@ -103,7 +104,72 @@ export function useManiobras(filtroStatus = "todos", ordenFecha = "desc") {
     setManiobras((prev) => [resultado, ...prev]);
   }, []);
 
+  // ── Refresco automático ───────────────────────────────────────────────────
+  // Mismo mecanismo que en Vacíos: se piden SOLO las filas tocadas desde la
+  // última vez y se fusionan por id, para no repintar 60 filas ni devolver el
+  // scroll infinito al principio. Ver useAutoRefresco.js.
+  const [recienCambiadas, setRecienCambiadas] = useState([]);
+
+  // Lo que filtra la vista, para que el reloj mire exactamente la misma lista.
+  const filtroQuery = STATUS_BACKEND.includes(filtroStatus)
+    ? `status=${filtroStatus}`
+    : filtroStatus === "tercero" ? "tercero=1" : "";
+
+  const aplicarCambios = useCallback(async ({ desde, hayBorrados }) => {
+    // Un borrado no se puede fusionar: la fila que desapareció no viene en
+    // ninguna respuesta. ponytail: se recarga la primera página y se pierde el
+    // scroll de las siguientes; borrar una maniobra exige admin y es excepcional.
+    if (hayBorrados) {
+      pageRef.current = 1;
+      fetchPage(1, true);
+      return;
+    }
+
+    const params = new URLSearchParams({ page_size: PAGE_SIZE, ordering: "-id" });
+    if (desde) params.set("modificado_desde", desde);
+    if (filtroQuery) filtroQuery.split("&").forEach((par) => {
+      const [k, v] = par.split("=");
+      params.set(k, v);
+    });
+
+    try {
+      const data      = await apiClient.get(`/maniobras/?${params.toString()}`);
+      const cambiadas = Array.isArray(data.results) ? data.results : data;
+      if (!cambiadas.length) return;
+
+      setManiobras((prev) => {
+        const pendientes = new Map(cambiadas.map((m) => [m.id, m]));
+        const mezclado = prev.map((m) => {
+          const nueva = pendientes.get(m.id);
+          if (!nueva) return m;
+          pendientes.delete(m.id);
+          return nueva;
+        });
+        // Lo que queda son maniobras nuevas. Van arriba y no en su sitio por
+        // FECHA PIS a propósito: colocarlas por fecha las metería a media tabla,
+        // donde nadie las vería llegar. Al recargar la pantalla se ordenan solas.
+        return [...pendientes.values(), ...mezclado];
+      });
+
+      setRecienCambiadas(cambiadas.map((m) => m.id));
+    } catch {
+      // Se reintentará en el siguiente cambio.
+    }
+  }, [fetchPage, filtroQuery]);
+
+  // El resaltado se retira solo. Si la clase se quedara puesta, la MISMA fila
+  // cambiando dos veces seguidas no volveria a parpadear: la animacion solo se
+  // dispara al ENTRAR la clase, no al repetirse el valor.
+  useEffect(() => {
+    if (!recienCambiadas.length) return;
+    const id = setTimeout(() => setRecienCambiadas([]), 1500);
+    return () => clearTimeout(id);
+  }, [recienCambiadas]);
+
+  useAutoRefresco("maniobras", aplicarCambios, { query: filtroQuery });
+
   return {
+    recienCambiadas,
     maniobras,
     setManiobras,
     loading,
