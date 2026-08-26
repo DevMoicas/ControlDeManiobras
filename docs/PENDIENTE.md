@@ -1,6 +1,6 @@
 # Pendiente
 
-Anotado el 2026-08-20 al cerrar la sesión. Para retomar el 2026-08-21.
+Anotado el 2026-08-25 al cerrar la sesión.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
@@ -10,9 +10,12 @@ punto al completarlo en vez de dejarlo criando polvo.
 
 ## 1. ADRs pendientes de escribir
 
-`docs/decisions/` se estrenó con el `0001` (tarifa congelada). Quedan tres decisiones de
-la sesión del 2026-08-20 que hoy solo viven en mensajes de commit. Aquí está el material
-para no tener que reconstruir el razonamiento.
+Quedan dos de la sesión del 2026-08-20 que hoy solo viven en mensajes de commit. Aquí
+está el material para no tener que reconstruir el razonamiento.
+
+> El **ADR-0004** que estaba reservado aquí ya está escrito, y **sustituido el mismo
+> día por el 0007**: los pendientes ahora se borran a mano. Se escribió igualmente
+> para que quede el histórico de por qué antes no se podían borrar.
 
 ### ADR-0002 — `reprogramado` como estado independiente de `status`
 
@@ -40,29 +43,16 @@ para no tener que reconstruir el razonamiento.
   - *Enlace de costos extra:* desmarcar un concepto de una maniobra es una edición
     corriente, no un borrado de negocio. Sin el permiso, quedaría media función:
     marcar sí, desmarcar no.
-  - *Pendientes:* el borrado **no** es una acción de usuario — la API no expone ruta de
-    borrado a nadie, ni a un admin. El permiso solo lo usa el barrido automático de los
-    caducados a las 28 h, que corre con el rol de quien mire la página.
+  - *Pendientes:* el permiso se concedió para el barrido automático de los caducados,
+    que corría con el rol de quien mirara la página.
+- **⚠️ Al escribirlo, corregir esa segunda justificación.** Desde el 2026-08-25 el
+  borrado de pendientes **sí es una acción de usuario** (ADR-0007). El permiso ya
+  estaba concedido, así que aquel cambio no necesitó migración — y el criterio del
+  ADR ("datos efímeros o de enlace, nunca registro de negocio") es justamente el que
+  lo autoriza. Escribirlo con esa lectura, no con la de agosto 20.
 - **Consecuencia:** maniobras, folios y catálogos siguen siendo indelebles sin admin.
-  El criterio para futuras excepciones es "datos efímeros o de enlace, nunca registro de
-  negocio".
 - **Verificado** contra Postgres real con el rol `standard`, no solo con las pruebas
   (`config/settings_test.py` avisa de que en la BD de test no hay separación de roles).
-
-### ADR-0004 — Pendientes sin ruta de borrado
-
-- **Decisión:** `PendienteViewSet` no hereda de `ModelViewSet`; monta solo List, Create y
-  Update. La ruta de borrado **no existe** (405), tampoco para administradores.
-- **Alternativa descartada:** un `destroy` con `if not request.user.is_staff` como el
-  resto de los ViewSets. Se descartó porque el requisito era que **nadie** pudiera
-  borrar, y una URL que no está es más difícil de romper por accidente que una
-  comprobación que alguien puede relajar.
-- **Referencias:** `api/test_pendientes.py` (`SinBorradoTests`), commit `799936da`.
-
-### Nota sobre un cuarto candidato
-
-"Tabla de enlace frente a columna JSON" **ya está cubierto** en el ADR-0001, en la
-sección de alternativas. No merece un ADR propio; si acaso, ampliar allí.
 
 ---
 
@@ -73,17 +63,49 @@ La columna se retiró de la vista el 2026-08-20 (commit `275d6e0`) porque no res
 
 - En la BD local: 226 vacíos, **uno solo** con valor (`'PEPE'`, con pinta de prueba).
 - **En producción no se ha mirado.** Es lo que falta para decidir.
-- Si se confirma que no hay nada que conservar, la migración `0044+` sería un
-  `DROP COLUMN` — irreversible.
+- Si se confirma que no hay nada que conservar, la migración sería un `DROP COLUMN` —
+  irreversible.
 - Mientras tanto no molesta: un `varchar` nullable cuyo coste es cero.
 
 ---
 
-## 3. Menor
+## 3. Abierto tras la sesión del 2026-08-25
+
+### Desglose de ACTIVOS y PENDIENTES en la pantalla de inicio
+
+Los dos botones del panel SEGUIMIENTOS abren su lista. Funcionan, pero:
+
+- **Tope de 60 filas.** Es lo que devuelve una página de la API y `page_size` no es
+  configurable. Hoy sobra de largo; si algún día una de las dos listas pasa de 60,
+  hay que paginar en el modal. Está marcado con un comentario `ponytail:`.
+- Añadir un tercer desglose es una entrada más en `VISTAS` (`Seguimientos.jsx`):
+  consulta, columnas y texto de lista vacía.
+
+### Folios anteriores al 2026-08-25
+
+No se rellenó la ASIGNACIÓN de los folios que ya estaban puestos en servicios
+existentes (ADR-0005). **Decisión cerrada del usuario: se quedan así.** De 376
+maniobras con folio, solo 8 de esos folios existen en el catálogo, así que el backfill
+habría tocado 5 filas.
+
+### Zona horaria de `ruta_inicio` / `ruta_fin`
+
+Son `timestamp` con `USE_TZ = True` y `TIME_ZONE = 'UTC'`, así que arrastran el mismo
+desfase que llevó a separar la hora de entrega (ADR-0008). **Hoy no se manifiesta**
+porque nadie recorta esas dos columnas a fecha. Si alguna vez se imprimen o se agrupan
+por día, hay que normalizar a `America/Mexico_City` primero.
+
+---
+
+## 4. Menor
 
 - `fecha_vencimiento_licencia` y `fecha_vencimiento_poliza` ya salen en DD/MM/AAAA en
   Catálogos. `fecha_ingreso` de empleados **no**, a propósito: es `CharField` en la base
   y no siempre trae una fecha. Si algún día se normaliza, entra en `COLUMNAS_FECHA`.
-- El CI avisa de que `actions/checkout@v4`, `setup-node@v4` y `azure/login@v2` apuntan a
-  Node 20, ya deprecado, y GitHub los fuerza a Node 24. Funciona hoy; en algún momento
-  habrá que subir esas acciones.
+- El CI avisa en **cada despliegue** de que `actions/checkout@v4`, `setup-node@v4` y
+  `azure/login@v2` apuntan a Node 20, ya deprecado, y GitHub los fuerza a Node 24.
+  Funciona hoy; el día que dejen de forzarlo, el workflow del frontend falla. Es subir
+  esas tres acciones de versión.
+- La tabla de Maniobras está en densidad compacta desde el 2026-08-25 (caben ~18 filas
+  donde antes 12). Los valores originales quedaron anotados en un comentario de
+  `ManiobrasPage.css` por si hay que volver a medio camino.
