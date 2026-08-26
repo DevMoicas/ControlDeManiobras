@@ -178,6 +178,10 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "30/minute",   # máximo 30 peticiones por minuto sin login
         "user": "200/minute",  # máximo 200 peticiones por minuto con login
+        # El sondeo del refresco automático, en su propio cubo (SondeoThrottle):
+        # 20/minuto por pantalla abierta, así que 120 deja sitio a tres pestañas
+        # y el doble de margen, sin morder el cupo del trabajo normal.
+        "sondeo": "120/minute",
     },
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 60,  # cambiado de 30 a 60

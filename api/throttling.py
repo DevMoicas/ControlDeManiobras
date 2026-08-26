@@ -34,3 +34,16 @@ class AnonIpRealThrottle(_IpRealMixin, AnonRateThrottle):
 
 class UserIpRealThrottle(_IpRealMixin, UserRateThrottle):
     pass
+
+
+class SondeoThrottle(_IpRealMixin, UserRateThrottle):
+    """Cupo propio para el sondeo del refresco automatico.
+
+    A un tick cada 3 s son 20 peticiones por minuto y pantalla abierta. Con el
+    cupo general de 200/minuto compartido, quien tenga Maniobras y Vacios en dos
+    pestanas gasta el 20% del presupuesto sin haber hecho nada, y un rato de
+    trabajo intenso lo dejaria rozando el 429 — que en pantalla se ve como un
+    error sin explicacion. Con cubo aparte, el sondeo no puede quitarle sitio al
+    trabajo de verdad ni al reves.
+    """
+    scope = 'sondeo'

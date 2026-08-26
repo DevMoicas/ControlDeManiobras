@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .Serializers import ReporteViajeSerializer, TorreFolioSerializer, TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer, CostoExtraSerializer, PendienteSerializer, TorreControlSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from .throttling import SondeoThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .Serializers import CustomTokenObtainPairSerializer, DispositivoConfianzaSerializer
 from . import confianza
@@ -29,7 +30,8 @@ from datetime import date
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from django.db.models import Case, F, IntegerField, Q, Value, When
+from django.utils.dateparse import parse_datetime
+from django.db.models import Case, Count, F, IntegerField, Max, Q, Value, When
 from django.http import FileResponse, HttpResponse
 from openpyxl import load_workbook
 from openpyxl.worksheet.page import PageMargins
@@ -469,6 +471,69 @@ class AuditoriaMixin:
         serializer.save(updated_by=usuario)
 
 
+# ── Refresco automatico: el reloj de una tabla ───────────────────────────────
+# La mitad servidor de useAutoRefresco.js. El navegador pregunta cada 3 s "¿ha
+# cambiado algo?" y solo pide datos cuando la respuesta cambia.
+#
+# Dos numeros y no uno: MAX(updated_at) detecta altas y ediciones, pero NO los
+# borrados — la fila que se va no baja el maximo de las que quedan, asi que el
+# reloj se quedaria clavado y la fila borrada seguiria en pantalla para siempre.
+# El COUNT es lo que cierra ese hueco.
+#
+# Se eligio esto y no WebSockets porque la factura real de Azure es ~$16.55/mes
+# y Redis costaria mas que el sistema entero; ver el analisis del 2026-08-26.
+class CambiosMixin:
+    """Anade `GET <recurso>/cambios/` y el filtro `?modificado_desde=`.
+
+    El reloj se calcula sobre el queryset YA FILTRADO: quien mira Vacios
+    pendientes solo se entera de lo que afecta a esa vista, y un vacio que pasa
+    a entregado se nota como una baja en su count — que es justo lo que hay que
+    repintar.
+    """
+
+    # ponytail: sin indice en updated_at, a proposito y medido (2026-08-26). El
+    # COUNT obliga a recorrer la tabla entera, asi que Postgres IGNORA el indice
+    # y hace Seq Scan igual: 0.147 ms con indice contra 0.189 ms sin el, ruido.
+    # Con 414 maniobras creciendo a 87 al ano, 5.000 filas (0.7% de un core en
+    # sondeo) quedan a decadas vista. El dia que duela, la salida NO es indexar:
+    # es quitar el COUNT y detectar los borrados de otra forma.
+    @action(detail=False, methods=['get'], url_path='cambios',
+            throttle_classes=[SondeoThrottle])
+    def cambios(self, request):
+        reloj = self.filter_queryset(self.get_queryset()).aggregate(
+            t=Max('updated_at'), n=Count('id'))
+        return Response({
+            # Cadena vacia y no null: el front compara con === y '' evita tener
+            # que distinguir "sin fecha" de "primera vez".
+            't': reloj['t'].isoformat() if reloj['t'] else '',
+            'n': reloj['n'],
+        })
+
+    def get_queryset(self):
+        """`?modificado_desde=<ISO>` acota a lo tocado despues de esa marca.
+
+        Con esto el refresco pide UNA o dos filas en vez de sesenta, y la lista
+        del navegador se actualiza por id sin perder el scroll ni las paginas ya
+        cargadas.
+
+        Las filas con updated_at NULL quedan fuera a proposito: son las
+        anteriores a la auditoria (383 de 414 maniobras) y, por definicion, nadie
+        las ha tocado desde entonces. En cuanto se editan, auto_now les pone
+        fecha y entran solas.
+        """
+        qs = super().get_queryset()
+        desde = self.request.query_params.get('modificado_desde')
+        if not desde:
+            return qs
+        marca = parse_datetime(desde)
+        if marca is None:
+            # Sin esto, una marca ilegible devolveria la tabla entera como si
+            # todo hubiera cambiado, y el refresco pasaria de 40 bytes a 60 filas
+            # cada 3 segundos sin que nadie lo note.
+            raise ValidationError({'modificado_desde': 'Marca de tiempo no valida.'})
+        return qs.filter(updated_at__gt=marca)
+
+
 # ── Gasto automatico al asignar el folio ─────────────────────────────────────
 # Ver docs/planes/PLAN_GASTO_AUTOMATICO.md (rama main).
 _TRANSPORTISTA_PROPIO = 'FRABA CONTAINER'
@@ -806,7 +871,7 @@ class OrdenNullsLast(OrderingFilter):
         ])
 
 
-class ManiobraViewSet(AuditoriaMixin, viewsets.ModelViewSet):
+class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
     # prefetch_related: la columna Costos Extra necesita los enlaces de cada
     # fila. Sin esto, una página de 60 maniobras hace 60 consultas extra.
     queryset = Maniobra.objects.all().prefetch_related('costos_extra_links').order_by("-id")
@@ -1212,7 +1277,7 @@ class GastoViewSet(viewsets.ModelViewSet):
             )
         return super().destroy(request, *args, **kwargs)
 
-class VacioViewSet(AuditoriaMixin, viewsets.ModelViewSet):
+class VacioViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
     queryset = Vacio.objects.all().order_by("-id")
     serializer_class = VacioSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
@@ -1616,8 +1681,15 @@ class FolioViewSet(viewsets.ModelViewSet):
                 # y el renombrado puede caer en cualquiera de ellas. Dejar fuera
                 # folio_2 deja esa maniobra apuntando a un codigo que ya no
                 # existe, y disponibles() vuelve a ofrecer el numero como libre.
-                Maniobra.objects.filter(folio=anterior).update(folio=folio.codigo)
-                Maniobra.objects.filter(folio_2=anterior).update(folio_2=folio.codigo)
+                # updated_at a mano: auto_now solo corre en save(), no en un
+                # update() masivo. Sin esto el renombrado seria invisible para el
+                # refresco automatico (CambiosMixin lee ese reloj) y las demas
+                # pantallas seguirian mostrando el codigo viejo hasta un F5.
+                ahora = timezone.now()
+                Maniobra.objects.filter(folio=anterior).update(
+                    folio=folio.codigo, updated_at=ahora)
+                Maniobra.objects.filter(folio_2=anterior).update(
+                    folio_2=folio.codigo, updated_at=ahora)
                 # Y la torre. Es el UNICO vinculo entre el tablero y Maniobras:
                 # sin esto, la fila se queda con el codigo viejo, get_servicio()
                 # no encuentra la maniobra y la unidad aparece con su folio y sin
