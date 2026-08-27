@@ -253,7 +253,10 @@ class DieselDelReporteAlGastoTests(BaseGastoAutomatico):
         gasto.refresh_from_db()
         self.assertEqual(gasto.gastos_totales, Decimal('7940.00'))  # 7440 + 500
 
-    def test_pisa_el_diesel_capturado_a_mano(self):
+    def test_NO_pisa_el_diesel_capturado_a_mano(self):
+        """El caso que motivo la regla (usuario, 2026-08-27): alguien anota el
+        diesel en Gastos hoy y el coordinador guarda su reporte pasado manana.
+        Antes, lo del reporte se llevaba por delante ese trabajo sin avisar."""
         m, gasto = self.maniobra_con_gasto()
         gasto.gasto_diesel = Decimal('10000')
         gasto.save()
@@ -262,7 +265,66 @@ class DieselDelReporteAlGastoTests(BaseGastoAutomatico):
             {'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80'}])
 
         gasto.refresh_from_db()
+        self.assertEqual(gasto.gasto_diesel, Decimal('10000.00'))
+
+    def test_el_descuadre_se_ve_en_la_lista_de_reportes(self):
+        """No basta con no pisar: si nadie se entera, las dos cifras se quedan
+        distintas para siempre. El aviso viaja en el propio reporte."""
+        m, gasto = self.maniobra_con_gasto()
+        gasto.gasto_diesel = Decimal('10000')
+        gasto.save()
+
+        r = self.crear_reporte('F-2279', [
+            {'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80'}])
+
+        self.assertIs(r.data['diesel_coincide'], False)
+        self.assertEqual(Decimal(r.data['diesel_reporte']), Decimal('7440.00'))
+        self.assertEqual(Decimal(r.data['diesel_gasto']),   Decimal('10000.00'))
+
+    def test_si_coinciden_no_se_avisa_de_nada(self):
+        m, gasto = self.maniobra_con_gasto()
+        gasto.gasto_diesel = Decimal('7440')
+        gasto.save()
+
+        r = self.crear_reporte('F-2279', [
+            {'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80'}])
+
+        self.assertIs(r.data['diesel_coincide'], True)
+
+    def test_sin_diesel_en_el_gasto_no_hay_descuadre_que_avisar(self):
+        """El gasto vacio no es un desacuerdo: es justo lo que el reporte viene
+        a rellenar."""
+        m, gasto = self.maniobra_con_gasto()
+
+        r = self.crear_reporte('F-2279', [
+            {'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80'}])
+
+        self.assertIs(r.data['diesel_coincide'], True)   # ya lo acaba de escribir
+        gasto.refresh_from_db()
         self.assertEqual(gasto.gasto_diesel, Decimal('7440.00'))
+
+    def test_cuadrarlo_a_mano_devuelve_el_mando_al_reporte(self):
+        """Una persona resuelve el descuadre poniendo en Gastos lo que dice el
+        reporte. A partir de ahi el importe vuelve a ser del reporte, o su
+        siguiente carga se leeria como un descuadre nuevo y no volcaria jamas."""
+        m, gasto = self.maniobra_con_gasto()
+        gasto.gasto_diesel = Decimal('10000')
+        gasto.save()
+        rid = self.crear_reporte('F-2279', [
+            {'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80'}]).data['id']
+
+        # Se cuadra a mano en Gastos y se vuelve a guardar el reporte.
+        self.cliente.patch('/api/gastos/%s/' % gasto.id,
+                           {'gasto_diesel': '7440'}, format='json')
+        self.cliente.patch('%s%s/' % (self.REPORTES, rid), {'coordinador': 'Ali'},
+                           format='json')
+
+        # Y ahora una carga mas: ya puede volcar.
+        self.cliente.patch('%s%s/' % (self.REPORTES, rid), {'cargas': [
+            {'orden': 2, 'litros_diesel': '100', 'precio_litro': '24.50'}]}, format='json')
+
+        gasto.refresh_from_db()
+        self.assertEqual(gasto.gasto_diesel, Decimal('9890.00'))
 
     def test_anadir_una_carga_despues_actualiza_el_gasto(self):
         """La razon de que pise: el reporte se llena por etapas."""

@@ -692,6 +692,14 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
     """
     cargas      = CargaCombustibleSerializer(many=True, required=False)
     km_totales  = serializers.SerializerMethodField()
+    # El descuadre del diesel, para el aviso de la tabla de reportes. Los tres
+    # van juntos a proposito: el aviso hay que poder LEERLO ("reporte 9,890 /
+    # gastos 10,000"), no solo verlo encendido. `diesel_coincide` lo decide el
+    # servidor y no el front para que la pantalla no pueda decir que cuadra
+    # mientras el volcado se niega a escribir por lo contrario.
+    diesel_reporte  = serializers.SerializerMethodField()
+    diesel_gasto    = serializers.SerializerMethodField()
+    diesel_coincide = serializers.SerializerMethodField()
     # rendimiento NO es un SerializerMethodField: es una columna de verdad, que
     # el modelo recalcula en cada escritura. read_only para que nadie la mande
     # desde fuera — el frontend manda el reporte entero y ahí viaja su copia
@@ -708,7 +716,11 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
     class Meta:
         model  = ReporteViaje
         fields = '__all__'
-        read_only_fields = ('creado_en', 'actualizado_en', 'rendimiento')
+        # diesel_volcado es memoria interna del volcado: si se pudiera mandar
+        # desde fuera, cualquiera desactivaria la proteccion de lo capturado a
+        # mano con solo declarar el importe que quisiera pisar.
+        read_only_fields = ('creado_en', 'actualizado_en', 'rendimiento',
+                            'diesel_volcado')
 
     # Los CharField/TextField del modelo son blank=True, default='': NOT NULL en
     # la base. Se derivan del modelo y no se listan a mano para que añadir un
@@ -731,6 +743,26 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
             data = {clave: ('' if clave in self._TEXTOS and valor is None else valor)
                     for clave, valor in data.items()}
         return super().to_internal_value(data)
+
+    # ── Diesel: reporte contra gastos ───────────────────────────────────────
+    # ponytail: dos consultas por reporte (maniobra y gasto). Con la lista
+    # paginada son pocas; si algun dia pesa, resolver los folios de la pagina de
+    # una vez en el ViewSet y pasarlos por contexto.
+    def _diesel(self, reporte):
+        if not hasattr(reporte, '_cache_diesel'):
+            reporte._cache_diesel = reporte.diesel_descuadrado()
+        return reporte._cache_diesel
+
+    def get_diesel_reporte(self, reporte):
+        total = self._diesel(reporte)[0]
+        return str(total) if total is not None else None
+
+    def get_diesel_gasto(self, reporte):
+        actual = self._diesel(reporte)[1]
+        return str(actual) if actual is not None else None
+
+    def get_diesel_coincide(self, reporte):
+        return self._diesel(reporte)[2]
 
     # ── Calculados. No se guardan: ver el docstring del modelo ──────────────
     def get_km_totales(self, reporte):

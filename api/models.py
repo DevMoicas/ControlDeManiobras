@@ -935,6 +935,14 @@ class ReporteViaje(models.Model):
     rendimiento = models.DecimalField(max_digits=6, decimal_places=2,
                                       null=True, blank=True, editable=False)
 
+    # Lo ULTIMO que este reporte escribio en gastos.gasto_diesel. No es un dato
+    # del viaje: es la memoria del volcado, y es lo unico que distingue "ese
+    # importe lo puse yo" de "lo capturo una persona". Sin ella no se puede
+    # respetar lo capturado a mano sin romper el llenado por etapas, que necesita
+    # pisar su propio valor cada vez que se anade una carga.
+    diesel_volcado = models.DecimalField(max_digits=10, decimal_places=2,
+                                         null=True, blank=True)
+
     creado_en      = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
 
@@ -974,6 +982,39 @@ class ReporteViaje(models.Model):
         return (Decimal(km) / litros).quantize(Decimal('0.01'),
                                                rounding=ROUND_HALF_UP)
 
+    def gasto_del_folio(self):
+        """El gasto al que le toca el diesel de este reporte, o None.
+
+        El folio puede estar en cualquiera de las dos columnas de la maniobra: un
+        Full repartido gasta un folio por operador. Mismo criterio que la torre.
+        """
+        maniobra = Maniobra.objects.filter(
+            models.Q(folio=self.folio) | models.Q(folio_2=self.folio)).first()
+        if maniobra is None:
+            return None
+        return Gasto.objects.filter(maniobra=maniobra).first()
+
+    def diesel_descuadrado(self):
+        """(total del reporte, importe en Gastos, si coinciden).
+
+        `coinciden` es None cuando no hay nada que comparar —el reporte aun no
+        tiene precios, no hay gasto, o el gasto no tiene diesel capturado—, y en
+        ese caso la pantalla no avisa de nada: no hay dos cifras que discrepen.
+        """
+        total = self.total_diesel()
+        gasto = self.gasto_del_folio()
+        actual = gasto.gasto_diesel if gasto else None
+        if total is None or actual is None:
+            return total, actual, None
+        return total, actual, actual == total
+
+    def _recordar_volcado(self, total):
+        """Deja constancia de que este importe es el que puso el reporte."""
+        if self.diesel_volcado == total:
+            return
+        self.diesel_volcado = total
+        self.save(update_fields=['diesel_volcado', 'actualizado_en'])
+
     def total_diesel(self):
         """Lo que costo el diesel del viaje: suma de litros x precio de las cinco
         cargas. None si ninguna tiene los dos datos — no es lo mismo que cero.
@@ -992,12 +1033,17 @@ class ReporteViaje(models.Model):
     def volcar_diesel_al_gasto(self, usuario=''):
         """Escribe el costo del diesel en el gasto del folio. Devuelve si escribio.
 
-        El reporte es el dueno de esa cifra: trae el detalle por parada, y como se
-        captura por etapas tiene que poder pisar lo que hubiera — si respetara lo
-        anterior, la primera carga fijaria el valor y las cuatro siguientes nunca
-        llegarian al gasto. El campo sigue siendo editable a mano en Gastos
-        (decision del usuario, 2026-08-24): lo que se escriba ahi aguanta hasta
-        que alguien vuelva a guardar el reporte.
+        NO pisa lo que capturo una persona (usuario, 2026-08-27). Alguien anota
+        el diesel a mano en Gastos hoy y el coordinador guarda su reporte pasado
+        manana: antes, lo del reporte se llevaba por delante ese trabajo sin
+        avisar. Ahora, si las dos cifras no coinciden, el gasto se queda como
+        esta y la pantalla de reportes ensena el descuadre para que una persona
+        decida cual vale (ver diesel_descuadrado).
+
+        Lo que SI sigue pisando es su propio volcado anterior, que es lo que hace
+        posible el llenado por etapas: sin eso, la primera carga fijaria el valor
+        y las cuatro siguientes nunca llegarian al gasto. La diferencia entre
+        "esto lo puse yo" y "esto lo puso una persona" es `diesel_volcado`.
 
         Si no hay gasto no se crea ninguno: los folios antiguos son manuales y los
         viajes de terceros no llevan gasto. El reporte se guarda igual.
@@ -1005,14 +1051,19 @@ class ReporteViaje(models.Model):
         total = self.total_diesel()
         if total is None:
             return False
-        # El folio puede estar en cualquiera de las dos columnas: un Full
-        # repartido gasta un folio por operador. Mismo criterio que la torre.
-        maniobra = Maniobra.objects.filter(
-            models.Q(folio=self.folio) | models.Q(folio_2=self.folio)).first()
-        if maniobra is None:
+        gasto = self.gasto_del_folio()
+        if gasto is None:
             return False
-        gasto = Gasto.objects.filter(maniobra=maniobra).first()
-        if gasto is None or gasto.gasto_diesel == total:
+        actual = gasto.gasto_diesel
+        if actual == total:
+            # Nada que escribir, pero si que recordar: si alguien cuadro el gasto
+            # a mano con el reporte y no lo anotaramos, este reporte no volveria a
+            # poder volcar nunca — su siguiente carga se leeria como descuadre.
+            self._recordar_volcado(total)
+            return False
+        if actual is not None and actual != self.diesel_volcado:
+            # El importe que hay no lo puso este reporte: lo capturo o lo corrigio
+            # una persona. No se toca.
             return False
         gasto.gasto_diesel = total
         if usuario:
@@ -1020,6 +1071,7 @@ class ReporteViaje(models.Model):
         # save() completo y no update(): gastos_totales se recalcula en
         # Gasto.save(), asi que un UPDATE directo dejaria el total desfasado.
         gasto.save()
+        self._recordar_volcado(total)
         return True
 
     def refrescar_rendimiento(self):
