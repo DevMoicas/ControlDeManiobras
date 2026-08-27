@@ -416,6 +416,9 @@ class GastoSerializer(serializers.ModelSerializer):
             'maniobra': {'required': False}  # para que PUT no lo exija
         }
 
+    def validate_color(self, valor):
+        return validar_color_de_fila(valor)
+
     def validate_formulas(self, valor):
         """El desglose de las celdas de dinero: {campo: "=150+230"}.
 

@@ -17,10 +17,12 @@ Solo corre con:  Manage.py test api --settings=config.settings_test
 """
 from django.contrib.auth import get_user_model
 from django.db import connections
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from rest_framework.test import APIClient
 
 from api.models import Maniobra, Vacio
+from api.Serializers import GastoSerializer
+from rest_framework import serializers as drf_serializers
 
 
 class BaseColor(TestCase):
@@ -161,3 +163,18 @@ class VacioColorTests(TestCase):
         self.pintar('#b6d7a8')
         self.assertEqual(self.pintar(None).status_code, 200)
         self.assertIsNone(self.color_guardado())
+
+
+class GastoColorTests(SimpleTestCase):
+    """Gastos usa la misma validación. Igual que en Vacíos, aquí solo se
+    comprueba el enganche: una columna `color` en un modelo nuevo sin su
+    `validate_color` deja la puerta abierta sin que nada falle.
+
+    Sin BD: la validación es una función pura del serializer."""
+
+    def test_engancha_la_validacion_compartida(self):
+        campo = GastoSerializer()
+        self.assertEqual(campo.validate_color('#B6D7A8'), '#b6d7a8')
+        self.assertIsNone(campo.validate_color(''))
+        with self.assertRaises(drf_serializers.ValidationError):
+            campo.validate_color('#b6d7a8; background-image: url(x)')

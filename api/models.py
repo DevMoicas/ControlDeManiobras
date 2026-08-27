@@ -246,6 +246,11 @@ class Gasto(models.Model):
     # tracto): se escribe a mano en la fila y no se deriva del folio.
     unidad = models.CharField(max_length=100, null=True, blank=True)
 
+    # Relleno elegido a mano para la fila, "#rrggbb", o NULL si no se ha pintado.
+    # Mismo contrato que Maniobra.color y Vacio.color (migraciones 0047 y 0048):
+    # el valor acaba dentro del CSS de la tabla, así que lo valida el serializer.
+    color = models.CharField(max_length=7, null=True, blank=True)
+
     # Desglose tal cual se escribió en cada celda de dinero, por campo:
     # {"casetas_ida": "=150+230+430"}. La columna de dinero guarda el TOTAL —es
     # lo que suma save()—; esto solo sirve para volver a enseñar la fórmula al
