@@ -345,7 +345,11 @@ const MANIOBRA_VACIA = {
   // cliente = nombre (lo que se ve en la tabla); cliente_id = a cuál fila del
   // catálogo apunta. El id es lo único que distingue dos clientes homónimos.
   cliente: "", cliente_id: null, origen: "", destino: "", status_piso: "", transportista: "", tercero: "", asignacion_operador_status: "",
-  unidad: "", remolque: "", remolque_2: "", folio: "", vacio_patio: "", status_vacio: "",
+  // STATUS VACÍO nace en "pendiente": el contenedor de una maniobra recién dada
+  // de alta siempre está por devolver, así que el estado inicial es el mismo que
+  // el de la fila que se crea en Vacíos (_crear_vacios_del_folio). Se puede
+  // cambiar en la propia fila nueva antes de guardar.
+  unidad: "", remolque: "", remolque_2: "", folio: "", vacio_patio: "", status_vacio: "pendiente",
   fecha_entrega_mercancia: "", hora_entrega: "", no_factura: "", dd: "", ccp: "", ruta_inicio: "", ruta_fin: "",
   // Segundo operador y su carga (migración 0035)
   operador_2: "", unidad_2: "", folio_2: "", remolque_3: "", remolque_4: "",
