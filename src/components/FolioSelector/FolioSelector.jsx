@@ -6,7 +6,10 @@ import "./FolioSelector.css";
 
 /**
  * FolioSelector
- * Muestra los últimos 30 folios de maniobras (con folio no vacío).
+ * Muestra los últimos 50 folios de maniobras (con folio no vacío) y, con el
+ * buscador de arriba, cualquier folio del historial completo — la búsqueda la
+ * resuelve el backend (?buscar=), que filtra ANTES de cortar a 50: buscando
+ * sobre los 50 ya traídos no se llegaría nunca a un folio de hace un año.
  * Al seleccionar, llama a onSelect(maniobraCompleta) con el objeto completo.
  *
  * Props:
@@ -21,6 +24,10 @@ import "./FolioSelector.css";
 export default function FolioSelector({ currentValue, onSelect, disabled, placas }) {
   const [abierto, setAbierto]     = useState(false);
   const [folios,  setFolios]      = useState([]);
+  // `busqueda` es lo que se ve al teclear; `consulta` es lo que se pide al
+  // servidor 300 ms después. Sin la espera, cada tecla sería una petición.
+  const [busqueda, setBusqueda]   = useState("");
+  const [consulta, setConsulta]   = useState("");
   const [cargando, setCargando]   = useState(false);
   const [error,   setError]       = useState(null);
   const [coords,  setCoords]      = useState(null);
@@ -41,23 +48,38 @@ export default function FolioSelector({ currentValue, onSelect, disabled, placas
     if (abierto) actualizarCoords();
   }, [abierto]);
 
-  // Cargar folios al abrir el dropdown
+  // Al cerrar, la búsqueda se olvida: abrir el selector otra vez tiene que
+  // enseñar los folios recientes, no el filtro de la vez anterior.
+  useEffect(() => {
+    if (!abierto) { setBusqueda(""); setConsulta(""); }
+  }, [abierto]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setConsulta(busqueda.trim()), 300);
+    return () => clearTimeout(t);
+  }, [busqueda]);
+
+  // Cargar folios al abrir el dropdown y en cada búsqueda
   useEffect(() => {
     if (!abierto) return;
     setCargando(true);
     setError(null);
-    // El filtro va en la URL y no aquí: el endpoint corta a 30 al final, así que
-    // filtrar en el cliente dejaría sin folios a una unidad que lleve días sin
-    // salir. Cada URL tiene su propia entrada de caché.
-    const ruta = placas
-      ? `/maniobras/folios-recientes/?placas=${encodeURIComponent(placas)}`
-      : "/maniobras/folios-recientes/";
-    apiClient
-      .getCatalogo(ruta)
+    // Los dos filtros van en la URL y no aquí: el endpoint corta a 50 al final,
+    // así que filtrar en el cliente dejaría sin folios a una unidad que lleve
+    // días sin salir, y una búsqueda no pasaría nunca de esos 50.
+    const parametros = new URLSearchParams();
+    if (placas)   parametros.set("placas", placas);
+    if (consulta) parametros.set("buscar", consulta);
+    const cadena = parametros.toString();
+    const ruta = `/maniobras/folios-recientes/${cadena ? `?${cadena}` : ""}`;
+    // La lista sin buscar es la de siempre y se cachea (TTL 45s, cada URL su
+    // entrada). Las búsquedas van sin caché: se teclean una vez y llenarían el
+    // caché de catálogos con una entrada por término.
+    (consulta ? apiClient.get(ruta) : apiClient.getCatalogo(ruta))
       .then((data) => setFolios(data || []))
       .catch(() => setError("Error al cargar folios"))
       .finally(() => setCargando(false));
-  }, [abierto, placas]);
+  }, [abierto, placas, consulta]);
 
   // Cerrar con Escape o clic fuera
   useEffect(() => {
@@ -104,11 +126,24 @@ export default function FolioSelector({ currentValue, onSelect, disabled, placas
 
       {abierto && coords && createPortal(
         <div className="fsl-dropdown" ref={dropRef} style={{ top: coords.top, left: coords.left }}>
+          {/* El buscador va DENTRO del desplegable: es el único sitio donde hace
+              falta, y así el botón sigue enseñando el folio elegido. */}
+          <input
+            type="search"
+            className="fsl-buscador"
+            autoFocus
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar folio en todo el historial…"
+            aria-label="Buscar folio"
+          />
           {cargando && <div className="fsl-msg">Cargando...</div>}
           {error && <div className="fsl-msg fsl-error">{error}</div>}
           {!cargando && !error && folios.length === 0 && (
             <div className="fsl-msg">
-              {placas ? "Esta unidad no tiene folios recientes" : "Sin folios registrados"}
+              {consulta
+                ? `Ningún folio contiene "${consulta}"`
+                : placas ? "Esta unidad no tiene folios recientes" : "Sin folios registrados"}
             </div>
           )}
           {folios.map((m) => (

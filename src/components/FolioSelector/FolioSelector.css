@@ -39,6 +39,29 @@
   box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 
+/* Buscador del desplegable. Pegado arriba: la lista scrollea debajo y el campo
+   no se pierde de vista al bajar por los folios. */
+.fsl-buscador {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 4px;
+  padding: 7px 9px;
+  border: 1px solid #e6ecf5;
+  border-radius: 8px;
+  background: #fff;
+  color: #101828;
+  font-family: inherit;
+  font-size: 0.82rem;
+}
+
+.fsl-buscador:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
 .fsl-msg {
   padding: 10px 14px;
   font-size: 0.8rem;
