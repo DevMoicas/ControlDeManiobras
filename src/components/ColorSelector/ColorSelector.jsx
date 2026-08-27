@@ -19,6 +19,9 @@ import { PALETA_SHEETS, esColorValido } from "../../utils/colorFila.mjs";
 import useDropdownNav from "../../hooks/useDropdownNav";
 import "./ColorSelector.css";
 
+// Aire mínimo entre el panel y el borde de la ventana.
+const MARGEN = 8;
+
 /**
  * @param {Object} props
  * @param {string|null} props.color   - "#rrggbb" o null (sin pintar)
@@ -37,10 +40,27 @@ export default function ColorSelector({ color, onSelect, loading = false }) {
 
   // Portal con position: fixed, igual que StatusSelector: sin esto el overflow
   // de la tabla recorta el panel en las últimas filas y no se puede elegir.
+  //
+  // Se coloca bajo el botón, pero PEGADO al borde de la ventana cuando no cabe:
+  // en Gastos el balde vive en la última columna (Acciones) y el panel se salía
+  // por la derecha, y en las últimas filas se salía por abajo. Se mide el panel
+  // ya montado —por eso se pinta oculto hasta tener coordenadas— en vez de
+  // repetir aquí su tamaño del CSS, que acabaría desfasado.
   const actualizarCoords = () => {
     if (!containerRef.current) return;
     const r = containerRef.current.getBoundingClientRect();
-    setCoords({ top: r.bottom + 4, left: r.left });
+    const panel = panelRef.current?.getBoundingClientRect();
+    const ancho = panel?.width ?? 0;
+    const alto = panel?.height ?? 0;
+
+    const left = Math.max(MARGEN, Math.min(r.left, window.innerWidth - ancho - MARGEN));
+    // Si no cabe debajo se abre hacia arriba, y si tampoco, se pega al borde:
+    // más vale desplazado que cortado.
+    const top = r.bottom + 4 + alto + MARGEN <= window.innerHeight
+      ? r.bottom + 4
+      : Math.max(MARGEN, r.top - 4 - alto);
+
+    setCoords({ top, left });
   };
 
   useLayoutEffect(() => {
@@ -104,14 +124,20 @@ export default function ColorSelector({ color, onSelect, loading = false }) {
         />
       </button>
 
-      {open && coords && createPortal(
+      {open && createPortal(
         <div
           className="color-selector__panel"
           id={panelId}
           ref={panelRef}
           role="dialog"
           aria-label="Color de la fila"
-          style={{ top: coords.top, left: coords.left }}
+          // Oculto —que no `display: none`— hasta tener coordenadas: hace falta
+          // que ocupe su sitio para poder medirlo, pero no que se vea saltar.
+          style={{
+            top: coords?.top ?? 0,
+            left: coords?.left ?? 0,
+            visibility: coords ? undefined : "hidden",
+          }}
         >
           <button
             type="button"
