@@ -31,7 +31,8 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
-from django.db.models import Case, Count, F, IntegerField, Max, Q, Value, When
+from django.db.models import Case, CharField, Count, F, IntegerField, Max, Q, Value, When
+from django.db.models.functions import Concat, Substr
 from django.http import FileResponse, HttpResponse
 from openpyxl import load_workbook
 from openpyxl.worksheet.page import PageMargins
@@ -1246,10 +1247,47 @@ class DispositivoConfianzaViewSet(viewsets.ViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 class GastoViewSet(viewsets.ModelViewSet):
     # select_related evita el N+1 que dispara GastoSerializer.folio
-    # (source='maniobra.folio') al serializar cada fila. order_by hace
-    # determinístico el orden entre páginas (antes indefinido).
+    # (source='maniobra.folio') al serializar cada fila. El orden real lo pone
+    # get_queryset(); este order_by es solo la red de seguridad de DRF.
     queryset = Gasto.objects.select_related('maniobra').all().order_by('-id')
     serializer_class = GastoSerializer
+
+    def get_queryset(self):
+        """Los gastos, de la fecha de entrega mas nueva a la mas vieja.
+
+        `gastos.fecha_entrega_mercancia` NO es una fecha en la base: es varchar
+        y hoy convive en DOS formatos, el ISO que escribe el DatePicker
+        ('2026-08-29') y el 'DD/MM/YYYY' que quedo de cuando se tecleaba a mano.
+        Ordenar la columna tal cual seria ordenar texto: '21/06/2026' saldria
+        despues de '20/10/2026' —manda el dia— y los dos formatos se
+        intercalarian entre si. Por eso se ordena por una clave normalizada a
+        ISO, que en texto ya ordena como fecha.
+
+        Lo que no case con ninguno de los dos formatos ('' , '200', textos
+        sueltos) vale NULL y cae al final con nulls_last: sin fecha no hay sitio
+        donde colocarlo, y arriba estorbaria justo lo que se viene a mirar.
+
+        Se normaliza al LEER y no se toca el dato guardado: reescribir la columna
+        cambiaria lo que ve el usuario en filas que nadie pidio tocar. El id
+        desempata para que la paginacion de 60 en 60 no repita ni se salte filas.
+
+        ponytail: la clave se calcula al vuelo en cada consulta, sin indice.
+        Son cientos de filas; si algun dia son cientos de miles, el camino es
+        normalizar la columna a DATE de una vez.
+        """
+        clave_fecha = Case(
+            When(fecha_entrega_mercancia__regex=r'^\d{4}-\d{2}-\d{2}$',
+                 then=F('fecha_entrega_mercancia')),
+            When(fecha_entrega_mercancia__regex=r'^\d{2}/\d{2}/\d{4}$',
+                 then=Concat(Substr('fecha_entrega_mercancia', 7, 4), Value('-'),
+                             Substr('fecha_entrega_mercancia', 4, 2), Value('-'),
+                             Substr('fecha_entrega_mercancia', 1, 2))),
+            default=None,
+            output_field=CharField(),
+        )
+        return (super().get_queryset()
+                .annotate(fecha_orden=clave_fecha)
+                .order_by(F('fecha_orden').desc(nulls_last=True), '-id'))
 
     def perform_create(self, serializer):
         maniobra_id = self.request.data.get('maniobra')
