@@ -83,6 +83,16 @@ const COLUMNAS_MONEDA = [
   'comision_operador', 'reparaciones', 'gastos_totales',
 ];
 
+// INGRESOS y UTILIDAD BRUTA son el margen del viaje: solo las ve un usuario
+// staff (rol admin). Esconderlas aqui es comodidad, no seguridad — quien de
+// verdad las oculta es el backend, que no manda `facturado` a un usuario
+// estandar (ver GastoSerializer.get_fields). UTILIDAD BRUTA ni siquiera existe
+// en la base: se calcula restando, asi que se va con ella.
+const SOLO_ADMIN = ["facturado", "utilidad_bruta"];
+
+const columnasVisibles = (isAdmin) =>
+  (isAdmin ? COLUMNAS : COLUMNAS.filter((col) => !SOLO_ADMIN.includes(col.key)));
+
 const GASTO_VACIO = {
   maniobra: "",  // id de la maniobra elegida en el FolioSelector
   folio: "",     // folio visible; useGastos.agregar lo excluye del POST
@@ -110,6 +120,9 @@ const MODAL_CERRADO = { abierto: false, datos: null };
 // ── Sub-componente: fila de inputs para nuevo gasto ──────────────────────────
 
 function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
+  const { isAdmin } = useAuthContext();
+  const columnas = columnasVisibles(isAdmin);
+
   return (
     <tr>
       {/* Selector de carta porte: últimos folios de maniobras */}
@@ -130,7 +143,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
       </td>
 
       {/*Resto de columnas sin maniobra */}
-      {COLUMNAS.slice(1).map((col) => (
+      {columnas.slice(1).map((col) => (
         <td key={col.key}>
           {col.isFecha ? (
             <DatePicker
@@ -187,6 +200,8 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
 // ── Sub-componente: modal de edición ──────────────────────────────────────────
 
 function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
+  const { isAdmin } = useAuthContext();
+  const columnas = columnasVisibles(isAdmin);
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onCerrar(); };
     window.addEventListener("keydown", onKey);
@@ -210,7 +225,7 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
         </div>
         <form onSubmit={onGuardar} className="modal-form">
           <div className="modal-grid">
-            {COLUMNAS.map((col) => (
+            {columnas.map((col) => (
               <div key={col.key} className="modal-campo">
                 <label htmlFor={`edit-${col.key}`}>{col.label}</label>
                 {col.isFecha ? (
@@ -284,6 +299,7 @@ function Intro() {
 export default function GastosPage() {
   const navigate = useNavigate();
   const { isAdmin } = useAuthContext();
+  const columnas = columnasVisibles(isAdmin);
   const {
     gastos, loading, loadingMore, hasMore, error,
     loadMore, eliminar, actualizar, agregar,
@@ -480,7 +496,7 @@ export default function GastosPage() {
         <table className="gastos-table">
           <thead>
             <tr>
-              {COLUMNAS.map((col) => <th key={col.key}>{col.label}</th>)}
+              {columnas.map((col) => <th key={col.key}>{col.label}</th>)}
               <th style={{ textAlign: "center" }}>Acciones</th>
             </tr>
           </thead>
@@ -498,7 +514,7 @@ export default function GastosPage() {
             {gastosFiltrados.length === 0 ? (
               <tr>
                 <td
-                  colSpan={COLUMNAS.length + 1}
+                  colSpan={columnas.length + 1}
                   style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}
                 >
                   No hay gastos que mostrar con el filtro actual
@@ -507,7 +523,7 @@ export default function GastosPage() {
             ) : (
               gastosFiltrados.map((gasto) => (
                 <tr key={gasto.id} {...propsPintado(gasto.color)}>
-                  {COLUMNAS.map((col) => (
+                  {columnas.map((col) => (
                     <td key={col.key} style={col.style ?? {}}>
                       {col.key === "maniobra"
                         ? (gasto.folio || gasto.maniobra) /* folio del servicio; fallback al id para registros viejos */
