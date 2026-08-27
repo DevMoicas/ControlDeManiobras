@@ -113,10 +113,18 @@ const VISTAS = {
   // abajo lo más lejano. Antes era por FECHA PIS; se conserva el sentido del
   // orden, solo cambia la columna que manda. Las que aún no tienen fecha de
   // entrega quedan al final — lo hace OrdenNullsLast en el backend, igual que en
-  // el desglose de activos. El id desempata dentro del mismo día.
+  // el desglose de activos.
+  //
+  // Dentro del mismo día de entrega, `-sin_pis` baja las que TODAVÍA no tienen
+  // FECHA PIS por debajo de las que ya la tienen asignada (usuario, 2026-08-27).
+  // `sin_pis` es el campo virtual del ManiobraViewSet: vale 0 sin fecha y 1 con
+  // ella, así que va en DESCENDENTE para que el 1 —la que ya la tiene— salga
+  // primero. La tabla de Maniobras pide el mismo campo al revés, y por eso el
+  // criterio vive en ?ordering= y no impuesto en el backend. El id desempata:
+  // sin él, dos filas iguales salen en orden arbitrario.
   pendiente: {
     titulo: "Servicios pendientes",
-    url: "/maniobras/?status=pendiente&ordering=fecha_entrega_mercancia,id",
+    url: "/maniobras/?status=pendiente&ordering=fecha_entrega_mercancia,-sin_pis,id",
     columnas: COLUMNAS_PENDIENTES,
     vacio: "No hay servicios pendientes.",
     // La casilla PENDIENTE DE PROGRAMAR solo existe en este desglose: es el
