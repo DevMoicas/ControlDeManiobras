@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import DatePicker from "react-datepicker";
-import { ArrowLeft, FileSpreadsheet, FileText, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, FileSpreadsheet, FileText, Trash2, Plus, TriangleAlert } from "lucide-react";
 import { useReportesViaje } from "../hooks/useReportesViaje";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
@@ -40,6 +40,11 @@ const fechaCorta = (iso) => {
 
 const mostrarNumero = (valor, sufijo = "") =>
   valor === null || valor === undefined ? "—" : `${valor}${sufijo}`;
+
+// Importe con dos decimales y separador de miles, para el aviso del diésel.
+const dinero = (valor) =>
+  `$${Number(valor).toLocaleString("es-MX", { minimumFractionDigits: 2,
+                                              maximumFractionDigits: 2 })}`;
 
 // ── Piezas del formulario ────────────────────────────────────────────────────
 
@@ -297,6 +302,20 @@ export default function ReporteViajePage() {
                         a 16px no se distinguen, y el title obliga a esperar el
                         tooltip para saber cuál es cuál. */}
                     <div className="rv-acciones">
+                      {/* Aviso de descuadre del diésel. Solo cuando las dos
+                          cifras existen y difieren: el backend ya se negó a
+                          pisar lo capturado en Gastos, así que sin esto nadie se
+                          enteraría de que hay dos números distintos. Lo decide
+                          el servidor (diesel_coincide), no esta pantalla. */}
+                      {r.diesel_coincide === false && (
+                        <span
+                          className="rv-descuadre"
+                          title={`Diésel: el reporte suma ${dinero(r.diesel_reporte)} y en Gastos hay ${dinero(r.diesel_gasto)}. `
+                                 + `No se sobrescribió lo capturado en Gastos: corrige una de las dos y vuelve a guardar el reporte.`}
+                        >
+                          <TriangleAlert size={13} /> Diésel
+                        </span>
+                      )}
                       <button className="rv-btn rv-btn--mini" title="Descargar en Excel"
                               onClick={() => bajar(r, "excel")} disabled={bajando}>
                         <FileSpreadsheet size={13} /> Excel

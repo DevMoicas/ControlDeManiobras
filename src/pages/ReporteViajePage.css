@@ -104,6 +104,24 @@
 }
 
 .rv-acciones { display: flex; align-items: center; gap: 8px; }
+
+/* Aviso de descuadre del diésel, a la izquierda de los descargables. Ámbar y no
+   rojo: no es un error, es que dos personas anotaron cifras distintas y alguien
+   tiene que decidir. El texto completo está en el title. */
+.rv-descuadre {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: help;
+}
 .rv-icono {
   display: inline-flex; padding: 6px; border: 1px solid var(--sheet-edge);
   border-radius: 7px; background: var(--card-bg); color: var(--ink); cursor: pointer;
