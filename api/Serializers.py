@@ -376,6 +376,26 @@ class DispositivoConfianzaSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+# Campos de la fila de gastos donde tiene sentido escribir una suma desglosada
+# ("=150+230+430", cinco casetas pagadas por separado). Son los de dinero: en un
+# campo de texto como `descripcion_gastos` una fórmula convertiría la nota de la
+# persona en un número. `gastos_totales` no está porque es read_only: lo calcula
+# Gasto.save() sumando el resto.
+CAMPOS_CON_FORMULA = frozenset({
+    'casetas_ida', 'casetas_regreso', 'gastos_adicionales', 'entregado',
+    'gasto_tag', 'gasto_diesel', 'comision_operador', 'reparaciones', 'facturado',
+})
+
+# La misma gramática que aplica el front (utils/formulaSuma.mjs): '=' y a partir
+# de ahí solo cifras separadas por + o -. Aquí se revalida porque `formulas` es
+# un jsonb que llega del cliente y el front no es una frontera de confianza.
+FORMULA_VALIDA = re.compile(r'^=\s*[-+]?\s*\d+(?:\.\d+)?(?:\s*[-+]\s*\d+(?:\.\d+)?)*$')
+
+# Tope de longitud: 200 caracteres dan para ~25 sumandos y evitan que la fila se
+# use como almacén de texto arbitrario.
+FORMULA_MAX = 200
+
+
 class GastoSerializer(serializers.ModelSerializer):
     folio = serializers.CharField(source='maniobra.folio', read_only=True)
     # Operador y destino del folio elegido. Se leen de la maniobra enlazada en vez
@@ -395,6 +415,25 @@ class GastoSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'maniobra': {'required': False}  # para que PUT no lo exija
         }
+
+    def validate_formulas(self, valor):
+        """El desglose de las celdas de dinero: {campo: "=150+230"}.
+
+        Se guarda solo para volver a enseñarlo al editar, nunca se recalcula a
+        partir de él: el número que manda es el de la columna. Aun así se valida
+        entero —claves, tipo, gramática y longitud— porque es un jsonb abierto y
+        cualquiera con sesión podría escribir en él.
+        """
+        if not isinstance(valor, dict):
+            raise serializers.ValidationError('Debe ser un objeto {campo: fórmula}.')
+        for campo, formula in valor.items():
+            if campo not in CAMPOS_CON_FORMULA:
+                raise serializers.ValidationError(f'"{campo}" no admite fórmula.')
+            if not isinstance(formula, str) or len(formula) > FORMULA_MAX:
+                raise serializers.ValidationError(f'Fórmula demasiado larga en "{campo}".')
+            if not FORMULA_VALIDA.match(formula):
+                raise serializers.ValidationError(f'Fórmula inválida en "{campo}": {formula!r}')
+        return valor
 
     def get_maniobra_info(self, obj):
         return {

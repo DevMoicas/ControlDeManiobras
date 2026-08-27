@@ -246,6 +246,15 @@ class Gasto(models.Model):
     # tracto): se escribe a mano en la fila y no se deriva del folio.
     unidad = models.CharField(max_length=100, null=True, blank=True)
 
+    # Desglose tal cual se escribió en cada celda de dinero, por campo:
+    # {"casetas_ida": "=150+230+430"}. La columna de dinero guarda el TOTAL —es
+    # lo que suma save()—; esto solo sirve para volver a enseñar la fórmula al
+    # editar, como hace Excel. Sin fórmula, la clave no está.
+    #
+    # Un solo jsonb en vez de una columna por campo: son 8 campos de dinero y
+    # ninguno necesita indexarse ni filtrarse por su fórmula.
+    formulas = models.JSONField(default=dict, blank=True)
+
     # ── Auditoría (quién/cuándo) ──
     created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
