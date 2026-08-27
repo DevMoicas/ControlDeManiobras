@@ -22,8 +22,12 @@ export const useGastos = () => {
         setError(null);
 
         try {
+            // Sin `ordering`: el orden lo pone GastoViewSet.get_queryset() —fecha
+            // de entrega de la mas nueva a la mas vieja, con el id de desempate—
+            // y este endpoint no tiene OrderingFilter, asi que el parametro que
+            // habia aqui no hacia nada y solo sugeria que se podia cambiar.
             const data = await apiClient.get(
-                `/gastos/?page=${page}&page_size=${PAGE_SIZE}&ordering=-id`
+                `/gastos/?page=${page}&page_size=${PAGE_SIZE}`
             );
             const results = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
 
