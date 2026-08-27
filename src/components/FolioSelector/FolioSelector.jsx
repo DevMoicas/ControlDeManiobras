@@ -62,6 +62,12 @@ export default function FolioSelector({ currentValue, onSelect, disabled, placas
   // Cargar folios al abrir el dropdown y en cada búsqueda
   useEffect(() => {
     if (!abierto) return;
+    // Una respuesta VIEJA no puede pisar a la nueva. Tecleando "868" a ritmo
+    // normal salen tres peticiones —"8", "86" y "868"— y la de "8" es la que más
+    // datos trae, así que suele llegar la última: el desplegable encontraba el
+    // 868 y acto seguido volvía a enseñar los 50 folios que llevan un 8.
+    // El flag lo apaga la limpieza del efecto, que corre al cambiar la consulta.
+    let vigente = true;
     setCargando(true);
     setError(null);
     // Los dos filtros van en la URL y no aquí: el endpoint corta a 50 al final,
@@ -76,9 +82,10 @@ export default function FolioSelector({ currentValue, onSelect, disabled, placas
     // entrada). Las búsquedas van sin caché: se teclean una vez y llenarían el
     // caché de catálogos con una entrada por término.
     (consulta ? apiClient.get(ruta) : apiClient.getCatalogo(ruta))
-      .then((data) => setFolios(data || []))
-      .catch(() => setError("Error al cargar folios"))
-      .finally(() => setCargando(false));
+      .then((data) => { if (vigente) setFolios(data || []); })
+      .catch(() => { if (vigente) setError("Error al cargar folios"); })
+      .finally(() => { if (vigente) setCargando(false); });
+    return () => { vigente = false; };
   }, [abierto, placas, consulta]);
 
   // Cerrar con Escape o clic fuera
@@ -146,7 +153,10 @@ export default function FolioSelector({ currentValue, onSelect, disabled, placas
                 : placas ? "Esta unidad no tiene folios recientes" : "Sin folios registrados"}
             </div>
           )}
-          {folios.map((m) => (
+          {/* Mientras se busca NO se deja la lista anterior puesta: son otros
+              folios, y verlos ahi mientras llega la respuesta se lee como que la
+              busqueda no ha filtrado nada. */}
+          {!cargando && folios.map((m) => (
             <button
               key={m.id}
               type="button"
