@@ -579,6 +579,34 @@ def _crear_gasto_del_folio(maniobra, usuario):
     return creado
 
 
+def _sincronizar_fecha_entrega(maniobra, usuario):
+    """Copia al gasto la FECHA DE ENTREGA de su maniobra.
+
+    El gasto nace con la fecha que la maniobra tuviera en ese momento
+    (_crear_gasto_del_folio) y hasta ahora se quedaba con ella para siempre. El
+    caso normal es justo el malo: el folio se asigna ANTES de saber la fecha, asi
+    que el gasto nacia vacio y habia que teclearla otra vez en Gastos. La
+    maniobra es la unica que la sabe, asi que es la que manda.
+
+    Se llama solo cuando la fecha CAMBIA, asi que editar cualquier otra cosa de
+    la maniobra no pisa el gasto. Si la fecha se borra en la maniobra, tambien se
+    borra aqui: son el mismo dato y dos valores distintos serian una mentira.
+
+    str() y no .isoformat(): sobre un str, isoformat() revienta — mismo cuidado
+    que en _crear_gasto_del_folio.
+    """
+    gasto = Gasto.objects.filter(maniobra=maniobra).first()
+    if gasto is None:
+        return False
+    nueva = str(maniobra.fecha_entrega_mercancia or '')
+    if (gasto.fecha_entrega_mercancia or '') == nueva:
+        return False
+    gasto.fecha_entrega_mercancia = nueva
+    gasto.updated_by = usuario
+    gasto.save()
+    return True
+
+
 # ── Vacios automaticos al asignar el folio ───────────────────────────────────
 # Mismo disparo que el gasto: el contenedor que trae el viaje hay que devolverlo,
 # asi que nace en Vacios en cuanto la maniobra tiene folio. Carga suelta no lleva
@@ -954,6 +982,9 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
         # Si el viaje ya tenia segundo operador antes de esta edicion: es lo que
         # distingue "se acaba de repartir el Full" de "ya venia repartido".
         operador_2_antes = (serializer.instance.operador_2 or '').strip()
+        # La fecha de entrega de ANTES, por el mismo motivo: solo se propaga al
+        # gasto cuando cambia de verdad.
+        fecha_entrega_antes = serializer.instance.fecha_entrega_mercancia
         with transaction.atomic(using=get_db_alias()):
             super().perform_update(serializer)
             maniobra = serializer.instance
@@ -970,6 +1001,11 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
                     not folio_antes
                     or (not operador_2_antes and (maniobra.operador_2 or '').strip())):
                 _crear_vacios_del_folio(maniobra, self._usuario())
+            # La fecha de entrega baja al gasto cada vez que cambia en la
+            # maniobra: se pone casi siempre DESPUES de asignar el folio, asi que
+            # copiarla solo al crear el gasto lo dejaba vacio para siempre.
+            if maniobra.fecha_entrega_mercancia != fecha_entrega_antes:
+                _sincronizar_fecha_entrega(maniobra, self._usuario())
             # La asignacion, en cambio, se recalcula siempre: el folio suele
             # ponerse antes de saber quien lo llevara.
             _sincronizar_asignacion_folios(maniobra, antes)

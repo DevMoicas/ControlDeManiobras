@@ -348,3 +348,66 @@ class DieselDelReporteAlGastoTests(BaseGastoAutomatico):
 
         gasto.refresh_from_db()
         self.assertEqual(gasto.gasto_diesel, Decimal('7440.00'))
+
+
+class FechaEntregaSincronizadaTests(BaseGastoAutomatico):
+    """La FECHA DE ENTREGA del gasto la manda la maniobra.
+
+    El gasto nace con la que hubiera al asignar el folio, y el caso normal es
+    justo el malo: el folio se pone ANTES de saber la fecha, asi que el gasto
+    nacia vacio y habia que teclearla otra vez en Gastos.
+    """
+
+    def maniobra_con_gasto(self, **campos):
+        respuesta = self.crear_maniobra(**campos)
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
+        maniobra_id = respuesta.data['id']
+        self.poner_folio(maniobra_id)
+        return maniobra_id
+
+    def fecha_del_gasto(self, maniobra_id):
+        return Gasto.objects.get(maniobra_id=maniobra_id).fecha_entrega_mercancia
+
+    def test_ponerla_en_la_maniobra_la_baja_al_gasto_que_nacio_sin_ella(self):
+        maniobra_id = self.maniobra_con_gasto()
+        self.assertEqual(self.fecha_del_gasto(maniobra_id), '')
+
+        self.cliente.patch(f'{URL}{maniobra_id}/',
+                           {'fecha_entrega_mercancia': '2026-08-29'}, format='json')
+        self.assertEqual(self.fecha_del_gasto(maniobra_id), '2026-08-29')
+
+    def test_corregirla_en_la_maniobra_la_corrige_en_el_gasto(self):
+        maniobra_id = self.maniobra_con_gasto(fecha_entrega_mercancia='2026-08-29')
+        self.assertEqual(self.fecha_del_gasto(maniobra_id), '2026-08-29')
+
+        self.cliente.patch(f'{URL}{maniobra_id}/',
+                           {'fecha_entrega_mercancia': '2026-09-02'}, format='json')
+        self.assertEqual(self.fecha_del_gasto(maniobra_id), '2026-09-02')
+
+    def test_borrarla_en_la_maniobra_la_borra_en_el_gasto(self):
+        # Son el mismo dato: dejar la del gasto seria dar por buena una fecha que
+        # la maniobra ya dice que no sabe.
+        maniobra_id = self.maniobra_con_gasto(fecha_entrega_mercancia='2026-08-29')
+        self.cliente.patch(f'{URL}{maniobra_id}/',
+                           {'fecha_entrega_mercancia': None}, format='json')
+        self.assertEqual(self.fecha_del_gasto(maniobra_id), '')
+
+    def test_editar_otra_cosa_no_toca_la_fecha_del_gasto(self):
+        # Lo que se capturo a mano en Gastos sobrevive mientras nadie cambie la
+        # fecha en la maniobra.
+        maniobra_id = self.maniobra_con_gasto()
+        gasto = Gasto.objects.get(maniobra_id=maniobra_id)
+        gasto.fecha_entrega_mercancia = '13/05/2026'
+        gasto.save()
+
+        self.cliente.patch(f'{URL}{maniobra_id}/', {'destino': 'MANZANILLO'}, format='json')
+        self.assertEqual(self.fecha_del_gasto(maniobra_id), '13/05/2026')
+
+    def test_una_maniobra_sin_gasto_no_revienta(self):
+        # Tercero: no se le crea gasto (ver _es_de_fraba). Cambiarle la fecha no
+        # debe fallar por no encontrar a quien copiarsela.
+        respuesta = self.crear_maniobra(transportista='OTRA LINEA', tercero='SI')
+        maniobra_id = respuesta.data['id']
+        salida = self.cliente.patch(f'{URL}{maniobra_id}/',
+                                    {'fecha_entrega_mercancia': '2026-08-29'}, format='json')
+        self.assertEqual(salida.status_code, 200, salida.data)
