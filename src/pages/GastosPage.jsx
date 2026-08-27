@@ -10,6 +10,8 @@ import SearchBar from "../components/SearchBar/SearchBar";
 import { filtrarBusqueda } from "../utils/buscar.mjs";
 import { evaluarSuma } from "../utils/formulaSuma.mjs";
 import CeldaEditable from "../components/CeldaEditable/CeldaEditable";
+import ColorSelector from "../components/ColorSelector/ColorSelector";
+import { esColorValido, textoSobre } from "../utils/colorFila.mjs";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
 import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import { useAlerta } from "../components/Alertas/Alertas";
@@ -92,6 +94,16 @@ const GASTO_VACIO = {
   operador: "", destino: "", unidad: ""
   // gastos_totales lo quitas porque es calculado
 };
+
+// Props de pintado de una fila. Mismo contrato que Maniobras y Vacíos: sin un
+// color válido no hay clase ni variables, así que la fila vuelve al fondo normal
+// y restablecer no tiene que recordar nada.
+const propsPintado = (color) => (esColorValido(color)
+  ? {
+      className: "row-pintada",
+      style: { "--color-fila": color, "--texto-fila": textoSobre(color) },
+    }
+  : {});
 
 const MODAL_CERRADO = { abierto: false, datos: null };
 
@@ -494,7 +506,7 @@ export default function GastosPage() {
               </tr>
             ) : (
               gastosFiltrados.map((gasto) => (
-                <tr key={gasto.id}>
+                <tr key={gasto.id} {...propsPintado(gasto.color)}>
                   {COLUMNAS.map((col) => (
                     <td key={col.key} style={col.style ?? {}}>
                       {col.key === "maniobra"
@@ -528,8 +540,15 @@ export default function GastosPage() {
 
                   {/* ── Columna Acciones ─────────────────────────────── */}
                   <td>
-                    <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-                      
+                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px" }}>
+
+                      {/* PINTAR LA FILA → TODOS. Mismo balde que Maniobras y
+                          Vacíos; el color se guarda en la fila (columna `color`). */}
+                      <ColorSelector
+                        color={gasto.color}
+                        onSelect={(valor) => handleGuardarCampo(gasto, "color", valor)}
+                      />
+
                       {/* EDITAR → TODOS */}
                       <button
                         className="btn-icon btn-editar"

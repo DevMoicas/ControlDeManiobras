@@ -247,6 +247,33 @@
 .gastos-container .gastos-table tbody tr { transition: background 0.12s; }
 .gastos-container .gastos-table tbody tr:hover td { background: var(--paper-deep); }
 
+/* ── Color de fila puesto a mano (el balde) ───────────────────────────────────
+   Copia del mismo bloque de Vacíos y Maniobras. Va DESPUÉS del hover a
+   propósito: misma especificidad, así que gana por orden y el color elegido no
+   desaparece al pasar el ratón; el hover se resuelve oscureciendo su propio
+   color, no sustituyéndolo.
+
+   `--texto-fila` existe porque la paleta de Sheets llega hasta el negro: sin
+   cambiar el texto a blanco, las filas oscuras quedarían ilegibles.
+
+   ponytail: G. Totales y Utilidad Bruta llevan su color en un `style` inline
+   (rojo y verde), y lo inline gana a esto, así que conservan su color sobre la
+   fila pintada. Es lo que hace una hoja de cálculo con una fuente de color. Si
+   sobre los tonos oscuros molesta, la salida es moverlos a una clase. */
+.gastos-container .gastos-table tbody tr.row-pintada td {
+  background: var(--color-fila);
+  color: var(--texto-fila);
+  /* Solo en las filas pintadas a mano: sobre un relleno elegido a dedo el texto
+     tiene que leerse igual de bien que sobre el blanco, y el color por sí solo
+     no basta en los tonos medios. */
+  font-weight: 600;
+}
+
+.gastos-container .gastos-table tbody tr.row-pintada:hover td {
+  background: var(--color-fila);
+  filter: brightness(0.94);
+}
+
 /* ── El talón ─────────────────────────────────────────────────────────────────
    La franja izquierda que identifica el registro, separada del cuerpo por una
    regla vertical. La carta porte es lo que identifica el gasto y al desplazarse
