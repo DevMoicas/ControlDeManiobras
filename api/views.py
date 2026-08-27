@@ -1033,14 +1033,19 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='folios-recientes')
     def folios_recientes(self, request):
-        """Devuelve UNA FILA POR FOLIO de las últimas 30 maniobras, incluyendo
+        """Devuelve UNA FILA POR FOLIO de las últimas 50 maniobras, incluyendo
         unidad (placas/tipo/modelo del tracto) y remolques para autollenar los
         documentos a partir del folio elegido.
 
         Un Full repartido entre dos operadores gasta un folio por operador y
         produce DOS filas: cada una con el operador, el tracto, los remolques y
         el contenedor que le tocan. Así elegir el folio en el modal ya elige de
-        quién es el documento — no hace falta un selector de operador aparte."""
+        quién es el documento — no hace falta un selector de operador aparte.
+
+        `?buscar=` busca en TODO el historial, no solo en las 50 últimas: filtra
+        antes del corte y devuelve las 50 coincidencias más recientes. Es lo que
+        permite llegar a un folio viejo sin subir el límite para todos, que es lo
+        que haría lenta la apertura normal del selector."""
         con_folio   = Q(folio__isnull=False)   & ~Q(folio='')
         con_folio_2 = Q(folio_2__isnull=False) & ~Q(folio_2='')
         consulta = Maniobra.objects.filter(con_folio | con_folio_2)
@@ -1059,7 +1064,15 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
         if placas:
             consulta = consulta.filter(Q(unidad=placas) | Q(unidad_2=placas))
 
-        maniobras = consulta.select_related('cliente_fk').order_by('-id')[:30]
+        # `?buscar=` para llegar a un folio que ya no está entre los últimos 50.
+        # Igual que `placas`, filtra ANTES del corte: buscando después, un folio
+        # de hace un año no aparecería nunca por muy exacto que fuera el término.
+        buscar = (request.query_params.get('buscar') or '').strip()
+        if buscar:
+            consulta = consulta.filter(
+                Q(folio__icontains=buscar) | Q(folio_2__icontains=buscar))
+
+        maniobras = consulta.select_related('cliente_fk').order_by('-id')[:50]
         # Mapa placas → tracto: resuelve Tipo de Unidad y Modelo sin N consultas.
         # Incluye los dos tractos: la Bitácora de Sueño del operador 2 necesita
         # el suyo igual que la del 1.
@@ -1084,6 +1097,17 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
             c.nombre_cliente: c
             for c in Cliente.objects.filter(nombre_cliente__in=nombres_cliente)
         } if nombres_cliente else {}
+
+        # Un Full trae DOS folios y la maniobra entra en la consulta si cualquiera
+        # de los dos casa. Sin volver a mirar folio a folio, buscar "894"
+        # devolvería también el 895 de su compañero, y acotar por placas
+        # ofrecería el folio del otro operador.
+        def ofrecer(folio, unidad):
+            if not folio:
+                return False
+            if placas and (unidad or '').strip() != placas:
+                return False
+            return not buscar or buscar.lower() in folio.lower()
 
         data = []
         for m in maniobras:
@@ -1158,7 +1182,7 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
                 'ruta_fin':    m.ruta_fin.isoformat() if m.ruta_fin else '',
             }
 
-            if m.folio and (not placas or (m.unidad or '').strip() == placas):
+            if ofrecer(m.folio, m.unidad):
                 tracto = tractos.get(m.unidad)
                 data.append({
                     **comun,
@@ -1179,7 +1203,7 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
                     'parte': '1' if dos_operadores else 'ambos',
                 })
 
-            if m.folio_2 and (not placas or (m.unidad_2 or '').strip() == placas):
+            if ofrecer(m.folio_2, m.unidad_2):
                 tracto_2 = tractos.get(m.unidad_2)
                 data.append({
                     **comun,
