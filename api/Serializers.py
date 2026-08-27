@@ -416,6 +416,30 @@ class GastoSerializer(serializers.ModelSerializer):
             'maniobra': {'required': False}  # para que PUT no lo exija
         }
 
+    def get_fields(self):
+        """INGRESOS (`facturado`) solo para staff.
+
+        La utilidad del viaje es el margen del negocio y no la ve un usuario
+        estandar. Se quita AQUI y no solo en la tabla porque la interfaz no es
+        una defensa: cualquiera con la consola abierta lee la respuesta del
+        endpoint. La columna Utilidad Bruta no existe en la base —la calcula el
+        front restando `gastos_totales` a esto—, asi que desaparece con ella.
+
+        Quitarlo del serializer lo quita tambien de la ESCRITURA: un PUT de un
+        usuario estandar manda la fila entera, y DRF ignora el campo que no
+        conoce, asi que el importe guardado se queda como estaba en vez de
+        borrarse. `gastos_totales` no se toca: ese lo ve todo el mundo.
+
+        Sin `request` en el contexto (usos internos, pruebas del serializer
+        suelto) se devuelven todos los campos: ahi no hay usuario al que ocultar
+        nada.
+        """
+        campos = super().get_fields()
+        peticion = self.context.get('request')
+        if peticion is not None and not getattr(peticion.user, 'is_staff', False):
+            campos.pop('facturado', None)
+        return campos
+
     def validate_color(self, valor):
         return validar_color_de_fila(valor)
 
