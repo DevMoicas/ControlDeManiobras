@@ -25,6 +25,7 @@ import SearchBar from "../components/SearchBar/SearchBar";
 import { useAlerta } from "../components/Alertas/Alertas";
 import ColorSelector from "../components/ColorSelector/ColorSelector";
 import { esColorValido, textoSobre } from "../utils/colorFila.mjs";
+import { filtrarBusqueda } from "../utils/buscar.mjs";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import { useAuthContext } from "../context/AuthContext";
 import DatePicker from "react-datepicker";
@@ -1488,18 +1489,12 @@ export default function ManiobrasPage() {
   // Los filtros de status y el de "Terceros" se resuelven en el backend (ver
   // useManiobras.buildUrl), así que aquí solo queda el filtro de búsqueda local
   // sobre lo ya cargado.
-  const maniobrasFiltradas = useMemo(() => (
-    maniobras.filter((m) =>
-      !busqueda ||
-      // `costos_extra` es una lista de objetos: sin este caso, String() la
-      // aplasta a "[object Object]" y buscar "object" casaría con media tabla.
-      // De paso, los conceptos se vuelven buscables por su nombre.
-      Object.values(m).some((v) =>
-        (Array.isArray(v) ? v.map((c) => c?.movimiento ?? "").join(" ") : String(v))
-          .toLowerCase().includes(busqueda.toLowerCase())
-      )
-    )
-  ), [maniobras, busqueda]);
+  // Acepta exclusiones ("-zuñiga") y frases entre comillas; ver utils/buscar.mjs,
+  // que es donde vive el caso de `costos_extra` (lista de objetos).
+  const maniobrasFiltradas = useMemo(
+    () => filtrarBusqueda(maniobras, busqueda),
+    [maniobras, busqueda]
+  );
 
   const handleVerFotos = useCallback((id) => setFotoModal({ registroId: id }), []);
 
@@ -1529,7 +1524,11 @@ export default function ManiobrasPage() {
       <Intro />
 
       <div className="mp-search">
-        <SearchBar value={busquedaInput} onChange={setBusquedaInput} />
+        <SearchBar
+          value={busquedaInput}
+          onChange={setBusquedaInput}
+          placeholder='Buscar…  ("-" excluye. ej: -zuñiga/-"jose zuñiga")'
+        />
       </div>
 
       <div className="toolbar">

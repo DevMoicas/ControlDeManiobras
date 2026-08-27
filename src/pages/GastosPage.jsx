@@ -7,6 +7,8 @@ import { Trash2, SquarePen, Settings, X } from "lucide-react";
 import { useGastos } from "../hooks/useGastos";
 import FolioSelector from "../components/FolioSelector/FolioSelector";
 import SearchBar from "../components/SearchBar/SearchBar";
+import { filtrarBusqueda } from "../utils/buscar.mjs";
+import { evaluarSuma } from "../utils/formulaSuma.mjs";
 import CeldaEditable from "../components/CeldaEditable/CeldaEditable";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
 import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
@@ -370,7 +372,8 @@ export default function GastosPage() {
       setNotif({
         tipo: "ok",
         msg: COLUMNAS.find((c) => c.key === campo)?.label ?? campo,
-        dato: valor || "(vacío)",
+        // El aviso enseña el TOTAL, no la fórmula: es lo que se guardó.
+        dato: evaluarSuma(valor) || "(vacío)",
       });
     } catch (err) {
       setNotif({ tipo: "error", msg: err.message || "Error al actualizar el campo." });
@@ -421,14 +424,9 @@ export default function GastosPage() {
 
   // ── Render principal ─────────────────────────────────────────────────────────
 
-  const gastosFiltrados = gastos.filter((g) => {
-    // 🔹 FILTRO POR BÚSQUEDA
-    const cumpleBusqueda = !busqueda || Object.values(g).some((valor) =>
-      String(valor).toLowerCase().includes(busqueda.toLowerCase())
-    );
-
-    return cumpleBusqueda;
-  });
+  // 🔹 FILTRO POR BÚSQUEDA
+  // Acepta exclusiones ("-zuñiga") y frases entre comillas; ver utils/buscar.mjs.
+  const gastosFiltrados = filtrarBusqueda(gastos, busqueda);
 
   return (
     <div className="gastos-container">
@@ -442,7 +440,11 @@ export default function GastosPage() {
 
       {/* BARRA DE BÚSQUEDA */}
       <div className="gp-search">
-        <SearchBar value={busqueda} onChange={setBusqueda} />
+        <SearchBar
+          value={busqueda}
+          onChange={setBusqueda}
+          placeholder='Buscar…  ("-" excluye. ej: -zuñiga/-"jose zuñiga")'
+        />
       </div>
 
       <div className="toolbar">
@@ -512,7 +514,9 @@ export default function GastosPage() {
                             onGuardar={(val) => handleGuardarCampo(gasto, col.key, val)}
                           />
                         : <CeldaEditable
-                            valor={gasto[col.key]}
+                            /* Como en Excel: la tabla enseña el total y al abrir
+                               la celda aparece el desglose que se escribió. */
+                            valor={gasto.formulas?.[col.key] ?? gasto[col.key]}
                             texto={COLUMNAS_MONEDA.includes(col.key) ? formatMoneda(gasto[col.key]) : undefined}
                             max={col.max}
                             etiqueta={col.label}

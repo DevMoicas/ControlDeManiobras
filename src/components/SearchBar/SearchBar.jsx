@@ -1,6 +1,8 @@
 import { Search } from 'lucide-react';
 
-export default function SearchBar({ value, onChange }) {
+// El placeholder es opcional: sin él, la caja dice lo de siempre. Lo usan las
+// páginas cuyo filtro acepta exclusiones ("-zuñiga"), para que se vea que existe.
+export default function SearchBar({ value, onChange, placeholder = "Busqueda" }) {
   return (
     <div className="w-full flex justify-center mb-4">
       <div className="relative w-11/12 md:w-2/3">
@@ -14,7 +16,7 @@ export default function SearchBar({ value, onChange }) {
         {/* Input */}
         <input
           type="text"
-          placeholder="Busqueda"
+          placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="w-full pl-10 pr-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

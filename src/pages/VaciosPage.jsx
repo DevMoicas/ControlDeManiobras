@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import VacioStatusSelector, { EIR_STATUSES } from "../components/VacioStatusSelector/VacioStatusSelector";
 import ColorSelector from "../components/ColorSelector/ColorSelector";
 import { esColorValido, textoSobre } from "../utils/colorFila.mjs";
+import { filtrarBusqueda } from "../utils/buscar.mjs";
 import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
 import PatioSelector from "../components/PatioSelector/PatioSelector";
 // Mismo componente que usan Origen y Destino en Maniobras; el alias es para que
@@ -536,13 +537,8 @@ export default function VaciosPage() {
   }, [actualizar, setVacios]);
 
   // ── Filtro por búsqueda — solo sobre datos ya cargados ────────────────────
-  const vaciosFiltrados = busqueda
-    ? vacios.filter((v) =>
-        Object.values(v).some((val) =>
-          String(val).toLowerCase().includes(busqueda.toLowerCase())
-        )
-      )
-    : vacios;
+  // Acepta exclusiones ("-zuñiga") y frases entre comillas; ver utils/buscar.mjs.
+  const vaciosFiltrados = filtrarBusqueda(vacios, busqueda);
 
   // ── Estados de carga / error ──────────────────────────────────────────────
 
@@ -579,7 +575,11 @@ export default function VaciosPage() {
       <Intro />
 
       <div className="vp-search">
-        <SearchBar value={busqueda} onChange={setBusqueda} />
+        <SearchBar
+            value={busqueda}
+            onChange={setBusqueda}
+            placeholder='Buscar…  ("-" excluye. ej: -zuñiga/-"jose zuñiga")'
+          />
       </div>
 
       <div className="toolbar">

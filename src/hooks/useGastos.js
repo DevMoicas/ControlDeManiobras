@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiClient } from "../api/apiClient";
+import { prepararPayload } from "../utils/formulaSuma.mjs";
 
 const PAGE_SIZE = 60;
 
@@ -50,13 +51,18 @@ export const useGastos = () => {
 
     const agregar = useCallback(async (nuevo) => {
         const { folio, ...datosLimpios } = nuevo;
-        const resultado = await apiClient.post("/gastos/", datosLimpios);
+        // Las celdas de dinero admiten el desglose de Excel ("=150+230"): la
+        // columna se lleva el total y el texto de la fórmula viaja en
+        // `formulas`, para poder volver a enseñarlo al editar. Se hace aquí,
+        // que es por donde pasan la fila nueva, el modal y la celda editable.
+        // Ver utils/formulaSuma.mjs.
+        const resultado = await apiClient.post("/gastos/", prepararPayload(datosLimpios));
         setGastos((prev) => [resultado, ...prev]);
     }, []);
 
     const actualizar = useCallback(async (id, datos) => {
         const { folio, maniobra, ...datosLimpios } = datos;
-        const resultado = await apiClient.put(`/gastos/${id}/`, datosLimpios);
+        const resultado = await apiClient.put(`/gastos/${id}/`, prepararPayload(datosLimpios));
         setGastos((prev) => prev.map((g) => (g.id === id ? resultado : g)));
     }, []);
 

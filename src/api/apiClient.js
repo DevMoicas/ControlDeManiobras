@@ -84,6 +84,16 @@ async function request(endpoint, options = {}, _reintento = false) {
   return response.json();
 }
 
+// Un mapa PLANO de texto→texto, y nada más: `Gasto.formulas`
+// ({"casetas_ida": "=150+230"}) es el único objeto que manda el sistema dentro
+// de un cuerpo. Se comprueba el prototipo, no `typeof`: así un Date o un File
+// no cuelan como "objeto plano" y acaban convertidos en {}.
+const esMapaDeTexto = (v) =>
+  v !== null &&
+  typeof v === "object" &&
+  Object.getPrototypeOf(v) === Object.prototype &&
+  Object.values(v).every((x) => typeof x === "string");
+
 function sanitizarPayload(body) {
   return Object.fromEntries(
     Object.entries(body)
@@ -97,8 +107,14 @@ function sanitizarPayload(body) {
         // sin esto, String([3,7]) las aplastaría a "3,7". Solo enteros a
         // propósito — es el único tipo de array que manda el sistema y así no
         // se abre un hueco para colar objetos en el cuerpo de la petición.
+        // Los mapas planos de texto (Gasto.formulas) pasan con las MISMAS
+        // reglas que el resto: clave alfanumérica y valor en texto, sin anidar
+        // más. Sin esto, String({...}) los aplastaba a "[object Object]".
         v === null || v === "" ? null
           : Array.isArray(v) ? v.map(Number).filter(Number.isInteger)
+          : esMapaDeTexto(v)
+            ? Object.fromEntries(Object.entries(v).map(
+                ([clave, texto]) => [clave.replace(/[^a-zA-Z0-9_]/g, ""), texto.trim()]))
           : String(v).trim(),
       ])
   );
