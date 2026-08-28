@@ -197,7 +197,11 @@ function Lista({ vista }) {
         </thead>
         <tbody>
           {filas.map((m) => (
-            <tr key={m.id} className={m.pendiente_programar ? "seg-fila--marcada" : undefined}>
+            // El verde solo donde existe la casilla: la marca es del repaso de
+            // PENDIENTES, y una vez el servicio pasa a activo ya no dice nada.
+            // La bandera se queda en la base, asi que si vuelve a pendiente
+            // sigue marcada.
+            <tr key={m.id} className={vista.marcable && m.pendiente_programar ? "seg-fila--marcada" : undefined}>
               {vista.marcable && (
                 <td className="seg-td seg-td--check">
                   <button
