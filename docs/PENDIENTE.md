@@ -1,6 +1,6 @@
 # Pendiente
 
-Anotado el 2026-08-25 y **actualizado el 2026-08-26** al cerrar la sesión.
+Anotado el 2026-08-25 y **actualizado el 2026-08-27** al cerrar la sesión.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
@@ -165,3 +165,64 @@ El automatismo del ADR-0011 separa la fila de un Full cuando aparece el segundo
 operador, pero **no la vuelve a juntar** si ese operador se quita. Se ajusta a mano.
 Sin decidir si merece arreglarse: hasta ahora no ha pasado.
 
+---
+
+## 6. Abierto tras la sesión del 2026-08-27
+
+### El renombrado de un folio deja huérfano su reporte de viaje — SIN ARREGLAR
+
+Encontrado al validar el volcado del diésel, y **confirmado ejecutándolo**: al renombrar
+un folio se actualizan `maniobras.folio`, `maniobras.folio_2` y `torre_folio.folio`, pero
+**no `api_reporteviaje.folio`**. El reporte se queda apuntando al código viejo.
+
+Prueba real: folio `F-2279` con 7.440 ya volcados → se renombra a `F-2279-2` → la maniobra
+queda en `F-2279-2` y el reporte sigue en `F-2279` → se añade una carga de 2.450 y el
+gasto **se queda en 7.440** en vez de 9.890. En silencio, sin error.
+
+No es raro: según el propio comentario del código, con el `-2` automático de los Full el
+renombrado ocurre en cada maniobra que se marca. Hoy no ha mordido porque **en producción
+todavía no hay ningún reporte de viaje**.
+
+**Arreglo previsto:** añadir `ReporteViaje.objects.filter(folio=anterior).update(...)` junto
+a las tres tablas que ya se actualizan, en `FolioViewSet` (`api/views.py`, alrededor de la
+línea 1786). Es una línea y su prueba.
+
+### Una carga de diésel sin precio se excluye del importe pero cuenta para el rendimiento
+
+Confirmado ejecutándolo: con cargas de 300 L a 24.80 y 100 L **sin precio**, al gasto le
+llegan 7.440 mientras el reporte enseña las dos cargas y calcula el rendimiento con 400 L.
+Es invisible: la pantalla del reporte solo muestra el total de cada renglón, no un total
+general.
+
+Con el ADR-0013 ya no borra nada —ahora saldría como descuadre—, pero sigue siendo la
+causa más probable de "no coincide" en el uso real. **Lo propuesto y no hecho:** enseñar en
+el reporte el total de diésel que va a mandar a Gastos. Alternativa más agresiva: que una
+carga sin precio tampoco cuente para el rendimiento, para que las dos cifras hablen del
+mismo conjunto de cargas.
+
+### Vaciar las cargas de un reporte no corrige el gasto
+
+`total_diesel()` devuelve None ("no se sabe") y el volcado no escribe, así que el importe
+anterior se queda en Gastos. Corregir un precio **a la baja** sí funciona. Sin decidir: la
+alternativa es poner el diésel en blanco, pero eso pisaría también lo capturado a mano.
+
+### El buscador del selector de folios
+
+Busca **solo por número de folio**, sin acentos ni mayúsculas, y devuelve las **50
+coincidencias más recientes**. Si se busca algo muy genérico (`8`) salen 50 y hay que
+afinar. Ampliarlo a cliente u operador es una línea en el filtro; subir el tope hace lento
+el desplegable, porque cada folio trae su ficha completa.
+
+### Formatos mezclados en `gastos.fecha_entrega_mercancia`
+
+En la base local, de 18 gastos: 4 en `DD/MM/YYYY`, 3 en ISO, un `'200'`, 6 vacíos y 3 NULL.
+Se normalizan solos según se toque la fecha de cada maniobra (ADR-0016). Mientras haya
+mezcla, el orden depende de la clave normalizada que se calcula al leer.
+
+### `docs/planes/PLAN_GASTO_AUTOMATICO.md` no está commiteado
+
+El docstring de `api/test_gasto_automatico.py` lo referencia ("ver docs/planes/…, rama
+main"), pero el archivo aparece como **untracked** en el worktree de `main`, junto con
+`PLAN_REPORTE_COORDINADORES.md`, `REPORTE COORDINADORES.md` y `analisis_de_costos.md`, y
+`PLAN_TORRE_CONTROL.md` con cambios sin commitear. No se tocaron: son trabajo previo del
+usuario y no me corresponde decidir si están listos.
