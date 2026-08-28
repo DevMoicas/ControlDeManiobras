@@ -69,6 +69,25 @@ class SeEscribeTests(BaseAsignacion):
         self.patch(m.id, folio='F-2279')
         self.assertEqual(self.asignacion(), 'JUAN CARLOS')
 
+    def test_un_apellido_compuesto_se_lleva_tres_palabras(self):
+        """Cortar en dos dejaba "ROBERTO DE", que no dice quien es."""
+        m = Maniobra.objects.create(solicita='PRUEBA',
+                                    asignacion_operador_status='ROBERTO DE LOERA PACHECO')
+        self.patch(m.id, folio='F-2279')
+        self.assertEqual(self.asignacion(), 'ROBERTO DE LOERA')
+
+    def test_dos_particulas_seguidas_se_estiran_hasta_el_nombre(self):
+        m = Maniobra.objects.create(solicita='PRUEBA',
+                                    asignacion_operador_status='MARIA DE LA LUZ HERNANDEZ')
+        self.patch(m.id, folio='F-2279')
+        self.assertEqual(self.asignacion(), 'MARIA DE LA LUZ')
+
+    def test_un_nombre_que_acaba_en_particula_no_se_pasa_de_largo(self):
+        m = Maniobra.objects.create(solicita='PRUEBA',
+                                    asignacion_operador_status='ROBERTO DE')
+        self.patch(m.id, folio='F-2279')
+        self.assertEqual(self.asignacion(), 'ROBERTO DE')
+
     def test_un_operador_de_dos_palabras_va_entero(self):
         m = Maniobra.objects.create(solicita='PRUEBA',
                                     asignacion_operador_status='ANTONIO FRANCO')

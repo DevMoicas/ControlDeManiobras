@@ -736,6 +736,14 @@ def _crear_vacios_del_folio(maniobra, usuario):
 #
 # Mismo criterio de "de quien es el viaje" que el gasto automatico (_es_de_fraba)
 # para no tener dos definiciones de tercero que puedan discrepar.
+
+# Un apellido compuesto no cabe en dos palabras: "ROBERTO DE LOERA PACHECO" se
+# quedaba en "ROBERTO DE", que no dice quien es (usuario, 2026-08-28). Si la
+# palabra del corte es una de estas, se estira una mas, y otra si la siguiente
+# tambien lo es ("MARIA DE LA LUZ").
+_PARTICULAS = {'DE', 'DEL', 'LA', 'LAS', 'LOS', 'Y'}
+
+
 def _asignacion_del_folio(maniobra, operador):
     """Lo que va escrito en el folio que lleva `operador`. "" si aun no se sabe.
 
@@ -744,7 +752,11 @@ def _asignacion_del_folio(maniobra, operador):
     """
     if not _es_de_fraba(maniobra):
         return ('TERCERO ' + (maniobra.transportista or '').strip())[:40]
-    return ' '.join((operador or '').split()[:2])[:40]
+    partes = (operador or '').split()
+    corte = 2
+    while corte < len(partes) and partes[corte - 1].upper() in _PARTICULAS:
+        corte += 1
+    return ' '.join(partes[:corte])[:40]
 
 
 def _sincronizar_asignacion_folios(maniobra, antes):
