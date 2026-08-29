@@ -1,6 +1,6 @@
 # Pendiente
 
-Anotado el 2026-08-25 y **actualizado el 2026-08-27** al cerrar la sesión.
+Anotado el 2026-08-25 y **actualizado el 2026-08-28** al cerrar la sesión.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
@@ -226,3 +226,48 @@ main"), pero el archivo aparece como **untracked** en el worktree de `main`, jun
 `PLAN_REPORTE_COORDINADORES.md`, `REPORTE COORDINADORES.md` y `analisis_de_costos.md`, y
 `PLAN_TORRE_CONTROL.md` con cambios sin commitear. No se tocaron: son trabajo previo del
 usuario y no me corresponde decidir si están listos.
+
+
+---
+
+## 7. Abierto tras la sesión del 2026-08-28
+
+### Visibilidad de secciones por cargo — PLANIFICADO, SIN EMPEZAR
+
+El plan entero está en **`docs/planes/PLAN_ROLES_POR_CARGO.md`**, con las ocho decisiones
+ya cerradas con el usuario, el modelo de datos, el mapa de endpoints y las cuatro fases.
+Para retomarlo basta con ese archivo; aquí solo queda por qué está parado y qué mirar antes
+de escribir la primera línea.
+
+**Qué es:** un tercer eje de permisos —qué pantallas ve cada quien, según el cargo del
+empleado que tenga asignado— encima de los dos que ya hay. El rol de BD, la RLS, los GRANTs,
+`is_staff` y la decisión A1 del borrado **no se tocan**: este eje solo resta.
+
+**Por qué está parado:** el usuario pidió planear y nada más. No hay código escrito, ni
+migraciones, ni ramas.
+
+**Lo que hay que verificar antes de implementar**, porque el plan lo da por bueno sin
+comprobarlo en producción:
+
+- **El mapa `ENDPOINTS` es un borrador.** Se armó leyendo qué componente llama a qué ruta en
+  el front de hoy. Antes de codificarlo hay que repasarlo pantalla por pantalla: un endpoint
+  mal anotado no da error, deja de responder a quien sí debía verlo.
+- **Cuántos empleados tienen un `cargo` que no casa con el catálogo.** Es texto libre. En
+  producción no se ha mirado, y de esa cifra depende cuánta gente empieza en "ve todo" por
+  desenganche en vez de por decisión.
+- **Si hay usuarios que no son ninguna persona** (cuentas de prueba, de sistema). Se quedarían
+  sin `PerfilUsuario` y por tanto viendo la app entera.
+
+**La trampa del diseño, escrita para que no se olvide:** con el "ve todo por defecto" que se
+eligió, el sistema **falla a favor del acceso**. Renombrar un cargo desde Catálogos desengancha
+a todos sus empleados y los abre a la app entera sin un solo error por ningún lado. Por eso el
+arrastre de `empleados.cargo` al renombrar no es un extra del plan: es lo que lo sostiene.
+
+### Desplegado hoy (2026-08-28)
+
+- **Backend `b14f60ce`:** la ASIGNACIÓN del folio se lleva entero el apellido compuesto
+  ("ROBERTO DE LOERA" en vez de "ROBERTO DE"). Los folios ya escritos no se corrigen solos: se
+  reescriben la próxima vez que se guarde su maniobra.
+- **Frontend `767cdfe`:** el verde del repaso de PENDIENTES ya no se pinta en el desglose de
+  ACTIVOS. La bandera `pendiente_programar` sigue guardada, así que un servicio que vuelva a
+  pendiente reaparece marcado.
