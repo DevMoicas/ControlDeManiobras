@@ -691,3 +691,13 @@
   .gastos-container .btn-guardar,
   .gastos-container .btn-cancelar { transition: none; }
 }
+
+/* Grupo de acciones de la barra, el mismo que Maniobras y Vacíos: el balde de
+   celdas y el botón de agregar van juntos a la derecha. Sin esto, el
+   space-between de .toolbar los separaría a cada extremo. */
+.gastos-container .toolbar-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}

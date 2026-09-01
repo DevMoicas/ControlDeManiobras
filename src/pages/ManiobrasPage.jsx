@@ -34,6 +34,7 @@ import { registerLocale } from "react-datepicker";
 import es from "date-fns/locale/es";
 import FotoModal from "../components/FotoModal/FotoModal";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
+import PinturaCeldas, { usePinturaCeldas } from "../components/PinturaCeldas/PinturaCeldas";
 import { partirDoble, partirTipoFull, leerPar, textoDelPar, conUnidad } from "../utils/dobleValor.mjs";
 import { codigoFolioFull, sinSufijoFull } from "../utils/folioFull.mjs";
 import { apiClient } from "../api/apiClient";
@@ -878,6 +879,7 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
 const FilaManiobra = memo(function FilaManiobra({
   maniobra, isUpdating, isUpdatingVacio, isUpdatingTercero, isAdmin, isSubmitting, recienCambiada,
   onStatusChange, onVacioStatusChange, onTerceroChange, onGuardarCampos, onEditar, onVerFotos, onEliminar,
+  pintarCelda,
 }) {
   const statusConfig = getStatusConfig(maniobra.status);
   // El color manual manda sobre el del status. Un valor guardado que no sea
@@ -1249,7 +1251,14 @@ const FilaManiobra = memo(function FilaManiobra({
       style={pintado ? { "--color-fila": pintado, "--texto-fila": textoSobre(pintado) } : undefined}
     >
       {COLUMNAS.map((col) => (
-        <td key={col.key} style={col.style ?? {}}>
+        // El balde de CELDA: el relleno propio de esta celda (que gana al de la
+        // fila y al del status), el clic que pinta en modo pintura y el clic
+        // derecho que abre la paleta. Ver components/PinturaCeldas.
+        <td
+          key={col.key}
+          {...pintarCelda(maniobra.colores, col.key,
+                          (colores) => guardar({ colores }), col.style)}
+        >
           {renderCelda(col)}
         </td>
       ))}
@@ -1363,6 +1372,8 @@ export default function ManiobrasPage() {
     updateStatus: updateTercero,
   } = useVacioStatusUpdate(setManiobras, { recurso: "maniobras", campo: "tercero" });
   const { isAdmin } = useAuthContext();
+  // Balde de celdas: el estado del modo pintura y de la paleta del clic derecho.
+  const pintura = usePinturaCeldas();
 
   const [modoAgregar,   setModoAgregar]   = useState(false);
   const [nuevaManiobra, setNuevaManiobra] = useState(MANIOBRA_VACIA);
@@ -1451,8 +1462,14 @@ export default function ManiobrasPage() {
         msg: COLUMNAS.find((c) => c.key === campo)?.label ?? campo,
         // Los costos extra viajan como lista de ids: pintarlos crudos en el
         // aviso ("37") no dice nada. Se resume por cantidad.
+        // Un mapa de colores tampoco se puede pintar crudo: React no renderiza
+        // un objeto, lo lanza como error y se cae la tabla entera.
         dato: Array.isArray(valor)
           ? (valor.length ? `${valor.length} seleccionado${valor.length > 1 ? "s" : ""}` : "(ninguno)")
+          : (valor && typeof valor === "object" && !Array.isArray(valor))
+          ? (Object.keys(valor).length
+              ? `${Object.keys(valor).length} celda(s) pintada(s)`
+              : "(sin pintar)")
           : (valor || "(vacío)"),
       });
     } catch (err) {
@@ -1568,6 +1585,7 @@ export default function ManiobrasPage() {
           ))}
         </div>
         <div className="toolbar-acciones">
+          <PinturaCeldas pintura={pintura} />
           <button
             className="btn-salto"
             onClick={() => scrollRef.current?.scrollTo({ left: 0, behavior: "smooth" })}
@@ -1646,6 +1664,7 @@ export default function ManiobrasPage() {
                     onEditar={handleAbrirEdicion}
                     onVerFotos={handleVerFotos}
                     onEliminar={handleEliminar}
+                    pintarCelda={pintura.celda}
                   />
                 ))
               )}

@@ -1,6 +1,7 @@
-// Color de relleno de una fila de Maniobras, elegido a mano como en una hoja
-// de cálculo. Manda sobre el color que pinta el status; sin color, la fila
-// vuelve sola a lo que diga su status.
+// Color de relleno elegido a mano, como en una hoja de cálculo. Hay DOS baldes
+// y no se sustituyen: el de la FILA (`color`, manda sobre el color del status) y
+// el de la CELDA (`colores`, un mapa {columna: "#rrggbb"} que manda sobre los
+// dos). Sin color, cada cosa vuelve sola a lo que diga su status.
 
 /**
  * La paleta estándar de Google Sheets, tal cual.
@@ -77,4 +78,27 @@ export function textoSobre(hex) {
   return contraste(fondo, luminancia(TEXTO_OSCURO)) >= contraste(fondo, luminancia(TEXTO_CLARO))
     ? TEXTO_OSCURO
     : TEXTO_CLARO;
+}
+
+
+/**
+ * Estilo de UNA celda pintada a mano, o `undefined` si esa no lo está.
+ *
+ * Devolver undefined y no un objeto vacío es lo que deja la celda exactamente
+ * como estaba: sin relleno propio hereda el de la fila (`row-pintada`) y, si
+ * tampoco lo hay, el de su status. Los tres niveles conviven así sin que ninguno
+ * tenga que saber de los otros.
+ *
+ * `fontWeight` acompaña al relleno por el mismo motivo que en la fila pintada:
+ * sobre un color elegido a dedo el texto tiene que leerse igual de bien que
+ * sobre el blanco, y en los tonos medios el contraste solo no basta.
+ *
+ * @param {Record<string,string>|null|undefined} colores  el mapa de la fila
+ * @param {string} campo  la columna de esta celda
+ * @returns {{background: string, color: string, fontWeight: number}|undefined}
+ */
+export function estiloCelda(colores, campo) {
+  const color = colores?.[campo];
+  if (!esColorValido(color)) return undefined;
+  return { background: color, color: textoSobre(color), fontWeight: 600 };
 }

@@ -13,6 +13,7 @@ import CeldaEditable from "../components/CeldaEditable/CeldaEditable";
 import ColorSelector from "../components/ColorSelector/ColorSelector";
 import { esColorValido, textoSobre } from "../utils/colorFila.mjs";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
+import PinturaCeldas, { usePinturaCeldas } from "../components/PinturaCeldas/PinturaCeldas";
 import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
@@ -300,6 +301,8 @@ export default function GastosPage() {
   const navigate = useNavigate();
   const { isAdmin } = useAuthContext();
   const columnas = columnasVisibles(isAdmin);
+  // Balde de celdas: modo pintura + paleta del clic derecho.
+  const pintura = usePinturaCeldas();
   const {
     gastos, loading, loadingMore, hasMore, error,
     loadMore, eliminar, actualizar, agregar,
@@ -401,7 +404,13 @@ export default function GastosPage() {
         tipo: "ok",
         msg: COLUMNAS.find((c) => c.key === campo)?.label ?? campo,
         // El aviso enseña el TOTAL, no la fórmula: es lo que se guardó.
-        dato: evaluarSuma(valor) || "(vacío)",
+        // El mapa de colores va aparte: evaluarSuma trabaja sobre texto, y un
+        // objeto pintado crudo en el aviso reventaría el render.
+        dato: (valor && typeof valor === "object" && !Array.isArray(valor))
+          ? (Object.keys(valor).length
+              ? `${Object.keys(valor).length} celda(s) pintada(s)`
+              : "(sin pintar)")
+          : (evaluarSuma(valor) || "(vacío)"),
       });
     } catch (err) {
       setNotif({ tipo: "error", msg: err.message || "Error al actualizar el campo." });
@@ -479,13 +488,18 @@ export default function GastosPage() {
         {/* Espaciador vacío para empujar el botón a la derecha igual que en Maniobras */}
         <div className="filtros-status"></div>
 
-        <button
-          className="btn-agregar"
-          onClick={() => setModoAgregar(true)}
-          disabled={modoAgregar || isSubmitting}
-        >
-          + Agregar Registro
-        </button>
+        {/* Mismo grupo de acciones que en Maniobras y Vacíos, para que el balde
+            caiga en el mismo sitio en las tres tablas. */}
+        <div className="toolbar-acciones">
+          <PinturaCeldas pintura={pintura} />
+          <button
+            className="btn-agregar"
+            onClick={() => setModoAgregar(true)}
+            disabled={modoAgregar || isSubmitting}
+          >
+            + Agregar Registro
+          </button>
+        </div>
       </div>
 
       <div className="bst-zona">
@@ -524,7 +538,13 @@ export default function GastosPage() {
               gastosFiltrados.map((gasto) => (
                 <tr key={gasto.id} {...propsPintado(gasto.color)}>
                   {columnas.map((col) => (
-                    <td key={col.key} style={col.style ?? {}}>
+                    // Relleno propio de la celda + los dos gestos de pintura.
+                    <td
+                      key={col.key}
+                      {...pintura.celda(gasto.colores, col.key,
+                                        (colores) => handleGuardarCampo(gasto, "colores", colores),
+                                        col.style)}
+                    >
                       {col.key === "maniobra"
                         ? (gasto.folio || gasto.maniobra) /* folio del servicio; fallback al id para registros viejos */
                         : col.readOnly

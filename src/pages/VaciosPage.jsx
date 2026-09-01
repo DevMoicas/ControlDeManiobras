@@ -8,6 +8,7 @@ import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
 import SearchBar from "../components/SearchBar/SearchBar";
 import CeldaEditable from "../components/CeldaEditable/CeldaEditable";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
+import PinturaCeldas, { usePinturaCeldas } from "../components/PinturaCeldas/PinturaCeldas";
 import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
@@ -383,6 +384,8 @@ export default function VaciosPage() {
   const [fotoModal,   setFotoModal]   = useState(null); // { registroId } | null
   // Modal del reporte en PDF: solo elige coordinador, el filtro lo hace el backend.
   const [modalReporte, setModalReporte] = useState(false);
+  // Balde de celdas: modo pintura + paleta del clic derecho.
+  const pintura = usePinturaCeldas();
 
   // ── Scroll listener en window ─────────────────────────────────────────────
   useEffect(() => {
@@ -460,7 +463,14 @@ export default function VaciosPage() {
         msg: COLUMNAS.find((c) => c.key === campo)?.label ?? campo,
         // Reprogramado guarda un booleano: React no pinta `true` y `false` caería
         // en "(vacío)", así que el aviso diría lo contrario de lo que se guardó.
-        dato: typeof valor === "boolean" ? (valor ? "Sí" : "No") : (valor || "(vacío)"),
+        // Y un mapa de colores tampoco: React no renderiza un objeto, lo lanza
+        // como error y se cae la tabla.
+        dato: typeof valor === "boolean" ? (valor ? "Sí" : "No")
+          : (valor && typeof valor === "object" && !Array.isArray(valor))
+          ? (Object.keys(valor).length
+              ? `${Object.keys(valor).length} celda(s) pintada(s)`
+              : "(sin pintar)")
+          : (valor || "(vacío)"),
       });
     } catch (err) {
       setNotif({ tipo: "error", msg: err.message || "Error al actualizar el campo." });
@@ -598,6 +608,7 @@ export default function VaciosPage() {
           ))}
         </div>
         <div className="toolbar-acciones">
+          <PinturaCeldas pintura={pintura} />
           <button
             className="btn-reporte"
             onClick={() => setModalReporte(true)}
@@ -651,7 +662,12 @@ export default function VaciosPage() {
               vaciosFiltrados.map((vacio) => (
                 <tr key={vacio.id} {...propsFila(vacio, recienCambiados.includes(vacio.id))}>
                   {COLUMNAS.map((col) => (
-                    <td key={col.key}>
+                    // Relleno propio de la celda + los dos gestos de pintura.
+                    <td
+                      key={col.key}
+                      {...pintura.celda(vacio.colores, col.key,
+                                        (colores) => handleGuardarCampo(vacio, "colores", colores))}
+                    >
                       {col.requiereReprogramado && !vacio.reprogramado ? null : col.isReprogramado ? (
                         <VacioStatusSelector
                           opciones={REPROGRAMADO_OPCIONES}

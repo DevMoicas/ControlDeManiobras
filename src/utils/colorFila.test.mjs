@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   PALETA_SHEETS, TEXTO_OSCURO, TEXTO_CLARO,
-  esColorValido, luminancia, textoSobre, contraste,
+  esColorValido, luminancia, textoSobre, contraste, estiloCelda,
 } from "./colorFila.mjs";
 
 test("la paleta es la rejilla de Sheets: 8 filas de 10", () => {
@@ -85,4 +85,29 @@ test("contraste: los extremos conocidos de la escala WCAG", () => {
   // Negro sobre blanco es 21:1, el máximo. Un color consigo mismo, 1:1.
   assert.equal(Math.round(contraste(luminancia("#000000"), luminancia("#ffffff"))), 21);
   assert.equal(contraste(luminancia("#808080"), luminancia("#808080")), 1);
+});
+
+// ── Balde por celda ──────────────────────────────────────────────────────────
+
+test("estiloCelda pinta solo la columna que tiene color", () => {
+  const colores = { contenedor: "#ffd966" };
+  assert.equal(estiloCelda(colores, "contenedor").background, "#ffd966");
+  assert.equal(estiloCelda(colores, "peso"), undefined);
+});
+
+test("sin mapa, ninguna celda se pinta", () => {
+  for (const vacio of [null, undefined, {}]) {
+    assert.equal(estiloCelda(vacio, "contenedor"), undefined);
+  }
+});
+
+test("un color corrupto deja la celda sin pintar en vez de meterlo en el CSS", () => {
+  for (const basura of ["#fff", "red", "#ffd966; background-image: url(x)", 42]) {
+    assert.equal(estiloCelda({ contenedor: basura }, "contenedor"), undefined);
+  }
+});
+
+test("el texto de la celda contrasta con su relleno, como en la fila", () => {
+  assert.equal(estiloCelda({ c: "#ffffff" }, "c").color, TEXTO_OSCURO);
+  assert.equal(estiloCelda({ c: "#000000" }, "c").color, TEXTO_CLARO);
 });
