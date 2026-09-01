@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { overlayMotion, contentMotion } from "../animations/modalMotion";
-import { Trash2, SquarePen, Camera, Settings, X } from "lucide-react";
+import { Trash2, SquarePen, Camera, Settings, X, FileText } from "lucide-react";
 import { useVacios } from "../hooks/useVacios";
 import { useAuthContext } from "../context/AuthContext";
 import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
@@ -27,6 +27,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { registerLocale } from "react-datepicker";
 import es from "date-fns/locale/es";
 import FotoModal from "../components/FotoModal/FotoModal";
+import ReporteVaciosModal from "../components/ReporteVaciosModal/ReporteVaciosModal";
 import "./VaciosPage.css";
 registerLocale("es", es);
 
@@ -89,7 +90,7 @@ const COLUMNAS = [
   { key: "patio",                     label: "Patio",             isPatio: true },
   { key: "fecha_maniobra",            label: "Fecha Maniobra",  isFecha: true },
   { key: "fecha_entrega",             label: "Fecha Entrega",   isFecha: true },
-  { key: "fecha_notificacion_cliente",label: "Cometarios",        max: 50 },
+  { key: "fecha_notificacion_cliente",label: "Comentarios",       max: 50 },
   { key: "status",                    label: "Status",            isStatus: true },
   { key: "reprogramado",              label: "Reprogramado",      isReprogramado: true },
   // Siempre presente en la cabecera; la celda queda vacía si el vacío no está
@@ -380,6 +381,8 @@ export default function VaciosPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const tablaRef = useRef(null);
   const [fotoModal,   setFotoModal]   = useState(null); // { registroId } | null
+  // Modal del reporte en PDF: solo elige coordinador, el filtro lo hace el backend.
+  const [modalReporte, setModalReporte] = useState(false);
 
   // ── Scroll listener en window ─────────────────────────────────────────────
   useEffect(() => {
@@ -594,13 +597,22 @@ export default function VaciosPage() {
             </button>
           ))}
         </div>
-        <button
-          className="btn-agregar"
-          onClick={() => setModoAgregar(true)}
-          disabled={modoAgregar || isSubmitting}
-        >
-          + Agregar Vacío
-        </button>
+        <div className="toolbar-acciones">
+          <button
+            className="btn-reporte"
+            onClick={() => setModalReporte(true)}
+            title="Lista de vacíos pendientes de un coordinador, en PDF"
+          >
+            <FileText size={16} /> Reporte Vacíos
+          </button>
+          <button
+            className="btn-agregar"
+            onClick={() => setModoAgregar(true)}
+            disabled={modoAgregar || isSubmitting}
+          >
+            + Agregar Vacío
+          </button>
+        </div>
       </div>
 
       <div className="bst-zona">
@@ -764,6 +776,15 @@ export default function VaciosPage() {
             onGuardar={handleGuardarEdicion}
             onCerrar={() => setModal(MODAL_CERRADO)}
             isSubmitting={isSubmitting}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {modalReporte && (
+          <ReporteVaciosModal
+            endpoint={ENDPOINT_COORDINADORES}
+            onCerrar={() => setModalReporte(false)}
           />
         )}
       </AnimatePresence>

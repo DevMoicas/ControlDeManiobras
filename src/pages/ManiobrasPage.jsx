@@ -312,7 +312,16 @@ const COLUMNAS = [
   { key: "remolque_3", label: "Remolque 3", isRemolque: true, requiereOperador2: true },
   { key: "remolque_4", label: "Remolque 4", isRemolque: true, requiereOperador2: true },
   { key: "folio_2", label: "Folio 2", isFolio: true, requiereOperador2: true },
-  { key: "vacio_patio", label: "Vacio Patio", isPatio: true },
+  // ── Espejo de Vacíos (solo lectura) ────────────────────────────────────────
+  // Las tres se leen de la fila de Vacíos enlazada a esta maniobra y NO se
+  // escriben desde aquí: es lo que evita que la tabla y Vacíos acaben diciendo
+  // cosas distintas por una captura a mano. El backend las manda ya formateadas
+  // (DD/MM/AAAA, y los dos valores unidos por " - " cuando el Full va repartido
+  // entre dos operadores y tiene un vacío cada uno), así que la celda solo
+  // imprime texto. Ver "Espejo de Vacios" en api/Serializers.py.
+  { key: "fecha_maniobra_v", label: "Fecha Maniobra V", soloLectura: true },
+  { key: "fecha_entrega_v", label: "Fecha entrega V", soloLectura: true },
+  { key: "patio_v", label: "Vacio Patio", soloLectura: true },
   { key: "status_vacio", label: "Status Vacío", isStatusVacio: true },
   { key: "fecha_entrega_mercancia", label: "Entrega Mercancía", esFecha: true },
   // La hora va aparte de la fecha, como Horario acompaña a Fecha PIS: la fecha
@@ -467,7 +476,9 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
     <tr>
       {COLUMNAS.map((col) => (
         <td key={col.key}>
-          {col.requiereOperador2 && !datos.operador_2 ? null : col.esFecha ? (
+          {/* soloLectura: el vacío no existe hasta que se le asigna folio, así
+              que en la fila nueva no hay nada que enseñar todavía. */}
+          {col.requiereOperador2 && !datos.operador_2 ? null : col.soloLectura ? null : col.esFecha ? (
             <DatePicker
               locale="es"
               dateFormat="dd/MM/yyyy"
@@ -672,7 +683,10 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
         </div>
         <form onSubmit={onGuardar} className="modal-form">
           <div className="modal-grid">
-            {COLUMNAS.filter((col) => !col.requiereOperador2 || datos.operador_2).map((col) => (
+            {/* Las de solo lectura no salen en el formulario: no son campos que
+                se editen, se ven en la tabla. */}
+            {COLUMNAS.filter((col) => !col.soloLectura)
+                     .filter((col) => !col.requiereOperador2 || datos.operador_2).map((col) => (
               <div key={col.key} className="modal-campo">
                 <label htmlFor={`edit-${col.key}`}>{col.label}</label>
                 {col.esFecha ? (
@@ -987,6 +1001,12 @@ const FilaManiobra = memo(function FilaManiobra({
     // operador a quien asignárselos: la columna sigue en la tabla (es global),
     // pero la celda queda vacía en las filas que no lo tienen.
     if (col.requiereOperador2 && !maniobra.operador_2) return null;
+
+    // Espejo de Vacíos: texto y nada más. No es celdaClicable porque aquí no hay
+    // nada que editar — esos tres datos se capturan en la página de Vacíos.
+    if (col.soloLectura) {
+      return maniobra[col.key] || <em className="mp-placeholder">—</em>;
+    }
 
     // ── Selectores: montados siempre, igual que Status Vacío y Tercero ya lo
     // estaban. Cerrados solo cuestan un <button>: ninguno pide su catálogo hasta

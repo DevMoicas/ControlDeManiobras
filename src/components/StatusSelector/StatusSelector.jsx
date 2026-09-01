@@ -8,6 +8,8 @@
  *  - Clic en una opción ya seleccionada → la quita, dejando la otra intacta.
  *  - Al llegar a 2, las opciones restantes se deshabilitan en vez de ignorar el
  *    clic en silencio: así el usuario ve POR QUÉ no puede elegir una tercera.
+ *  - Entregado (STATUS_EXCLUSIVO) es la excepción: no se suma, sustituye. Nunca
+ *    se deshabilita por el tope y al marcarlo la maniobra se queda solo con él.
  *  - El desplegable NO se cierra al seleccionar: hay que poder elegir el segundo
  *    status (o corregirse) sin reabrirlo. Cierra por clic fuera, Escape o trigger.
  *
@@ -27,6 +29,8 @@ import {
   MAX_STATUSES,
   parseStatusValue,
   joinStatusIds,
+  alternarStatus,
+  STATUS_EXCLUSIVO,
   formatStatusLabel,
   getStatusConfig,
 } from "../../config/statusConfig";
@@ -103,18 +107,15 @@ export default function StatusSelector({ currentStatus, onSelect, loading = fals
   }, [loading]);
 
   const handleSelect = useCallback((statusId) => {
-    const yaEstaba = selectedIds.includes(statusId);
+    // alternarStatus resuelve quitar/añadir, el tope de 2 y la regla del status
+    // exclusivo. joinStatusIds ordena por prioridad y devuelve null si queda vacío.
+    const valor = joinStatusIds(alternarStatus(selectedIds, statusId));
 
-    // Tope alcanzado y esta opción no está seleccionada → no hay nada que hacer.
-    // (La opción ya se pinta deshabilitada; esto es solo la red de seguridad.)
-    if (!yaEstaba && selectedIds.length >= MAX_STATUSES) return;
+    // Red de seguridad: si el clic no cambia nada (opción ya deshabilitada por el
+    // tope), no se dispara un PATCH que escribiría exactamente lo que ya había.
+    if (valor === joinStatusIds(selectedIds)) return;
 
-    const nuevos = yaEstaba
-      ? selectedIds.filter((id) => id !== statusId)  // quitar solo esta, conservar la otra
-      : [...selectedIds, statusId];                  // añadir
-
-    // joinStatusIds ordena por prioridad y devuelve null si queda vacío.
-    onSelect(joinStatusIds(nuevos));
+    onSelect(valor);
     // Ojo: no se cierra el desplegable — el usuario puede querer elegir el segundo.
   }, [selectedIds, onSelect]);
 
@@ -174,8 +175,9 @@ export default function StatusSelector({ currentStatus, onSelect, loading = fals
         >
           {MANIOBRA_STATUSES_LIST.map((config) => {
             const isSelected = selectedIds.includes(config.id);
-            // Deshabilitada: ya hay 2 y esta no es una de ellas.
-            const isDisabled = isFull && !isSelected;
+            // Deshabilitada: ya hay 2 y esta no es una de ellas. Entregado se
+            // libra del tope porque sustituye a lo que hubiera en vez de sumarse.
+            const isDisabled = isFull && !isSelected && config.id !== STATUS_EXCLUSIVO;
             return (
               <li
                 key={config.id}

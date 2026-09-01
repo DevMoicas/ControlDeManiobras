@@ -24,7 +24,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-/** @typedef {'activo' | 'pendiente' | 'quemada' | 'cancelado' | 'por_salir'} ManiobraStatus */
+/** @typedef {'activo' | 'pendiente' | 'quemada' | 'cancelado' | 'por_salir' | 'entregado'} ManiobraStatus */
 
 /**
  * Valor tal y como viaja//se guarda: un id, dos ids separados por coma, o null.
@@ -86,6 +86,17 @@ export const STATUS_MAP = Object.freeze({
     color:      "#c7b0d4",
     emoji:      "🟣",
   }),
+  // Entregado NO pinta la fila: `rowClass` va vacia a proposito para que la <tr>
+  // se quede con el color por defecto de la tabla, sin una regla CSS que lo
+  // repinte de blanco. Es ademas el unico status EXCLUSIVO (ver STATUS_EXCLUSIVO).
+  entregado: Object.freeze({
+    id:         "entregado",
+    label:      "Entregado",
+    rowClass:   "",
+    badgeClass: "badge-status--entregado",
+    color:      "#ffffff",
+    emoji:      "⚪",
+  }),
 });
 
 /**
@@ -110,6 +121,10 @@ export const PRIORITY_ORDER = Object.freeze([
   "cancelado",  // pegado a Quemada: comparten color, así que el orden entre
                 // los dos no cambia lo que se ve, solo fija la forma canónica
   "pendiente",
+  // Entregado nunca comparte fila con otro status, asi que su sitio aqui no
+  // decide ningun color. Esta igualmente porque parseStatusValue/joinStatusIds
+  // consultan indexOf(): sin el daria -1 y lo ordenaria por delante de todos.
+  "entregado",
 ]);
 
 /**
@@ -142,6 +157,36 @@ export function joinStatusIds(ids) {
     .sort((a, b) => PRIORITY_ORDER.indexOf(a) - PRIORITY_ORDER.indexOf(b))
     .slice(0, MAX_STATUSES)
     .join(",");
+}
+
+/**
+ * El unico status que no admite compañero: marcarlo deja la maniobra solo con
+ * el, y marcar cualquier otro estando puesto lo sustituye. Por eso `entregado`
+ * no tiene combos en STATUS_CHOICES (backend/models.py): "entregado,activo" no
+ * es un choice valido, asi que el propio backend rechaza la combinacion con un
+ * 400 aunque alguien la mandara saltandose el selector.
+ * @type {ManiobraStatus}
+ */
+export const STATUS_EXCLUSIVO = "entregado";
+
+/**
+ * Nueva seleccion tras hacer clic en `id`, con la regla del status exclusivo.
+ * Pura: es la logica del selector, aqui para poder probarla sin React.
+ *
+ *   ya estaba          -> se quita
+ *   es el exclusivo    -> se queda solo el
+ *   habia el exclusivo -> lo sustituye
+ *   ninguno            -> se añade si cabe (tope MAX_STATUSES)
+ *
+ * @param {ManiobraStatus[]} seleccionados
+ * @param {ManiobraStatus} id
+ * @returns {ManiobraStatus[]}
+ */
+export function alternarStatus(seleccionados, id) {
+  if (seleccionados.includes(id)) return seleccionados.filter((s) => s !== id);
+  if (id === STATUS_EXCLUSIVO) return [id];
+  const resto = seleccionados.filter((s) => s !== STATUS_EXCLUSIVO);
+  return resto.length >= MAX_STATUSES ? resto : [...resto, id];
 }
 
 /**

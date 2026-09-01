@@ -60,6 +60,14 @@
   color: #6d28d9;
   border-color: #c4b5fd;
 }
+/* Entregado deja la FILA en el color por defecto (statusConfig.js: rowClass
+   vacia). El chip no puede ser blanco puro: el desplegable ya es #fff y la
+   opcion desapareceria. Gris neutro, que es como se lee "sin color". */
+.badge-status--entregado {
+  background-color: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+}
 
 /* ── Dots de color ────────────────────────────────────────────────────────────
    Con 2 status se muestran 2 puntos en el trigger: el fondo ya dice cuál domina,
@@ -87,6 +95,11 @@
 .status-selector__dot--pendiente { background-color: #96c6e0; }
 .status-selector__dot--quemada   { background-color: #ff6961; }
 .status-selector__dot--por_salir { background-color: #c7b0d4; }
+/* Entregado: punto blanco, el aro gris lo dibuja sobre el chip claro. */
+.status-selector__dot--entregado {
+  background-color: #ffffff;
+  box-shadow: 0 0 0 1px #9ca3af;
+}
 .status-selector__dot--vacio {
   background-color: transparent;
   box-shadow: 0 0 0 1px #9ca3af;
