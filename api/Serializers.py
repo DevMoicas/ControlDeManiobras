@@ -109,6 +109,50 @@ def validar_color_de_fila(valor):
     return valor.lower()
 
 
+# Tope de celdas pintadas en una fila. No es una regla de negocio: es lo que
+# impide que alguien con sesión engorde el jsonb sin freno. Maniobras tiene 30
+# columnas, así que 60 deja sitio de sobra para cualquier tabla futura.
+MAX_CELDAS_PINTADAS = 60
+
+# Una clave es el `key` de una columna de la tabla: contenedor, fecha_pis, patio_v…
+# Se valida la FORMA y no una lista de nombres A PROPÓSITO: esa lista viviría
+# aquí y en COLUMNAS del frontend, y las dos copias se separarían a la primera
+# columna nueva. Una clave que no case con ninguna columna no pinta nada — es
+# inerte, no un error, y así añadir una columna no exige tocar el servidor.
+CLAVE_DE_COLUMNA = re.compile(r'^[a-z][a-z0-9_]{0,39}$')
+
+
+def validar_colores_de_celda(valor):
+    """Relleno por CELDA: {columna: "#rrggbb"}. {} es "ninguna pintada".
+
+    Compartido por Maniobras, Vacíos y Gastos por el mismo motivo que
+    validar_color_de_fila: es una comprobación de seguridad y tres copias se
+    separarían con el tiempo.
+
+    Se valida entero —tipo, claves, valores y tamaño— porque es un jsonb abierto
+    que llega del cliente y cada color acaba DENTRO del CSS de la tabla, que ven
+    todos los usuarios. La interfaz no es una defensa.
+    """
+    if valor in (None, ''):
+        return {}
+    if not isinstance(valor, dict):
+        raise serializers.ValidationError('Debe ser un objeto {columna: color}.')
+    if len(valor) > MAX_CELDAS_PINTADAS:
+        raise serializers.ValidationError(
+            f'Demasiadas celdas pintadas (máximo {MAX_CELDAS_PINTADAS}).'
+        )
+    limpio = {}
+    for columna, color in valor.items():
+        if not isinstance(columna, str) or not CLAVE_DE_COLUMNA.match(columna):
+            raise serializers.ValidationError(f'Columna inválida: {columna!r}.')
+        if not isinstance(color, str) or not re.fullmatch(r'#[0-9a-fA-F]{6}', color):
+            raise serializers.ValidationError(
+                f'Color inválido en "{columna}": se espera "#rrggbb".'
+            )
+        limpio[columna] = color.lower()
+    return limpio
+
+
 # ── Espejo de Vacios ─────────────────────────────────────────────────────────
 # La tabla de Maniobras enseña tres datos que se capturan en la pagina de
 # Vacios: fecha de maniobra, fecha de entrega y patio. NO se guardan en
@@ -204,6 +248,9 @@ class ManiobraSerializer(serializers.ModelSerializer):
 
     def validate_color(self, valor):
         return validar_color_de_fila(valor)
+
+    def validate_colores(self, valor):
+        return validar_colores_de_celda(valor)
 
     def validate(self, data):
         # Longitud máxima por campo para evitar payloads enormes
@@ -506,6 +553,9 @@ class GastoSerializer(serializers.ModelSerializer):
     def validate_color(self, valor):
         return validar_color_de_fila(valor)
 
+    def validate_colores(self, valor):
+        return validar_colores_de_celda(valor)
+
     def validate_formulas(self, valor):
         """El desglose de las celdas de dinero: {campo: "=150+230"}.
 
@@ -544,6 +594,9 @@ class VacioSerializer(serializers.ModelSerializer):
 
     def validate_color(self, valor):
         return validar_color_de_fila(valor)
+
+    def validate_colores(self, valor):
+        return validar_colores_de_celda(valor)
 
 class PatioSerializer(serializers.ModelSerializer):
     class Meta:

@@ -220,6 +220,18 @@ class Maniobra(models.Model):
     # CSS de la tabla. Columna real en la migración 0047 (tabla managed=False).
     color = models.CharField(max_length=7, null=True, blank=True)
 
+    # Relleno de CELDAS sueltas: {columna: "#rrggbb"}. Es el otro balde, aparte
+    # del `color` de arriba que pinta la fila entera: para senalar UN dato,
+    # pintar la fila tapa los otros treinta. El de la celda GANA al de la fila,
+    # que a su vez gana al del status. Una clave que no sea una columna de la
+    # tabla no pinta nada: es inerte, no un error.
+    #
+    # Un solo jsonb y no una columna por celda, igual que `Gasto.formulas`:
+    # ninguna necesita indexarse ni filtrarse por su color. El valor lo valida
+    # el serializer porque acaba dentro del CSS de la tabla. Columna real en la
+    # migracion 0062 (maniobras es managed=False).
+    colores = models.JSONField(default=dict, blank=True)
+
     # ── Auditoría (quién/cuándo). editable=False / auto_now → read_only en el
     # serializer; created_by/updated_by se rellenan en perform_create/update. ──
     created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
@@ -256,6 +268,18 @@ class Gasto(models.Model):
     # Mismo contrato que Maniobra.color y Vacio.color (migraciones 0047 y 0048):
     # el valor acaba dentro del CSS de la tabla, así que lo valida el serializer.
     color = models.CharField(max_length=7, null=True, blank=True)
+
+    # Relleno de CELDAS sueltas: {columna: "#rrggbb"}. Es el otro balde, aparte
+    # del `color` de arriba que pinta la fila entera: para senalar UN dato,
+    # pintar la fila tapa los otros treinta. El de la celda GANA al de la fila,
+    # que a su vez gana al del status. Una clave que no sea una columna de la
+    # tabla no pinta nada: es inerte, no un error.
+    #
+    # Un solo jsonb y no una columna por celda, igual que `Gasto.formulas`:
+    # ninguna necesita indexarse ni filtrarse por su color. El valor lo valida
+    # el serializer porque acaba dentro del CSS de la tabla. Columna real en la
+    # migracion 0062 (gastos es managed=False).
+    colores = models.JSONField(default=dict, blank=True)
 
     # Desglose tal cual se escribió en cada celda de dinero, por campo:
     # {"casetas_ida": "=150+230+430"}. La columna de dinero guarda el TOTAL —es
@@ -360,6 +384,18 @@ class Vacio(models.Model):
     # —las filas de Vacios no se pintan solas—, así que NULL devuelve la fila al
     # fondo normal. Columna real en la migracion 0048 (tabla managed=False).
     color = models.CharField(max_length=7, null=True, blank=True)
+
+    # Relleno de CELDAS sueltas: {columna: "#rrggbb"}. Es el otro balde, aparte
+    # del `color` de arriba que pinta la fila entera: para senalar UN dato,
+    # pintar la fila tapa los otros treinta. El de la celda GANA al de la fila,
+    # que a su vez gana al del status. Una clave que no sea una columna de la
+    # tabla no pinta nada: es inerte, no un error.
+    #
+    # Un solo jsonb y no una columna por celda, igual que `Gasto.formulas`:
+    # ninguna necesita indexarse ni filtrarse por su color. El valor lo valida
+    # el serializer porque acaba dentro del CSS de la tabla. Columna real en la
+    # migracion 0062 (vacios es managed=False).
+    colores = models.JSONField(default=dict, blank=True)
 
     # ── Auditoría (quién/cuándo) ──
     created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
