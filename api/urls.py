@@ -22,6 +22,7 @@ from .views import (
     DocumentoCtaPortView,
     DocumentoCtaPortTercerosView,
     DocumentoBitacoraGastosView,
+    DocumentoReporteVaciosView,
     CustomTokenObtainPairView,   # ← nueva, del mismo Views.py
     MovimientoLocalViewSet,
     AlertasVencimientoView,
@@ -70,6 +71,10 @@ urlpatterns = [
     path('documentos/cta-port/',       DocumentoCtaPortView.as_view(),       name='cta-port'),
     path('documentos/cta-port-terceros/', DocumentoCtaPortTercerosView.as_view(), name='cta-port-terceros'),
     path('documentos/bitacora-gastos/', DocumentoBitacoraGastosView.as_view(), name='bitacora-gastos'),
+    # La lista de vacios pendientes de un coordinador. Es el unico documento
+    # sin template: la hoja se arma en la vista porque la lista no tiene un
+    # numero fijo de filas.
+    path('documentos/reporte-vacios/', DocumentoReporteVaciosView.as_view(), name='reporte-vacios'),
 
     # Alertas de vencimiento (licencias / pólizas) para el Home
     path('alertas-vencimiento/', AlertasVencimientoView.as_view(), name='alertas-vencimiento'),

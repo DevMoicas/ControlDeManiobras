@@ -34,10 +34,10 @@ from django.utils.dateparse import parse_datetime
 from django.db.models import Case, CharField, Count, F, IntegerField, Max, Q, Value, When
 from django.db.models.functions import Concat, Substr
 from django.http import FileResponse, HttpResponse
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.page import PageMargins
 from openpyxl.worksheet.properties import PageSetupProperties
-from openpyxl.styles import Alignment
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from PIL import Image
 from rest_framework.views import APIView
 
@@ -716,6 +716,11 @@ def _crear_vacios_del_folio(maniobra, usuario):
         if _vacio_pendiente(contenedor):
             continue
         Vacio.objects.create(
+            # De aqui sale el enlace con la maniobra (migracion 0061): este es el
+            # unico momento en que se sabe de que viaje es el vacio sin adivinarlo
+            # por el contenedor. Es lo que luego permite a la tabla de Maniobras
+            # leer del vacio sus fechas y su patio.
+            maniobra=maniobra,
             contenedor=contenedor,
             tipo_contenedor=tipo,
             operador=operador,
@@ -914,8 +919,12 @@ class OrdenNullsLast(OrderingFilter):
 
 class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
     # prefetch_related: la columna Costos Extra necesita los enlaces de cada
-    # fila. Sin esto, una página de 60 maniobras hace 60 consultas extra.
-    queryset = Maniobra.objects.all().prefetch_related('costos_extra_links').order_by("-id")
+    # fila, y las tres celdas que se leen de Vacios (fecha de maniobra, fecha de
+    # entrega y patio) necesitan sus vacios. Sin esto, una pagina de 60 maniobras
+    # hace 60 consultas extra por cada una de las dos cosas; con esto, una.
+    queryset = Maniobra.objects.all().prefetch_related(
+        'costos_extra_links', 'vacios',
+    ).order_by("-id")
     serializer_class = ManiobraSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     filter_backends = [DjangoFilterBackend, OrdenNullsLast]
@@ -2332,6 +2341,200 @@ class DocumentoBitacoraGastosView(APIView):
             )
         except Exception:
             logger.exception("Error inesperado al generar Bitácora de Gastos")
+            return Response(
+                {'detail': 'No se pudo generar el documento. Contacte al administrador.'},
+                status=500,
+            )
+
+
+# ── Reporte de vacios pendientes por coordinador ─────────────────────────────
+# Nueve columnas, en el mismo orden y con las mismas etiquetas que la tabla de
+# Vacios (COLUMNAS en src/pages/VaciosPage.jsx): el reporte es la lista que ya se
+# ve en pantalla, para llevarsela impresa. De la tabla se quedan fuera Entrego,
+# Cita, CD, y ademas Reprogramado, Fecha Reprogramacion y Status EIR, que el
+# usuario quito para que lo que si sale quepa mas grande.
+#
+# El tercer valor es el ancho de la columna. Suman a proposito casi el ancho
+# util del folio apaisado: la hoja se escala para caber en UNA pagina (nunca se
+# agranda), asi que unas columnas estrechas dejarian la tabla en una esquina con
+# la letra diminuta. Anchas, el escalado sale cerca del 100% y se lee.
+_COLUMNAS_REPORTE_VACIOS = (
+    # Contenedor y las dos fechas van holgadas a proposito: son valores que NO
+    # pueden partirse en dos lineas ('TCNU731524' / '0' no es un contenedor, y
+    # '28/08/202' / '6' no es una fecha). El resto son varias palabras y parten
+    # bien, asi que se les da lo justo: cada unidad de ancho que se ahorra es
+    # menos encogido de la hoja, y por tanto letra mas grande en TODA la tabla.
+    ('contenedor',                 'Contenedor',           18),
+    ('tipo_contenedor',            'Tipo',                  8),
+    ('patio',                      'Patio',                20),
+    ('fecha_maniobra',             'Fecha Maniobra',       16),
+    ('fecha_entrega',              'Fecha Entrega',        16),
+    ('fecha_notificacion_cliente', 'Comentarios',          24),
+    ('status',                     'Status',               12),
+    ('coordinador',                'Coordinador',          24),
+    ('operador',                   'OP del Viaje',         24),
+)
+
+# Las MISMAS etiquetas que pinta el selector del frontend (VACIO_STATUSES en
+# VacioStatusSelector.jsx). El papel tiene que decir lo mismo que la pantalla:
+# en la base viven en minusculas.
+_ETIQUETAS_STATUS_VACIO = {'pendiente': 'Pendiente', 'entregado': 'Entregado'}
+
+
+def _celda_reporte_vacios(vacio, campo):
+    """El valor de una columna, tal y como se lee en la tabla de Vacios."""
+    valor = getattr(vacio, campo)
+    if campo == 'status':
+        return _ETIQUETAS_STATUS_VACIO.get(valor, valor or '')
+    if isinstance(valor, date):
+        return valor.strftime('%d/%m/%Y')
+    return _sin_formula(valor or '')
+
+
+def _nombre_ascii(texto: str) -> str:
+    """Sin acentos y sin ñ, para el nombre del fichero.
+
+    La cabecera Content-Disposition se codifica en latin-1: un nombre con un
+    caracter fuera de esa tabla tumbaria la respuesta ENTERA con un
+    UnicodeEncodeError, y seria por el nombre del archivo, no por el reporte.
+    """
+    import unicodedata
+    limpio = unicodedata.normalize('NFKD', texto).encode('ascii', 'ignore').decode()
+    return re.sub(r'[^A-Za-z0-9 _-]', '', limpio).strip() or 'COORDINADOR'
+
+
+# Azul de la marca (--primary-blue del frontend) para la fila de titulos, y el
+# gris de las filas alternas, que es lo que hace legible en papel una tabla de
+# 12 columnas.
+_AZUL_REPORTE = '1D4ED8'
+_GRIS_REPORTE = 'F4F7FB'
+_LINEA_REPORTE = 'D0D7E2'
+
+# Fila donde van los titulos de las columnas. Encima quedan el titulo, el
+# coordinador, la fecha y una en blanco.
+_FILA_TITULOS_REPORTE = 5
+
+
+def _workbook_reporte_vacios(vacios, coordinador):
+    """La hoja del reporte, ya montada. Aparte de la vista para poder generar un
+    PDF de muestra sin base de datos (ver smoke_pdf.py)."""
+    borde = Side(style='thin', color=_LINEA_REPORTE)
+    recuadro = Border(left=borde, right=borde, top=borde, bottom=borde)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'VACIOS PENDIENTES'
+
+    # Apaisado y encogido a UN folio de ancho: 12 columnas no caben de otra
+    # forma, y partirlas entre dos hojas rompe la lectura de la fila. A lo alto
+    # se parte en las hojas que hagan falta.
+    ws.page_setup.orientation = 'landscape'
+    # UNA sola pagina, a lo ancho y a lo alto (decision del usuario). El escalado
+    # de Excel/LibreOffice solo ENCOGE, nunca agranda, asi que "lo mas grande
+    # posible" no lo da este ajuste: lo dan las columnas anchas y la letra
+    # grande de abajo, que llenan el folio para que el encogido salga minimo.
+    #
+    # Ojo al limite, MEDIDO: con 15 vacios la tabla sale a tamaño completo; con
+    # 45 sigue cabiendo en la hoja pero encogida a menos de la mitad, y como el
+    # escalado es uniforme tambien se estrecha y deja media hoja en blanco. Si
+    # algun coordinador llega a acumular tantos pendientes, fitToHeight = 0
+    # devuelve la lista a varias hojas con la letra intacta.
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 1
+    ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+    # Margenes al minimo: cada decima de pulgada que se quita es ancho que gana
+    # la tabla, y con el encogido eso es letra mas grande.
+    ws.page_margins = PageMargins(left=0.2, right=0.2, top=0.25, bottom=0.25)
+    # Por si algun dia vuelve a haber mas de una hoja (ver fitToHeight): la
+    # cabecera se repite, que sin titulos la segunda no se sabe leer.
+    ws.print_title_rows = f'1:{_FILA_TITULOS_REPORTE}'
+
+    ws['A1'] = 'REPORTE DE VACÍOS PENDIENTES'
+    ws['A1'].font = Font(size=20, bold=True, color='1F2937')
+    ws['A2'] = f'Coordinador: {_sin_formula(coordinador)}'
+    ws['A2'].font = Font(size=15, bold=True, color=_AZUL_REPORTE)
+    ws['A3'] = (f'Generado: {date.today().strftime("%d/%m/%Y")}'
+                f'   ·   {len(vacios)} vacío(s) pendiente(s)')
+    ws['A3'].font = Font(size=11, color='6B7280')
+
+    for columna, (_campo, etiqueta, ancho) in enumerate(
+            _COLUMNAS_REPORTE_VACIOS, start=1):
+        celda = ws.cell(row=_FILA_TITULOS_REPORTE, column=columna, value=etiqueta)
+        celda.font = Font(bold=True, color='FFFFFF', size=14)
+        celda.fill = PatternFill('solid', fgColor=_AZUL_REPORTE)
+        celda.alignment = Alignment(horizontal='center', vertical='center',
+                                    wrap_text=True)
+        celda.border = recuadro
+        ws.column_dimensions[celda.column_letter].width = ancho
+    ws.row_dimensions[_FILA_TITULOS_REPORTE].height = 32
+
+    for i, vacio in enumerate(vacios):
+        fila = _FILA_TITULOS_REPORTE + 1 + i
+        for columna, (campo, _etiqueta, _ancho) in enumerate(
+                _COLUMNAS_REPORTE_VACIOS, start=1):
+            celda = ws.cell(row=fila, column=columna,
+                            value=_celda_reporte_vacios(vacio, campo))
+            celda.font = Font(size=13)
+            celda.alignment = Alignment(vertical='center', wrap_text=True)
+            celda.border = recuadro
+            if i % 2:
+                celda.fill = PatternFill('solid', fgColor=_GRIS_REPORTE)
+
+    # Solo se nota al abrir el .xlsx; en el PDF manda print_title_rows.
+    ws.freeze_panes = ws.cell(row=_FILA_TITULOS_REPORTE + 1, column=1)
+    return wb
+
+
+class DocumentoReporteVaciosView(APIView):
+    """
+    POST /api/documentos/reporte-vacios/
+    Body: {"coordinador": "<nombre>", "formato": "pdf"|"excel"}
+
+    Los vacios PENDIENTES de ese coordinador, en una lista con el mismo aspecto
+    que la tabla de Vacios. Devuelve el PDF (o el .xlsx si se pide 'excel',
+    igual que el resto de documentos).
+
+    SIN template, al reves que los otros cuatro documentos: aqui el numero de
+    filas es el que sea, y un formato con celdas fijas no vale para una lista.
+    Requiere autenticacion JWT.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    def post(self, request):
+        coordinador = str(request.data.get('coordinador') or '').strip()
+        formato = request.data.get('formato', 'pdf')
+
+        if not coordinador:
+            return Response({'detail': 'Elige un coordinador.'}, status=400)
+
+        # iexact: `empleados` y `vacios` son managed=False y el coordinador se
+        # guarda como texto, no como FK. Una mayuscula de mas devolveria un
+        # reporte vacio sin que se entienda por que.
+        vacios = list(
+            Vacio.objects.filter(status='pendiente', coordinador__iexact=coordinador)
+            .order_by('-id')                      # el mismo orden que la tabla
+        )
+        if not vacios:
+            return Response(
+                {'detail': f'{coordinador} no tiene vacíos pendientes.'}, status=400,
+            )
+
+        try:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                return _responder_documento(
+                    _workbook_reporte_vacios(vacios, coordinador), tmp_dir,
+                    f'REPORTE VACIOS {_nombre_ascii(coordinador)}', formato,
+                )
+
+        except subprocess.TimeoutExpired:
+            return Response(
+                {'detail': 'La conversión a PDF tardó demasiado. Intente de nuevo.'},
+                status=500,
+            )
+        except Exception:
+            logger.exception("Error inesperado al generar el Reporte de Vacíos")
             return Response(
                 {'detail': 'No se pudo generar el documento. Contacte al administrador.'},
                 status=500,

@@ -15,7 +15,7 @@ from django.db import connections
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from api.models import Chofer, Folio, Gasto, Maniobra
+from api.models import Chofer, Folio, Gasto, Maniobra, Vacio
 
 URL = '/api/maniobras/'
 
@@ -25,10 +25,13 @@ class BaseAsignacion(TestCase):
     # por el alias del hilo. Ver test_infra_bd.py.
     databases = {'default', 'standard'}
 
-    # Las tres son managed=False y settings_test no las crea. `gastos` y
-    # `choferes` hacen falta aunque esto no las pruebe: guardar una maniobra con
-    # folio dispara el gasto automatico, y poner un operador consulta su licencia.
-    TABLAS = (Maniobra, Gasto, Chofer)
+    # Las cuatro son managed=False y settings_test no las crea. `gastos`,
+    # `choferes` y `vacios` hacen falta aunque esto no las pruebe: guardar una
+    # maniobra con folio dispara el gasto y los vacios automaticos, poner un
+    # operador consulta su licencia, y desde la 0061 leer una maniobra lee de
+    # `vacios` sus fechas y su patio. Maniobra va primero: `vacios` tiene una FK
+    # a ella y el borrado va en orden inverso.
+    TABLAS = (Maniobra, Gasto, Chofer, Vacio)
 
     @classmethod
     def setUpClass(cls):

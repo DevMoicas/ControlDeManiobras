@@ -15,7 +15,7 @@ from django.db import connections
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from api.models import Vacio
+from api.models import Maniobra, Vacio
 
 
 class BaseReprogramado(TestCase):
@@ -28,12 +28,16 @@ class BaseReprogramado(TestCase):
         # `vacios` es managed=False y settings_test no la crea (ver su docstring).
         super().setUpClass()
         with connections['standard'].schema_editor() as editor:
+            # `maniobras` primero aunque esta prueba no la use: desde la 0061
+            # `vacios` tiene una FK a ella y no se puede crear sin su destino.
+            editor.create_model(Maniobra)
             editor.create_model(Vacio)
 
     @classmethod
     def tearDownClass(cls):
         with connections['standard'].schema_editor() as editor:
             editor.delete_model(Vacio)
+            editor.delete_model(Maniobra)
         super().tearDownClass()
 
     def setUp(self):

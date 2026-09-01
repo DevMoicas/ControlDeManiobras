@@ -181,6 +181,12 @@ class Maniobra(models.Model):
         # CANCELADO va junto a QUEMADA en la prioridad y comparte su color: los dos
         # son finales de viaje que no salieron bien, y en la fila se leen igual.
         ("cancelado", "Cancelado"),
+        # ENTREGADO no entra en NINGUNA combinacion a proposito: va solo. Al
+        # marcarlo, el selector deja la maniobra solo con el (STATUS_EXCLUSIVO en
+        # src/config/statusConfig.js del frontend) y, como "entregado,activo" no
+        # es un choice valido, DRF rechaza con 400 cualquier combo que llegue
+        # saltandose el front. En la tabla pinta la fila del color por defecto.
+        ("entregado", "Entregado"),
         # Combinaciones de 2 (orden canónico: mayor prioridad primero)
         ("por_salir,activo",    "Por salir + Activo"),
         ("por_salir,quemada",   "Por salir + Quemada"),
@@ -287,6 +293,23 @@ class Gasto(models.Model):
         db_table = 'gastos'
 
 class Vacio(models.Model):
+    # De que maniobra salio este vacio. Lo pone _crear_vacios_del_folio al dar de
+    # alta la fila, que es el unico momento en que se sabe con certeza. Un vacio
+    # creado a mano en la pagina de Vacios se queda en NULL, que es la verdad: no
+    # viene de ninguna maniobra.
+    #
+    # Antes de esta columna (migracion 0061) el enlace se adivinaba por el
+    # contenedor y solo entre los pendientes (_vacio_pendiente en views.py). Esa
+    # via sigue en pie para NO duplicar vacios al asignar el folio; lo que ya no
+    # depende de ella es la lectura, porque el mismo contenedor vuelve a pasar
+    # meses despues y no distingue un viaje del otro.
+    #
+    # La columna real la añade la 0061 via RunSQL (vacios es managed=False),
+    # igual que Maniobra.cliente_fk en la 0028.
+    maniobra = models.ForeignKey(
+        'api.Maniobra', null=True, blank=True, on_delete=models.SET_NULL,
+        db_column='maniobra_id', related_name='vacios',
+    )
     contenedor = models.CharField(max_length=255, null=True, blank=True)
     # Tipo del contenedor (40HC, 20DC…). Texto libre: no hay catálogo de tipos y
     # el histórico de Maniobra.tipo tampoco lo tiene.

@@ -18,7 +18,7 @@ from django.db import connections
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from api.models import Tracto, Maniobra, TorreFolio, Folio
+from api.models import Tracto, Maniobra, TorreFolio, Folio, Vacio
 
 URL = '/api/torre-folios/'
 
@@ -35,10 +35,14 @@ class BaseFolios(TestCase):
         with connections['standard'].schema_editor() as editor:
             editor.create_model(Tracto)
             editor.create_model(Maniobra)
+            # `vacios` tambien: desde la 0061 la maniobra lee de ahi sus fechas y su
+            # patio al serializarse, asi que sin esta tabla cualquier lectura revienta.
+            editor.create_model(Vacio)
 
     @classmethod
     def tearDownClass(cls):
         with connections['standard'].schema_editor() as editor:
+            editor.delete_model(Vacio)
             editor.delete_model(Maniobra)
             editor.delete_model(Tracto)
         super().tearDownClass()

@@ -12,7 +12,7 @@ from django.db import connections
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from api.models import Folio, Maniobra
+from api.models import Folio, Maniobra, Vacio
 
 LOTE_MZO = ['F-2279', 'R-2280', 'A-2281', 'B-2282', 'A-2283', 'C-2284', 'O-2285',
             'N-2286', 'T-2287', 'A-2288', 'I-2289', 'N-2290', 'E-2291', 'R-2292']
@@ -39,10 +39,14 @@ class BaseFolios(TestCase):
         super().setUpClass()
         with connections['standard'].schema_editor() as editor:
             editor.create_model(Maniobra)
+            # `vacios` tambien: desde la 0061 la maniobra lee de ahi sus fechas y su
+            # patio al serializarse, asi que sin esta tabla cualquier lectura revienta.
+            editor.create_model(Vacio)
 
     @classmethod
     def tearDownClass(cls):
         with connections['standard'].schema_editor() as editor:
+            editor.delete_model(Vacio)
             editor.delete_model(Maniobra)
         super().tearDownClass()
 

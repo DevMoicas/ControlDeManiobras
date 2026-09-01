@@ -1,4 +1,5 @@
 import re
+from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from rest_framework import serializers
 from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD, ReporteViaje, CargaCombustible
@@ -108,6 +109,45 @@ def validar_color_de_fila(valor):
     return valor.lower()
 
 
+# ── Espejo de Vacios ─────────────────────────────────────────────────────────
+# La tabla de Maniobras enseña tres datos que se capturan en la pagina de
+# Vacios: fecha de maniobra, fecha de entrega y patio. NO se guardan en
+# `maniobras`: se leen de las filas de `vacios` enlazadas por maniobra_id
+# (migracion 0061) cada vez que se sirve la maniobra. Al no haber copia, no hay
+# nada que se pueda quedar desfasado de lo que se escribio en Vacios, que es
+# justo lo que se pedia.
+#
+# Un Full repartido entre dos operadores tiene DOS vacios: se enseñan los dos
+# unidos por " - ", el mismo formato que ya usan Contenedor y Peso en esa fila.
+# Van ya formateadas a DD/MM/AAAA porque son celdas de solo lectura: la tabla
+# imprime el texto tal cual, sin parsear fechas ni tener que saber que puede
+# haber dos valores dentro.
+
+def _texto_de_vacio(valor):
+    """Un campo de un vacio, listo para pintar en la tabla de Maniobras."""
+    if valor is None or valor == '':
+        return ''
+    if isinstance(valor, date):
+        return valor.strftime('%d/%m/%Y')
+    return str(valor).strip()
+
+
+def _espejo_de_vacios(maniobra, campo):
+    """`campo` de los vacios de esta maniobra, unidos por " - ".
+
+    Ordenados por id, que es el orden en que se crearon y por tanto el del
+    operador 1 primero. sorted() y no .order_by(): asi funciona sobre la lista
+    que ya trae prefetch_related('vacios') sin disparar una consulta por fila.
+
+    El hueco de un vacio sin ese dato se conserva —en un Full la posicion dice
+    de quien es cada valor—, pero si NINGUNO lo tiene se devuelve "" para que la
+    celda salga vacia en vez de con un guion suelto.
+    """
+    valores = [_texto_de_vacio(getattr(v, campo, None))
+               for v in sorted(maniobra.vacios.all(), key=lambda v: v.id)]
+    return " - ".join(valores) if any(valores) else ""
+
+
 class ManiobraSerializer(serializers.ModelSerializer):
     # Único campo obligatorio para registrar una maniobra.
     solicita = serializers.CharField(required=True, allow_blank=False, allow_null=False, max_length=30)
@@ -132,6 +172,29 @@ class ManiobraSerializer(serializers.ModelSerializer):
         child=serializers.IntegerField(min_value=1),
         write_only=True, required=False, allow_empty=True,
     )
+
+    # Las tres celdas que la tabla lee de Vacios (ver "Espejo de Vacios" arriba).
+    # SerializerMethodField => solo lectura, que es su razon de ser: escribirlas
+    # desde Maniobras es exactamente el desfase que vienen a quitar.
+    fecha_maniobra_v = serializers.SerializerMethodField()
+    fecha_entrega_v = serializers.SerializerMethodField()
+    patio_v = serializers.SerializerMethodField()
+
+    def get_fecha_maniobra_v(self, obj):
+        return _espejo_de_vacios(obj, 'fecha_maniobra')
+
+    def get_fecha_entrega_v(self, obj):
+        return _espejo_de_vacios(obj, 'fecha_entrega')
+
+    def get_patio_v(self, obj):
+        """El patio del vacio y, si aun no hay vacio enlazado, el que se tecleo
+        en su dia en `maniobras.vacio_patio`.
+
+        Sin ese respaldo, cientos de maniobras viejas —las de antes de la 0061,
+        que no tienen vacio al que mirar— perderian en pantalla un dato que hoy
+        se ve. En cuanto hay vacio enlazado, manda el vacio.
+        """
+        return _espejo_de_vacios(obj, 'patio') or (obj.vacio_patio or '')
 
     class Meta:
         model = Maniobra
@@ -474,6 +537,10 @@ class VacioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vacio
         fields = '__all__'
+        # El enlace con la maniobra lo pone el servidor al crear el vacio
+        # (_crear_vacios_del_folio) y no hay pantalla que lo cambie: de lectura,
+        # para no abrir un PATCH que reasigne un vacio a otro viaje.
+        read_only_fields = ('maniobra',)
 
     def validate_color(self, valor):
         return validar_color_de_fila(valor)
