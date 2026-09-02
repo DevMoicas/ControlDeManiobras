@@ -20,7 +20,7 @@ from django.test import TestCase
 from openpyxl import load_workbook
 from rest_framework.test import APIClient
 
-from api.models import Maniobra, Vacio
+from api.models import Maniobra, Patio, Vacio
 
 URL = '/api/documentos/reporte-vacios/'
 FILA_TITULOS = 5
@@ -142,7 +142,40 @@ class ReporteVaciosTests(TestCase):
                          '13/09/2026 14:30')
 
     def test_un_vacio_sin_cita_deja_la_celda_vacia(self):
+        # Sin patio no se sabe si hay cita o no, asi que el papel no se inventa
+        # nada: el CITA ABIERTA sale del patio, no de la falta de hora.
         Vacio.objects.create(contenedor='X1', status='pendiente', coordinador='ANA LOPEZ')
+        self.assertEqual(self.filas_del_excel(self.pedir('ANA LOPEZ'))[0][4], '')
+
+    def test_el_patio_que_no_exige_cita_imprime_cita_abierta(self):
+        """El coordinador lee el papel en el patio: si ahi dice vacio, tiene que
+        preguntar si habia hora. 'CITA ABIERTA' es la respuesta ya escrita."""
+        Patio.objects.create(nombre='APM TERMINAL')
+        Vacio.objects.create(contenedor='X1', status='pendiente', coordinador='ANA LOPEZ',
+                             patio='APM TERMINAL')
+        self.assertEqual(self.filas_del_excel(self.pedir('ANA LOPEZ'))[0][4], 'CITA ABIERTA')
+
+    def test_el_patio_con_cita_no_dice_cita_abierta(self):
+        """Ahi la hora hay que pedirla: decir 'abierta' mandaria al operador a
+        presentarse cuando quisiera."""
+        Patio.objects.create(nombre='APM TERMINAL', con_cita=True)
+        Vacio.objects.create(contenedor='X1', status='pendiente', coordinador='ANA LOPEZ',
+                             patio='APM TERMINAL')
+        self.assertEqual(self.filas_del_excel(self.pedir('ANA LOPEZ'))[0][4], '')
+
+    def test_un_patio_que_no_esta_en_el_catalogo_no_dice_nada(self):
+        """`vacios.patio` arrastra nombres sueltos del historico. De esos no se
+        sabe si piden hora, y marcarlos en Catalogos no los alcanzaria."""
+        Patio.objects.create(nombre='CIMA')
+        Vacio.objects.create(contenedor='X1', status='pendiente', coordinador='ANA LOPEZ',
+                             patio='CIMA ASIPONA')
+        self.assertEqual(self.filas_del_excel(self.pedir('ANA LOPEZ'))[0][4], '')
+
+    def test_una_mayuscula_de_mas_en_el_patio_no_cambia_la_cita(self):
+        # `vacios.patio` guarda el NOMBRE, no un enlace: el cruce se normaliza.
+        Patio.objects.create(nombre='APM TERMINAL', con_cita=True)
+        Vacio.objects.create(contenedor='X1', status='pendiente', coordinador='ANA LOPEZ',
+                             patio=' apm terminal ')
         self.assertEqual(self.filas_del_excel(self.pedir('ANA LOPEZ'))[0][4], '')
 
     def test_una_formula_en_un_campo_de_texto_no_se_ejecuta_en_el_excel(self):

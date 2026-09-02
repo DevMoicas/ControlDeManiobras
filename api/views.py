@@ -2388,11 +2388,35 @@ _COLUMNAS_REPORTE_VACIOS = (
 _ETIQUETAS_STATUS_VACIO = {'pendiente': 'Pendiente', 'entregado': 'Entregado'}
 
 
-def _celda_reporte_vacios(vacio, campo):
+def _mapa_de_patios():
+    """El catalogo de patios como {NOMBRE NORMALIZADO: con_cita}.
+
+    En MAYUSCULAS y sin espacios de sobra porque `vacios.patio` guarda el
+    NOMBRE del patio y no un enlace al catalogo: es el unico cruce que hay, y
+    una diferencia de mayusculas diria "cita abierta" en un patio que si la
+    exige. Mismo mapa que arma la pantalla (utils/citaAbierta.mjs).
+    """
+    return {(nombre or '').strip().upper(): con_cita
+            for nombre, con_cita in Patio.objects.values_list('nombre', 'con_cita')}
+
+
+def _celda_reporte_vacios(vacio, campo, patios=None):
     """El valor de una columna, tal y como se lee en la tabla de Vacios."""
     valor = getattr(vacio, campo)
     if campo == 'status':
         return _ETIQUETAS_STATUS_VACIO.get(valor, valor or '')
+    # CITA ABIERTA: el patio que no exige hora recibe cuando se llegue. Es un
+    # dato derivado del catalogo —no se guarda en el vacio—, el mismo que pinta
+    # la pantalla (utils/citaAbierta.mjs), y solo rellena el hueco: una hora
+    # escrita a mano gana.
+    #
+    # Solo se afirma de los patios que ESTAN en el catalogo. `vacios.patio`
+    # arrastra nombres sueltos del historico ('CIMA', 'CIMA ASIPONA', 'SSA 9 PM
+    # 25 NOV'): de esos no se sabe si piden hora, y marcarlos en Catalogos no
+    # los alcanzaria nunca porque el cruce es por nombre exacto.
+    if campo == 'cita' and valor is None:
+        patio = (patios or {}).get((vacio.patio or '').strip().upper())
+        return 'CITA ABIERTA' if patio is False else ''
     # datetime ANTES que date, que es su clase padre: la cita lleva hora y se
     # imprime en la hora de operacion, no en el UTC en que se guarda.
     if isinstance(valor, datetime):
@@ -2479,12 +2503,16 @@ def _workbook_reporte_vacios(vacios, coordinador):
         ws.column_dimensions[celda.column_letter].width = ancho
     ws.row_dimensions[_FILA_TITULOS_REPORTE].height = 32
 
+    # Una sola consulta para toda la hoja: el catalogo de patios es corto y no
+    # cambia mientras se genera el reporte.
+    patios = _mapa_de_patios()
+
     for i, vacio in enumerate(vacios):
         fila = _FILA_TITULOS_REPORTE + 1 + i
         for columna, (campo, _etiqueta, _ancho) in enumerate(
                 _COLUMNAS_REPORTE_VACIOS, start=1):
             celda = ws.cell(row=fila, column=columna,
-                            value=_celda_reporte_vacios(vacio, campo))
+                            value=_celda_reporte_vacios(vacio, campo, patios))
             celda.font = Font(size=13)
             celda.alignment = Alignment(vertical='center', wrap_text=True)
             celda.border = recuadro

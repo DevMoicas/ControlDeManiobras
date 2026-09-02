@@ -421,6 +421,12 @@ class Vacio(models.Model):
 
 class Patio(models.Model):
     nombre = models.CharField(max_length=100)
+    # CON CITA: este patio exige una hora concreta para recibir el vacio, y esa
+    # hora se captura en Vacios.cita. El que NO la exige recibe a cita abierta,
+    # y eso es lo que la columna CITA de Vacios enseña sola mientras nadie
+    # escriba una hora: es un dato DERIVADO del catalogo, no se guarda en el
+    # vacio, asi que marcar el patio corrige de golpe todos los suyos.
+    con_cita = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["nombre"]
