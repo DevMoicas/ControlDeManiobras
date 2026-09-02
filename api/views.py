@@ -1937,6 +1937,32 @@ class FotoRegistroViewSet(viewsets.ViewSet):
     ALLOWED_MIMES = {'image/jpeg', 'image/png', 'image/webp'}
     MAX_SIZE      = 2 * 1024 * 1024  # 2 MB
 
+    # Documentos de los catalogos: {tipo: (modelo del registro, huecos que usa)}.
+    # Son otra cosa que las fotos de trabajo: entran TAL CUAL —el navegador no los
+    # recomprime— y admiten PDF, porque una tarjeta de circulacion recomprimida a
+    # JPEG deja de servir de comprobante. Por eso su tope es otro: 10 MB, que es
+    # lo que ocupa un escaneo de hoja completa a color.
+    #
+    # 'Permisos Full' usa los dos huecos —el permiso suele venir en dos hojas—;
+    # el resto solo el primero, y pedir el 2 en esos es un 400.
+    TIPOS_CATALOGO = {
+        'tracto_tarjeta':  ('Tracto',   1),
+        'tracto_full':     ('Tracto',   2),
+        'tracto_fisico':   ('Tracto',   1),
+        'tracto_humo':     ('Tracto',   1),
+        'remolque_full':   ('Remolque', 2),
+        'remolque_fisico': ('Remolque', 1),
+    }
+    MAX_SIZE_DOCUMENTO = 10 * 1024 * 1024  # 10 MB
+
+    def _modelo_de(self, tipo):
+        """El modelo al que cuelga cada tipo, para no dejar archivos huerfanos."""
+        if tipo == 'maniobra':
+            return Maniobra
+        if tipo == 'vacio':
+            return Vacio
+        return {'Tracto': Tracto, 'Remolque': Remolque}[self.TIPOS_CATALOGO[tipo][0]]
+
     # ── Validadores de parámetros comunes ────────────────────────────────────
 
     def _validar_params(self, tipo, registro_id_raw, slot_raw=None):
@@ -1944,9 +1970,9 @@ class FotoRegistroViewSet(viewsets.ViewSet):
         Valida y convierte los parámetros comunes.
         Retorna (registro_id, slot, error_response) donde error_response es None si OK.
         """
-        if tipo not in ('maniobra', 'vacio'):
+        if tipo not in ('maniobra', 'vacio') and tipo not in self.TIPOS_CATALOGO:
             return None, None, Response(
-                {'detail': 'tipo inválido. Use maniobra o vacio.'},
+                {'detail': 'tipo inválido.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         try:
@@ -1959,13 +1985,17 @@ class FotoRegistroViewSet(viewsets.ViewSet):
 
         slot = None
         if slot_raw is not None:
+            # Los documentos de un solo hueco rechazan el 2: aceptarlo guardaria
+            # el archivo donde la pantalla no lo ensena nunca.
+            huecos = self.TIPOS_CATALOGO.get(tipo, (None, 2))[1]
+            permitidos = (1, 2)[:huecos]
             try:
                 slot = int(slot_raw)
-                if slot not in (1, 2):
+                if slot not in permitidos:
                     raise ValueError
             except (TypeError, ValueError):
                 return None, None, Response(
-                    {'detail': 'slot debe ser 1 o 2.'},
+                    {'detail': 'slot debe ser %s.' % ' o '.join(str(n) for n in permitidos)},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -2015,8 +2045,8 @@ class FotoRegistroViewSet(viewsets.ViewSet):
         if err:
             return err
 
-        # Evita fotos huérfanas: el registro (maniobra/vacío) debe existir.
-        modelo = Maniobra if tipo == 'maniobra' else Vacio
+        # Evita archivos huérfanos: el registro al que cuelga debe existir.
+        modelo = self._modelo_de(tipo)
         if not modelo.objects.filter(pk=registro_id).exists():
             return Response(
                 {'detail': 'El registro indicado no existe.'},
@@ -2029,13 +2059,21 @@ class FotoRegistroViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if foto_file.size > self.MAX_SIZE:
+        es_documento = tipo in self.TIPOS_CATALOGO
+        tope = self.MAX_SIZE_DOCUMENTO if es_documento else self.MAX_SIZE
+        if foto_file.size > tope:
             return Response(
-                {'detail': 'La imagen no puede superar 2 MB.'},
+                {'detail': 'El archivo no puede superar %d MB.' % (tope // (1024 * 1024))},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         foto_bytes = foto_file.read()
+
+        # Un PDF no pasa por Pillow, asi que se reconoce por su firma —igual que
+        # las imagenes, por los BYTES y no por el content_type que fija el
+        # cliente—. Solo en documentos: en una foto de maniobra no pinta nada.
+        if es_documento and foto_bytes[:5] == b'%PDF-':
+            return self._guardar(tipo, registro_id, slot, foto_bytes, 'application/pdf')
 
         # No confiar en content_type (lo fija el cliente): validar los bytes reales.
         try:
@@ -2050,29 +2088,52 @@ class FotoRegistroViewSet(viewsets.ViewSet):
         _FORMATO_A_MIME = {'JPEG': 'image/jpeg', 'PNG': 'image/png', 'WEBP': 'image/webp'}
         if formato_real not in _FORMATO_A_MIME:
             return Response(
-                {'detail': 'Formato no permitido. Use JPG, PNG o WEBP.'},
+                {'detail': 'Formato no permitido. Use %s.'
+                           % ('PDF, JPG, PNG o WEBP' if es_documento else 'JPG, PNG o WEBP')},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        mime = _FORMATO_A_MIME[formato_real]
 
+        return self._guardar(tipo, registro_id, slot, foto_bytes,
+                             _FORMATO_A_MIME[formato_real])
+
+    def _guardar(self, tipo, registro_id, slot, contenido, mime):
         registro, _ = FotoRegistro.objects.get_or_create(
             tipo=tipo,
             registro_id=registro_id,
         )
 
         if slot == 1:
-            registro.foto_1      = foto_bytes
+            registro.foto_1      = contenido
             registro.foto_1_mime = mime
         else:
-            registro.foto_2      = foto_bytes
+            registro.foto_2      = contenido
             registro.foto_2_mime = mime
 
         registro.save()
 
         return Response(
-            {'detail': f'Foto {slot} guardada correctamente.'},
+            {'detail': f'Archivo {slot} guardado correctamente.'},
             status=status.HTTP_200_OK,
         )
+
+    # ── GET /api/fotos/catalogos/ ────────────────────────────────────────────
+
+    @action(detail=False, methods=['get'], url_path='catalogos')
+    def catalogos(self, request):
+        """Que tractos y remolques YA tienen cada documento.
+
+        Una sola consulta para toda la pantalla de Catalogos: preguntarlo fila a
+        fila serian cuatro peticiones por tracto. Devuelve solo ids —los bytes se
+        piden al abrir el documento—, asi que la respuesta sigue siendo corta
+        aunque los archivos pesen 10 MB.
+        """
+        resultado = {tipo: [] for tipo in self.TIPOS_CATALOGO}
+        filas = (FotoRegistro.objects
+                 .filter(tipo__in=self.TIPOS_CATALOGO)
+                 .values_list('tipo', 'registro_id'))
+        for tipo, registro_id in filas:
+            resultado[tipo].append(registro_id)
+        return Response(resultado)
 
     # ── DELETE /api/fotos/eliminar/?tipo=...&registro_id=...&slot=1 ──────────
 
@@ -2583,19 +2644,37 @@ class DocumentoReporteVaciosView(APIView):
 class AlertasVencimientoView(APIView):
     """
     GET /api/alertas-vencimiento/
-    Devuelve licencias de choferes y pólizas de tractos que vencen en los
-    próximos 30 días, ordenadas por fecha ascendente. Visible para todos los
-    usuarios autenticados sin distinción de rol.
+    Devuelve lo que está por vencer, ordenado por fecha ascendente. Visible para
+    todos los usuarios autenticados sin distinción de rol.
+
+    Cada vencimiento avisa con la antelación que le sirve a quien lo renueva, y
+    por eso no hay un plazo único: la licencia con un mes, la póliza con dos
+    semanas, y los permisos y verificaciones de tracto y remolque con DOS MESES,
+    porque son trámite y con menos no da tiempo.
     """
     authentication_classes = [JWTAuthentication]
     permission_classes     = [IsAuthenticated]
     throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    # (campo del modelo, tipo de alerta) de los vencimientos que avisan a 60
+    # días. La etiqueta que se lee la pone el frontend (AlertaVencimiento.jsx):
+    # aquí solo viaja el tipo.
+    TRAMITES_TRACTO = [
+        ('fecha_vencimiento_permisos_full',   'permisos_full_tracto'),
+        ('fecha_vencimiento_fisico_mecanica', 'fisico_mecanica_tracto'),
+        ('fecha_vencimiento_humo',            'humo'),
+    ]
+    TRAMITES_REMOLQUE = [
+        ('fecha_vencimiento_permisos_full',   'permisos_full_remolque'),
+        ('fecha_vencimiento_fisico_mecanica', 'fisico_mecanica_remolque'),
+    ]
 
     def get(self, request):
         from datetime import timedelta
         hoy = date.today()
         limite_licencia = hoy + timedelta(days=30)   # licencias: 1 mes
         limite_poliza   = hoy + timedelta(days=14)   # pólizas: 2 semanas
+        limite_tramite  = hoy + timedelta(days=60)   # permisos y verificaciones: 2 meses
 
         choferes_por_vencer = Chofer.objects.filter(
             fecha_vencimiento_licencia__isnull=False,
@@ -2629,6 +2708,30 @@ class AlertasVencimientoView(APIView):
                 'fecha':     t['fecha_vencimiento_poliza'].strftime('%d/%m/%Y'),
                 'fecha_raw': t['fecha_vencimiento_poliza'].isoformat(),
             })
+
+        # Permisos Full, Físico Mecánica y Humo, de tractos y de remolques. Un
+        # bucle y no diez consultas escritas a mano: son el mismo aviso con otra
+        # etiqueta, y así añadir uno nuevo es una línea en las listas de arriba.
+        for modelo, tramites, campos_nombre in (
+                (Tracto,   self.TRAMITES_TRACTO,   ('unidad', 'anio', 'placas')),
+                (Remolque, self.TRAMITES_REMOLQUE, ('tipo', 'color', 'placas')),
+        ):
+            for campo, tipo in tramites:
+                filtro = {
+                    campo + '__isnull': False,
+                    campo + '__gte': hoy,
+                    campo + '__lte': limite_tramite,
+                }
+                for fila in modelo.objects.filter(**filtro).values(campo, *campos_nombre):
+                    nombre = ' '.join(
+                        str(fila[c]) for c in campos_nombre if fila[c]
+                    ).strip()
+                    alertas.append({
+                        'tipo':      tipo,
+                        'nombre':    nombre or '(sin datos)',
+                        'fecha':     fila[campo].strftime('%d/%m/%Y'),
+                        'fecha_raw': fila[campo].isoformat(),
+                    })
 
         alertas.sort(key=lambda a: a['fecha_raw'])
 

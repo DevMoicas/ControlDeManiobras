@@ -18,6 +18,20 @@ class Tracto(models.Model):
     # columnas en el orden que llegan, así que este orden ES el de la tabla.
     poliza = models.CharField(max_length=100, null=True, blank=True)
     fecha_vencimiento_poliza = models.DateField(null=True, blank=True)
+    # Vencimientos con documento adjunto. La fecha vive aqui y el archivo en
+    # FotoRegistro ('tracto_full', 'tracto_fisico', 'tracto_humo'), que es donde
+    # el proyecto ya guarda bytes: en la misma tabla obligaria a arrastrar los
+    # archivos en CADA lectura del catalogo.
+    #
+    # Avisan a 60 dias, no a 30 como la poliza: renovar un permiso Full o una
+    # verificacion lleva tramite, y con un mes encima ya no da tiempo. Las
+    # anteriores se quedan con el suyo, que es el que le sirve al usuario.
+    #
+    # La Tarjeta de Circulacion NO esta aqui a proposito: es solo el documento
+    # ('tracto_tarjeta'), sin fecha ni aviso.
+    fecha_vencimiento_permisos_full = models.DateField(null=True, blank=True)
+    fecha_vencimiento_fisico_mecanica = models.DateField(null=True, blank=True)
+    fecha_vencimiento_humo = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.no_eco} - {self.placas}"
@@ -30,6 +44,10 @@ class Remolque(models.Model):
     color = models.CharField(max_length=255)
     tipo = models.CharField(max_length=255)
     placas = models.CharField(max_length=255, unique=True)
+    # Los mismos dos vencimientos del tracto, con la misma reparticion: la fecha
+    # aqui, el archivo en FotoRegistro ('remolque_full', 'remolque_fisico').
+    fecha_vencimiento_permisos_full = models.DateField(null=True, blank=True)
+    fecha_vencimiento_fisico_mecanica = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return self.placas
@@ -530,9 +548,23 @@ class Destino(models.Model):
 
 
 class FotoRegistro(models.Model):
+    # Los dos primeros son fotos de trabajo, que el navegador recomprime a JPEG
+    # hasta caber en 2 MB. Los seis de catalogos son DOCUMENTOS: entran tal cual,
+    # admiten PDF y llegan hasta 10 MB, porque una tarjeta de circulacion
+    # recomprimida deja de servir para lo que se guarda.
+    #
+    # Va aqui y no en una tabla nueva porque es el mismo problema ya resuelto:
+    # bytes con su mime, colgados de (tipo, registro_id). 'Permisos Full' usa los
+    # dos huecos —el permiso suele venir en dos hojas—; el resto solo el primero.
     TIPO_CHOICES = [
         ('maniobra', 'Maniobra'),
         ('vacio', 'Vacío'),
+        ('tracto_tarjeta', 'Tracto · Tarjeta de Circulación'),
+        ('tracto_full', 'Tracto · Permisos Full'),
+        ('tracto_fisico', 'Tracto · Físico Mecánica'),
+        ('tracto_humo', 'Tracto · Humo'),
+        ('remolque_full', 'Remolque · Permisos Full'),
+        ('remolque_fisico', 'Remolque · Físico Mecánica'),
     ]
     tipo        = models.CharField(max_length=20, choices=TIPO_CHOICES)
     registro_id = models.IntegerField()
