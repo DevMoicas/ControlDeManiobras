@@ -1,10 +1,36 @@
 # Pendiente
 
-Anotado el 2026-08-25 y **actualizado el 2026-08-28** al cerrar la sesión.
+Anotado el 2026-08-25 y **actualizado el 2026-09-01** al cerrar la sesión.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
 punto al completarlo en vez de dejarlo criando polvo.
+
+---
+
+## 0. ⚠️ SIN EMPUJAR: la 0063 ya está en producción y su código NO
+
+**Estado al cerrar el 2026-09-01.** La migración **0063** (`vacios.cita` de `varchar` a
+`timestamptz`) **se aplicó en producción**, pero los commits que la acompañan se quedaron
+en local, sin empujar, por decisión del usuario al terminar la jornada:
+
+| Rama | Commit | Qué lleva |
+|---|---|---|
+| `backend/api` | `f79c3c66` | La Cita como instante + su columna en el reporte de vacíos |
+| `feature/inicio-botones` | `088d5ed` | La Cita con hora en la tabla y movida entre las dos fechas |
+| `main` | (este mismo) | ADR-0017 a ADR-0020 y esta nota |
+
+**Qué significa mientras siga así.** La base de prod tiene `cita` como instante y el código
+desplegado la sigue declarando `CharField`:
+
+- **Leer** no rompe: Django devuelve el `datetime` y el serializer lo pinta como texto, así
+  que en la columna Cita de Vacíos se vería algo tipo `2026-09-13 20:30:00+00:00`. Feo, no
+  fatal — y la columna estaba vacía, así que no debería verse nada.
+- **Escribir** sí rompe: si alguien teclea texto en esa celda, Postgres rechaza el
+  `varchar` contra un `timestamptz` y sale un 500 al guardar. Solo esa celda.
+
+**Al retomar: empujar backend primero, esperar el CI en verde, y luego el frontend.** No
+hace falta migrar nada más.
 
 ---
 
@@ -271,3 +297,55 @@ arrastre de `empleados.cargo` al renombrar no es un extra del plan: es lo que lo
 - **Frontend `767cdfe`:** el verde del repaso de PENDIENTES ya no se pinta en el desglose de
   ACTIVOS. La bandera `pendiente_programar` sigue guardada, así que un servicio que vuelva a
   pendiente reaparece marcado.
+
+
+---
+
+## 7. Abierto tras la sesión del 2026-09-01
+
+### El gate de dependencias tumbó los dos despliegues del día
+
+Ninguna de las dos tenía que ver con el código que se subía:
+
+- **Frontend:** `GHSA-c83g-rgw3-j3cx` y `GHSA-73wf-gq98-2v4g` en **browserslist ≤ 4.28.6**
+  (transitiva de autoprefixer y babel). Arreglado subiendo a 4.28.8 — solo `package-lock.json`,
+  no entra en el bundle.
+- **Backend:** `CVE-2026-73228` y `CVE-2026-73229` en **djangorestframework 3.17.1**.
+  Arreglado subiendo a 3.17.2, con las 423 pruebas pasadas sobre la versión nueva antes de
+  empujar.
+
+Los dos se **arreglaron** en vez de excepcionarse porque había versión con parche. Vale la
+pena presupuestar este rato en cada despliegue: pasa casi siempre.
+
+### `react-router` ya tiene arreglo y su excepción se puede retirar
+
+`audit-excepciones.txt` dice que la excepción de `GHSA-qwww-vcr4-c8h2` se retira "en cuanto
+exista una versión con arreglo". **Ya existe**: el rango vulnerable es `>=7.12.0 <7.18.2`,
+así que 7.18.2 lo cierra. No se hizo en la sesión porque subir el router tiene riesgo
+propio y no bloqueaba el despliegue.
+
+### Un vacío duplicado en la base local
+
+Al enlazar los vacíos con su maniobra (ADR-0017) salieron **dos filas pendientes con el
+mismo contenedor** (`MSKU5536563`, ids 231 y 233), las dos apuntando a la maniobra 4490.
+Esa maniobra enseña tres valores donde deberían ser dos. Es un duplicado de datos, no del
+enlace, y borrar un vacío pide admin. Sin mirar en producción.
+
+### El reporte de vacíos a una sola página tiene un techo
+
+`fitToHeight = 1` mete la lista en un folio pase lo que pase. **Medido**: con 15 vacíos la
+tabla sale a tamaño completo; con 45 sigue cabiendo pero encogida a menos de la mitad y,
+como el escalado es uniforme, se estrecha y deja media hoja en blanco. Si algún coordinador
+acumula tantos pendientes, `fitToHeight = 0` devuelve la lista a varias hojas con la letra
+intacta.
+
+### El pintado de celdas no se imprime en el reporte
+
+El balde de celdas (ADR-0018) es de pantalla. El reporte en PDF sale siempre con su
+zebrado, ignorando los colores que alguien haya puesto. No se pidió; si se quiere, hay que
+decidir antes el contraste del texto, porque la paleta de Sheets llega hasta el negro.
+
+### Sigue el aviso de Node 20 en el CI
+
+Sin cambios desde el 2026-08-27: `actions/checkout@v4`, `setup-node@v4` y `azure/login@v2`
+apuntan a Node 20 y GitHub los fuerza a Node 24. Es subir esas tres acciones de versión.
