@@ -31,7 +31,19 @@ producción antes de empujar (ADR-0021):
 
 - **Backend `ff76e106`** · **Frontend `a5ac41c`**.
 
-**Queda abierto de estos tres:**
+**Después, ya sin migración:**
+
+- **Frontend `d00612d` y `9cb7eec`** — la tabla de Tractos, que con las columnas nuevas
+  dejó de caber en la columna de 1320px: esa pestaña ensancha su contenido hasta la
+  pantalla, la tarjeta se ajusta al ancho de la tabla (`width: fit-content`) y tarjeta y
+  pestañas se centran. Los demás catálogos no cambian.
+- **Frontend `242c433`** — el status QUEMADA se lee "Quemada/En falso". Solo la etiqueta:
+  el id sigue siendo `quemada` en la base y en `STATUS_CHOICES`.
+- **Backend `23d40f9c`** · **Frontend `63fd862`** — los plazos de los avisos nuevos, que
+  salieron a 60 días y el usuario ajustó al verlos: Permisos Full a 1 mes, Físico Mecánica
+  y Humo el día que vencen y mientras sigan vencidos (ADR-0022).
+
+**Queda abierto de todo esto:**
 
 - Los vacíos que YA existían con el **STATUS EIR en blanco** se quedaron como estaban: el
   cambio solo decide con qué valor nacen los nuevos. Ponerlos todos en `pendiente` sería
@@ -49,6 +61,9 @@ producción antes de empujar (ADR-0021):
 - La **Tarjeta de Circulación no vence** en el sistema: se decidió que fuera solo el
   archivo. Si algún día tiene que avisar, es una columna de fecha más y una línea en
   `TRAMITES_TRACTO`.
+- **La tabla de Tractos cabe hoy, pero no hay margen.** El ancho se ganó ensanchando la
+  columna y dejando que los títulos ocupen dos líneas. Una columna más y vuelve a
+  arrastrarse; la siguiente palanca sin tocar datos es bajar la tipografía de esa tabla.
 - **Verificar en producción el borrado de documentos.** Está cubierto por prueba
   (`test_documentos_catalogos.py`), pero no se pudo comprobar a mano: en local el admin
   tiene un TOTP que no está sincronizado. Para eso se creó `adminlocal`, un superusuario

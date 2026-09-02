@@ -37,9 +37,24 @@ Los documentos **no comparten reglas con las fotos de trabajo**, aunque comparta
 - **Permisos Full usa los dos huecos** que la tabla ya tenía (el permiso suele venir en dos
   hojas); el resto solo el primero, y pedir el hueco 2 en esos es un 400.
 
-**Los avisos nuevos son a 60 días**, no a los 30 de la licencia ni a los 14 de la póliza:
-renovar un permiso o una verificación es trámite y con un mes encima no da tiempo. Los
-plazos anteriores no se tocaron.
+**Cada aviso nuevo se adelanta lo que le sirve a quien renueva ese trámite**, y los plazos
+anteriores no se tocaron:
+
+| Vencimiento | Avisa |
+|---|---|
+| Permisos Full (tracto y remolque) | 1 mes antes, como la licencia |
+| Físico Mecánica y Humo | el día que vencen, y siguen mientras la fecha esté pasada |
+
+Salieron a producción con 60 días los tres, y el usuario los ajustó a esto el mismo día al
+verlos funcionando. Lo que hizo falta para poder ajustarlos fue mover la antelación a la
+tabla de trámites (`días`, o `None` para "sin antelación") en vez de tenerla como un límite
+común: era ese límite el que obligaba a que los tres avisaran igual.
+
+La Físico Mecánica y el Humo son **las primeras alertas del sistema que hablan de algo YA
+vencido** —hasta entonces todas filtraban por `fecha >= hoy`—, así que su consulta no lleva
+tope por abajo: una verificación caducada hace meses sigue siendo un camión que no debería
+estar circulando. Por lo mismo la tarjeta dice "venció" y no "vence" cuando la fecha ya
+pasó, comparando la fecha y no el tipo de alerta.
 
 En pantalla, **una columna por concepto**: la celda enseña la fecha y a su lado el clip del
 archivo. La Tarjeta de Circulación, que quedó sin fecha, lleva columna propia.
