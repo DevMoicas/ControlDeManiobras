@@ -7,6 +7,10 @@ import { useAuthContext } from "../context/AuthContext";
 import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
 import SearchBar from "../components/SearchBar/SearchBar";
 import CeldaEditable from "../components/CeldaEditable/CeldaEditable";
+// La Cita comparte los conversores de la celda editable: un solo ida y vuelta
+// entre el instante del backend y el calendario, probado en fechaCelda.test.mjs.
+import { aDateHora, aBackendHora, fechaHoraParaMostrar }
+  from "../components/CeldaEditable/fechaCelda.mjs";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
 import PinturaCeldas, { usePinturaCeldas } from "../components/PinturaCeldas/PinturaCeldas";
 import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
@@ -90,6 +94,10 @@ const COLUMNAS = [
   { key: "tipo_contenedor",           label: "Tipo",              max: 100 },
   { key: "patio",                     label: "Patio",             isPatio: true },
   { key: "fecha_maniobra",            label: "Fecha Maniobra",  isFecha: true },
+  // La hora a la que hay que estar en la terminal. Va entre las dos fechas
+  // porque es lo que pasa entre una y otra. Instante completo, no solo fecha:
+  // se guarda en UTC y se lee en la hora del navegador (ver fechaCelda.mjs).
+  { key: "cita",                      label: "Cita",            isFechaHora: true },
   { key: "fecha_entrega",             label: "Fecha Entrega",   isFecha: true },
   { key: "fecha_notificacion_cliente",label: "Comentarios",       max: 50 },
   { key: "status",                    label: "Status",            isStatus: true },
@@ -107,7 +115,6 @@ const COLUMNAS = [
   // práctica). El campo Vacio.transportista SIGUE existiendo en la base con sus
   // datos: quitarlo de aquí no borra nada y volver a mostrarlo es esta línea.
   { key: "operador_entrega",          label: "Entregó",           max: 255 },
-  { key: "cita",                      label: "Cita",              max: 255 },
   { key: "cd",                        label: "CD",                max: 255 },
 ];
 
@@ -167,6 +174,21 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               currentStatus={datos[col.key] ? "si" : "no"}
               onSelect={(val) => onChange(col.key, aBooleano(val))}
               loading={false}
+            />
+          ) : col.isFechaHora ? (
+            <DatePicker
+              locale="es"
+              showTimeSelect
+              timeFormat="HH:mm"
+              timeIntervals={15}
+              dateFormat="dd/MM/yyyy HH:mm"
+              placeholderText="DD/MM/YYYY HH:mm"
+              className="date-picker-input"
+              isClearable
+              portalId={FECHA_PORTAL_ID}
+              popperModifiers={FECHA_MIDDLEWARE}
+              selected={aDateHora(datos[col.key])}
+              onChange={(d) => onChange(col.key, aBackendHora(d))}
             />
           ) : col.isFecha ? (
             <DatePicker
@@ -271,6 +293,22 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     currentStatus={datos[col.key] ? "si" : "no"}
                     onSelect={(val) => onChange(col.key, aBooleano(val))}
                     loading={false}
+                  />
+                ) : col.isFechaHora ? (
+                  <DatePicker
+                    id={`edit-${col.key}`}
+                    locale="es"
+                    showTimeSelect
+                    timeFormat="HH:mm"
+                    timeIntervals={15}
+                    dateFormat="dd/MM/yyyy HH:mm"
+                    placeholderText="DD/MM/YYYY HH:mm"
+                    className="date-picker-input"
+                    isClearable
+                    portalId={FECHA_PORTAL_ID}
+                    popperModifiers={FECHA_MIDDLEWARE}
+                    selected={aDateHora(datos[col.key] ?? "")}
+                    onChange={(d) => onChange(col.key, aBackendHora(d))}
                   />
                 ) : col.isFecha ? (
                   <DatePicker
@@ -711,6 +749,14 @@ export default function VaciosPage() {
                         <PatioSelector
                           currentValue={vacio.patio}
                           onSelect={(nombre) => handlePatioChange(vacio, nombre)}
+                        />
+                      ) : col.isFechaHora ? (
+                        <CeldaEditable
+                          fechaHora
+                          valor={vacio[col.key]}
+                          texto={fechaHoraParaMostrar(vacio[col.key])}
+                          etiqueta={col.label}
+                          onGuardar={(val) => handleGuardarCampo(vacio, col.key, val)}
                         />
                       ) : col.isFecha ? (
                         <CeldaEditable

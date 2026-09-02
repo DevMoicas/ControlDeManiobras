@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { aDate, aBackend } from "./fechaCelda.mjs";
+import { aDate, aBackend, aDateHora, aBackendHora, fechaHoraParaMostrar } from "./fechaCelda.mjs";
 
 test("ida y vuelta no mueve el dia", () => {
   assert.equal(aBackend(aDate("2026-08-13")), "2026-08-13");
@@ -27,4 +27,24 @@ test("vacio o malformado devuelve null, no Invalid Date", () => {
 test("sin fecha se guarda cadena vacia", () => {
   assert.equal(aBackend(null), "");
   assert.equal(aBackend(undefined), "");
+});
+
+// ── Fecha con hora (la cita de Vacíos) ───────────────────────────────────────
+
+test("el instante da la vuelta sin moverse", () => {
+  const d = new Date(2026, 8, 12, 14, 30);          // 12/09/2026 14:30 local
+  assert.equal(aDateHora(aBackendHora(d)).getTime(), d.getTime());
+});
+
+test("se pinta en la hora del navegador, no en UTC", () => {
+  const d = new Date(2026, 8, 12, 14, 30);
+  assert.equal(fechaHoraParaMostrar(d.toISOString()), "12/09/2026 14:30");
+});
+
+test("sin cita no hay Invalid Date por ningun lado", () => {
+  for (const vacio of [null, undefined, "", "no soy una fecha"]) {
+    assert.equal(aDateHora(vacio), null);
+    assert.equal(fechaHoraParaMostrar(vacio), "");
+  }
+  assert.equal(aBackendHora(null), "");
 });

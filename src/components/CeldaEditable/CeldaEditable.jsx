@@ -3,7 +3,7 @@ import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { shift } from "@floating-ui/react";
 import es from "date-fns/locale/es";
-import { aDate, aBackend } from "./fechaCelda.mjs";
+import { aDate, aBackend, aDateHora, aBackendHora } from "./fechaCelda.mjs";
 import "./CeldaEditable.css";
 
 registerLocale("es", es);
@@ -36,11 +36,13 @@ const FECHA_MIDDLEWARE = [shift({ padding: 8 })];
  *             DD/MM/YYYY…). Si no se pasa, se muestra `valor`.
  * - `fecha`:  abre un DatePicker en vez de un input. Guarda al CERRAR el
  *             calendario, no en cada clic: elegir día es un paso intermedio.
+ * - `fechaHora`: igual, pero con hora — el valor es un instante ISO, no un
+ *             'YYYY-MM-DD'. Lo usa la Cita de Vacíos.
  * - `max`:    límite del SERIALIZER, que en varios campos es más estricto que el
  *             del modelo. Cortar aquí evita un 400 que el apiClient solo sabe
  *             mostrar como "HTTP 400".
  */
-export default function CeldaEditable({ valor, texto, onGuardar, fecha = false, max, etiqueta }) {
+export default function CeldaEditable({ valor, texto, onGuardar, fecha = false, fechaHora = false, max, etiqueta }) {
   const [editando, setEditando] = useState(false);
   const [borrador, setBorrador] = useState("");
 
@@ -86,6 +88,27 @@ export default function CeldaEditable({ valor, texto, onGuardar, fecha = false, 
       popperModifiers={FECHA_MIDDLEWARE}
       selected={aDate(borrador)}
       onChange={(d) => setBorrador(aBackend(d))}
+      onCalendarClose={confirmar}
+    />
+  );
+
+  // Mismo trato que `fecha` —se guarda al cerrar el calendario— porque elegir
+  // el día y elegir la hora son dos pasos de la misma edición.
+  if (fechaHora) return (
+    <DatePicker
+      autoFocus
+      locale="es"
+      showTimeSelect
+      timeFormat="HH:mm"
+      timeIntervals={15}
+      dateFormat="dd/MM/yyyy HH:mm"
+      placeholderText="DD/MM/YYYY HH:mm"
+      className="date-picker-input"
+      isClearable
+      portalId={FECHA_PORTAL_ID}
+      popperModifiers={FECHA_MIDDLEWARE}
+      selected={aDateHora(borrador)}
+      onChange={(d) => setBorrador(aBackendHora(d))}
       onCalendarClose={confirmar}
     />
   );
