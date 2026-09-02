@@ -506,7 +506,8 @@ export default function NoEcoPage() {
       })
     : [];
   return (
-    <div className="noeco-container">
+    // Tractos es la única tabla que no cabe en la columna de siempre.
+    <div className={`noeco-container ${vista === "tractos" ? "noeco-container--ancha" : ""}`}>
 
       {/* ── Header con título y botón admin ── */}
       {/* Mismo patrón que Movimientos Locales y Documentos de Viaje:

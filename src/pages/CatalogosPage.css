@@ -548,3 +548,34 @@
 @media (prefers-reduced-motion: reduce) {
   .cat-check { transition: none; }
 }
+
+/* ── Tractos: la tabla que se salió de la columna ─────────────────────────── */
+/* Trece columnas contra las cinco o seis de los demás catálogos, desde que cada
+   documento trajo su vencimiento. En la columna de 1320px que comparten todas no
+   cabe, y la tarjeta acababa arrastrándose por dentro: el botón de Agregar se
+   quedaba en el borde visible mientras la tabla seguía por debajo.
+   Solo esta pestaña ensancha su contenido hasta la pantalla. Las demás no lo
+   necesitan y se quedan exactamente como estaban. */
+.noeco-container--ancha {
+  padding-left: clamp(20px, 4vw, 48px);
+  padding-right: clamp(20px, 4vw, 48px);
+}
+
+/* La tarjeta se ajusta al ancho de LA TABLA, no al de la pantalla: así el botón
+   de Agregar —pegado a la derecha dentro de la tarjeta— cae en la esquina de la
+   tabla y no flotando a media pantalla. El max-width es el que evita que, en una
+   pantalla estrecha, el desbordamiento pase a ser de la página entera. */
+.noeco-container--ancha .table-container {
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* Los títulos dejan de ir en una sola línea. "Fecha Vencimiento Póliza" en una
+   sola ocupa más que cualquier dato de su columna, y son 13: es de donde sale
+   casi todo el ancho que sobraba. */
+.noeco-container--ancha .custom-table thead th {
+  white-space: normal;
+  padding: 12px 11px;
+}
+
+.noeco-container--ancha .custom-table td { padding: 8px 10px; }
