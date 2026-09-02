@@ -46,13 +46,21 @@ export default function AlertaVencimiento({ alerta }) {
     sujeto: <>El documento <strong>{alerta.tipo}</strong> de</>, verbo: "vence", accion: "el dato",
   };
 
+  // La Físico Mecánica y el Humo no avisan por adelantado: aparecen el día que
+  // vencen y siguen ahí mientras la fecha esté pasada. En esos días "vence el
+  // día 20/08" sería falso, así que el verbo se pone en pasado. Los demás avisos
+  // siempre llegan con fecha futura y no pasan por aquí.
+  const enPasado = { vence: "venció", vencen: "vencieron" };
+  const yaVencio = alerta.fecha_raw && alerta.fecha_raw < new Date().toLocaleDateString("sv");
+  const cuando = yaVencio ? enPasado[verbo] : verbo;
+
   return (
     <div className="av-card" role="alert">
       <p className="av-urgente">
         <AlertTriangle size={16} aria-hidden="true" /> ¡URGENTE!
       </p>
       <p className="av-mensaje">
-        {sujeto} <strong>{alerta.nombre}</strong> {verbo} el día{" "}
+        {sujeto} <strong>{alerta.nombre}</strong> {cuando} el día{" "}
         <strong>{alerta.fecha}</strong>, actualice {accion} a la brevedad
       </p>
     </div>
