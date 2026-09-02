@@ -1,6 +1,6 @@
 # Pendiente
 
-Anotado el 2026-08-25 y **actualizado el 2026-09-01** al cerrar la sesión.
+Anotado el 2026-08-25 y **actualizado el 2026-09-02**.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
@@ -8,29 +8,24 @@ punto al completarlo en vez de dejarlo criando polvo.
 
 ---
 
-## 0. ⚠️ SIN EMPUJAR: la 0063 ya está en producción y su código NO
+## 0. Desplegado el 2026-09-02
 
-**Estado al cerrar el 2026-09-01.** La migración **0063** (`vacios.cita` de `varchar` a
-`timestamptz`) **se aplicó en producción**, pero los commits que la acompañan se quedaron
-en local, sin empujar, por decisión del usuario al terminar la jornada:
+Lo que el 2026-09-01 se quedo en local ya esta en produccion, en el orden de siempre
+(backend en verde primero, luego el frontend):
 
-| Rama | Commit | Qué lleva |
-|---|---|---|
-| `backend/api` | `f79c3c66` | La Cita como instante + su columna en el reporte de vacíos |
-| `feature/inicio-botones` | `088d5ed` | La Cita con hora en la tabla y movida entre las dos fechas |
-| `main` | (este mismo) | ADR-0017 a ADR-0020 y esta nota |
+- **Backend `d4942c6d`** — la Cita como instante y en el reporte (`f79c3c66`, el que
+  acompanaba a la migracion **0063**, aplicada desde el 2026-09-01) + el STATUS EIR
+  naciendo en `pendiente`.
+- **Frontend `28ebf45`** — la Cita con hora entre las dos fechas (`088d5ed`) + la fila
+  nueva de Vacios con el EIR en `pendiente`.
 
-**Qué significa mientras siga así.** La base de prod tiene `cita` como instante y el código
-desplegado la sigue declarando `CharField`:
+El desfase entre la 0063 y su codigo, que dejaba un 500 al escribir en la celda Cita,
+esta cerrado.
 
-- **Leer** no rompe: Django devuelve el `datetime` y el serializer lo pinta como texto, así
-  que en la columna Cita de Vacíos se vería algo tipo `2026-09-13 20:30:00+00:00`. Feo, no
-  fatal — y la columna estaba vacía, así que no debería verse nada.
-- **Escribir** sí rompe: si alguien teclea texto en esa celda, Postgres rechaza el
-  `varchar` contra un `timestamptz` y sale un 500 al guardar. Solo esa celda.
-
-**Al retomar: empujar backend primero, esperar el CI en verde, y luego el frontend.** No
-hace falta migrar nada más.
+**Queda abierto del EIR:** los vacios que YA existen con el STATUS EIR en blanco se
+quedaron como estaban — el cambio solo decide con que valor nacen los nuevos. Ponerlos
+todos en `pendiente` seria una migracion de datos, y no se sabe si ese blanco es
+decision de alguien.
 
 ---
 
