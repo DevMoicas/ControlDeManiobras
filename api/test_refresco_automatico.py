@@ -67,7 +67,10 @@ class RelojTests(BaseRefresco):
         v = Vacio.objects.create(contenedor='WHLU5591210', status='pendiente')
         antes = self.reloj()
 
-        v.cita = '10:00'
+        # Un campo cualquiera: lo que se mide es que EDITAR mueve el reloj, no
+        # que lo haga este campo. Antes se usaba `cita`, que desde la 0063 ya no
+        # es texto libre sino un instante.
+        v.cd = 'EDITADO'
         v.save()
 
         self.assertGreater(self.reloj()['t'], antes['t'])

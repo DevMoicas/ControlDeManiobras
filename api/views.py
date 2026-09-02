@@ -26,7 +26,7 @@ import subprocess
 import tempfile
 import logging
 import io
-from datetime import date
+from datetime import date, datetime
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -2368,6 +2368,9 @@ _COLUMNAS_REPORTE_VACIOS = (
     ('tipo_contenedor',            'Tipo',                  8),
     ('patio',                      'Patio',                20),
     ('fecha_maniobra',             'Fecha Maniobra',       16),
+    # Va entre las dos fechas, igual que en la tabla. Mas ancha que ellas
+    # porque lleva la hora detras.
+    ('cita',                       'Cita',                 20),
     ('fecha_entrega',              'Fecha Entrega',        16),
     ('fecha_notificacion_cliente', 'Comentarios',          24),
     ('status',                     'Status',               12),
@@ -2386,6 +2389,10 @@ def _celda_reporte_vacios(vacio, campo):
     valor = getattr(vacio, campo)
     if campo == 'status':
         return _ETIQUETAS_STATUS_VACIO.get(valor, valor or '')
+    # datetime ANTES que date, que es su clase padre: la cita lleva hora y se
+    # imprime en la hora de operacion, no en el UTC en que se guarda.
+    if isinstance(valor, datetime):
+        return _fecha_hora_doc(valor)
     if isinstance(valor, date):
         return valor.strftime('%d/%m/%Y')
     return _sin_formula(valor or '')

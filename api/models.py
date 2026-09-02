@@ -375,7 +375,16 @@ class Vacio(models.Model):
     # existentes quedan en NULL. Columnas reales en la migración 0025 (managed=False).
     transportista = models.CharField(max_length=255, null=True, blank=True)
     operador_entrega = models.CharField(max_length=255, null=True, blank=True)
-    cita = models.CharField(max_length=255, null=True, blank=True)
+    # La hora a la que hay que estar en la terminal. Fue texto libre hasta la
+    # 0063, donde se convirtio: nadie la habia usado nunca.
+    #
+    # Un instante y no fecha + hora en dos columnas. El par separado
+    # (Maniobra.fecha_entrega_mercancia + hora_entrega) existe para las fechas
+    # que se RECORTAN a dia y viajan como 'YYYY-MM-DD' a documentos y gastos;
+    # esta no se recorta, se lee entera, y para imprimirla ya esta
+    # _fecha_hora_doc, que la pasa a la hora de operacion. Mismo tipo que
+    # ReporteViaje.cita, que es esta misma idea en otra tabla.
+    cita = models.DateTimeField(null=True, blank=True)
     cd = models.CharField(max_length=255, null=True, blank=True)
 
     # Color de relleno de la fila, elegido a mano. Mismo contrato que

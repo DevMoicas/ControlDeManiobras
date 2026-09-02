@@ -11,7 +11,8 @@ persona a buscar un contenedor que no le toca y nadie se entera hasta el patio.
 Solo corre con:  Manage.py test api --settings=config.settings_test
 """
 import io
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
 from django.db import connections
@@ -23,6 +24,11 @@ from api.models import Maniobra, Vacio
 
 URL = '/api/documentos/reporte-vacios/'
 FILA_TITULOS = 5
+
+# La cita se guarda en UTC y se imprime en la hora de operacion. Escribirla ya
+# en esa zona es lo que hace que la prueba mida el viaje de ida y vuelta: si
+# alguien quitara la conversion, saldrian las 20:30 en el papel.
+ZONA = ZoneInfo('America/Mexico_City')
 
 
 class ReporteVaciosTests(TestCase):
@@ -78,10 +84,11 @@ class ReporteVaciosTests(TestCase):
         contenedores = [fila[0] for fila in self.filas_del_excel(r)]
         self.assertEqual(contenedores, ['SUYO1'])
 
-    def test_las_nueve_columnas_van_de_contenedor_a_op_del_viaje(self):
+    def test_las_diez_columnas_van_de_contenedor_a_op_del_viaje(self):
         Vacio.objects.create(
             contenedor='ABCD1234567', tipo_contenedor='40HC', patio='APM TERMINAL',
             fecha_maniobra=date(2026, 9, 12), fecha_entrega=date(2026, 9, 15),
+            cita=datetime(2026, 9, 13, 14, 30, tzinfo=ZONA),
             fecha_notificacion_cliente='AVISADO', status='pendiente',
             coordinador='ANA LOPEZ', operador='JUAN PEREZ',
             # Nada de esto sale en el reporte: Reprogramado, Fecha Reprogramacion
@@ -89,12 +96,13 @@ class ReporteVaciosTests(TestCase):
             # grande, y Entrego / Cita / CD nunca estuvieron.
             reprogramado=True, fecha_reprogramacion=date(2026, 9, 20),
             status_eir='sin_eir_fisico',
-            operador_entrega='NO SALE', cita='NO SALE', cd='NO SALE',
+            operador_entrega='NO SALE', cd='NO SALE',
         )
         fila = self.filas_del_excel(self.pedir('ANA LOPEZ'))[0]
         self.assertEqual(fila, [
-            'ABCD1234567', '40HC', 'APM TERMINAL', '12/09/2026', '15/09/2026',
-            'AVISADO', 'Pendiente', 'ANA LOPEZ', 'JUAN PEREZ',
+            'ABCD1234567', '40HC', 'APM TERMINAL', '12/09/2026',
+            '13/09/2026 14:30',                      # la cita, entre las dos fechas
+            '15/09/2026', 'AVISADO', 'Pendiente', 'ANA LOPEZ', 'JUAN PEREZ',
         ])
         # Ni rastro de lo que se quito, en ninguna columna.
         for fuera in ('Sí', '20/09/2026', 'Sin EIR Físico', 'NO SALE'):
@@ -105,7 +113,8 @@ class ReporteVaciosTests(TestCase):
         # 'Pendiente' y el papel tiene que decir lo mismo que la pantalla.
         Vacio.objects.create(contenedor='X1', status='pendiente',
                              coordinador='ANA LOPEZ')
-        self.assertEqual(self.filas_del_excel(self.pedir('ANA LOPEZ'))[0][6], 'Pendiente')
+        # 7 y no 6: la Cita entro entre las dos fechas y corrio el resto.
+        self.assertEqual(self.filas_del_excel(self.pedir('ANA LOPEZ'))[0][7], 'Pendiente')
 
     def test_una_mayuscula_de_mas_no_deja_el_reporte_vacio(self):
         # El coordinador se guarda como texto, no como FK.
@@ -123,7 +132,21 @@ class ReporteVaciosTests(TestCase):
         self.assertEqual(r.status_code, 400)
         self.assertIn('no tiene vacíos pendientes', r.data['detail'])
 
+    def test_la_cita_sale_en_la_hora_de_operacion_y_no_en_utc(self):
+        """Es lo unico del reporte que lleva HORA, y la hora se tuerce sola: se
+        guarda en UTC y el papel lo arma el SERVIDOR, asi que sin convertir
+        saldria seis horas corrida."""
+        Vacio.objects.create(contenedor='X1', status='pendiente', coordinador='ANA LOPEZ',
+                             cita=datetime(2026, 9, 13, 14, 30, tzinfo=ZONA))
+        self.assertEqual(self.filas_del_excel(self.pedir('ANA LOPEZ'))[0][4],
+                         '13/09/2026 14:30')
+
+    def test_un_vacio_sin_cita_deja_la_celda_vacia(self):
+        Vacio.objects.create(contenedor='X1', status='pendiente', coordinador='ANA LOPEZ')
+        self.assertEqual(self.filas_del_excel(self.pedir('ANA LOPEZ'))[0][4], '')
+
     def test_una_formula_en_un_campo_de_texto_no_se_ejecuta_en_el_excel(self):
         # CWE-1236: sin la comilla, Excel/LibreOffice lo trataria como formula.
         Vacio.objects.create(contenedor='=1+1', status='pendiente', coordinador='ANA LOPEZ')
         self.assertEqual(self.filas_del_excel(self.pedir('ANA LOPEZ'))[0][0], "'=1+1")
+
