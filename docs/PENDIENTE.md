@@ -26,7 +26,12 @@ producción antes de empujar (ADR-0021):
 
 - **Backend `ea271be6`** · **Frontend `27e0c19`**.
 
-**Queda abierto de estos dos:**
+**Por la noche** — los documentos y vencimientos de Tractos y Remolques, con la
+**migración 0065** aplicada en producción antes de empujar (ADR-0022):
+
+- **Backend `ff76e106`** · **Frontend `a5ac41c`**.
+
+**Queda abierto de estos tres:**
 
 - Los vacíos que YA existían con el **STATUS EIR en blanco** se quedaron como estaban: el
   cambio solo decide con qué valor nacen los nuevos. Ponerlos todos en `pendiente` sería
@@ -37,6 +42,17 @@ producción antes de empujar (ADR-0021):
   `ISL` 8, `APM` 6…); en producción lo dijo el paso `ver` de `migrar_prod.sh`. Para que
   entren hay que **normalizar esos nombres** o dar de alta el patio con el nombre exacto.
   Ninguna de las dos se hizo: es una decisión de negocio sobre datos que ya existen.
+- Los **documentos ocupan espacio en la base**: hasta 10 MB por archivo, sin recomprimir.
+  Con ~40 unidades y 4 documentos cada una son cientos de MB en el peor caso, sobre disco
+  ya provisionado. Nadie lo ha medido en producción todavía; si algún día molesta, la
+  conversación es Blob Storage y el punto de cambio es `_guardar()` en `api/views.py`.
+- La **Tarjeta de Circulación no vence** en el sistema: se decidió que fuera solo el
+  archivo. Si algún día tiene que avisar, es una columna de fecha más y una línea en
+  `TRAMITES_TRACTO`.
+- **Verificar en producción el borrado de documentos.** Está cubierto por prueba
+  (`test_documentos_catalogos.py`), pero no se pudo comprobar a mano: en local el admin
+  tiene un TOTP que no está sincronizado. Para eso se creó `adminlocal`, un superusuario
+  **solo de la base local** y sin segundo factor — no existe en producción.
 
 ---
 
