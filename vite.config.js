@@ -30,6 +30,12 @@ export default defineConfig(({ mode }) => {
           "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "img-src 'self' data: blob:",
+          // El visor de documentos de Catalogos mete el PDF en un <iframe> con
+          // una URL de blob que crea la propia pagina. Sin esto cae en
+          // default-src 'self' y Chrome lo bloquea con "Este contenido esta
+          // bloqueado". Solo blob:, que unicamente puede crear codigo del mismo
+          // origen — no abre la puerta a empotrar nada de fuera.
+          "frame-src 'self' blob:",
           `connect-src 'self' ${apiOrigin} ws://localhost:* ws://127.0.0.1:*`,
           "font-src 'self' https://fonts.gstatic.com",
           "frame-ancestors 'none'",

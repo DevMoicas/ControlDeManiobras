@@ -13,6 +13,7 @@ import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import CargoSelector from "../components/CargoSelector/CargoSelector";
 import TransportistaSelector from "../components/TransportistaSelector/TransportistaSelector";
+import DocumentoCelda from "../components/DocumentoCelda/DocumentoCelda";
 
 // Todas las tablas de catálogos se muestran estrictamente por id ascendente.
 const porId = (arr) => [...arr].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
@@ -24,7 +25,32 @@ const porId = (arr) => [...arr].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
 const COLUMNAS_FECHA = new Set([
   "fecha_vencimiento_poliza",
   "fecha_vencimiento_licencia",
+  "fecha_vencimiento_permisos_full",
+  "fecha_vencimiento_fisico_mecanica",
+  "fecha_vencimiento_humo",
 ]);
+
+// Columnas con documento adjunto. La FECHA es una columna del modelo y se pinta
+// sola; el clip se cuelga de ESA MISMA celda en vez de abrir una columna aparte,
+// porque el permiso y su vencimiento son un solo concepto y la tabla ya es
+// ancha. Los huecos son los del backend: Permisos Full lleva dos hojas.
+const DOCUMENTOS_EN_FECHA = {
+  tractos: {
+    fecha_vencimiento_permisos_full:   { tipo: "tracto_full",   etiqueta: "Permisos Full",   huecos: 2 },
+    fecha_vencimiento_fisico_mecanica: { tipo: "tracto_fisico", etiqueta: "Físico Mecánica", huecos: 1 },
+    fecha_vencimiento_humo:            { tipo: "tracto_humo",   etiqueta: "Humo",            huecos: 1 },
+  },
+  remolques: {
+    fecha_vencimiento_permisos_full:   { tipo: "remolque_full",   etiqueta: "Permisos Full",   huecos: 2 },
+    fecha_vencimiento_fisico_mecanica: { tipo: "remolque_fisico", etiqueta: "Físico Mecánica", huecos: 1 },
+  },
+};
+
+// La Tarjeta de Circulación no vence en el sistema —se decidió que fuera solo el
+// archivo—, así que no tiene columna de fecha donde colgarse y lleva la suya.
+const DOCUMENTOS_SUELTOS = {
+  tractos: [{ tipo: "tracto_tarjeta", etiqueta: "Tarjeta de Circulación", huecos: 1 }],
+};
 
 // "2026-12-31" → "31/12/2026". Cualquier otra cosa (vacío, texto suelto) sale
 // tal cual: la celda nunca debe tragarse un dato por no saber interpretarlo.
@@ -84,6 +110,11 @@ export default function NoEcoPage() {
     telefono: "Teléfono",
     transportista: "Transportista",
     con_cita: "Con Cita",
+    // Se leen por el concepto y no por el nombre de la columna: la celda enseña
+    // la fecha de vencimiento y el clip de su documento.
+    fecha_vencimiento_permisos_full: "Permisos Full",
+    fecha_vencimiento_fisico_mecanica: "Físico Mecánica",
+    fecha_vencimiento_humo: "Humo",
   };
 
   const configFormularios = {
@@ -95,12 +126,19 @@ export default function NoEcoPage() {
       { name: "placas", label: "Placas", type: "text" },
       { name: "tipo", label: "Tipo", type: "text" },
       { name: "poliza", label: "Póliza", type: "text", required: false },
-      { name: "fecha_vencimiento_poliza", label: "Fecha Vencimiento Póliza", type: "date", required: false }
+      { name: "fecha_vencimiento_poliza", label: "Fecha Vencimiento Póliza", type: "date", required: false },
+      // El archivo de cada uno se sube desde el clip de su celda, no desde aquí:
+      // subirlo necesita que el tracto ya exista y tenga id.
+      { name: "fecha_vencimiento_permisos_full", label: "Vencimiento Permisos Full", type: "date", required: false },
+      { name: "fecha_vencimiento_fisico_mecanica", label: "Vencimiento Físico Mecánica", type: "date", required: false },
+      { name: "fecha_vencimiento_humo", label: "Vencimiento Humo", type: "date", required: false }
     ],
     remolques: [
       { name: "color", label: "Color", type: "text" },
       { name: "tipo", label: "Tipo de remolque", type: "text" },
-      { name: "placas", label: "Placas del remolque", type: "text" }
+      { name: "placas", label: "Placas del remolque", type: "text" },
+      { name: "fecha_vencimiento_permisos_full", label: "Vencimiento Permisos Full", type: "date", required: false },
+      { name: "fecha_vencimiento_fisico_mecanica", label: "Vencimiento Físico Mecánica", type: "date", required: false }
     ],
     choferes: [
       { name: "nombre", label: "Nombre Completo", type: "text" },
@@ -272,6 +310,25 @@ export default function NoEcoPage() {
       }
     }
   };
+
+  // Qué tractos y remolques ya tienen cada documento, en UNA petición para toda
+  // la pantalla: preguntarlo fila a fila serían cuatro por tracto. Solo ids —los
+  // bytes se piden al abrir el clip—, así que la respuesta es corta.
+  const [documentos, setDocumentos] = useState({});
+  useEffect(() => {
+    apiClient.get("/fotos/catalogos/")
+      .then((data) => setDocumentos(Object.fromEntries(
+        Object.entries(data).map(([tipo, ids]) => [tipo, new Set(ids)]))))
+      // Sin esto los clips se pintan vacíos: se sigue pudiendo abrir y subir,
+      // solo se pierde el "ya tiene" de un vistazo.
+      .catch(() => {});
+  }, []);
+
+  const marcarDocumento = (tipo, id, hay) => setDocumentos((prev) => {
+    const ids = new Set(prev[tipo] ?? []);
+    if (hay) ids.add(id); else ids.delete(id);
+    return { ...prev, [tipo]: ids };
+  });
 
   // CON CITA (solo Patios): se marca en la propia tabla, como la casilla de
   // Pendientes, porque es un si/no y abrir el modal para un booleano sobra.
@@ -845,6 +902,9 @@ export default function NoEcoPage() {
                       {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
                     </th>
                   ))}
+                {data.length > 0 && DOCUMENTOS_SUELTOS[vista]?.map((doc) => (
+                  <th key={doc.tipo}>{doc.etiqueta}</th>
+                ))}
                 {data.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
               </tr>
             </thead>
@@ -860,7 +920,18 @@ export default function NoEcoPage() {
                   <tr key={item.id}>
                     {Object.entries(item).map(([clave, val]) => (
                       <td key={clave}>
-                        {clave === "con_cita" ? (
+                        {DOCUMENTOS_EN_FECHA[vista]?.[clave] ? (
+                          <>
+                            {valorParaMostrar(clave, val)}
+                            <DocumentoCelda
+                              {...DOCUMENTOS_EN_FECHA[vista][clave]}
+                              registroId={item.id}
+                              tiene={documentos[DOCUMENTOS_EN_FECHA[vista][clave].tipo]?.has(item.id)}
+                              isAdmin={isAdmin}
+                              onCambio={marcarDocumento}
+                            />
+                          </>
+                        ) : clave === "con_cita" ? (
                           <button
                             type="button"
                             role="checkbox"
@@ -875,6 +946,17 @@ export default function NoEcoPage() {
                             {val && <Check size={14} strokeWidth={3} />}
                           </button>
                         ) : valorParaMostrar(clave, val)}
+                      </td>
+                    ))}
+                    {DOCUMENTOS_SUELTOS[vista]?.map((doc) => (
+                      <td key={doc.tipo}>
+                        <DocumentoCelda
+                          {...doc}
+                          registroId={item.id}
+                          tiene={documentos[doc.tipo]?.has(item.id)}
+                          isAdmin={isAdmin}
+                          onCambio={marcarDocumento}
+                        />
                       </td>
                     ))}
                     <td>

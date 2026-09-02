@@ -75,7 +75,7 @@ function Home() {
                 {errorAlertas ? (
                   <div className="av-card av-card--fallo" role="alert">
                     <p className="av-mensaje">
-                      No se pudieron cargar las alertas de licencias y pólizas.
+                      No se pudieron cargar las alertas de vencimiento.
                       Recarga la página; si sigue igual, vuelve a iniciar sesión.
                     </p>
                   </div>
