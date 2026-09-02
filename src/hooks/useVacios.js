@@ -14,7 +14,9 @@ export const VACIO_VACIO = {
   // Los vacios nacen pendientes, se agreguen a mano o los cree el automatismo
   // del folio (api/views.py, _crear_vacios_del_folio).
   status: "pendiente",
-  status_eir: "",
+  // El EIR tambien nace por hacer: en blanco habia que marcar 'Pendiente' a
+  // mano en cada vacio.
+  status_eir: "pendiente",
   operador: "",
   operador_entrega: "",
   cita: "",
