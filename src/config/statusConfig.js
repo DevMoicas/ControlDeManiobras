@@ -60,8 +60,11 @@ export const STATUS_MAP = Object.freeze({
     emoji:      "🔵",
   }),
   quemada: Object.freeze({
+    // El id NO cambia: es lo que hay guardado en `maniobras.status` de todo el
+    // historico y lo que valida STATUS_CHOICES en el backend. Aqui solo se
+    // cambia lo que se LEE.
     id:         "quemada",
-    label:      "Quemada",
+    label:      "Quemada/En falso",
     rowClass:   "row-status--quemada",
     badgeClass: "badge-status--quemada",
     color:      "#ff6961",
