@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { overlayMotion, contentMotion } from "../animations/modalMotion";
 import { Trash2, SquarePen, Camera, Settings, X, FileText } from "lucide-react";
+import { apiClient } from "../api/apiClient";
 import { useVacios } from "../hooks/useVacios";
 import { useAuthContext } from "../context/AuthContext";
 import { useVacioStatusUpdate } from "../hooks/useVacioStatusUpdate";
@@ -21,6 +22,9 @@ import VacioStatusSelector, { EIR_STATUSES } from "../components/VacioStatusSele
 import ColorSelector from "../components/ColorSelector/ColorSelector";
 import { esColorValido, textoSobre } from "../utils/colorFila.mjs";
 import { filtrarBusqueda } from "../utils/buscar.mjs";
+// La columna CITA se lee del vacio Y del catalogo de patios: la regla y su
+// prueba viven fuera del componente (citaAbierta.test.mjs).
+import { mapaDePatios, textoDeCita } from "../utils/citaAbierta.mjs";
 import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
 import PatioSelector from "../components/PatioSelector/PatioSelector";
 // Mismo componente que usan Origen y Destino en Maniobras; el alias es para que
@@ -411,6 +415,17 @@ export default function VaciosPage() {
     updateStatus: updateEirStatus,
   } = useVacioStatusUpdate(setVacios, { campo: "status_eir" });
 
+  // El catalogo de patios, para saber cuales reciben a cita abierta. Cacheado
+  // 45s por apiClient.getCatalogo, el mismo que usa el selector de patio.
+  const [patios, setPatios] = useState(null);
+  useEffect(() => {
+    apiClient.getCatalogo("/patios/")
+      .then((res) => setPatios(mapaDePatios(Array.isArray(res) ? res : (res?.results ?? []))))
+      // Sin catalogo se deja la celda como estaba: decir "CITA ABIERTA" a ciegas
+      // mandaria al operador a presentarse sin hora en un patio que la exige.
+      .catch(() => {});
+  }, []);
+
   const [modoAgregar, setModoAgregar] = useState(false);
   const [nuevoVacio,  setNuevoVacio]  = useState(VACIO_VACIO);
   const [modal,       setModal]       = useState(MODAL_CERRADO);
@@ -754,7 +769,9 @@ export default function VaciosPage() {
                         <CeldaEditable
                           fechaHora
                           valor={vacio[col.key]}
-                          texto={fechaHoraParaMostrar(vacio[col.key])}
+                          texto={col.key === "cita"
+                            ? textoDeCita(vacio, patios)
+                            : fechaHoraParaMostrar(vacio[col.key])}
                           etiqueta={col.label}
                           onGuardar={(val) => handleGuardarCampo(vacio, col.key, val)}
                         />

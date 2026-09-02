@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { overlayMotion, contentMotion } from "../animations/modalMotion";
 import { apiClient } from "../api/apiClient";
-import { SquarePen, Trash2, Settings } from "lucide-react";
+import { SquarePen, Trash2, Settings, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import "./CatalogosPage.css";
@@ -83,6 +83,7 @@ export default function NoEcoPage() {
     cargo: "Cargo",
     telefono: "Teléfono",
     transportista: "Transportista",
+    con_cita: "Con Cita",
   };
 
   const configFormularios = {
@@ -269,6 +270,21 @@ export default function NoEcoPage() {
       } finally {
         setIsSubmitting(false);
       }
+    }
+  };
+
+  // CON CITA (solo Patios): se marca en la propia tabla, como la casilla de
+  // Pendientes, porque es un si/no y abrir el modal para un booleano sobra.
+  // Optimista con vuelta atras: si el PATCH falla, la casilla regresa sola.
+  const alternarConCita = async (patio) => {
+    const valor = !patio.con_cita;
+    setData((prev) => prev.map((p) => (p.id === patio.id ? { ...p, con_cita: valor } : p)));
+    try {
+      await apiClient.patch(`/patios/${patio.id}/`, { con_cita: valor });
+    } catch (error) {
+      console.error("Error:", error);
+      setData((prev) => prev.map((p) => (p.id === patio.id ? { ...p, con_cita: !valor } : p)));
+      alerta({ tipo: "error", msg: "No se pudo cambiar el Con Cita del patio." });
     }
   };
 
@@ -843,7 +859,23 @@ export default function NoEcoPage() {
                 dataFiltrada.map((item) => (
                   <tr key={item.id}>
                     {Object.entries(item).map(([clave, val]) => (
-                      <td key={clave}>{valorParaMostrar(clave, val)}</td>
+                      <td key={clave}>
+                        {clave === "con_cita" ? (
+                          <button
+                            type="button"
+                            role="checkbox"
+                            aria-checked={!!val}
+                            aria-label={val
+                              ? `${item.nombre}: quitar que va con cita`
+                              : `${item.nombre}: marcar que va con cita`}
+                            className={`cat-check ${val ? "cat-check--si" : ""}`}
+                            onClick={() => alternarConCita(item)}
+                            disabled={isSubmitting}
+                          >
+                            {val && <Check size={14} strokeWidth={3} />}
+                          </button>
+                        ) : valorParaMostrar(clave, val)}
+                      </td>
                     ))}
                     <td>
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>

@@ -513,3 +513,38 @@
   .noeco-container .btn-edit,
   .noeco-container .btn-delete { transition: none; }
 }
+
+/* ── Casilla CON CITA (Patios) ────────────────────────────────────────────── */
+/* Misma casilla que la de Pendientes (.pd-check): un si/no que se marca en la
+   propia tabla, sin abrir el modal. */
+.cat-check {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cat-check:hover { border-color: var(--primary); }
+
+.cat-check:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.cat-check--si {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.cat-check:disabled { cursor: default; opacity: 0.6; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cat-check { transition: none; }
+}
