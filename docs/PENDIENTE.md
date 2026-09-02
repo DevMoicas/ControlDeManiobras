@@ -10,22 +10,33 @@ punto al completarlo en vez de dejarlo criando polvo.
 
 ## 0. Desplegado el 2026-09-02
 
-Lo que el 2026-09-01 se quedo en local ya esta en produccion, en el orden de siempre
-(backend en verde primero, luego el frontend):
+Dos despliegues el mismo día, los dos en el orden de siempre (migrar si toca, backend en
+verde, luego frontend):
+
+**Por la mañana** — lo que el 2026-09-01 se quedó en local, sin migración pendiente:
 
 - **Backend `d4942c6d`** — la Cita como instante y en el reporte (`f79c3c66`, el que
-  acompanaba a la migracion **0063**, aplicada desde el 2026-09-01) + el STATUS EIR
-  naciendo en `pendiente`.
+  acompañaba a la migración 0063, aplicada desde el 2026-09-01) + el STATUS EIR naciendo
+  en `pendiente`.
 - **Frontend `28ebf45`** — la Cita con hora entre las dos fechas (`088d5ed`) + la fila
-  nueva de Vacios con el EIR en `pendiente`.
+  nueva de Vacíos con el EIR en `pendiente`.
 
-El desfase entre la 0063 y su codigo, que dejaba un 500 al escribir en la celda Cita,
-esta cerrado.
+**Por la tarde** — la casilla CON CITA de Patios, con la **migración 0064** aplicada en
+producción antes de empujar (ADR-0021):
 
-**Queda abierto del EIR:** los vacios que YA existen con el STATUS EIR en blanco se
-quedaron como estaban — el cambio solo decide con que valor nacen los nuevos. Ponerlos
-todos en `pendiente` seria una migracion de datos, y no se sabe si ese blanco es
-decision de alguien.
+- **Backend `ea271be6`** · **Frontend `27e0c19`**.
+
+**Queda abierto de estos dos:**
+
+- Los vacíos que YA existían con el **STATUS EIR en blanco** se quedaron como estaban: el
+  cambio solo decide con qué valor nacen los nuevos. Ponerlos todos en `pendiente` sería
+  una migración de datos, y no se sabe si ese blanco es decisión de alguien.
+- Los vacíos cuyo **patio no está en el catálogo** no dicen "CITA ABIERTA" y no hay forma
+  de que lo digan: el cruce es por nombre exacto y `vacios.patio` arrastra nombres sueltos
+  del histórico. En la base local son **131 de 227** (`CIMA` 64, `TIMSA` 23, `SSA` 9,
+  `ISL` 8, `APM` 6…); en producción lo dijo el paso `ver` de `migrar_prod.sh`. Para que
+  entren hay que **normalizar esos nombres** o dar de alta el patio con el nombre exacto.
+  Ninguna de las dos se hizo: es una decisión de negocio sobre datos que ya existen.
 
 ---
 
