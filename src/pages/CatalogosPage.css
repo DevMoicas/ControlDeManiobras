@@ -568,6 +568,18 @@
 .noeco-container--ancha .table-container {
   width: fit-content;
   max-width: 100%;
+  /* Un bloque con fit-content se queda pegado a la izquierda: sin los márgenes
+     automáticos la tarjeta quedaba escorada en cuanto la columna se ensanchó. */
+  margin-inline: auto;
+}
+
+/* El selector de pestañas es `width: max-content` y hasta ahora arrancaba en el
+   borde izquierdo de la columna, que coincidía con el de la tarjeta. Al
+   ensanchar la columna dejó de coincidir con nada, así que aquí también se
+   centra — igual que la tabla que hay debajo. */
+.noeco-container--ancha .tabs {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Los títulos dejan de ir en una sola línea. "Fecha Vencimiento Póliza" en una
