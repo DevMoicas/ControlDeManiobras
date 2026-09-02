@@ -202,34 +202,50 @@ class AlertasDeVencimientoTests(BaseCatalogos):
         self.assertEqual(respuesta.status_code, 200, respuesta.data)
         return {a['tipo'] for a in respuesta.data}
 
-    def test_los_tramites_avisan_con_dos_meses(self):
-        self.tracto.fecha_vencimiento_permisos_full = date.today() + timedelta(days=45)
+    def test_los_permisos_full_avisan_con_un_mes(self):
+        self.tracto.fecha_vencimiento_permisos_full = date.today() + timedelta(days=20)
         self.tracto.save()
         self.assertIn('permisos_full_tracto', self.tipos(self.cliente.get(ALERTAS)))
 
-    def test_a_tres_meses_todavia_no_avisa(self):
-        self.tracto.fecha_vencimiento_humo = date.today() + timedelta(days=90)
+    def test_los_permisos_full_a_mes_y_medio_todavia_no_avisan(self):
+        self.tracto.fecha_vencimiento_permisos_full = date.today() + timedelta(days=45)
+        self.tracto.save()
+        self.assertNotIn('permisos_full_tracto', self.tipos(self.cliente.get(ALERTAS)))
+
+    def test_el_humo_no_avisa_antes_de_tiempo(self):
+        """A diferencia del resto, este no se adelanta ni un dia."""
+        self.tracto.fecha_vencimiento_humo = date.today() + timedelta(days=1)
+        self.tracto.save()
+        self.assertNotIn('humo', self.tipos(self.cliente.get(ALERTAS)))
+
+    def test_el_humo_avisa_el_dia_que_vence(self):
+        self.tracto.fecha_vencimiento_humo = date.today()
+        self.tracto.save()
+        self.assertIn('humo', self.tipos(self.cliente.get(ALERTAS)))
+
+    def test_el_humo_vencido_sigue_avisando(self):
+        """Es la unica familia de alertas que habla de algo YA vencido: una
+        verificacion caducada hace meses sigue siendo un camion que no deberia
+        estar circulando. Se quita renovando la fecha, como las demas."""
+        self.tracto.fecha_vencimiento_humo = date.today() - timedelta(days=90)
+        self.tracto.save()
+        self.assertIn('humo', self.tipos(self.cliente.get(ALERTAS)))
+
+        self.tracto.fecha_vencimiento_humo = date.today() + timedelta(days=365)
         self.tracto.save()
         self.assertNotIn('humo', self.tipos(self.cliente.get(ALERTAS)))
 
     def test_la_poliza_conserva_sus_dos_semanas(self):
-        """Los plazos de antes no se tocaron: a 45 dias la poliza NO avisa,
-        aunque un tramite con esa misma fecha si lo haria."""
-        self.tracto.fecha_vencimiento_poliza = date.today() + timedelta(days=45)
+        """Los plazos de antes no se tocaron: a 20 dias la poliza NO avisa,
+        aunque unos Permisos Full con esa misma fecha si lo harian."""
+        self.tracto.fecha_vencimiento_poliza = date.today() + timedelta(days=20)
         self.tracto.save()
         self.assertNotIn('poliza', self.tipos(self.cliente.get(ALERTAS)))
 
     def test_el_remolque_avisa_con_su_placa(self):
         remolque = Remolque.objects.create(color='ROJO', tipo='CAJA', placas='XYZ789')
-        remolque.fecha_vencimiento_fisico_mecanica = date.today() + timedelta(days=10)
+        remolque.fecha_vencimiento_fisico_mecanica = date.today() - timedelta(days=3)
         remolque.save()
         alerta = next(a for a in self.cliente.get(ALERTAS).data
                       if a['tipo'] == 'fisico_mecanica_remolque')
         self.assertIn('XYZ789', alerta['nombre'])
-
-    def test_lo_ya_vencido_no_avisa(self):
-        """Mismo criterio que licencias y polizas desde siempre: el aviso es
-        para lo que esta POR vencer."""
-        self.tracto.fecha_vencimiento_humo = date.today() - timedelta(days=1)
-        self.tracto.save()
-        self.assertNotIn('humo', self.tipos(self.cliente.get(ALERTAS)))

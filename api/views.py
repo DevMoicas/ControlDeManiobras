@@ -2648,25 +2648,30 @@ class AlertasVencimientoView(APIView):
     todos los usuarios autenticados sin distinción de rol.
 
     Cada vencimiento avisa con la antelación que le sirve a quien lo renueva, y
-    por eso no hay un plazo único: la licencia con un mes, la póliza con dos
-    semanas, y los permisos y verificaciones de tracto y remolque con DOS MESES,
-    porque son trámite y con menos no da tiempo.
+    por eso no hay un plazo único: la licencia y los Permisos Full con un mes, la
+    póliza con dos semanas, y la Físico Mecánica y el Humo SIN antelación —esos
+    aparecen el día que vencen y se quedan hasta que se renueve la fecha—.
     """
     authentication_classes = [JWTAuthentication]
     permission_classes     = [IsAuthenticated]
     throttle_classes       = [UserRateThrottle, AnonRateThrottle]
 
-    # (campo del modelo, tipo de alerta) de los vencimientos que avisan a 60
-    # días. La etiqueta que se lee la pone el frontend (AlertaVencimiento.jsx):
-    # aquí solo viaja el tipo.
+    # (campo del modelo, tipo de alerta, días de antelación) de los vencimientos
+    # de tracto y remolque. La etiqueta que se lee la pone el frontend
+    # (AlertaVencimiento.jsx): aquí solo viaja el tipo.
+    #
+    # `None` es "sin antelación": no avisa antes de tiempo, aparece el día del
+    # vencimiento y se queda mientras la fecha siga pasada. Es lo que pidió el
+    # usuario para la Físico Mecánica y el Humo, y por eso esas dos son las
+    # únicas alertas del sistema que hablan de algo YA vencido.
     TRAMITES_TRACTO = [
-        ('fecha_vencimiento_permisos_full',   'permisos_full_tracto'),
-        ('fecha_vencimiento_fisico_mecanica', 'fisico_mecanica_tracto'),
-        ('fecha_vencimiento_humo',            'humo'),
+        ('fecha_vencimiento_permisos_full',   'permisos_full_tracto',   30),
+        ('fecha_vencimiento_fisico_mecanica', 'fisico_mecanica_tracto', None),
+        ('fecha_vencimiento_humo',            'humo',                   None),
     ]
     TRAMITES_REMOLQUE = [
-        ('fecha_vencimiento_permisos_full',   'permisos_full_remolque'),
-        ('fecha_vencimiento_fisico_mecanica', 'fisico_mecanica_remolque'),
+        ('fecha_vencimiento_permisos_full',   'permisos_full_remolque',   30),
+        ('fecha_vencimiento_fisico_mecanica', 'fisico_mecanica_remolque', None),
     ]
 
     def get(self, request):
@@ -2674,7 +2679,6 @@ class AlertasVencimientoView(APIView):
         hoy = date.today()
         limite_licencia = hoy + timedelta(days=30)   # licencias: 1 mes
         limite_poliza   = hoy + timedelta(days=14)   # pólizas: 2 semanas
-        limite_tramite  = hoy + timedelta(days=60)   # permisos y verificaciones: 2 meses
 
         choferes_por_vencer = Chofer.objects.filter(
             fecha_vencimiento_licencia__isnull=False,
@@ -2716,12 +2720,16 @@ class AlertasVencimientoView(APIView):
                 (Tracto,   self.TRAMITES_TRACTO,   ('unidad', 'anio', 'placas')),
                 (Remolque, self.TRAMITES_REMOLQUE, ('tipo', 'color', 'placas')),
         ):
-            for campo, tipo in tramites:
-                filtro = {
-                    campo + '__isnull': False,
-                    campo + '__gte': hoy,
-                    campo + '__lte': limite_tramite,
-                }
+            for campo, tipo, dias in tramites:
+                filtro = {campo + '__isnull': False}
+                if dias is None:
+                    # Ya vencido, o vence hoy. Sin tope por abajo a propósito:
+                    # una verificación caducada hace meses sigue siendo un camión
+                    # que no debería estar circulando.
+                    filtro[campo + '__lte'] = hoy
+                else:
+                    filtro[campo + '__gte'] = hoy
+                    filtro[campo + '__lte'] = hoy + timedelta(days=dias)
                 for fila in modelo.objects.filter(**filtro).values(campo, *campos_nombre):
                     nombre = ' '.join(
                         str(fila[c]) for c in campos_nombre if fila[c]
