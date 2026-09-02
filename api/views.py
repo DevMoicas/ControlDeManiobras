@@ -704,8 +704,9 @@ def _separar_full_repartido(filas, usuario):
 def _crear_vacios_del_folio(maniobra, usuario):
     """Da de alta en Vacios los contenedores del viaje. Devuelve cuantos creo.
 
-    Nacen en 'pendiente' —lo que hay que hacer con ellos esta por hacer— y con
-    el operador del viaje ya puesto en OP DEL VIAJE. Lo demas (patio, fechas,
+    Nacen en 'pendiente' —lo que hay que hacer con ellos esta por hacer—, con
+    el STATUS EIR tambien en 'pendiente' y con el operador del viaje ya puesto
+    en OP DEL VIAJE. Lo demas (patio, fechas,
     coordinador) se captura en Vacios como hasta ahora.
     """
     filas = _filas_de_vacios(maniobra)
@@ -725,6 +726,9 @@ def _crear_vacios_del_folio(maniobra, usuario):
             tipo_contenedor=tipo,
             operador=operador,
             status='pendiente',
+            # El EIR tambien empieza por hacer: naciendo en blanco, alguien
+            # tenia que marcar 'Pendiente' a mano en cada vacio.
+            status_eir='pendiente',
             created_by=usuario,
             updated_by=usuario,
         )

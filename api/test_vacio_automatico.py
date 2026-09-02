@@ -85,6 +85,11 @@ class SeCreaElVacioTests(BaseVacioAutomatico):
         self.poner_folio(self.sencillo().id)
         self.assertEqual(Vacio.objects.get().status, 'pendiente')
 
+    def test_el_status_eir_nace_pendiente(self):
+        """En blanco obligaba a marcar 'Pendiente' a mano en cada vacio."""
+        self.poner_folio(self.sencillo().id)
+        self.assertEqual(Vacio.objects.get().status_eir, 'pendiente')
+
     def test_se_recupera_el_operador_del_viaje(self):
         self.poner_folio(self.sencillo().id)
         self.assertEqual(Vacio.objects.get().operador, 'JUAN PEREZ LOPEZ')
