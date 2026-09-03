@@ -626,7 +626,7 @@ export default function NoEcoPage() {
           {/* ── TABLA ORÍGENES ── */}
           <div className="bst-zona">
           <BarraScrollTabla contenedorRef={refOrigenes} />
-          <div className="table-container" ref={refOrigenes} style={{ marginBottom: "30px" }}>
+          <div className="table-container" style={{ marginBottom: "30px" }}>
             <div className="add-button-container">
               <button
                 onClick={() => abrirModalAgregar("origenes")}
@@ -639,63 +639,65 @@ export default function NoEcoPage() {
             <h3 className="subtable-title">
               Orígenes
             </h3>
-            <table className="custom-table">
-              <thead>
-                <tr>
-                  {dataOrigenes.length > 0 &&
-                    Object.keys(dataOrigenes[0]).map((key) => (
-                      <th key={key}>
-                        {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
-                      </th>
-                    ))}
-                  {dataOrigenes.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {dataOrigenesFiltrada.length === 0 ? (
+            <div className="tabla-cabecera-fija" ref={refOrigenes}>
+              <table className="custom-table">
+                <thead>
                   <tr>
-                    <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
-                      No hay registros de orígenes en la base de datos
-                    </td>
-                  </tr>
-                ) : (
-                  dataOrigenesFiltrada.map((item) => (
-                    <tr key={item.id}>
-                      {Object.entries(item).map(([clave, val]) => (
-                        <td key={clave}>{valorParaMostrar(clave, val)}</td>
+                    {dataOrigenes.length > 0 &&
+                      Object.keys(dataOrigenes[0]).map((key) => (
+                        <th key={key}>
+                          {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
+                        </th>
                       ))}
-                      <td>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                          <button
-                            onClick={() => iniciarEdicion(item, "origenes")}
-                            className="btn-edit"
-                            disabled={isSubmitting}
-                          >
-                            <SquarePen size={18} />
-                          </button>
-                          {isAdmin && (
-                            <button
-                              className="btn-delete"
-                              onClick={() => eliminarRegistro(item.id, "origenes")}
-                              disabled={isSubmitting}
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          )}
-                        </div>
+                    {dataOrigenes.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {dataOrigenesFiltrada.length === 0 ? (
+                    <tr>
+                      <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
+                        No hay registros de orígenes en la base de datos
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    dataOrigenesFiltrada.map((item) => (
+                      <tr key={item.id}>
+                        {Object.entries(item).map(([clave, val]) => (
+                          <td key={clave}>{valorParaMostrar(clave, val)}</td>
+                        ))}
+                        <td>
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                            <button
+                              onClick={() => iniciarEdicion(item, "origenes")}
+                              className="btn-edit"
+                              disabled={isSubmitting}
+                            >
+                              <SquarePen size={18} />
+                            </button>
+                            {isAdmin && (
+                              <button
+                                className="btn-delete"
+                                onClick={() => eliminarRegistro(item.id, "origenes")}
+                                disabled={isSubmitting}
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
           </div>
 
           {/* ── TABLA DESTINOS ── */}
           <div className="bst-zona">
           <BarraScrollTabla contenedorRef={refDestinos} />
-          <div className="table-container" ref={refDestinos}>
+          <div className="table-container">
             <div className="add-button-container">
               <button
                 onClick={() => abrirModalAgregar("destinos")}
@@ -708,56 +710,58 @@ export default function NoEcoPage() {
             <h3 className="subtable-title">
               Destinos
             </h3>
-            <table className="custom-table">
-              <thead>
-                <tr>
-                  {dataDestinos.length > 0 &&
-                    Object.keys(dataDestinos[0]).map((key) => (
-                      <th key={key}>
-                        {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
-                      </th>
-                    ))}
-                  {dataDestinos.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {dataDestinosFiltrada.length === 0 ? (
+            <div className="tabla-cabecera-fija" ref={refDestinos}>
+              <table className="custom-table">
+                <thead>
                   <tr>
-                    <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
-                      No hay registros de destinos en la base de datos
-                    </td>
-                  </tr>
-                ) : (
-                  dataDestinosFiltrada.map((item) => (
-                    <tr key={item.id}>
-                      {Object.entries(item).map(([clave, val]) => (
-                        <td key={clave}>{valorParaMostrar(clave, val)}</td>
+                    {dataDestinos.length > 0 &&
+                      Object.keys(dataDestinos[0]).map((key) => (
+                        <th key={key}>
+                          {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
+                        </th>
                       ))}
-                      <td>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                          <button
-                            onClick={() => iniciarEdicion(item, "destinos")}
-                            className="btn-edit"
-                            disabled={isSubmitting}
-                          >
-                            <SquarePen size={18} />
-                          </button>
-                          {isAdmin && (
-                            <button
-                              className="btn-delete"
-                              onClick={() => eliminarRegistro(item.id, "destinos")}
-                              disabled={isSubmitting}
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          )}
-                        </div>
+                    {dataDestinos.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {dataDestinosFiltrada.length === 0 ? (
+                    <tr>
+                      <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
+                        No hay registros de destinos en la base de datos
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    dataDestinosFiltrada.map((item) => (
+                      <tr key={item.id}>
+                        {Object.entries(item).map(([clave, val]) => (
+                          <td key={clave}>{valorParaMostrar(clave, val)}</td>
+                        ))}
+                        <td>
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                            <button
+                              onClick={() => iniciarEdicion(item, "destinos")}
+                              className="btn-edit"
+                              disabled={isSubmitting}
+                            >
+                              <SquarePen size={18} />
+                            </button>
+                            {isAdmin && (
+                              <button
+                                className="btn-delete"
+                                onClick={() => eliminarRegistro(item.id, "destinos")}
+                                disabled={isSubmitting}
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
           </div>
         </>
@@ -766,7 +770,7 @@ export default function NoEcoPage() {
           {/* ── TABLA UNIDADES ── */}
           <div className="bst-zona">
           <BarraScrollTabla contenedorRef={refUnidades} />
-          <div className="table-container" ref={refUnidades} style={{ marginBottom: "30px" }}>
+          <div className="table-container" style={{ marginBottom: "30px" }}>
             <div className="add-button-container">
               <button
                 onClick={() => abrirModalAgregar("unidades-terceros")}
@@ -779,63 +783,65 @@ export default function NoEcoPage() {
             <h3 className="subtable-title">
               Unidades
             </h3>
-            <table className="custom-table">
-              <thead>
-                <tr>
-                  {dataUnidades.length > 0 &&
-                    Object.keys(dataUnidades[0]).map((key) => (
-                      <th key={key}>
-                        {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
-                      </th>
-                    ))}
-                  {dataUnidades.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {dataUnidadesFiltrada.length === 0 ? (
+            <div className="tabla-cabecera-fija" ref={refUnidades}>
+              <table className="custom-table">
+                <thead>
                   <tr>
-                    <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
-                      No hay registros de unidades de terceros en la base de datos
-                    </td>
-                  </tr>
-                ) : (
-                  dataUnidadesFiltrada.map((item) => (
-                    <tr key={item.id}>
-                      {Object.entries(item).map(([clave, val]) => (
-                        <td key={clave}>{valorParaMostrar(clave, val)}</td>
+                    {dataUnidades.length > 0 &&
+                      Object.keys(dataUnidades[0]).map((key) => (
+                        <th key={key}>
+                          {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
+                        </th>
                       ))}
-                      <td>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                          <button
-                            onClick={() => iniciarEdicion(item, "unidades-terceros")}
-                            className="btn-edit"
-                            disabled={isSubmitting}
-                          >
-                            <SquarePen size={18} />
-                          </button>
-                          {isAdmin && (
-                            <button
-                              className="btn-delete"
-                              onClick={() => eliminarRegistro(item.id, "unidades-terceros")}
-                              disabled={isSubmitting}
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          )}
-                        </div>
+                    {dataUnidades.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {dataUnidadesFiltrada.length === 0 ? (
+                    <tr>
+                      <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
+                        No hay registros de unidades de terceros en la base de datos
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    dataUnidadesFiltrada.map((item) => (
+                      <tr key={item.id}>
+                        {Object.entries(item).map(([clave, val]) => (
+                          <td key={clave}>{valorParaMostrar(clave, val)}</td>
+                        ))}
+                        <td>
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                            <button
+                              onClick={() => iniciarEdicion(item, "unidades-terceros")}
+                              className="btn-edit"
+                              disabled={isSubmitting}
+                            >
+                              <SquarePen size={18} />
+                            </button>
+                            {isAdmin && (
+                              <button
+                                className="btn-delete"
+                                onClick={() => eliminarRegistro(item.id, "unidades-terceros")}
+                                disabled={isSubmitting}
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
           </div>
 
           {/* ── TABLA OPERADORES ── */}
           <div className="bst-zona">
           <BarraScrollTabla contenedorRef={refOperadores} />
-          <div className="table-container" ref={refOperadores}>
+          <div className="table-container">
             <div className="add-button-container">
               <button
                 onClick={() => abrirModalAgregar("operadores-terceros")}
@@ -848,35 +854,154 @@ export default function NoEcoPage() {
             <h3 className="subtable-title">
               Operadores
             </h3>
+            <div className="tabla-cabecera-fija" ref={refOperadores}>
+              <table className="custom-table">
+                <thead>
+                  <tr>
+                    {dataOperadores.length > 0 &&
+                      Object.keys(dataOperadores[0]).map((key) => (
+                        <th key={key}>
+                          {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
+                        </th>
+                      ))}
+                    {dataOperadores.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {dataOperadoresFiltrada.length === 0 ? (
+                    <tr>
+                      <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
+                        No hay registros de operadores de terceros en la base de datos
+                      </td>
+                    </tr>
+                  ) : (
+                    dataOperadoresFiltrada.map((item) => (
+                      <tr key={item.id}>
+                        {Object.entries(item).map(([clave, val]) => (
+                          <td key={clave}>{valorParaMostrar(clave, val)}</td>
+                        ))}
+                        <td>
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                            <button
+                              onClick={() => iniciarEdicion(item, "operadores-terceros")}
+                              className="btn-edit"
+                              disabled={isSubmitting}
+                            >
+                              <SquarePen size={18} />
+                            </button>
+                            {isAdmin && (
+                              <button
+                                className="btn-delete"
+                                onClick={() => eliminarRegistro(item.id, "operadores-terceros")}
+                                disabled={isSubmitting}
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          </div>
+        </>
+      ) : (
+        <div className="bst-zona">
+        <BarraScrollTabla contenedorRef={refPrincipal} />
+        <div className="table-container">
+          <div className="add-button-container">
+            <button
+              onClick={() => abrirModalAgregar(null)}
+              className="btn-add"
+              disabled={isSubmitting}
+            >
+              <span>+</span> Agregar Nuevo {nombresSingulares[vista] || "Registro"}
+            </button>
+          </div>
+
+          <div className="tabla-cabecera-fija" ref={refPrincipal}>
             <table className="custom-table">
               <thead>
                 <tr>
-                  {dataOperadores.length > 0 &&
-                    Object.keys(dataOperadores[0]).map((key) => (
+                  {data.length > 0 &&
+                    Object.keys(data[0]).map((key) => (
                       <th key={key}>
                         {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
                       </th>
                     ))}
-                  {dataOperadores.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
+                  {data.length > 0 && DOCUMENTOS_SUELTOS[vista]?.map((doc) => (
+                    <th key={doc.tipo}>{doc.etiqueta}</th>
+                  ))}
+                  {data.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
                 </tr>
               </thead>
               <tbody>
-                {dataOperadoresFiltrada.length === 0 ? (
+                {dataFiltrada.length === 0 ? (
                   <tr>
                     <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
-                      No hay registros de operadores de terceros en la base de datos
+                      No hay registros encontrados en la base de datos de {vista}
                     </td>
                   </tr>
                 ) : (
-                  dataOperadoresFiltrada.map((item) => (
+                  dataFiltrada.map((item) => (
                     <tr key={item.id}>
                       {Object.entries(item).map(([clave, val]) => (
-                        <td key={clave}>{valorParaMostrar(clave, val)}</td>
+                        <td key={clave}>
+                          {DOCUMENTOS_EN_FECHA[vista]?.[clave] ? (
+                            <>
+                              {valorParaMostrar(clave, val)}
+                              <DocumentoCelda
+                                {...DOCUMENTOS_EN_FECHA[vista][clave]}
+                                registroId={item.id}
+                                tiene={documentos[DOCUMENTOS_EN_FECHA[vista][clave].tipo]?.has(item.id)}
+                                isAdmin={isAdmin}
+                                onCambio={marcarDocumento}
+                              />
+                            </>
+                          ) : clave === "coordinador" ? (
+                            <CatalogoSelector
+                              endpoint={ENDPOINT_COORDINADORES}
+                              campo="nombre_trabajador"
+                              currentValue={val || ""}
+                              onSelect={(nombre) => asignarCoordinador(item, nombre)}
+                              disabled={isSubmitting}
+                            />
+                          ) : clave === "con_cita" ? (
+                            <button
+                              type="button"
+                              role="checkbox"
+                              aria-checked={!!val}
+                              aria-label={val
+                                ? `${item.nombre}: quitar que va con cita`
+                                : `${item.nombre}: marcar que va con cita`}
+                              className={`cat-check ${val ? "cat-check--si" : ""}`}
+                              onClick={() => alternarConCita(item)}
+                              disabled={isSubmitting}
+                            >
+                              {val && <Check size={14} strokeWidth={3} />}
+                            </button>
+                          ) : valorParaMostrar(clave, val)}
+                        </td>
+                      ))}
+                      {DOCUMENTOS_SUELTOS[vista]?.map((doc) => (
+                        <td key={doc.tipo}>
+                          <DocumentoCelda
+                            {...doc}
+                            registroId={item.id}
+                            tiene={documentos[doc.tipo]?.has(item.id)}
+                            isAdmin={isAdmin}
+                            onCambio={marcarDocumento}
+                          />
+                        </td>
                       ))}
                       <td>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
                           <button
-                            onClick={() => iniciarEdicion(item, "operadores-terceros")}
+                            onClick={() => iniciarEdicion(item)}
                             className="btn-edit"
                             disabled={isSubmitting}
                           >
@@ -885,7 +1010,7 @@ export default function NoEcoPage() {
                           {isAdmin && (
                             <button
                               className="btn-delete"
-                              onClick={() => eliminarRegistro(item.id, "operadores-terceros")}
+                              onClick={() => eliminarRegistro(item.id)}
                               disabled={isSubmitting}
                             >
                               <Trash2 size={18} />
@@ -899,121 +1024,6 @@ export default function NoEcoPage() {
               </tbody>
             </table>
           </div>
-          </div>
-        </>
-      ) : (
-        <div className="bst-zona">
-        <BarraScrollTabla contenedorRef={refPrincipal} />
-        <div className="table-container" ref={refPrincipal}>
-          <div className="add-button-container">
-            <button
-              onClick={() => abrirModalAgregar(null)}
-              className="btn-add"
-              disabled={isSubmitting}
-            >
-              <span>+</span> Agregar Nuevo {nombresSingulares[vista] || "Registro"}
-            </button>
-          </div>
-
-          <table className="custom-table">
-            <thead>
-              <tr>
-                {data.length > 0 &&
-                  Object.keys(data[0]).map((key) => (
-                    <th key={key}>
-                      {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
-                    </th>
-                  ))}
-                {data.length > 0 && DOCUMENTOS_SUELTOS[vista]?.map((doc) => (
-                  <th key={doc.tipo}>{doc.etiqueta}</th>
-                ))}
-                {data.length > 0 && <th style={{ textAlign: "center" }}>Acciones</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {dataFiltrada.length === 0 ? (
-                <tr>
-                  <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
-                    No hay registros encontrados en la base de datos de {vista}
-                  </td>
-                </tr>
-              ) : (
-                dataFiltrada.map((item) => (
-                  <tr key={item.id}>
-                    {Object.entries(item).map(([clave, val]) => (
-                      <td key={clave}>
-                        {DOCUMENTOS_EN_FECHA[vista]?.[clave] ? (
-                          <>
-                            {valorParaMostrar(clave, val)}
-                            <DocumentoCelda
-                              {...DOCUMENTOS_EN_FECHA[vista][clave]}
-                              registroId={item.id}
-                              tiene={documentos[DOCUMENTOS_EN_FECHA[vista][clave].tipo]?.has(item.id)}
-                              isAdmin={isAdmin}
-                              onCambio={marcarDocumento}
-                            />
-                          </>
-                        ) : clave === "coordinador" ? (
-                          <CatalogoSelector
-                            endpoint={ENDPOINT_COORDINADORES}
-                            campo="nombre_trabajador"
-                            currentValue={val || ""}
-                            onSelect={(nombre) => asignarCoordinador(item, nombre)}
-                            disabled={isSubmitting}
-                          />
-                        ) : clave === "con_cita" ? (
-                          <button
-                            type="button"
-                            role="checkbox"
-                            aria-checked={!!val}
-                            aria-label={val
-                              ? `${item.nombre}: quitar que va con cita`
-                              : `${item.nombre}: marcar que va con cita`}
-                            className={`cat-check ${val ? "cat-check--si" : ""}`}
-                            onClick={() => alternarConCita(item)}
-                            disabled={isSubmitting}
-                          >
-                            {val && <Check size={14} strokeWidth={3} />}
-                          </button>
-                        ) : valorParaMostrar(clave, val)}
-                      </td>
-                    ))}
-                    {DOCUMENTOS_SUELTOS[vista]?.map((doc) => (
-                      <td key={doc.tipo}>
-                        <DocumentoCelda
-                          {...doc}
-                          registroId={item.id}
-                          tiene={documentos[doc.tipo]?.has(item.id)}
-                          isAdmin={isAdmin}
-                          onCambio={marcarDocumento}
-                        />
-                      </td>
-                    ))}
-                    <td>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                        <button
-                          onClick={() => iniciarEdicion(item)}
-                          className="btn-edit"
-                          disabled={isSubmitting}
-                        >
-                          <SquarePen size={18} />
-                        </button>
-                        {isAdmin && (
-                          <button
-                            className="btn-delete"
-                            onClick={() => eliminarRegistro(item.id)}
-                            disabled={isSubmitting}
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
         </div>
         </div>
       )}

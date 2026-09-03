@@ -183,7 +183,7 @@ function Lista({ vista }) {
   return (
     // ponytail: se ven los que quepan en una página de la API (60). Si algún día
     // pasan de 60, paginar aquí.
-    <div className="seg-modal-scroll">
+    <div className="seg-modal-scroll tabla-cabecera-fija">
       <table className="seg-tabla">
         <thead>
           <tr>

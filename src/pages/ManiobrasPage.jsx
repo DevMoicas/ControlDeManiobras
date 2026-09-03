@@ -1620,7 +1620,7 @@ export default function ManiobrasPage() {
         {/* ── BODY — scroll horizontal + vertical ── */}
         <div className="bst-zona">
         <BarraScrollTabla contenedorRef={scrollRef} />
-        <div className="table-scroll-wrapper" ref={scrollRef}>
+        <div className="table-scroll-wrapper tabla-cabecera-fija" ref={scrollRef}>
           <table className="maniobras-table">
             {/* thead fantasma para sincronizar anchos de columna */}
             <thead className="thead-ghost">

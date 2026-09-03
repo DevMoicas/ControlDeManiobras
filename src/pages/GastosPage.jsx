@@ -506,7 +506,7 @@ export default function GastosPage() {
 
       <BarraScrollTabla contenedorRef={tablaRef} />
 
-      <div className="table-responsive" ref={tablaRef}>
+      <div className="table-responsive tabla-cabecera-fija" ref={tablaRef}>
         <table className="gastos-table">
           <thead>
             <tr>

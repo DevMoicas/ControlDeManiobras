@@ -433,7 +433,7 @@ export default function MovimientosLocalesPage() {
         {/* Tabla */}
         <div className="bst-zona">
         <BarraScrollTabla contenedorRef={panelRef} />
-        <div className="ml-panel" ref={panelRef}>
+        <div className="ml-panel tabla-cabecera-fija" ref={panelRef}>
         <table className="ml-tabla">
           <thead>
             <tr>

@@ -65,7 +65,7 @@ function FolioTabla({ titulo, anadiendo, folios, onAnadir, onAnadirAnterior, onG
       </div>
       <div className="bst-zona">
       <BarraScrollTabla contenedorRef={scrollRef} />
-      <div className="fp-scroll" ref={scrollRef}>
+      <div className="fp-scroll tabla-cabecera-fija" ref={scrollRef}>
         <table className="fp-tabla">
           <thead>
             <tr>

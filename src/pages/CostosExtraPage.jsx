@@ -133,50 +133,52 @@ export default function CostosExtraPage() {
 
       <div className="bst-zona">
         <BarraScrollTabla contenedorRef={refTabla} />
-        <div className="table-container" ref={refTabla}>
+        <div className="table-container">
           <div className="add-button-container">
             <button onClick={abrirAgregar} className="btn-add" disabled={isSubmitting}>
               <span>+</span> Agregar Costo Extra
             </button>
           </div>
 
-          <table className="custom-table">
-            <thead>
-              <tr>
-                <th>Movimiento</th>
-                <th>Costo</th>
-                <th style={{ textAlign: "center" }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrada.length === 0 ? (
+          <div className="tabla-cabecera-fija" ref={refTabla}>
+            <table className="custom-table">
+              <thead>
                 <tr>
-                  <td colSpan="3" style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}>
-                    No hay costos extra registrados
-                  </td>
+                  <th>Movimiento</th>
+                  <th>Costo</th>
+                  <th style={{ textAlign: "center" }}>Acciones</th>
                 </tr>
-              ) : (
-                filtrada.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.movimiento}</td>
-                    <td>{formatearCosto(item.costo)}</td>
-                    <td>
-                      <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-                        <button className="btn-edit" onClick={() => abrirEdicion(item)} disabled={isSubmitting}>
-                          <SquarePen size={18} />
-                        </button>
-                        {isAdmin && (
-                          <button className="btn-delete" onClick={() => eliminar(item)} disabled={isSubmitting}>
-                            <Trash2 size={18} />
-                          </button>
-                        )}
-                      </div>
+              </thead>
+              <tbody>
+                {filtrada.length === 0 ? (
+                  <tr>
+                    <td colSpan="3" style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}>
+                      No hay costos extra registrados
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filtrada.map((item) => (
+                    <tr key={item.id}>
+                      <td>{item.movimiento}</td>
+                      <td>{formatearCosto(item.costo)}</td>
+                      <td>
+                        <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
+                          <button className="btn-edit" onClick={() => abrirEdicion(item)} disabled={isSubmitting}>
+                            <SquarePen size={18} />
+                          </button>
+                          {isAdmin && (
+                            <button className="btn-delete" onClick={() => eliminar(item)} disabled={isSubmitting}>
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

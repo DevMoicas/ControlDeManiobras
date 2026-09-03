@@ -383,3 +383,34 @@ html, body, #root {
 .home-page {
   min-height: calc(100vh - 40px); /* descuenta la altura del footer */
 }
+
+/* ── Cabecera fija en las tablas ───────────────────────────────────────────────
+   La cabecera solo se queda quieta si ALGO scrollea en vertical. Los paneles de
+   tabla ya llevan `overflow-x: auto`, y eso los convierte en contenedor de
+   scroll en LOS DOS ejes (la spec fuerza a `auto` el `visible` que queda), pero
+   sin una altura tope la caja crece con el contenido: no scrollea nunca, el que
+   se mueve es el documento y el `sticky` no tiene a qué agarrarse. Esa era la
+   única diferencia con Maniobras, la que ya llevaba tope y por eso funcionaba.
+
+   Solo actúa en las tablas LARGAS: una corta no llega al tope y su caja sigue
+   ajustándose al contenido, exactamente igual que antes.
+
+   Los 300px son lo que ocupa la página POR ENCIMA de la tabla (título, barra de
+   acciones, buscador). Se queda corto a propósito: pasarse deja la caja por
+   debajo del pliegue, y entonces lo primero que scrollea es el documento — con
+   la cabecera saliéndose de la pantalla, que es justo lo que se viene a
+   arreglar. Quedarse corto solo desaprovecha unos píxeles. Una página con menos
+   cabecera la aprieta declarando --tabla-tope en su propia hoja.
+
+   z-index 10: por debajo de los desplegables, que se pintan en portal. Las
+   tablas con la primera columna congelada suben su esquina a 11 en su hoja. */
+.tabla-cabecera-fija {
+  overflow: auto;
+  max-height: calc(100vh - var(--tabla-tope, 300px));
+  -webkit-overflow-scrolling: touch;
+}
+.tabla-cabecera-fija thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}

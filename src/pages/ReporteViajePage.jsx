@@ -263,7 +263,7 @@ export default function ReporteViajePage() {
         </div>
 
         <div className="rv-hoja">
-         <div className="rv-tabla-scroll">
+         <div className="rv-tabla-scroll tabla-cabecera-fija">
           <table className="rv-tabla">
             <thead>
               <tr>

@@ -683,7 +683,7 @@ export default function VaciosPage() {
 
       <BarraScrollTabla contenedorRef={tablaRef} />
 
-      <div className="table-responsive" ref={tablaRef}>
+      <div className="table-responsive tabla-cabecera-fija" ref={tablaRef}>
         <table className="vacios-table">
           <thead>
             <tr>

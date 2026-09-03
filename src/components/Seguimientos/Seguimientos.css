@@ -192,6 +192,19 @@
   overflow-x: auto;
 }
 
+/* Aquí el tope no lo pone la ventana sino el propio modal, que ya es una
+   columna flex con su max-height: la lista se queda con el hueco que sobre bajo
+   la cabecera del modal. De ahí que se anule el max-height de
+   .tabla-cabecera-fija en vez de darle otro número. min-height: 0 porque un
+   elemento flex no encoge por debajo de su contenido sin él, y sin encoger no
+   scrollea. El selector lleva el padre para ganar la especificidad sin depender
+   del orden en que el bundle junte las hojas. */
+.seg-modal .seg-modal-scroll {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+
 .seg-tabla {
   width: 100%;
   border-collapse: collapse;

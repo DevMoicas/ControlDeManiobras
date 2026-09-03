@@ -236,10 +236,11 @@
   animation: mp-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* El scroll y el tope los pone .tabla-cabecera-fija (App.css); aqui solo se
+   declara cuanto ocupa la cabecera de ESTA pagina, que es menos que el default
+   porque solo lleva buscador y barra de acciones. */
 .maniobras-container .table-scroll-wrapper {
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  max-height: calc(100vh - 230px);
+  --tabla-tope: 230px;
   border-radius: 6px;
   /* La barra VERTICAL sigue siendo del navegador, con grosor y tinta propios.
      La horizontal se mueve arriba (BarraScrollTabla), así que aquí se anula:
@@ -298,13 +299,6 @@
   color: #fff;
   border-bottom: 1px solid #1e2b38;
   min-width: 96px;
-}
-
-/* Header fijo al scrollear dentro del wrapper */
-.maniobras-container .maniobras-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 
 .maniobras-container .maniobras-table td {
