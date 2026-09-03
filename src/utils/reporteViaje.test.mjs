@@ -35,12 +35,25 @@ test("el folio precarga lo que la maniobra ya sabe", () => {
     folio: "F-2279", tipo_servicio: "full", cliente_nombre: "YAZAKI",
     origen: "Manzanillo", destino: "Guadalajara", operador: "Juan Pérez",
     placas: "93-AF-2K", remolque_1: "R-101", remolque_2: "R-102",
+    coordinador: "Ana López", recoleccion: "propio",
   });
   assert.equal(precarga.folio, "F-2279");
   assert.equal(precarga.servicio, "full");
   assert.equal(precarga.cliente, "YAZAKI");
   assert.equal(precarga.unidad, "93-AF-2K");
   assert.equal(precarga.remolque_1, "R-101");
+  // Los dos que resuelve el servidor: el coordinador del chofer y la
+  // recolección de puerto. Aquí solo se copian.
+  assert.equal(precarga.coordinador, "Ana López");
+  assert.equal(precarga.recoleccion, "propio");
+});
+
+test("sin coordinador ni recolección se dejan para elegir a mano", () => {
+  // Un chofer sin coordinador puesto, o una maniobra todavía sin placas_pis:
+  // el servidor manda "" y el campo se queda vacío, no a medio inventar.
+  const precarga = desdeFolio({ folio: "F-2279" });
+  assert.equal(precarga.coordinador, "");
+  assert.equal(precarga.recoleccion, "");
 });
 
 test("ruta inicio y fin YA NO se precargan", () => {

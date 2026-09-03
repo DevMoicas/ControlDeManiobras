@@ -14,6 +14,11 @@ import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import CargoSelector from "../components/CargoSelector/CargoSelector";
 import TransportistaSelector from "../components/TransportistaSelector/TransportistaSelector";
 import DocumentoCelda from "../components/DocumentoCelda/DocumentoCelda";
+import CatalogoSelector from "../components/CiudadSelector/CiudadSelector";
+
+// El mismo desplegable de coordinadores que ya usan Vacíos y Reportes de viaje.
+// /empleados/ filtra por cargo en el servidor (cargo__iexact).
+const ENDPOINT_COORDINADORES = "/empleados/?cargo=Coordinador";
 
 // Todas las tablas de catálogos se muestran estrictamente por id ascendente.
 const porId = (arr) => [...arr].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
@@ -103,6 +108,7 @@ export default function NoEcoPage() {
     colonia: "Colonia",
     ciudad: "Ciudad",
     fecha_vencimiento_licencia: "Fecha Vencimiento Licencia",
+    coordinador: "Coordinador",
     poliza: "Póliza",
     fecha_vencimiento_poliza: "Fecha Vencimiento Póliza",
     tag: "Tag",
@@ -342,6 +348,21 @@ export default function NoEcoPage() {
       console.error("Error:", error);
       setData((prev) => prev.map((p) => (p.id === patio.id ? { ...p, con_cita: !valor } : p)));
       alerta({ tipo: "error", msg: "No se pudo cambiar el Con Cita del patio." });
+    }
+  };
+
+  // El coordinador del chofer se asigna desde la propia celda, como el Con Cita
+  // del patio: es un dato suelto que se cambia a menudo y abrir el modal de
+  // edición para un desplegable sobra. Optimista, y se revierte si el PATCH falla.
+  const asignarCoordinador = async (chofer, nombre) => {
+    const previo = chofer.coordinador ?? "";
+    setData((prev) => prev.map((c) => (c.id === chofer.id ? { ...c, coordinador: nombre } : c)));
+    try {
+      await apiClient.patch(`/choferes/${chofer.id}/`, { coordinador: nombre });
+    } catch (error) {
+      console.error("Error:", error);
+      setData((prev) => prev.map((c) => (c.id === chofer.id ? { ...c, coordinador: previo } : c)));
+      alerta({ tipo: "error", msg: "No se pudo asignar el coordinador." });
     }
   };
 
@@ -932,6 +953,14 @@ export default function NoEcoPage() {
                               onCambio={marcarDocumento}
                             />
                           </>
+                        ) : clave === "coordinador" ? (
+                          <CatalogoSelector
+                            endpoint={ENDPOINT_COORDINADORES}
+                            campo="nombre_trabajador"
+                            currentValue={val || ""}
+                            onSelect={(nombre) => asignarCoordinador(item, nombre)}
+                            disabled={isSubmitting}
+                          />
                         ) : clave === "con_cita" ? (
                           <button
                             type="button"

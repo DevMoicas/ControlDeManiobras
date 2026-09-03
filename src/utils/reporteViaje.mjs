@@ -57,12 +57,20 @@ export function citaDesdeManiobra(fechaPis, horario) {
 // `maniobra` es una entrada de /maniobras/folios-recientes/, que es lo que
 // devuelve FolioSelector al elegir. Se COPIA: el reporte se firma, así que no
 // puede cambiar solo si alguien edita la maniobra después.
+//
+// `coordinador` y `recoleccion` llegan YA RESUELTOS por el servidor y aquí solo
+// se copian. No es pereza: el coordinador sale del chofer del catálogo y la
+// recolección de comparar `placas_pis` contra el catálogo de tractos, y esa
+// misma regla la aplica el backend al abrir el reporte solo al asignar el folio
+// (_crear_reportes_del_folio). Rehacerla en JS serían dos copias que se separan.
 export function desdeFolio(maniobra) {
   if (!maniobra) return {};
   return {
     folio:              maniobra.folio || "",
+    coordinador:        maniobra.coordinador || "",
     servicio:           maniobra.tipo_servicio || "",
     cliente:            maniobra.cliente_nombre || "",
+    recoleccion:        maniobra.recoleccion || "",
     origen:             maniobra.origen || "",
     destino:            maniobra.destino || "",
     operador:           maniobra.operador || "",
