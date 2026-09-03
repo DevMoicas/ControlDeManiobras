@@ -60,6 +60,16 @@ class Chofer(models.Model):
     rfc = models.CharField(max_length=13, unique=True, null=True, blank=True, validators=[MinLengthValidator(13)])
     licencia = models.CharField(max_length=255, unique=True, null=True, blank=True)
     fecha_vencimiento_licencia = models.DateField(null=True, blank=True)
+    # Coordinador que lleva a este chofer. Se guarda el NOMBRE y no una FK, igual
+    # que Vacio.coordinador y ReporteViaje.coordinador: `choferes` es
+    # managed=False y todas las referencias a personas de estas tablas ya son por
+    # texto. De aqui sale el coordinador del reporte de viaje que se abre solo al
+    # asignar el folio (_crear_reportes_del_folio en views.py).
+    #
+    # Va detras de fecha_vencimiento_licencia a proposito: la tabla de Catalogos
+    # pinta las columnas en el orden en que el serializer las devuelve, que es el
+    # del modelo. Columna real en la migracion 0066 (tabla managed=False).
+    coordinador = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.nombre

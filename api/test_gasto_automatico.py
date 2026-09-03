@@ -17,7 +17,7 @@ from django.db import connections
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from api.models import Gasto, Maniobra, Vacio
+from api.models import Gasto, Maniobra, ReporteViaje, Vacio
 
 URL = '/api/maniobras/'
 
@@ -212,9 +212,25 @@ class DieselDelReporteAlGastoTests(BaseGastoAutomatico):
     REPORTES = '/api/reportes-viaje/'
 
     def crear_reporte(self, folio, cargas=None, **extra):
-        cuerpo = {'folio': folio, 'cargas': cargas or []}
+        """Guarda el reporte de ese folio: PATCH si ya existe, POST si no.
+
+        Desde el 2026-09-03 el reporte lo abre solo el automatismo al asignar el
+        folio (_crear_reportes_del_folio), asi que en casi todas estas pruebas ya
+        esta creado y un POST chocaria contra el UNIQUE de `folio`. Los folios
+        que NO pasan por ahi —el de una maniobra creada por ORM, o uno sin
+        maniobra— se siguen abriendo con POST, que es justo lo que prueban.
+
+        El volcado del diesel se dispara por igual en las dos vias, que es lo que
+        miran estas pruebas.
+        """
+        cuerpo = {'cargas': cargas or []}
         cuerpo.update(extra)
-        return self.cliente.post(self.REPORTES, cuerpo, format='json')
+        reporte = ReporteViaje.objects.filter(folio=folio).first()
+        if reporte is None:
+            return self.cliente.post(self.REPORTES, {'folio': folio, **cuerpo},
+                                     format='json')
+        return self.cliente.patch('%s%s/' % (self.REPORTES, reporte.id),
+                                  cuerpo, format='json')
 
     def maniobra_con_gasto(self, folio='F-2279', **campos):
         """Una maniobra de FRABA a la que se le asigna folio: el gasto lo crea
@@ -230,7 +246,8 @@ class DieselDelReporteAlGastoTests(BaseGastoAutomatico):
         r = self.crear_reporte('F-2279', [
             {'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80'}])
 
-        self.assertEqual(r.status_code, 201, r.data)
+        # 200 y no 201: el reporte ya lo abrio el folio, aqui solo se rellena.
+        self.assertEqual(r.status_code, 200, r.data)
         gasto.refresh_from_db()
         self.assertEqual(gasto.gasto_diesel, Decimal('7440.00'))
 

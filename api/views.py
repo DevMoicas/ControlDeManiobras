@@ -736,6 +736,191 @@ def _crear_vacios_del_folio(maniobra, usuario):
     return creados
 
 
+# ── Reporte de viaje automatico al asignar el folio ──────────────────────────
+# Mismo disparo que el gasto y los vacios: el papel del coordinador existe desde
+# que el viaje tiene folio, asi que el reporte nace ahi en vez de abrirse a mano.
+#
+# Lo que precarga es lo mismo que precargaba el modal al elegir el folio
+# (desdeFolio en src/utils/reporteViaje.mjs del frontend, que sigue en pie para
+# los folios viejos): las dos listas son espejo, como CARGAS_EN_EL_PAPEL.
+_HORA_CITA = re.compile(r'^(\d{1,2}):(\d{2})')
+
+
+def _es_viaje_propio(maniobra):
+    """Si el viaje es de FRABA Y ademas no esta marcado como TERCERO.
+
+    Los DOS criterios juntos y a proposito (usuario, 2026-09-03): la marca
+    TERCERO se le puede pasar al capturista, y un viaje con transportista BSH es
+    de un tercero aunque nadie la haya marcado. Con uno solo se colaria la mitad
+    de los casos.
+
+    El transportista vacio cuenta como propio, que es como lo lee ya todo el
+    sistema (ver _es_de_fraba) y lo que tiene la mayoria de las maniobras.
+    """
+    return _es_de_fraba(maniobra) and not (maniobra.tercero or '').strip()
+
+
+def _recoleccion_del_puerto(maniobra, propias=None):
+    """RECOLECCION EN PUERTO del reporte: 'propio', 'tercero' o '' si no se sabe.
+
+    Lo dicta `placas_pis` —la unidad que recoge en el puerto— y NO la marca
+    TERCERO de la maniobra, que habla del viaje entero (usuario, 2026-09-03). El
+    catalogo `tractos` son las unidades propias y el selector de placas_pis
+    ofrece esas y las de terceros, asi que "no esta en tractos" es exactamente
+    "es de un tercero".
+
+    Vacio devuelve '' y no 'tercero': el folio se asigna casi siempre antes de
+    capturar las placas, y ahi 'tercero' seria afirmar lo que nadie sabe todavia.
+    Lo remata _completar_reportes_del_folio cuando aparecen.
+
+    `propias` son las placas del catalogo cuando quien llama ya las tiene
+    resueltas para toda una pagina (folios_recientes). Sin ese hueco, precargar
+    50 folios seria una consulta por folio; con una sola maniobra delante se deja
+    en None y se pregunta a la base.
+    """
+    placas = (maniobra.placas_pis or '').strip()
+    if not placas:
+        return ''
+    es_propia = (placas in propias if propias is not None
+                 else Tracto.objects.filter(placas=placas).exists())
+    return 'propio' if es_propia else 'tercero'
+
+
+def _coordinador_del_operador(nombre, mapa=None):
+    """El coordinador asignado al chofer que lleva el viaje, o ''.
+
+    Por NOMBRE, que es como enlaza ya el sistema chofer y maniobra (ver
+    _validar_operador_vigente). Un operador que no este en el catalogo —o un
+    chofer al que aun no se le ha puesto coordinador— deja el campo vacio y se
+    elige a mano en el reporte.
+
+    `mapa` es {nombre: coordinador} ya resuelto, por el mismo motivo que
+    `propias` en _recoleccion_del_puerto: folios_recientes lo arma de una vez
+    para toda la pagina en lugar de una consulta por folio.
+    """
+    if not (nombre or '').strip():
+        return ''
+    if mapa is not None:
+        return mapa.get(nombre) or ''
+    chofer = Chofer.objects.filter(nombre=nombre).first()
+    return (chofer.coordinador if chofer else '') or ''
+
+
+def _cita_del_folio(maniobra):
+    """FECHA Y HORA DE LA CITA = fecha_pis (el dia) + horario (la hora).
+
+    Espejo de citaDesdeManiobra() en src/utils/reporteViaje.mjs, que es quien la
+    arma cuando el reporte se abre a mano. Alli el navegador ya esta en la hora
+    de operacion; aqui hay que decirla, y de ahi _ZONA_OPERACION: sin zona, el
+    reporte que crea el servidor saldria corrido respecto del que crea la
+    pantalla, para el mismo viaje.
+
+    Hacen falta LOS DOS. Con solo el dia habria que inventar una hora, y un
+    '00:00' en el papel se lee como una cita a medianoche, no como un hueco.
+
+    str() sobre fecha_pis: el modelo dice DateField pero la columna real es TEXT
+    (`maniobras` es managed=False — mismo caso que fecha_entrega_mercancia).
+    str() da 'YYYY-MM-DD' con un date y deja la cadena igual si es texto.
+    """
+    dia  = re.match(r'^(\d{4})-(\d{2})-(\d{2})', str(maniobra.fecha_pis or '').strip())
+    hora = _HORA_CITA.match((maniobra.horario or '').strip())
+    if not dia or not hora:
+        return None
+    if int(hora.group(1)) > 23 or int(hora.group(2)) > 59:
+        return None
+    return datetime(int(dia.group(1)), int(dia.group(2)), int(dia.group(3)),
+                    int(hora.group(1)), int(hora.group(2)), tzinfo=_ZONA_OPERACION)
+
+
+def _reportes_del_viaje(maniobra):
+    """(folio, datos precargados) de cada reporte que le toca a este viaje.
+
+    Un Full repartido gasta un folio por operador y abre DOS reportes, cada uno
+    con SU operador, SU tracto y SUS remolques: el mismo reparto que hace
+    folios_recientes al ofrecer los folios, y el que ya hacen los vacios.
+    """
+    comun = {
+        'servicio':    maniobra.tipo_servicio or '',
+        # El nombre del catalogo cuando hay FK; `cliente` es el respaldo de los
+        # registros anteriores a cliente_id (igual que _resolver_cliente).
+        'cliente':     (maniobra.cliente_fk.nombre_cliente
+                        if maniobra.cliente_fk_id else maniobra.cliente) or '',
+        'origen':      maniobra.origen or '',
+        'destino':     maniobra.destino or '',
+        'recoleccion': _recoleccion_del_puerto(maniobra),
+        'cita':        _cita_del_folio(maniobra),
+    }
+    partes = (
+        (maniobra.folio,   maniobra.asignacion_operador_status, maniobra.unidad,
+         maniobra.remolque,   maniobra.remolque_2),
+        (maniobra.folio_2, maniobra.operador_2, maniobra.unidad_2,
+         maniobra.remolque_3, maniobra.remolque_4),
+    )
+    salida = []
+    for folio, operador, unidad, remolque_1, remolque_2 in partes:
+        folio = (folio or '').strip()
+        if not folio:
+            continue
+        salida.append((folio, {
+            **comun,
+            'operador':    operador or '',
+            'coordinador': _coordinador_del_operador(operador),
+            'unidad':      unidad or '',
+            'remolque_1':  remolque_1 or '',
+            'remolque_2':  remolque_2 or '',
+        }))
+    return salida
+
+
+def _crear_reportes_del_folio(maniobra):
+    """Abre el reporte de viaje de cada folio del viaje. Devuelve cuantos creo.
+
+    get_or_create sobre `folio`, que es UNIQUE en la base: es lo que impide que
+    dos peticiones simultaneas cuelen dos reportes del mismo folio, igual que el
+    UNIQUE de gastos.maniobra_id en _crear_gasto_del_folio. Un folio que ya tenga
+    reporte —abierto a mano, por ejemplo— no se toca.
+    """
+    if not _es_viaje_propio(maniobra):
+        return 0
+    creados = 0
+    for folio, datos in _reportes_del_viaje(maniobra):
+        _, creado = ReporteViaje.objects.get_or_create(folio=folio, defaults=datos)
+        creados += bool(creado)
+    return creados
+
+
+# Los huecos con los que nace el reporte, y las columnas de la maniobra de las
+# que cuelgan. El folio se pone casi siempre ANTES de saber quien lo llevara (ver
+# _sincronizar_asignacion_folios) y antes de capturar las placas del puerto, asi
+# que sin este remate los tres se teclearian a mano en cada viaje.
+_HUECOS_DEL_REPORTE  = ('operador', 'coordinador', 'recoleccion')
+_FUENTES_DEL_REPORTE = ('placas_pis', 'asignacion_operador_status', 'operador_2')
+
+
+def _completar_reportes_del_folio(maniobra):
+    """Rellena SOLO los huecos que siguen vacios. Devuelve cuantos reportes toco.
+
+    Solo lo vacio: el reporte se FIRMA, asi que lo que un coordinador haya
+    escrito ahi manda sobre lo que diga la maniobra despues (usuario,
+    2026-09-03). Esto no es una sincronizacion permanente como
+    _sincronizar_fecha_entrega — es el remate de la precarga, que llega tarde
+    porque el dato llega tarde.
+    """
+    tocados = 0
+    for folio, datos in _reportes_del_viaje(maniobra):
+        reporte = ReporteViaje.objects.filter(folio=folio).first()
+        if reporte is None:
+            continue
+        huecos = [c for c in _HUECOS_DEL_REPORTE if datos[c] and not getattr(reporte, c)]
+        if not huecos:
+            continue
+        for campo in huecos:
+            setattr(reporte, campo, datos[campo])
+        reporte.save(update_fields=huecos + ['actualizado_en'])
+        tocados += 1
+    return tocados
+
+
 # ── Asignacion automatica del folio ──────────────────────────────────────────
 # La columna ASIGNACION de la pagina de Folios dice quien lleva ese folio. Se
 # escribia a mano; ahora la deriva la maniobra que lo tiene puesto.
@@ -996,6 +1181,10 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
             if (maniobra.folio or '').strip():
                 _crear_gasto_del_folio(maniobra, self._usuario())
                 _crear_vacios_del_folio(maniobra, self._usuario())
+            # El reporte de viaje mira los DOS folios: la fila nueva puede traer
+            # ya el del segundo operador, y cada folio abre el suyo.
+            if (maniobra.folio or '').strip() or (maniobra.folio_2 or '').strip():
+                _crear_reportes_del_folio(maniobra)
             _sincronizar_asignacion_folios(maniobra, {})
 
     def perform_update(self, serializer):
@@ -1003,7 +1192,13 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
         # como esta en la base.
         antes = {'folio':   serializer.instance.folio,
                  'folio_2': serializer.instance.folio_2}
-        folio_antes = (antes['folio'] or '').strip()
+        folio_antes   = (antes['folio']   or '').strip()
+        folio_2_antes = (antes['folio_2'] or '').strip()
+        # Los datos que el reporte precarga pero la maniobra suele saber DESPUES
+        # de asignar el folio. Se comparan antes/despues para no lanzar las
+        # consultas del remate en cada edicion de una maniobra cualquiera.
+        fuentes_antes = tuple(getattr(serializer.instance, c)
+                              for c in _FUENTES_DEL_REPORTE)
         # Si el viaje ya tenia segundo operador antes de esta edicion: es lo que
         # distingue "se acaba de repartir el Full" de "ya venia repartido".
         operador_2_antes = (serializer.instance.operador_2 or '').strip()
@@ -1031,6 +1226,16 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
             # copiarla solo al crear el gasto lo dejaba vacio para siempre.
             if maniobra.fecha_entrega_mercancia != fecha_entrega_antes:
                 _sincronizar_fecha_entrega(maniobra, self._usuario())
+            # El reporte de viaje, al pasar ESE folio de vacio a lleno: un Full
+            # repartido abre el del segundo operador cuando aparece su folio, no
+            # antes. Si no hay folio nuevo pero si cambio alguno de los datos que
+            # se capturan mas tarde (las placas del puerto, el operador), se
+            # rematan los huecos del reporte que ya existe.
+            if ((not folio_antes and (maniobra.folio or '').strip())
+                    or (not folio_2_antes and (maniobra.folio_2 or '').strip())):
+                _crear_reportes_del_folio(maniobra)
+            elif tuple(getattr(maniobra, c) for c in _FUENTES_DEL_REPORTE) != fuentes_antes:
+                _completar_reportes_del_folio(maniobra)
             # La asignacion, en cambio, se recalcula siempre: el folio suele
             # ponerse antes de saber quien lo llevara.
             _sincronizar_asignacion_folios(maniobra, antes)
@@ -1099,18 +1304,21 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
 
         maniobras = consulta.select_related('cliente_fk').order_by('-id')[:50]
         # Mapa placas → tracto: resuelve Tipo de Unidad y Modelo sin N consultas.
-        # Incluye los dos tractos: la Bitácora de Sueño del operador 2 necesita
-        # el suyo igual que la del 1.
+        # Incluye los dos tractos —la Bitácora de Sueño del operador 2 necesita el
+        # suyo igual que la del 1— y ADEMÁS `placas_pis`, que no es la unidad del
+        # viaje sino la que recoge en el puerto: estar o no estar en este catálogo
+        # es exactamente lo que decide la RECOLECCIÓN del reporte de viaje.
         placas_unidad = {
-            placas
+            placas.strip()
             for m in maniobras
-            for placas in (m.unidad, m.unidad_2)
+            for placas in (m.unidad, m.unidad_2, m.placas_pis)
             if placas
         }
         tractos = {
             t.placas: t
             for t in Tracto.objects.filter(placas__in=placas_unidad)
         } if placas_unidad else {}
+        placas_propias = set(tractos)
         # Mapa nombre → cliente, mismo patrón que tractos: SOLO para los folios
         # previos al FK cliente_id, que únicamente guardaron el nombre (ver
         # _resolver_cliente). Un nombre que ya no exista en el catálogo devuelve la
@@ -1122,6 +1330,20 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
             c.nombre_cliente: c
             for c in Cliente.objects.filter(nombre_cliente__in=nombres_cliente)
         } if nombres_cliente else {}
+        # Mapa nombre → coordinador del chofer, mismo patrón que los anteriores.
+        # Lo pide el reporte de viaje al elegir el folio a mano; el que se abre
+        # solo al asignarlo lo saca del mismo sitio (_coordinador_del_operador),
+        # así que las dos vías precargan lo mismo.
+        nombres_operador = {
+            nombre
+            for m in maniobras
+            for nombre in (m.asignacion_operador_status, m.operador_2)
+            if nombre
+        }
+        coordinadores = dict(
+            Chofer.objects.filter(nombre__in=nombres_operador)
+                          .values_list('nombre', 'coordinador')
+        ) if nombres_operador else {}
 
         # Un Full trae DOS folios y la maniobra entra en la consulta si cualquiera
         # de los dos casa. Sin volver a mirar folio a folio, buscar "894"
@@ -1165,6 +1387,11 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
                 'horario':     m.horario or '',
                 'referencia':  m.referencia or '',
                 'tipo_servicio': m.tipo_servicio or '',
+                # RECOLECCIÓN EN PUERTO del reporte de viaje. Va aquí y no en el
+                # navegador para que la regla viva en UN sitio: es la misma que
+                # aplica _crear_reportes_del_folio al abrirlo solo. Es de la
+                # maniobra y no del folio — `placas_pis` no se reparte.
+                'recoleccion': _recoleccion_del_puerto(m, propias=placas_propias),
                 'dos_operadores': dos_operadores,
                 # La carga viaja EN CRUDO, las dos columnas tal cual, y el reparto
                 # lo hace cargaDeParte() en el front con `parte`. Es a propósito:
@@ -1217,6 +1444,9 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
                     'ccp':         m.ccp or '',
                     # Operador, unidad y remolques del registro (autollenado de documentos)
                     'operador':    m.asignacion_operador_status or '',      # nombre del operador asignado
+                    # El coordinador SÍ es de cada folio: va pegado a su operador.
+                    'coordinador': _coordinador_del_operador(
+                        m.asignacion_operador_status, coordinadores),
                     'placas':      m.unidad or '',                          # placas del tracto asignado
                     'tipo_unidad': (tracto.unidad if tracto else '') or '', # Tipo de Unidad
                     'anio':        str(tracto.anio) if tracto and tracto.anio is not None else '',  # Modelo
@@ -1235,6 +1465,7 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
                     'folio':       m.folio_2,
                     'ccp':         m.ccp_2 or '',
                     'operador':    m.operador_2 or '',
+                    'coordinador': _coordinador_del_operador(m.operador_2, coordinadores),
                     'placas':      m.unidad_2 or '',
                     'tipo_unidad': (tracto_2.unidad if tracto_2 else '') or '',
                     'anio':        str(tracto_2.anio) if tracto_2 and tracto_2.anio is not None else '',

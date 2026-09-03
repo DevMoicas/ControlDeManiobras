@@ -20,7 +20,7 @@ from django.db import connections
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from api.models import Gasto, Maniobra, Vacio
+from api.models import Chofer, Gasto, Maniobra, Vacio
 
 URL = '/api/maniobras/'
 
@@ -39,10 +39,14 @@ class BaseEspejo(TestCase):
             editor.create_model(Maniobra)
             editor.create_model(Gasto)
             editor.create_model(Vacio)
+            # Chofer: al asignar el folio, el reporte de viaje automatico
+            # busca el coordinador del operador (_coordinador_del_operador).
+            editor.create_model(Chofer)
 
     @classmethod
     def tearDownClass(cls):
         with connections['standard'].schema_editor() as editor:
+            editor.delete_model(Chofer)
             editor.delete_model(Vacio)
             editor.delete_model(Gasto)
             editor.delete_model(Maniobra)
