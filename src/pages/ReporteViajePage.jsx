@@ -11,6 +11,7 @@ import PlacasSelector from "../components/PlacasSelector/PlacasSelector";
 import OperadorSelector from "../components/OperadorSelector/OperadorSelector";
 import RemolqueSelector from "../components/RemolqueSelector/RemolqueSelector";
 import CatalogoSelector from "../components/CiudadSelector/CiudadSelector";
+import { aDate, aBackend } from "../components/CeldaEditable/fechaCelda.mjs";
 import VacioStatusSelector from "../components/VacioStatusSelector/VacioStatusSelector";
 import SearchBar from "../components/SearchBar/SearchBar";
 import {
@@ -390,8 +391,12 @@ export default function ReporteViajePage() {
           <Campo label="Fecha">
             <DatePicker
               locale="es"
-              selected={abierto.fecha ? new Date(abierto.fecha) : null}
-              onChange={(d) => cambiar("fecha", d ? d.toISOString().slice(0, 10) : null)}
+              /* aDate/aBackend y no new Date()/toISOString(): un "2026-01-12" se
+                 parsea como UTC y al oeste de Greenwich se lee como el día 11.
+                 Se veía en cuanto la fecha empezó a precargarse sola. Son los
+                 mismos conversores —ya probados— que usan las celdas de tabla. */
+              selected={aDate(abierto.fecha)}
+              onChange={(d) => cambiar("fecha", aBackend(d) || null)}
               dateFormat="dd/MM/yyyy"
               placeholderText="DD/MM/YYYY"
               className="date-picker-input"

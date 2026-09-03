@@ -28,6 +28,7 @@ const porId = (arr) => [...arr].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
 // empleados es texto libre en la base y no siempre trae una fecha; estas dos sí
 // son DateField (Tracto.fecha_vencimiento_poliza, Chofer.fecha_vencimiento_licencia).
 const COLUMNAS_FECHA = new Set([
+  "fecha_salida",
   "fecha_vencimiento_poliza",
   "fecha_vencimiento_licencia",
   "fecha_vencimiento_permisos_full",
@@ -101,6 +102,7 @@ export default function NoEcoPage() {
     id: "ID",
     nombre_trabajador: "Nombre del Trabajador",
     fecha_ingreso: "Fecha de Ingreso",
+    fecha_salida: "Fecha de Salida",
     nss: "NSS",
     nombre: "Nombre",
     nombre_cliente: "Nombre del Cliente",
@@ -160,7 +162,10 @@ export default function NoEcoPage() {
       { name: "fecha_ingreso", label: "Fecha de Ingreso", type: "date", required: false },
       { name: "nss", label: "NSS", type: "text", required: false },
       { name: "cargo", label: "Cargo", type: "selector", selector: "cargo" },
-      { name: "telefono", label: "Teléfono", type: "tel", required: false }
+      { name: "telefono", label: "Teléfono", type: "tel", required: false },
+      // La baja. Vacía mientras el empleado siga trabajando; con ella puesta,
+      // Nómina lo sigue enseñando pero marcado, para poder cerrarle el finiquito.
+      { name: "fecha_salida", label: "Fecha de Salida", type: "date", required: false }
     ],
     patios: [
       { name: "nombre", label: "Nombre", type: "text" }

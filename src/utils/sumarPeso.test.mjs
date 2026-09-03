@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { sumarPeso } from "./sumarPeso.mjs";
+import { pesoDeFolios } from "./sumarPeso.mjs";
 
 test("un solo valor se devuelve tal cual", () => {
   assert.equal(sumarPeso("23412"), 23412);
@@ -34,4 +35,29 @@ test("si nada es numerico devuelve cadena vacia, no cero", () => {
   assert.equal(sumarPeso(""), "");
   assert.equal(sumarPeso("N/A"), "");
   assert.equal(sumarPeso(null, undefined), "");
+});
+
+// ── El peso que va a la bitácora: cargaDeParte + sumarPeso ───────────────────
+// Es la COMPOSICIÓN que se rompió, no ninguna de las dos por separado. Desde la
+// 0035 cada mitad de un Full tiene su columna; leyendo solo `peso`, el segundo
+// contenedor se quedaba fuera y el documento salía con la mitad del peso.
+test("un Full con cada mitad en su columna suma los DOS pesos", () => {
+  assert.equal(pesoDeFolios([{ peso: "23412", peso_2: "22000", parte: "ambos" }]),
+               45412);
+});
+
+test("un registro anterior a la 0035 sigue sumando igual", () => {
+  // Los dos pesos dentro de la primera columna, que es como se guardaban antes.
+  assert.equal(pesoDeFolios([{ peso: "23412 - 22000", peso_2: "", parte: "ambos" }]),
+               45412);
+});
+
+test("empatar los dos folios de un Full repartido no cuenta ningún peso dos veces", () => {
+  // Las dos filas de /folios-recientes/ traen la carga ENTERA; lo que las
+  // distingue es `parte`. Sin mirarla, empatarlas sumaría 90824.
+  const carga = { peso: "23412", peso_2: "22000" };
+  assert.equal(
+    pesoDeFolios([{ ...carga, parte: "1" }, { ...carga, parte: "2" }]),
+    45412,
+  );
 });

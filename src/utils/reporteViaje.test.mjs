@@ -48,6 +48,17 @@ test("el folio precarga lo que la maniobra ya sabe", () => {
   assert.equal(precarga.recoleccion, "propio");
 });
 
+test("la fecha se precarga con el día en que arrancó la ruta", () => {
+  // Llega ya resuelto del servidor: aquí solo se copia. Si se recortara de
+  // `ruta_inicio` en el navegador, toda salida de tarde daría el día siguiente.
+  const precarga = desdeFolio({ folio: "F-2279", fecha_ruta_inicio: "2026-01-12" });
+  assert.equal(precarga.fecha, "2026-01-12");
+});
+
+test("un viaje sin ruta inicio deja la fecha para capturar a mano", () => {
+  assert.equal(desdeFolio({ folio: "F-2279" }).fecha, null);
+});
+
 test("sin coordinador ni recolección se dejan para elegir a mano", () => {
   // Un chofer sin coordinador puesto, o una maniobra todavía sin placas_pis:
   // el servidor manda "" y el campo se queda vacío, no a medio inventar.

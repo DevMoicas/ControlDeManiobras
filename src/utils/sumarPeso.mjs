@@ -10,6 +10,30 @@
 //
 //   node --test src/utils/sumarPeso.test.mjs
 
+import { cargaDeParte } from "./dobleValor.mjs";
+
+/**
+ * El peso que va a un documento a partir de las filas de /folios-recientes/.
+ *
+ * Es la composición que usa la bitácora, aquí y no en el modal para poder
+ * probarla: leyendo `folio.peso` a secas, un Full con las dos columnas nuevas
+ * (migración 0035) salía con la MITAD del peso, y eso no lo veía ninguna prueba.
+ *
+ * cargaDeParte respeta además el reparto: un Full con un solo operador se lleva
+ * las dos mitades ("ambos") y uno repartido entre dos folios se lleva cada uno
+ * la suya, así que empatarlos no cuenta ningún peso dos veces.
+ *
+ * @param   {Array<object|null|undefined>} folios filas de /folios-recientes/
+ * @returns {number|""}
+ */
+export function pesoDeFolios(folios) {
+  return sumarPeso(
+    ...(folios || [])
+      .filter(Boolean)
+      .map((f) => cargaDeParte(f, f.parte || "ambos").peso)
+  );
+}
+
 /**
  * Suma todas las cantidades que vengan en los pesos recibidos.
  *

@@ -71,9 +71,14 @@ export default function CiudadSelector({ endpoint, campo = "ciudad", currentValu
     };
   }, [open]);
 
-  const handleSelect = (ciudad) => {
+  const handleSelect = (ciudad, registro) => {
     setOpen(false);
-    onSelect(ciudad === currentValue ? "" : ciudad);   // reelegir = deseleccionar
+    // El registro entero va como segundo argumento: quien solo quiere el texto
+    // lo ignora (es lo que hacen Vacíos, Reportes de viaje y Catálogos), y quien
+    // necesita el id —el calendario de vacaciones guarda `empleado`, no un
+    // nombre— lo tiene sin una segunda consulta ni cruzar por nombre, que con
+    // dos homónimos elegiría al equivocado.
+    onSelect(ciudad === currentValue ? "" : ciudad, registro);   // reelegir = deseleccionar
   };
 
   return (
@@ -108,7 +113,7 @@ export default function CiudadSelector({ endpoint, campo = "ciudad", currentValu
               role="option"
               aria-selected={c[campo] === currentValue}
               className={`cds-option ${c[campo] === currentValue ? "cds-option--selected" : ""}`}
-              onClick={(e) => { e.stopPropagation(); handleSelect(c[campo]); }}
+              onClick={(e) => { e.stopPropagation(); handleSelect(c[campo], c); }}
             >
               {c[campo]}
               {c[campo] === currentValue && <span className="cds-check">✓</span>}

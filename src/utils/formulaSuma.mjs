@@ -63,6 +63,12 @@ export const CAMPOS_CON_FORMULA = [
   "gasto_tag", "gasto_diesel", "comision_operador", "reparaciones", "facturado",
 ];
 
+// Nómina: solo DÍAS TOMADOS. Es la única celda que se captura sumando —tres días
+// en marzo más dos en agosto—; el sueldo y el finiquito son un importe, no un
+// desglose de renglones. Copia deliberada de CAMPOS_CON_FORMULA_NOMINA en
+// api/Serializers.py, igual que la lista de arriba: allí es donde se valida.
+export const CAMPOS_CON_FORMULA_NOMINA = ["dias_tomados"];
+
 // ¿El número que hay en la celda sigue siendo el resultado de esa fórmula?
 const esSuResultado = (formula, valor) =>
   valor != null && valor !== "" && evaluarSuma(formula) === Number(valor).toFixed(2);
@@ -82,13 +88,16 @@ const esSuResultado = (formula, valor) =>
  * alguien escribió el total a mano, o vació la celda. Mientras el número
  * cuadre, sobrevive a los PUT de los demás campos, que mandan la fila entera.
  *
- * @param   {object} datos payload de POST/PUT
+ * @param   {object} datos  payload de POST/PUT
+ * @param   {string[]} campos qué columnas admiten fórmula. Por defecto las de
+ *                     Gastos; Nómina pasa las suyas. Es lo único que cambia
+ *                     entre las dos, así que la regla vive en un solo sitio.
  * @returns {object} copia; el original no se toca
  */
-export function prepararPayload(datos) {
+export function prepararPayload(datos, campos = CAMPOS_CON_FORMULA) {
   const salida = { ...datos };
   const formulas = { ...(datos.formulas ?? {}) };
-  for (const campo of CAMPOS_CON_FORMULA) {
+  for (const campo of campos) {
     const entrada = salida[campo];
     const texto = typeof entrada === "string" ? entrada.trim() : "";
     const total = texto && evaluarSuma(texto);

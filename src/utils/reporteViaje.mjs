@@ -67,6 +67,10 @@ export function desdeFolio(maniobra) {
   if (!maniobra) return {};
   return {
     folio:              maniobra.folio || "",
+    // El día en que arrancó la ruta. Llega YA resuelto del servidor (el día de
+    // `ruta_inicio` en la hora de operación): recortarlo aquí sobre el ISO daría
+    // el día siguiente en cualquier salida de tarde.
+    fecha:              maniobra.fecha_ruta_inicio || null,
     coordinador:        maniobra.coordinador || "",
     servicio:           maniobra.tipo_servicio || "",
     cliente:            maniobra.cliente_nombre || "",

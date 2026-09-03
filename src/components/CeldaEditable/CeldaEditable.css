@@ -32,3 +32,25 @@
 #celda-fecha-portal .react-datepicker-popper {
   z-index: 9999;
 }
+
+/* ── Sitio para el aspa de limpiar ────────────────────────────────────────────
+   En las celdas estrechas el aspa se pintaba ENCIMA de la fecha: el clic caía en
+   el input, abría el calendario en vez de borrar, y había que vaciar la celda a
+   mano. El aspa se ancla al borde derecho del envoltorio, así que lo que hace
+   falta es apartar el texto, no mover el aspa.
+
+   El selector lleva `input` para ganar por especificidad (0,2,1) a los
+   `.<pagina>-container .date-picker-input` (0,2,0) de Maniobras, Gastos y
+   Vacíos, que declaran el padding en shorthand y si no lo pisarían. Así el
+   arreglo vive en UN sitio en vez de repetirse en cada hoja. */
+.celda-fecha input.date-picker-input {
+  padding-right: 26px;
+}
+
+/* Y el área táctil sube de ~20px a ~44px, el mínimo exigido, sin desplazarla:
+   el círculo sigue anclado a la derecha. Mismo remedio que ya llevaba
+   Movimientos Locales en móvil. */
+.celda-fecha .react-datepicker__close-icon {
+  padding-right: 2px;
+  padding-left: 18px;
+}

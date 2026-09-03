@@ -1,0 +1,319 @@
+/* Calendario de vacaciones de la Nómina.
+   Mismos tokens que el resto del sistema (--primary, --text, --bg, borde
+   #e6ecf5, radio 14px) y la misma rejilla mensual que la Torre de Control, para
+   que no parezca una pantalla de otra aplicación.
+
+   La clase .modal-overlay se conserva en el JSX aunque el velo se pinte aquí:
+   es la que Index.css usa para bloquear el scroll del documento mientras hay un
+   modal abierto, y esa regla es global. */
+
+.cv-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(16, 24, 40, 0.5);
+}
+
+.cv-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(1080px, 100%);
+  /* El tope es el hueco que deja el overlay. La rejilla de dentro se queda con
+     lo que sobre bajo la cabecera (ver .cv-rejilla-scroll). */
+  max-height: calc(100vh - 32px);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 60px -20px rgba(16, 24, 40, 0.45);
+  overflow: hidden;
+}
+
+/* ── Cabecera ─────────────────────────────────────────────────────────────── */
+
+.cv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e6ecf5;
+}
+
+.cv-titulo {
+  margin: 0;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.cv-cerrar {
+  display: inline-flex;
+  padding: 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-light, #6b7280);
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+.cv-cerrar:hover { background: #f1f5f9; }
+
+/* ── Navegación de mes ────────────────────────────────────────────────────── */
+
+.cv-barra-mes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px 20px 10px;
+}
+
+.cv-mes {
+  min-width: 15ch;
+  margin: 0;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: capitalize;
+  color: var(--text);
+}
+
+.cv-flecha {
+  display: inline-flex;
+  padding: 7px;
+  border: 1px solid #e6ecf5;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--primary);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.cv-flecha:hover:not(:disabled) { border-color: var(--primary); background: #f4f8ff; }
+/* Enero y diciembre: el calendario es de un año, no de una línea infinita. */
+.cv-flecha:disabled { opacity: 0.35; cursor: default; }
+
+/* ── Rejilla ──────────────────────────────────────────────────────────────── */
+
+.cv-rejilla-scroll {
+  flex: 1;
+  min-height: 0;   /* sin esto un hijo flex no encoge y la rejilla no scrollea */
+  overflow: auto;
+  padding: 0 20px 4px;
+}
+
+.cv-rejilla {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(116px, 1fr));
+  gap: 6px;
+  min-width: 812px;   /* 7 × 116 */
+}
+
+.cv-dia-nombre {
+  padding: 9px 0;
+  margin-bottom: 2px;
+  border-radius: 10px;
+  background: #e4ecfa;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-align: center;
+  color: var(--text);
+}
+
+.cv-celda {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 88px;
+  padding: 6px;
+  border: 1px solid #e6ecf5;
+  border-radius: 14px;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.cv-celda:hover { border-color: var(--primary); background: #f4f8ff; }
+
+/* Los días anteriores al 1: no son un día, así que ni se pintan ni se pulsan. */
+.cv-celda-hueca {
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+.cv-celda-hoy {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary) inset;
+}
+
+.cv-numero {
+  font-size: 0.8rem;
+  color: #8a97ab;
+}
+
+/* El rectángulo del evento, bajo el número: el mismo gesto visual que un
+   calendario de Google o Apple. El color lo elige quien lo registra y el
+   contraste del texto lo resuelve textoSobre() en el JSX, no un color fijo que
+   se volvería ilegible sobre media paleta. */
+.cv-evento {
+  display: block;
+  padding: 3px 7px;
+  border-radius: 7px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.25;
+  /* El nombre completo no cabe en 116px: se corta con puntos suspensivos y el
+     title de la celda lo enseña entero. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cv-cargando,
+.cv-nota {
+  margin: 10px 20px 0;
+  font-size: 0.8rem;
+  color: var(--text-light, #6b7280);
+}
+.cv-nota { padding-bottom: 16px; text-align: center; }
+
+/* ── Alta y edición de un día ─────────────────────────────────────────────── */
+/* Va por encima del calendario (z-index mayor que .cv-overlay): es un segundo
+   piso, no un modal que lo sustituya — al cerrarlo se vuelve a la rejilla. */
+
+.cv-sub-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(16, 24, 40, 0.45);
+}
+
+.cv-evento-modal {
+  width: min(420px, 100%);
+  padding: 22px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 60px -20px rgba(16, 24, 40, 0.5);
+}
+
+.cv-evento-titulo {
+  margin: 0 0 18px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.cv-campo { margin-bottom: 14px; }
+
+.cv-campo label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-light, #6b7280);
+}
+
+.cv-campo input[type="text"],
+.cv-campo input[type="date"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 11px;
+  border: 1px solid #e6ecf5;
+  border-radius: 10px;
+  background: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+.cv-campo input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+/* Del … Al, en la misma línea: son un solo dato partido en dos. */
+.cv-campo-doble {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.cv-campo-color {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cv-campo-color label { margin-bottom: 0; }
+
+.cv-lectura {
+  display: block;
+  padding: 9px 11px;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.cv-evento-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+.cv-espacio { flex: 1; }
+
+.cv-evento-acciones button {
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.cv-evento-acciones button:disabled { opacity: 0.6; cursor: default; }
+
+.cv-btn-guardar { background: var(--primary); color: #fff; }
+.cv-btn-guardar:hover:not(:disabled) { background: #1d4ed8; }
+
+.cv-btn-cancelar {
+  border-color: #e6ecf5;
+  background: #fff;
+  color: var(--text);
+}
+.cv-btn-cancelar:hover:not(:disabled) { background: #f1f5f9; }
+
+.cv-btn-borrar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+}
+.cv-btn-borrar:hover:not(:disabled) { background: #fee2e2; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-celda, .cv-flecha, .cv-cerrar, .cv-evento-acciones button { transition: none; }
+}

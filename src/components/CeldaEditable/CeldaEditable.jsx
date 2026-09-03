@@ -51,8 +51,12 @@ export default function CeldaEditable({ valor, texto, onGuardar, fecha = false, 
     setEditando(true);
   };
 
-  const confirmar = () => {
-    if (borrador !== (valor ?? "")) onGuardar(borrador);
+  // Acepta el valor por parametro porque limpiar con el aspa tiene que guardar
+  // EN EL ACTO, sin esperar al estado. Los que la llaman sin argumento van
+  // envueltos en una flecha a proposito: onBlur y onCalendarClose pasan un
+  // evento como primer argumento y aqui se leeria como el valor a guardar.
+  const confirmar = (nuevo = borrador) => {
+    if (nuevo !== (valor ?? "")) onGuardar(nuevo);
     setEditando(false);
   };
 
@@ -86,9 +90,17 @@ export default function CeldaEditable({ valor, texto, onGuardar, fecha = false, 
       isClearable
       portalId={FECHA_PORTAL_ID}
       popperModifiers={FECHA_MIDDLEWARE}
+      wrapperClassName="celda-fecha"
       selected={aDate(borrador)}
-      onChange={(d) => setBorrador(aBackend(d))}
-      onCalendarClose={confirmar}
+      onChange={(d) => {
+        const nuevo = aBackend(d);
+        setBorrador(nuevo);
+        // El aspa es una edicion COMPLETA, no un paso intermedio como elegir
+        // dia: se guarda al momento. Esperar a onCalendarClose la perdia, porque
+        // limpiar no siempre cierra el calendario.
+        if (d === null) confirmar(nuevo);
+      }}
+      onCalendarClose={() => confirmar()}
     />
   );
 
@@ -107,9 +119,14 @@ export default function CeldaEditable({ valor, texto, onGuardar, fecha = false, 
       isClearable
       portalId={FECHA_PORTAL_ID}
       popperModifiers={FECHA_MIDDLEWARE}
+      wrapperClassName="celda-fecha"
       selected={aDateHora(borrador)}
-      onChange={(d) => setBorrador(aBackendHora(d))}
-      onCalendarClose={confirmar}
+      onChange={(d) => {
+        const nuevo = aBackendHora(d);
+        setBorrador(nuevo);
+        if (d === null) confirmar(nuevo);   // el aspa, igual que arriba
+      }}
+      onCalendarClose={() => confirmar()}
     />
   );
 
@@ -121,7 +138,7 @@ export default function CeldaEditable({ valor, texto, onGuardar, fecha = false, 
       maxLength={max}
       aria-label={etiqueta}
       onChange={(e) => setBorrador(e.target.value)}
-      onBlur={confirmar}
+      onBlur={() => confirmar()}
       onKeyDown={(e) => {
         if (e.key === "Enter")  confirmar();
         if (e.key === "Escape") setEditando(false);

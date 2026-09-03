@@ -20,6 +20,7 @@ import MovimientosLocalesPage from './pages/MovimientosLocalesPage';
 import FoliosPage from './pages/FoliosPage';
 import FinanzasPage from './pages/FinanzasPage';
 import CostosExtraPage from './pages/CostosExtraPage';
+import NominaPage from './pages/NominaPage';
 import PendientesPage from './pages/PendientesPage';
 import TorreControlPage from './pages/TorreControlPage';
 import ReporteViajePage from './pages/ReporteViajePage';
@@ -226,7 +227,17 @@ function AppRoutes() {
               contenido; las otras tres esperan a tenerlo. */}
           <Route path="finanzas" element={<FinanzasPage />} />
           <Route path="finanzas/costos-extra" element={<CostosExtraPage />} />
-          <Route path="finanzas/nomina" element={<BlankPage title="NÓMINA" />} />
+          {/* Nómina: sueldos, primas y finiquitos. Admin-only también en la API
+              y en la base (ver la migración 0067), así que sin este candado un
+              usuario normal solo vería la pantalla romperse con un 403. */}
+          <Route
+            path="finanzas/nomina"
+            element={
+              <ProtectedRoute requireAdmin>
+                <NominaPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="finanzas/facturacion" element={<BlankPage title="FACTURACIÓN" />} />
           <Route path="finanzas/estados-cuenta" element={<BlankPage title="ESTADOS DE CUENTA" />} />
           <Route path="perfil" element={<PerfilPage />} />

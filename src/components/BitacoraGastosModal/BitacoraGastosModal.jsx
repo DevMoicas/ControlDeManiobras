@@ -7,7 +7,7 @@ import OperadorSelector from "../OperadorSelector/OperadorSelector";
 import PlacasSelector from "../PlacasSelector/PlacasSelector";
 import RemolqueSelector from "../RemolqueSelector/RemolqueSelector";
 import FolioSelector from "../FolioSelector/FolioSelector";
-import { sumarPeso } from "../../utils/sumarPeso.mjs";
+import { pesoDeFolios } from "../../utils/sumarPeso.mjs";
 import "./BitacoraGastosModal.css";
 
 // Tope de folios que pueden salir empatados en un mismo documento, EL PRINCIPAL
@@ -80,10 +80,14 @@ export default function BitacoraGastosModal({ onCerrar }) {
 
   // El peso se CALCULA, nunca se teclea: lo que se pinta es lo que se manda.
   // sumarPeso acepta N pesos, justo para esto.
-  const pesoTotal = sumarPeso(
-    maniobra1?.peso ?? "",
-    ...empatadas.map((m) => m.peso ?? "")
-  );
+  //
+  // Va por cargaDeParte y no por `m.peso` a secas: desde la 0035 cada mitad de
+  // un Full tiene su columna, así que leyendo solo `peso` el segundo contenedor
+  // se quedaba fuera y el documento salía con la mitad del peso. cargaDeParte
+  // además respeta el reparto — un Full con un operador se lleva las dos mitades
+  // ("ambos"), y uno repartido entre dos folios se lleva cada uno la suya, así
+  // que empatarlos no cuenta ningún peso dos veces.
+  const pesoTotal = pesoDeFolios([maniobra1, ...empatadas]);
 
   // Un campo discrepa si ALGUNA de las empatadas no coincide con la principal.
   // Se listan los valores distintos, sin repetir: con cuatro folios, tres veces
