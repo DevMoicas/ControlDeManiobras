@@ -1,6 +1,6 @@
 # Pendiente
 
-Anotado el 2026-08-25 y **actualizado el 2026-09-02**.
+Anotado el 2026-08-25 y **actualizado el 2026-09-03** al cerrar la sesión.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
@@ -151,20 +151,33 @@ existentes (ADR-0005). **Decisión cerrada del usuario: se quedan así.** De 376
 maniobras con folio, solo 8 de esos folios existen en el catálogo, así que el backfill
 habría tocado 5 filas.
 
-### Zona horaria de `ruta_inicio` / `ruta_fin`
+### Zona horaria de `ruta_inicio` / `ruta_fin` — YA SE MANIFESTÓ (2026-09-03)
 
-Son `timestamp` con `USE_TZ = True` y `TIME_ZONE = 'UTC'`, así que arrastran el mismo
-desfase que llevó a separar la hora de entrega (ADR-0008). **Hoy no se manifiesta**
-porque nadie recorta esas dos columnas a fecha. Si alguna vez se imprimen o se agrupan
-por día, hay que normalizar a `America/Mexico_City` primero.
+Aquí decía que el desfase **no se manifestaba** porque nadie recortaba esas columnas a
+fecha. **Desde el 2026-09-03 sí**: la FECHA del reporte de viaje es el día de
+`ruta_inicio` (ADR-0022). Se resolvió convirtiendo a `America/Mexico_City` antes de
+recortar — sin eso, toda salida de tarde salía con el día siguiente.
+
+Y de paso apareció lo que este apunte daba por sabido y no lo era: **`maniobras.ruta_inicio`
+y `ruta_fin` son `timestamp WITHOUT time zone`**, no con zona. Django devuelve un datetime
+*naive* y `timezone.localtime()` revienta con uno. Lo guardado es UTC
+(`settings.TIME_ZONE`), y por eso la API lo devuelve con la `Z` y el navegador lo lee bien.
+
+**Queda abierto** el mismo cuidado para cualquier otro uso futuro: agrupar por día,
+imprimir o comparar esas dos columnas exige marcarlas como UTC y convertir primero.
 
 ---
 
 ## 4. Menor
 
 - `fecha_vencimiento_licencia` y `fecha_vencimiento_poliza` ya salen en DD/MM/AAAA en
-  Catálogos. `fecha_ingreso` de empleados **no**, a propósito: es `CharField` en la base
-  y no siempre trae una fecha. Si algún día se normaliza, entra en `COLUMNAS_FECHA`.
+  Catálogos. `fecha_ingreso` de empleados **no**.
+  ⚠️ **Corregido el 2026-09-03:** aquí decía que la columna es `CharField` en la base. **No
+  lo es.** El MODELO dice `CharField`; la columna real es `date` (`empleados` es
+  `managed=False`, la creó pgAdmin y cambiar el modelo nunca alteró el esquema). Django
+  devuelve un objeto `date`, y fiarse del modelo costó un 500 en la primera lectura de la
+  nómina contra la base de verdad. Sigue fuera de `COLUMNAS_FECHA` porque nadie lo ha
+  pedido, no porque sea texto.
 - El CI avisa en **cada despliegue** de que `actions/checkout@v4`, `setup-node@v4` y
   `azure/login@v2` apuntan a Node 20, ya deprecado, y GitHub los fuerza a Node 24.
   Funciona hoy; el día que dejen de forzarlo, el workflow del frontend falla. Es subir
@@ -363,7 +376,7 @@ propio y no bloqueaba el despliegue.
 
 ### Un vacío duplicado en la base local
 
-Al enlazar los vacíos con su maniobra (ADR-0017) salieron **dos filas pendientes con el
+Al enlazar los vacíos con su maniobra (migración `0061`) salieron **dos filas pendientes con el
 mismo contenedor** (`MSKU5536563`, ids 231 y 233), las dos apuntando a la maniobra 4490.
 Esa maniobra enseña tres valores donde deberían ser dos. Es un duplicado de datos, no del
 enlace, y borrar un vacío pide admin. Sin mirar en producción.
@@ -378,7 +391,7 @@ intacta.
 
 ### El pintado de celdas no se imprime en el reporte
 
-El balde de celdas (ADR-0018) es de pantalla. El reporte en PDF sale siempre con su
+El balde de celdas (migración `0062`) es de pantalla. El reporte en PDF sale siempre con su
 zebrado, ignorando los colores que alguien haya puesto. No se pidió; si se quiere, hay que
 decidir antes el contraste del texto, porque la paleta de Sheets llega hasta el negro.
 
@@ -386,3 +399,81 @@ decidir antes el contraste del texto, porque la paleta de Sheets llega hasta el 
 
 Sin cambios desde el 2026-08-27: `actions/checkout@v4`, `setup-node@v4` y `azure/login@v2`
 apuntan a Node 20 y GitHub los fuerza a Node 24. Es subir esas tres acciones de versión.
+
+
+---
+
+## 8. Abierto tras la sesión del 2026-09-03
+
+Sesión larga: se desplegaron tres tandas (`9f7a1a1a` + `26e773a`, `038b95d`, `e6646a21` +
+`2099e96`) y se escribieron seis ADR nuevos, del **0017 al 0022**. Lo que sigue es lo que
+NO quedó cerrado.
+
+> ⚠️ Dos apuntes de la sesión del 2026-09-01 citaban un "ADR-0017" y un "ADR-0018" que
+> nunca existieron: se referían a las migraciones `0061` y `0062`. Corregido arriba, porque
+> esos dos números ya están ocupados por ADRs de verdad.
+
+### La nómina en producción está vacía y sin verificar
+
+Se desplegó, pero **nadie ha capturado un sueldo todavía**. Antes de fiarse de ninguna
+prima conviene mirar dos cosas en producción:
+
+- **Cuántos empleados tienen `fecha_ingreso` legible.** Sin ella salen con 0 días de
+  vacaciones y la celda los marca en rojo. En la base local, de 3 empleados **solo 1** la
+  tenía. Si en producción la proporción es parecida, la mitad de la tabla nace en cero.
+- **Que el usuario que la va a llevar sea `staff`.** Si no, la tarjeta ni aparece
+  (ADR-0020), y eso se lee como "está roto".
+
+### El calendario de vacaciones borra de día en día
+
+Quitar unas vacaciones de una semana son cinco clics. Está marcado con un comentario
+`ponytail:` y el arreglo es un borrado por rango en el ViewSet, igual que el alta
+(ADR-0021). Sin decidir si merece la pena.
+
+### Un Full repartido pisa su propio RUTA INICIO
+
+Dos reportes, una sola columna `ruta_inicio`: el último que guarde su salida real manda
+(ADR-0022). Separarlos pide una columna por operador y no se pidió. Hoy no ha mordido
+porque en producción todavía casi no hay reportes.
+
+### El tope de la nómina de 31 años en adelante
+
+La escalera de días de vacaciones se queda en 30 a partir del año 31, que es el último
+tramo que se dictó. La LFT suma dos días por cada cinco años. El sitio está marcado en
+`dias_de_vacaciones()`; hace falta que el usuario diga hasta dónde sube.
+
+### `--tabla-tope: 300px` sin medir contra pantalla
+
+La cabecera fija de las tablas (`.tabla-cabecera-fija` en `App.css`) acota la caja a
+`100vh - 300px`. Ese número es **lo que ocupa la página por encima de la tabla** y se eligió
+deliberadamente **corto**: pasarse deja la caja bajo el pliegue y entonces scrollea primero
+el documento, con la cabecera saliéndose — que es el fallo que se venía a arreglar.
+Quedarse corto solo desaprovecha píxeles. **No se midió página por página**; si alguna tabla
+se ve más baja de lo que da el monitor, es declarar `--tabla-tope` en su hoja.
+
+### Lo que estas pruebas NO pueden ver
+
+Quedó demostrado dos veces en una sola sesión, y conviene que no se olvide:
+
+> `config/settings_test.py` crea las tablas de `api` **desde los modelos**. Cuando el modelo
+> miente sobre el tipo de columna —y en este proyecto miente a menudo, porque media base es
+> `managed=False`— **las pruebas prueban el modelo, no la base**.
+
+Los dos 500 del día (`empleados.fecha_ingreso` como `date`, `maniobras.ruta_inicio` sin
+zona) pasaron 526 pruebas en verde y se cayeron en la primera lectura contra Postgres real.
+**Levantar el backend local y leer los endpoints nuevos antes de empujar** es lo único que
+los encontró. Ya son cuatro columnas conocidas con este problema; ver también
+`gastos.fecha_entrega_mercancia` (ADR-0016) y `maniobras.fecha_pis`.
+
+### Cuenta local `admin1`
+
+Se creó en la base **local** un admin sin segundo factor (`admin1`) porque el `admin` de
+siempre pide TOTP y en local no se valida. **No existe en producción y no debería**: es un
+administrador sin MFA con una contraseña que circuló por el chat. Si algún día hace falta un
+segundo admin en producción, que sea con su TOTP dado de alta.
+
+### Sigue el aviso de Node 20 en el CI
+
+Sin cambios desde el 2026-08-27, y ya van tres sesiones: `actions/checkout@v4`,
+`setup-node@v4` y `azure/login@v2` apuntan a Node 20 y GitHub los fuerza a Node 24. Es
+subir esas tres acciones de versión.
