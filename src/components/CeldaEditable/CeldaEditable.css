@@ -1,0 +1,56 @@
+/* Superficie clicable de una celda editable. Mismas reglas que .mp-celda-texto
+   de Maniobras, sin el prefijo de contenedor para poder montarse en cualquier
+   tabla. Los tokens (--primary-blue, --text-muted) los aporta el contenedor de
+   la página: .gastos-container y .vacios-container ya los declaran. */
+.celda-editable {
+  display: block;
+  padding: 2px 4px;
+  border-radius: 6px;
+  cursor: text;
+}
+
+/* Velo blanco con anillo azul: se lee igual sobre la hoja crema y sobre los
+   fondos de color que pintan las filas por status. */
+.celda-editable:hover {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.35);
+}
+
+.celda-editable:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 1px;
+}
+
+.celda-editable-vacia { color: var(--text-muted); font-style: normal; }
+
+/* Calendario en portal (ver FECHA_PORTAL_ID en el JSX). Al colgar del <body>
+   escapa del overflow de la tabla, pero hereda z-index:1 de la hoja de
+   react-datepicker y quedaría por debajo del overlay del modal. 9999 = misma
+   escala que los selectores en portal. El contenedor se deja SIN position a
+   propósito: al posicionarlo se convierte en el ancestro de referencia del
+   popper y el calendario aparece descolocado. */
+#celda-fecha-portal .react-datepicker-popper {
+  z-index: 9999;
+}
+
+/* ── Sitio para el aspa de limpiar ────────────────────────────────────────────
+   En las celdas estrechas el aspa se pintaba ENCIMA de la fecha: el clic caía en
+   el input, abría el calendario en vez de borrar, y había que vaciar la celda a
+   mano. El aspa se ancla al borde derecho del envoltorio, así que lo que hace
+   falta es apartar el texto, no mover el aspa.
+
+   El selector lleva `input` para ganar por especificidad (0,2,1) a los
+   `.<pagina>-container .date-picker-input` (0,2,0) de Maniobras, Gastos y
+   Vacíos, que declaran el padding en shorthand y si no lo pisarían. Así el
+   arreglo vive en UN sitio en vez de repetirse en cada hoja. */
+.celda-fecha input.date-picker-input {
+  padding-right: 26px;
+}
+
+/* Y el área táctil sube de ~20px a ~44px, el mínimo exigido, sin desplazarla:
+   el círculo sigue anclado a la derecha. Mismo remedio que ya llevaba
+   Movimientos Locales en móvil. */
+.celda-fecha .react-datepicker__close-icon {
+  padding-right: 2px;
+  padding-left: 18px;
+}

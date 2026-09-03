@@ -1,0 +1,851 @@
+/* ── Vacíos — control de contenedores vacíos ─────────────────────────────────
+   Mismo lenguaje visual que Movimientos Locales y Documentos de Viaje: shell
+   azul del app, Oswald display, IBM Plex Mono para etiquetas, Inter cuerpo.
+
+   Todo cuelga de .vacios-container a propósito. Las clases de esta página
+   (.modal-content, .btn-agregar…) tienen nombres genéricos que Maniobras,
+   Gastos y Catálogos también declaran como globales; al scopearlas aquí ganan por
+   especificidad (0,2,0 vs 0,1,0) sin importar el orden del bundle, y esta hoja
+   deja de filtrarse a las otras páginas.
+
+   AdminVaciosPage.jsx reutiliza .vacios-container y .vacios-title, así que hereda
+   este mismo estilo sin cambios.
+
+   Las fuentes ya vienen de index.html — sin @import, que bloquea el render. */
+
+/* ── Tokens (locales: no ensucian :root) ──────────────────────────────────── */
+.vacios-container {
+  --primary-blue:  var(--primary, #2563eb);
+  --primary-hover: #1d4ed8;
+  --primary-soft:  var(--primary-light, #eaf1ff);
+  --text-main:     var(--text, #1f2937);
+  --text-muted:    var(--text-light, #6b7280);
+  --border-color:  #e6ecf5;
+  --border-soft:   #eef2f7;
+  --danger:        #dc2626;
+  --danger-soft:   #fef2f2;
+  /* ── Variante D ────────────────────────────────────────────────────────────
+     El cuerpo de la tabla se rediseña como el documento que ya es en papel en
+     esta industria: hoja crema (L≈97, un blanco menos intenso, no un amarillo),
+     reglas impresas, radio corto. La cabecera se queda en la barra oscura de
+     siempre. Toda la tinta del cuerpo es cálida: sobre crema, una línea azulada
+     se ve como un arañazo frío. */
+  --card-bg:       #faf8f3;  /* la hoja */
+  --paper-deep:    #f3ede1;  /* hover de fila y de control */
+  --paper-line:    #e6dfd1;  /* borde de los controles de papel */
+  --ink:           #23201c;  /* tinta de imprenta */
+  --rule:          rgba(74, 58, 34, 0.24);  /* reglas mayores */
+  --grid-line:     rgba(74, 58, 34, 0.10);  /* filetes entre columnas */
+  --row-line:      rgba(74, 58, 34, 0.13);  /* renglones */
+  --sheet-edge:    #e3dccd;  /* canto de la hoja */
+
+  position: relative; /* ancla del botón de Admin Vacíos */
+  min-height: calc(100vh - 40px);
+  padding: 52px 28px 64px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--text-main);
+  background:
+    radial-gradient(900px 420px at 100% -8%, #e8f0ff 0%, transparent 58%),
+    var(--bg, #f4f7fb);
+}
+
+/* ── Intro (centrada) ─────────────────────────────────────────────────────── */
+.vacios-container .vp-intro { text-align: center; }
+.vacios-container .vp-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--primary-blue);
+  margin: 0 0 12px;
+}
+.vacios-container .vacios-title {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  font-size: 2.45rem;
+  line-height: 1.02;
+  color: var(--text-main);
+  margin: 0;
+  display: block;
+  /* también centra el título de AdminVaciosPage, que va suelto sin .vp-intro */
+  text-align: center;
+}
+.vacios-container .vp-lead {
+  margin: 12px auto 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.5;
+  max-width: 56ch;
+}
+
+/* ── Botón de Admin Vacíos ────────────────────────────────────────────────── */
+.vacios-container .vacios-admin-btn {
+  position: absolute;
+  top: 40px;
+  right: 28px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  /* Mono espaciada, como las etiquetas de la app: interruptor del tablero. */
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  border: 1px solid var(--paper-line);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+/* Invierte a la barra de la cabecera: el control se lee como parte de la tabla
+   que gobierna, no como un botón de formulario suelto. */
+.vacios-container .vacios-admin-btn:hover {
+  background: #2b3e50;
+  border-color: #2b3e50;
+  color: #fff;
+  transform: none; /* anula el scale(1.05) del button global de App.css */
+}
+.vacios-container .vacios-admin-btn:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── Búsqueda (SearchBar compartida: se ajusta sin tocar las otras páginas) ── */
+.vacios-container .vp-search { margin-top: 32px; }
+.vacios-container .vp-search > div { margin-bottom: 0 !important; }
+.vacios-container .vp-search input {
+  font-family: 'Inter', sans-serif !important;
+  background: #fff !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04) !important;
+  color: var(--text-main) !important;
+}
+.vacios-container .vp-search input:focus {
+  outline: none !important;
+  border-color: var(--primary-blue) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16) !important;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────────── */
+/* .filtros-status es un espaciador vacío: empuja el botón a la derecha. */
+.vacios-container .toolbar {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.vacios-container .btn-agregar {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 9px;
+  background: var(--primary-blue);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.vacios-container .btn-agregar:not(:disabled):hover {
+  background: var(--primary-hover);
+  color: #fff;
+  transform: none;
+}
+.vacios-container .btn-agregar:disabled { opacity: 0.5; cursor: not-allowed; }
+.vacios-container .btn-agregar:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── Filtros de status (Pendientes / Todos / Entregados) ──────────────────────
+   Ocupan el lado izquierdo de la toolbar; el space-between empuja "Agregar" a la
+   derecha. La vista por defecto es Pendientes (ver VaciosPage.jsx). */
+.vacios-container .filtros-status {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.vacios-container .btn-filtro {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.vacios-container .btn-filtro:hover {
+  border-color: #c7d9f7;
+  color: var(--primary-blue);
+  transform: none;
+}
+.vacios-container .btn-filtro.active {
+  background: var(--primary-blue);
+  border-color: var(--primary-blue);
+  color: #fff;
+}
+.vacios-container .btn-filtro:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── Punto 10: el botón de Transportista con el mismo look que el de operador
+      ("OP del Viaje", .op-trigger). Scopeado a Vacíos para NO tocar el de
+      Maniobras. "Entregó" ya usa OperadorSelector, así que hereda ese estilo. */
+.vacios-container .tsl-wrapper { width: auto; }
+.vacios-container .tsl-btn {
+  width: auto;
+  max-width: 160px;
+  padding: 4px 10px;
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: filter 0.15s ease;
+}
+.vacios-container .tsl-btn:hover:not(:disabled) {
+  border-color: #bae6fd;
+  filter: brightness(0.96);
+}
+
+/* ── Panel + tabla ────────────────────────────────────────────────────────── */
+/* La hoja: radio corto y canto cálido en vez de tarjeta de 16px. La sombra
+   larga la despega del escritorio; la corta es el grosor del papel. */
+.vacios-container .table-responsive {
+  margin-top: 22px;
+  background: var(--card-bg);
+  border: 1px solid var(--sheet-edge);
+  border-radius: 6px;
+  box-shadow:
+    0 1px 2px rgba(74, 58, 34, 0.07),
+    0 18px 34px -24px rgba(74, 58, 34, 0.45);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  animation: vp-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* La barra es el control con el que se recorre la tabla, no un residuo del
+     navegador: grosor y tinta propios. */
+  scrollbar-width: thin;
+  scrollbar-color: #cec4b0 transparent;
+}
+.vacios-container .table-responsive::-webkit-scrollbar { width: 12px; height: 12px; }
+.vacios-container .table-responsive::-webkit-scrollbar-track,
+.vacios-container .table-responsive::-webkit-scrollbar-corner { background: var(--card-bg); }
+.vacios-container .table-responsive::-webkit-scrollbar-thumb {
+  background: #cec4b0;
+  border-radius: 999px;
+  border: 3px solid var(--card-bg);
+}
+.vacios-container .table-responsive::-webkit-scrollbar-thumb:hover { background: #b6a98e; }
+
+.vacios-container .vacios-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--ink);
+  /* Cifras de ancho fijo: fechas y folios caen en columna al leer en vertical. */
+  font-variant-numeric: tabular-nums;
+}
+
+.vacios-container .vacios-table th {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+  padding: 14px 16px;
+  background: #2b3e50;
+  color: #fff;
+  border-bottom: 1px solid #1e2b38;
+  min-width: 120px;
+}
+
+.vacios-container .vacios-table td {
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--row-line);
+  /* Filete vertical: sin retícula la vista se pierde entre columnas. */
+  border-right: 1px solid var(--grid-line);
+  color: var(--ink);
+  vertical-align: middle;
+  min-width: 120px;
+  /* Opaco por defecto — lo exige el talón congelado de abajo. */
+  background: var(--card-bg);
+}
+.vacios-container .vacios-table td:last-child { border-right: none; }
+.vacios-container .vacios-table tbody tr:last-child td { border-bottom: none; }
+.vacios-container .vacios-table tbody tr { transition: background 0.12s; }
+.vacios-container .vacios-table tbody tr:hover td { background: var(--paper-deep); }
+
+/* ── Color de fila puesto a mano (el balde) ───────────────────────────────────
+   Va DESPUÉS del hover a propósito: tiene la misma especificidad, así que gana
+   por orden y el color elegido no desaparece al pasar el ratón. El hover sobre
+   una fila pintada se resuelve oscureciendo su propio color, no sustituyéndolo.
+
+   Sin color no hay clase `row-pintada` y la fila vuelve al fondo normal: aquí no
+   hay color por status que recuperar, las filas de Vacíos no se pintan solas.
+
+   `--texto-fila` existe porque la paleta de Sheets llega hasta el negro: sin
+   cambiar el texto a blanco, las filas oscuras quedarían ilegibles. */
+.vacios-container .vacios-table tbody tr.row-pintada td {
+  background: var(--color-fila);
+  color: var(--texto-fila);
+  /* Solo en las filas pintadas a mano, nunca en las de status: sobre un relleno
+     elegido a dedo el texto tiene que leerse igual de bien que sobre el blanco,
+     y el color por si solo no basta en los tonos medios. `--texto-fila` ya elige
+     entre tinta y blanco por contraste (ver colorFila.mjs); esto le anade el
+     peso. */
+  font-weight: 600;
+}
+
+.vacios-container .vacios-table tbody tr.row-pintada:hover td {
+  background: var(--color-fila);
+  filter: brightness(0.94);
+}
+
+/* ── El talón ─────────────────────────────────────────────────────────────────
+   En un impreso, el talón es la franja izquierda que identifica el registro y va
+   separada del cuerpo por una regla vertical. Aquí es la primera columna, que
+   además se congela: al desplazarse a la derecha se perdía de vista de quién es
+   la fila. Las celdas con colspan (el "no hay registros") quedan fuera: no son
+   columna. La cabecera queda lisa, así que la regla empieza en el cuerpo. */
+.vacios-container .vacios-table th:first-child,
+.vacios-container .vacios-table td:first-child:not([colspan]) {
+  position: sticky;
+  left: 0;
+}
+.vacios-container .vacios-table td:first-child:not([colspan]) {
+  z-index: 5;
+  border-right: 2px solid var(--rule);
+  box-shadow: 8px 0 10px -10px rgba(74, 58, 34, 0.5);
+}
+.vacios-container .vacios-table thead th:first-child { z-index: 11; }
+
+/* ── Inputs ───────────────────────────────────────────────────────────────── */
+.vacios-container .vacios-table input,
+.vacios-container .date-picker-input {
+  font-family: 'Inter', sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  background: #fff;
+  color: var(--text-main);
+}
+.vacios-container .vacios-table input:focus,
+.vacios-container .date-picker-input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+/* ── Fila nueva: guardar / cancelar ───────────────────────────────────────── */
+.vacios-container .btn-accion {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s ease;
+}
+.vacios-container .btn-guardar-fila {
+  background: var(--primary-blue);
+  color: #fff;
+}
+.vacios-container .btn-guardar-fila:hover {
+  background: var(--primary-hover);
+  color: #fff;
+  transform: none;
+}
+.vacios-container .btn-cancelar-fila {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+.vacios-container .btn-cancelar-fila:hover {
+  background: #dc2626;
+  color: #fff;
+  transform: none;
+}
+
+/* ── Botones de icono ─────────────────────────────────────────────────────── */
+.vacios-container .btn-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+.vacios-container .btn-icon:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+.vacios-container .btn-editar { color: var(--primary-blue); }
+.vacios-container .btn-editar:hover {
+  background: var(--primary-soft);
+  color: var(--primary-blue);
+  transform: none;
+}
+.vacios-container .btn-foto { color: #7c3aed; }
+.vacios-container .btn-foto:hover {
+  background: #f3e8ff;
+  color: #7c3aed;
+  transform: none;
+}
+/* Eliminar conserva el rojo en hover: el button:hover global de App.css lo
+   pintaba de azul, borrando la señal de acción destructiva. */
+.vacios-container .btn-eliminar { color: var(--danger); }
+.vacios-container .btn-eliminar:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+  transform: none;
+}
+
+/* ── Estados de carga / error ─────────────────────────────────────────────── */
+/* Ocupan el sitio de la tabla, así que son la misma hoja. */
+.vacios-container .loading-box,
+.vacios-container .error-box {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 250px;
+  background: var(--card-bg);
+  border: 1px solid var(--sheet-edge);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(74, 58, 34, 0.07);
+}
+.vacios-container .loading-text {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  animation: vp-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.vacios-container .error-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--danger);
+  margin: 0 0 8px;
+}
+.vacios-container .error-text {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0;
+  max-width: 46ch;
+  text-align: center;
+}
+
+/* ── Scroll infinito ──────────────────────────────────────────────────────────
+   Estas tres clases NO estaban declaradas en esta hoja: el JSX las usaba y se
+   apoyaba en la de Maniobras/Gastos. Ahora son propias. */
+.vacios-container .loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.vacios-container .loading-more-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--primary-blue);
+  border-radius: 50%;
+  animation: vp-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+.vacios-container .end-of-list {
+  text-align: center;
+  padding: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── Modal ───────────────────────────────────────────────────────────────────
+   Mismo diseño que los modales de Movimientos Locales y Catálogos: tarjeta con
+   borde suave y radio 16, lomo azul a la izquierda, título en Oswald, etiquetas
+   en IBM Plex Mono.
+
+   El TAMAÑO y la disposición no se tocan: 1100px de ancho, 92vh de alto y la
+   rejilla auto-fit se conservan porque ya son los adecuados para este formulario. */
+.vacios-container .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.vacios-container .modal-content {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 1100px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(16, 40, 80, 0.24);
+  color: var(--text-main);
+  /* sin padding: vive en cabecera, cuerpo y pie */
+  padding: 0;
+}
+/* Lomo izquierdo azul — la firma de Movimientos Locales y Documentos de Viaje */
+.vacios-container .modal-content::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--primary-blue);
+}
+
+/* ── Cabecera ─────────────────────────────────────────────────────────────── */
+.vacios-container .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  flex-shrink: 0;
+}
+.vacios-container .modal-titulo {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+.vacios-container .modal-cerrar {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.vacios-container .modal-cerrar:hover {
+  background: #f7f9fc;
+  color: var(--text-main);
+  transform: none; /* anula el scale(1.05) del button global de App.css */
+}
+.vacios-container .modal-cerrar:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── Cuerpo ───────────────────────────────────────────────────────────────── */
+/* min-height:0 es imprescindible: sin él, un hijo flex no se encoge por debajo
+   de su contenido y el cuerpo no puede hacer scroll dentro de la tarjeta. */
+.vacios-container .modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+}
+.vacios-container .modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  padding: 18px 22px;
+  overflow-y: auto;
+  flex: 1;
+  min-width: 0;
+}
+.vacios-container .modal-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.vacios-container .modal-campo label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.vacios-container .modal-campo input {
+  font-family: 'Inter', sans-serif;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: var(--text-main);
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+.vacios-container .modal-campo input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+/* ── Pie ──────────────────────────────────────────────────────────────────── */
+.vacios-container .modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid var(--border-soft);
+  margin: 0;
+  flex-shrink: 0;
+}
+/* Cancelar en rojo, igual que en toda la app: es el color con el que el equipo
+   ya identifica la acción de descartar. */
+.vacios-container .btn-cancelar {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.vacios-container .btn-cancelar:hover:not(:disabled) {
+  background: #dc2626;
+  color: #fff;
+  transform: none;
+}
+.vacios-container .btn-guardar {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-blue);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.vacios-container .btn-guardar:hover:not(:disabled) {
+  background: var(--primary-hover);
+  color: #fff;
+  transform: none;
+}
+.vacios-container .btn-cancelar:disabled,
+.vacios-container .btn-guardar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── DatePicker (clases de la librería: se dejan globales a propósito, el popper
+      se renderiza fuera del contenedor) ─────────────────────────────────────── */
+.react-datepicker-wrapper { width: 100%; }
+.react-datepicker-popper  { z-index: 9999; }
+
+/* El calendario en portal tiene que quedar POR ENCIMA del overlay del modal, que
+   ya está en 9999 (ver .vacios-container .modal-overlay). El contenedor del
+   portal se deja sin `position` a propósito: al posicionarlo se convierte en el
+   ancestro de referencia del popper y el calendario aparece descolocado. */
+#vacios-fecha-portal .react-datepicker-popper { z-index: 10000; }
+
+/* ── Animaciones ──────────────────────────────────────────────────────────── */
+@keyframes vp-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes vp-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes vp-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .vacios-container { padding: 40px 20px 52px; }
+  .vacios-container .vacios-title { font-size: 2rem; }
+  .vacios-container .vacios-admin-btn {
+    position: static;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  .vacios-container .toolbar { flex-direction: column; align-items: stretch; }
+  .vacios-container .btn-agregar { width: 100%; }
+  .vacios-container .vacios-table th,
+  .vacios-container .vacios-table td { min-width: 100px; padding: 10px 8px; }
+  /* En móvil el talón congelado se comería un tercio de la pantalla. */
+  .vacios-container .vacios-table th:first-child,
+  .vacios-container .vacios-table td:first-child:not([colspan]) {
+    position: static;
+    box-shadow: none;
+  }
+}
+
+/* ── Movimiento reducido ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .vacios-container .table-responsive { animation: none; }
+  .vacios-container .loading-text { animation: none; }
+  .vacios-container .vacios-table tbody tr,
+  .vacios-container .btn-agregar,
+  .vacios-container .vacios-admin-btn,
+  .vacios-container .btn-icon,
+  .vacios-container .btn-accion,
+  .vacios-container .btn-guardar,
+  .vacios-container .btn-cancelar { transition: none; }
+}
+
+/* ── Refresco automático: la fila que otra persona acaba de tocar ───────────
+   Un destello de un segundo y a su color de siempre. Existe para que el cambio
+   se VEA llegar: sin él, el valor cambia solo y nadie se entera de que llegó
+   información nueva — que es el riesgo real de refrescar sin recargar.
+   El fondo va en ::after y no en la propia fila para no pelearse con
+   `row-pintada` ni con el color del status, que ya escriben ese fondo. */
+tr.fila-cambiada > td {
+  position: relative;
+}
+
+tr.fila-cambiada > td::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: currentColor;
+  opacity: 0;
+  animation: destello-cambio 1s ease-out;
+}
+
+@keyframes destello-cambio {
+  0%   { opacity: .16; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Sin animación sigue habiendo aviso: se queda quieto y se apaga de golpe. */
+  tr.fila-cambiada > td::after { animation: destello-cambio 1s steps(1, end); }
+}
+
+/* ── Reporte de Vacíos ────────────────────────────────────────────────────────
+   Botón en la toolbar, al lado de Agregar pero en secundario (contorno): la
+   acción principal de esta pantalla sigue siendo dar de alta un vacío, no
+   imprimir. El modal reutiliza .modal-* del modal de editar; lo único propio es
+   el ancho, que aquí es un diálogo de un campo y no un formulario de catorce. */
+.vacios-container .toolbar-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.vacios-container .btn-reporte {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border: 1px solid var(--primary-blue);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--primary-blue);
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.vacios-container .btn-reporte:not(:disabled):hover {
+  background: var(--primary-blue);
+  color: #fff;
+  transform: none;
+}
+.vacios-container .btn-reporte:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+.vacios-container .modal-content.modal-estrecho { max-width: 420px; }
+.vacios-container .rv-ayuda {
+  margin: 2px 0 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.vacios-container .rv-error {
+  margin: 0;
+  padding: 0 22px 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #b91c1c;
+}
+.vacios-container .rv-girando { animation: rv-giro 0.9s linear infinite; }
+@keyframes rv-giro { to { transform: rotate(360deg); } }

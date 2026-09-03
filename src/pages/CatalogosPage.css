@@ -1,0 +1,593 @@
+/* ── Catálogos — maestros del sistema ────────────────────────────────────────
+   Mismo lenguaje visual que Movimientos Locales y Documentos de Viaje: shell
+   azul del app, Oswald display, IBM Plex Mono para etiquetas, Inter cuerpo.
+
+   Todo cuelga de .noeco-container a propósito. .modal-overlay y .modal-content
+   tienen nombres genéricos que Maniobras, Gastos y Vacíos también declaran como
+   globales; sin scope, la definición ancha (95vw) de esas páginas ganaba por
+   orden de bundle y este modal —diseñado a 480px— se renderizaba a pantalla
+   completa. Al scoparlo aquí (0,2,0 vs 0,1,0) recupera su ancho de formulario.
+
+   Las fuentes ya vienen de index.html — sin @import, que bloquea el render. */
+
+/* ── Tokens (locales: no ensucian :root) ──────────────────────────────────── */
+.noeco-container {
+  --primary-blue:  var(--primary, #2563eb);
+  --primary-hover: #1d4ed8;
+  --primary-soft:  var(--primary-light, #eaf1ff);
+  --text-main:     var(--text, #1f2937);
+  --text-muted:    var(--text-light, #6b7280);
+  --border-color:  #e6ecf5;
+  --border-soft:   #eef2f7;
+  --danger:        #dc2626;
+  --danger-soft:   #fef2f2;
+  /* ── Variante D ────────────────────────────────────────────────────────────
+     El cuerpo de la tabla se rediseña como el documento que ya es en papel en
+     esta industria: hoja crema (L≈97, un blanco menos intenso, no un amarillo),
+     reglas impresas, radio corto. La cabecera se queda en la barra oscura de
+     siempre. Toda la tinta del cuerpo es cálida: sobre crema, una línea azulada
+     se ve como un arañazo frío. */
+  --card-bg:       #faf8f3;  /* la hoja */
+  --paper-deep:    #f3ede1;  /* hover de fila y de control */
+  --paper-line:    #e6dfd1;  /* borde de los controles de papel */
+  --ink:           #23201c;  /* tinta de imprenta */
+  --grid-line:     rgba(74, 58, 34, 0.10);  /* filetes entre columnas */
+  --row-line:      rgba(74, 58, 34, 0.13);  /* renglones */
+  --sheet-edge:    #e3dccd;  /* canto de la hoja */
+  --row-stripe:    #f6f2e9;  /* zebra: un paso más de papel, no un gris frío */
+
+  /* dvh y no vh: en móvil, 100vh es el viewport GRANDE (como si la barra de URL
+     estuviera oculta), así que reservaba ~60-100px de más y dejaba un hueco
+     blanco antes del footer. En escritorio dvh ≡ vh: valor idéntico, cero
+     cambio. Regla §5 viewport-units de ui-ux-pro-max. */
+  min-height: calc(100dvh - 40px);
+  /* El tope de ancho vive en el padding, no en max-width: así este elemento —que
+     es el que pinta el fondo— llena la pantalla como en el resto de las páginas,
+     mientras el contenido sigue centrado y limitado a 1320px. Con max-width el
+     degradado se recortaba a la caja centrada y los costados quedaban sin color. */
+  padding: 52px max(clamp(20px, 4vw, 48px), calc((100% - 1320px) / 2)) 64px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--text-main);
+  background:
+    radial-gradient(900px 420px at 100% -8%, #e8f0ff 0%, transparent 58%),
+    var(--bg, #f4f7fb);
+}
+
+/* ── Intro (centrada) ─────────────────────────────────────────────────────── */
+.noeco-container .noeco-header {
+  position: relative;
+  text-align: center;
+  margin-bottom: 4px;
+}
+.noeco-container .cp-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--primary-blue);
+  margin: 0 0 12px;
+}
+.noeco-container .noeco-title {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  font-size: 2.45rem;
+  line-height: 1.02;
+  color: var(--text-main);
+  margin: 0;
+  display: block;
+  text-align: center;
+}
+.noeco-container .cp-lead {
+  margin: 12px auto 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.5;
+  max-width: 56ch;
+}
+
+/* ── Botón de Admin Catálogos ─────────────────────────────────────────────── */
+.noeco-container .noeco-admin-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-main);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.noeco-container .noeco-admin-btn:hover {
+  background: #f7f9fc;
+  border-color: #c7d9f7;
+  color: var(--primary-blue);
+  transform: none; /* anula el scale(1.05) del button global de App.css */
+}
+.noeco-container .noeco-admin-btn:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── Búsqueda (SearchBar compartida: se ajusta sin tocar las otras páginas) ── */
+.noeco-container .cp-search { margin-top: 32px; }
+.noeco-container .cp-search > div { margin-bottom: 0 !important; }
+.noeco-container .cp-search input {
+  font-family: 'Inter', sans-serif !important;
+  background: #fff !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04) !important;
+  color: var(--text-main) !important;
+}
+.noeco-container .cp-search input:focus {
+  outline: none !important;
+  border-color: var(--primary-blue) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16) !important;
+}
+
+/* ── Tabs — control segmentado ────────────────────────────────────────────── */
+.noeco-container .tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 16px 0 22px;
+  background: #fff;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  width: max-content;
+  max-width: 100%;
+}
+
+.noeco-container .tab-button {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.noeco-container .tab-button:hover {
+  background: var(--primary-soft);
+  color: var(--primary-blue);
+  transform: none;
+}
+.noeco-container .tab-button.active,
+.noeco-container .tab-button.active:hover {
+  background: var(--primary-blue);
+  color: #fff;
+}
+.noeco-container .tab-button:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── Panel de tabla ───────────────────────────────────────────────────────── */
+/* La hoja: radio corto y canto cálido en vez de tarjeta de 16px. */
+.noeco-container .table-container {
+  background: var(--card-bg);
+  border: 1px solid var(--sheet-edge);
+  border-radius: 6px;
+  padding: 22px;
+  box-shadow:
+    0 1px 2px rgba(74, 58, 34, 0.07),
+    0 18px 34px -24px rgba(74, 58, 34, 0.45);
+  animation: cp-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* Una tabla no encoge por debajo del ancho mínimo de su contenido. Sin esto
+     se desbordaba de la tarjeta —se veía el fondo de la página por detrás— y
+     ensanchaba el documento entero, obligando a arrastrar la pantalla en móvil.
+     El scroll se queda DENTRO de la tarjeta, como ya hacen Vacíos y Movimientos
+     Locales. En escritorio la tabla cabe, así que no se activa: cero cambio. */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.noeco-container .subtable-title {
+  font-family: 'Oswald', sans-serif;
+  margin: 0 0 16px;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* Lomo azul — la firma de Documentos de Viaje, aquí a escala de subtítulo */
+.noeco-container .subtable-title::before {
+  content: "";
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--primary-blue);
+}
+
+.noeco-container .add-button-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.noeco-container .btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 9px;
+  background: var(--primary-blue);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.noeco-container .btn-add span {
+  font-size: 1.1rem;
+  line-height: 1;
+  margin-top: -1px;
+}
+.noeco-container .btn-add:hover:not(:disabled) {
+  background: var(--primary-hover);
+  color: #fff;
+  transform: none;
+}
+.noeco-container .btn-add:disabled { opacity: 0.55; cursor: not-allowed; }
+.noeco-container .btn-add:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── Tabla ────────────────────────────────────────────────────────────────── */
+.noeco-container .custom-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--sheet-edge);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cabecera clara, como el resto de tablas de la app (antes era gris pizarra) */
+.noeco-container .custom-table thead th {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+  padding: 14px 16px;
+  background: #2b3e50;
+  color: #fff;
+  border-bottom: 1px solid #1e2b38;
+}
+
+.noeco-container .custom-table td {
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--row-line);
+  /* Filete vertical: sin retícula la vista se pierde entre columnas. */
+  border-right: 1px solid var(--grid-line);
+  color: var(--ink);
+  vertical-align: middle;
+}
+.noeco-container .custom-table td:last-child { border-right: none; }
+.noeco-container .custom-table tbody tr { transition: background 0.12s; }
+.noeco-container .custom-table tbody tr:nth-child(even) { background: var(--row-stripe); }
+/* El lomo azul del hover se queda: es señal de interacción, no de estado. */
+.noeco-container .custom-table tbody tr:hover {
+  background: var(--paper-deep);
+  box-shadow: inset 3px 0 0 0 var(--primary-blue);
+}
+.noeco-container .custom-table tbody tr:last-child td { border-bottom: none; }
+
+/* ── Acciones de fila ─────────────────────────────────────────────────────── */
+.noeco-container .btn-edit,
+.noeco-container .btn-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  padding: 7px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.noeco-container .btn-edit { color: var(--primary-blue); }
+.noeco-container .btn-edit:hover {
+  background: var(--primary-soft);
+  border-color: #bfdbfe;
+  color: var(--primary-blue);
+  transform: none;
+}
+/* Eliminar conserva el rojo en hover: el button:hover global de App.css lo
+   pintaba de azul, borrando la señal de acción destructiva. */
+.noeco-container .btn-delete { color: var(--danger); }
+.noeco-container .btn-delete:hover {
+  background: var(--danger-soft);
+  border-color: #fecaca;
+  color: var(--danger);
+  transform: none;
+}
+.noeco-container .btn-edit:disabled,
+.noeco-container .btn-delete:disabled { opacity: 0.45; cursor: not-allowed; }
+.noeco-container .btn-edit:focus-visible,
+.noeco-container .btn-delete:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── Modal ────────────────────────────────────────────────────────────────── */
+.noeco-container .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.noeco-container .modal-content {
+  position: relative;
+  /* Blanco explícito, no var(--card-bg): un diálogo es otra superficie, no la
+     hoja. En el resto de páginas el modal ya era #fff literal. */
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 26px 30px;
+  /* ancho de formulario: Catálogos captura pocos campos, no es captura masiva */
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(16, 40, 80, 0.24);
+}
+/* Lomo izquierdo azul — la firma de Documentos de Viaje */
+.noeco-container .modal-content::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--primary-blue);
+}
+
+.noeco-container .modal-title {
+  font-family: 'Oswald', sans-serif;
+  margin: 0 0 22px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.noeco-container .form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+.noeco-container .form-group label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+  color: var(--text-muted);
+}
+
+.noeco-container .form-input {
+  font-family: 'Inter', sans-serif;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.noeco-container .form-input:focus {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+.noeco-container .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-soft);
+}
+
+/* Cancelar en rojo, igual que en toda la app: es el color con el que el equipo
+   ya identifica la acción de descartar. */
+.noeco-container .btn-cancel {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.noeco-container .btn-cancel:hover {
+  background: #dc2626;
+  color: #fff;
+  transform: none;
+}
+
+.noeco-container .btn-save {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-blue);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.noeco-container .btn-save:hover:not(:disabled) {
+  background: var(--primary-hover);
+  color: #fff;
+  transform: none;
+}
+.noeco-container .btn-cancel:disabled,
+.noeco-container .btn-save:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ── Animación ────────────────────────────────────────────────────────────── */
+@keyframes cp-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .noeco-container { padding: 40px 16px 52px; }
+  .noeco-container .noeco-title { font-size: 2rem; }
+  .noeco-container .noeco-admin-btn {
+    position: static;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 16px;
+  }
+  .noeco-container .tabs { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .noeco-container .table-container { padding: 16px 14px; }
+  .noeco-container .custom-table { font-size: 0.84rem; }
+  .noeco-container .custom-table thead th,
+  .noeco-container .custom-table td { padding: 11px 12px; }
+}
+
+/* ── Movimiento reducido ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .noeco-container .table-container { animation: none; }
+  .noeco-container .custom-table tbody tr,
+  .noeco-container .tab-button,
+  .noeco-container .btn-add,
+  .noeco-container .btn-save,
+  .noeco-container .btn-cancel,
+  .noeco-container .noeco-admin-btn,
+  .noeco-container .btn-edit,
+  .noeco-container .btn-delete { transition: none; }
+}
+
+/* ── Casilla CON CITA (Patios) ────────────────────────────────────────────── */
+/* Misma casilla que la de Pendientes (.pd-check): un si/no que se marca en la
+   propia tabla, sin abrir el modal. */
+.cat-check {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cat-check:hover { border-color: var(--primary); }
+
+.cat-check:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.cat-check--si {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.cat-check:disabled { cursor: default; opacity: 0.6; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cat-check { transition: none; }
+}
+
+/* ── Tractos: la tabla que se salió de la columna ─────────────────────────── */
+/* Trece columnas contra las cinco o seis de los demás catálogos, desde que cada
+   documento trajo su vencimiento. En la columna de 1320px que comparten todas no
+   cabe, y la tarjeta acababa arrastrándose por dentro: el botón de Agregar se
+   quedaba en el borde visible mientras la tabla seguía por debajo.
+   Solo esta pestaña ensancha su contenido hasta la pantalla. Las demás no lo
+   necesitan y se quedan exactamente como estaban. */
+.noeco-container--ancha {
+  padding-left: clamp(20px, 4vw, 48px);
+  padding-right: clamp(20px, 4vw, 48px);
+}
+
+/* La tarjeta se ajusta al ancho de LA TABLA, no al de la pantalla: así el botón
+   de Agregar —pegado a la derecha dentro de la tarjeta— cae en la esquina de la
+   tabla y no flotando a media pantalla. El max-width es el que evita que, en una
+   pantalla estrecha, el desbordamiento pase a ser de la página entera. */
+.noeco-container--ancha .table-container {
+  width: fit-content;
+  max-width: 100%;
+  /* Un bloque con fit-content se queda pegado a la izquierda: sin los márgenes
+     automáticos la tarjeta quedaba escorada en cuanto la columna se ensanchó. */
+  margin-inline: auto;
+}
+
+/* El selector de pestañas es `width: max-content` y hasta ahora arrancaba en el
+   borde izquierdo de la columna, que coincidía con el de la tarjeta. Al
+   ensanchar la columna dejó de coincidir con nada, así que aquí también se
+   centra — igual que la tabla que hay debajo. */
+.noeco-container--ancha .tabs {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Los títulos dejan de ir en una sola línea. "Fecha Vencimiento Póliza" en una
+   sola ocupa más que cualquier dato de su columna, y son 13: es de donde sale
+   casi todo el ancho que sobraba. */
+.noeco-container--ancha .custom-table thead th {
+  white-space: normal;
+  padding: 12px 11px;
+}
+
+.noeco-container--ancha .custom-table td { padding: 8px 10px; }

@@ -1,0 +1,37 @@
+/* La zona envuelve barra + tabla. Su única razón de ser es acotar el `sticky`
+   de la barra a la altura de SU tabla: fuera de ella la barra desaparece, y en
+   una página con varias tablas cada una se queda con la suya. Sin overflow ni
+   transform, que romperían el sticky de dentro. */
+.bst-zona { position: relative; }
+
+.bst {
+  position: sticky;
+  top: 0;
+  /* Por encima de las celdas y del thead de Maniobras (10), por debajo de los
+     modales (1000) y de los desplegables en portal (9999). */
+  z-index: 20;
+  display: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-top: 22px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--sheet-edge, #e5e7eb);
+  border-radius: 6px;
+  /* Misma tinta cálida que las barras nativas de Maniobras y Gastos, pero sin
+     `thin`: esta se arrastra a propósito, así que se le deja grosor cómodo. */
+  scrollbar-color: #cec4b0 transparent;
+}
+
+.bst--visible { display: block; }
+
+/* Solo existe para dar ancho al scroll: no se ve nada de él. */
+.bst-espacio { height: 1px; }
+
+.bst::-webkit-scrollbar { height: 14px; }
+.bst::-webkit-scrollbar-track { background: var(--card-bg, #fff); }
+.bst::-webkit-scrollbar-thumb {
+  background: #cec4b0;
+  border-radius: 8px;
+  border: 3px solid var(--card-bg, #fff);
+}
+.bst::-webkit-scrollbar-thumb:hover { background: #b6a98e; }

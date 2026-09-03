@@ -1,0 +1,91 @@
+name: frontend-ci
+
+# paths-ignore: un cambio que SOLO toca documentación no reconstruye la imagen ni
+# redespliega producción. Un commit mixto (código + documentos) sí dispara el
+# workflow, que es lo correcto: GitHub solo lo salta si TODOS los archivos del push
+# encajan en la lista. La documentación transversal vive en `main`, que no tiene
+# workflow (ver docs/README.md en esa rama).
+on:
+  push:
+    branches: [feature/inicio-botones]
+    paths-ignore: ['**.md', 'docs/**']
+  workflow_dispatch:
+
+permissions:
+  id-token: write # pedir el JWT de OIDC a GitHub
+  contents: read
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # 7.3 (A06): rompe el despliegue ante vulnerabilidades altas o críticas.
+      # Va ANTES del build: si una dependencia está comprometida, no interesa ni
+      # compilarla, y desde luego no publicarla.
+      #
+      # `npm audit` no sabe de excepciones por aviso (solo tiene --audit-level,
+      # que es todo o nada), así que se filtra a mano contra audit-excepciones.txt.
+      # Cada excepción de ese fichero lleva su motivo y su condición de retirada.
+      - name: Auditoría de dependencias (npm audit)
+        run: |
+          npm audit --json > /tmp/audit.json || true
+
+          # Los identificadores GHSA viven en la URL de cada aviso.
+          jq -r '[.vulnerabilities[].via[]
+                  | select(type == "object")
+                  | select(.severity == "high" or .severity == "critical")
+                  | .url | split("/")[-1]] | unique | .[]' /tmp/audit.json \
+            | sort > /tmp/encontrados.txt
+
+          grep -vE '^[[:space:]]*(#|$)' audit-excepciones.txt | sort > /tmp/excepciones.txt
+          comm -23 /tmp/encontrados.txt /tmp/excepciones.txt > /tmp/sin_excepcionar.txt
+
+          if [ -s /tmp/sin_excepcionar.txt ]; then
+            echo "::error::vulnerabilidades altas/criticas sin excepcion documentada:"
+            cat /tmp/sin_excepcionar.txt
+            echo "Arreglalas, o documenta la excepcion con su motivo en audit-excepciones.txt"
+            exit 1
+          fi
+          echo "npm audit: nada alto/critico fuera de la lista de excepciones"
+
+      - run: npm run build
+
+      # El bundle se hornea en build: si sale mal, se sirve mal y no hay aviso.
+      # Los dos fallos que ya mordieron en Fase 2, convertidos en check.
+      - name: Verificar el bundle
+        run: |
+          if grep -rIlE 'localhost:8000|127\.0\.0\.1:8000' dist/; then
+            echo "::error::el bundle apunta al backend de desarrollo"; exit 1
+          fi
+          test -f dist/staticwebapp.config.json \
+            || { echo "::error::falta staticwebapp.config.json (CSP, HSTS y fallback SPA)"; exit 1; }
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # El token se pide en caliente y solo vive en este job. Nada persistente.
+      - name: Obtener token de despliegue
+        id: swa
+        run: |
+          TOKEN=$(az staticwebapp secrets list -n swa-cdm-fraba -g rg-cdm-prod --query properties.apiKey -o tsv)
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.swa.outputs.token }}
+          action: upload
+          app_location: dist
+          skip_app_build: true

@@ -1,0 +1,69 @@
+/* Finanzas reutiliza el armazón de la Home (.home-page, .grid, .card en
+   App.css). Aquí solo va lo que cambia: cuatro tarjetas en vez de ocho, así que
+   caben más grandes. Nada de duplicar la tarjeta entera — si mañana cambia el
+   diseño de .card, cambia también aquí. */
+
+.finanzas-page .grid {
+  grid-template-columns: repeat(auto-fit, 420px);
+  gap: 26px;
+}
+
+.finanzas-page .card {
+  padding: 34px 32px;
+  border-radius: 18px;
+  column-gap: 22px;
+  row-gap: 10px;
+}
+
+.finanzas-page .card-icon {
+  padding: 16px;
+  border-radius: 22px;
+}
+
+.finanzas-page .card-title {
+  font-size: 1.22rem;
+}
+
+.finanzas-page .card-desc {
+  font-size: 0.93rem;
+}
+
+/* Rótulo de la barra superior centrado. El perfil sale del flujo y se ancla a
+   la derecha: con space-between el rótulo quedaría descentrado por el ancho del
+   botón de perfil, que no tiene pareja a la izquierda. */
+.finanzas-page .home-topbar {
+  position: relative;
+  justify-content: center;
+}
+
+.finanzas-page .home-profile {
+  position: absolute;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Antetítulo sobre el título, mismo recurso que .cp-eyebrow en Catálogos. */
+.fz-eyebrow {
+  margin: 0 0 6px;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.finanzas-page .home-head > h1 {
+  font-size: 2.3rem;
+}
+
+/* Por debajo de 460px una tarjeta de 420px desborda la ventana. */
+@media (max-width: 460px) {
+  .finanzas-page .grid {
+    grid-template-columns: 1fr;
+  }
+  .finanzas-page .card {
+    padding: 24px 20px;
+  }
+}

@@ -1,6 +1,7 @@
 CREATE TABLE tractos (
     id SERIAL PRIMARY KEY,
     no_eco VARCHAR(50) UNIQUE NOT NULL,
+    anio SMALLINT NOT NULL,
     unidad VARCHAR(100) NOT NULL,
     placas VARCHAR(20) UNIQUE NOT NULL,
     tipo VARCHAR(50) NOT NULL
@@ -45,3 +46,40 @@ CREATE TABLE maniobras (
     no_factura TEXT,
     ccp TEXT
 );
+
+CREATE TABLE vacios (
+    id SERIAL PRIMARY KEY,
+    contenedor TEXT,
+    patio TEXT,
+    fecha_maniobra TEXT,
+    fecha_entrega TEXT,
+    fecha_notificacion_cliente TEXT,
+    status TEXT,
+    operador TEXT,
+    cita TEXT,
+    cd TEXT
+);
+
+CREATE TABLE gastos (
+    id SERIAL PRIMARY KEY,
+    carta_porte VARCHAR(100),
+    fecha_entrega_mercancia TEXT,
+    casetas_ida DECIMAL(10, 2),
+    casetas_regreso DECIMAL(10, 2),
+    gastos_adicionales DECIMAL(10, 2),
+    entregado DECIMAL(10, 2),
+    gasto_tag DECIMAL(10, 2),
+    gasto_diesel DECIMAL(10, 2),
+    comision_operador DECIMAL(10, 2),
+    reparaciones DECIMAL(10, 2),
+    gastos_totales DECIMAL(10, 2),
+    facturado TEXT,
+    descripcion_gastos TEXT
+);
+
+CREATE TABLE empleados (
+    id SERIAL PRIMARY KEY,
+    nombre_trabajador VARCHAR(100),
+    fecha_ingreso DATE,
+    nss VARCHAR (100)
+)

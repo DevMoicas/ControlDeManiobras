@@ -1,0 +1,125 @@
+/* Alertas del sistema.
+
+   Arriba a la izquierda y fija al viewport: antes cada página pintaba su aviso
+   en el flujo del documento, así que con la tabla scrolleada la confirmación
+   salía fuera de pantalla. La izquierda es el costado que ninguna tabla usa —
+   las acciones y el scroll horizontal viven a la derecha.
+
+   Tokens locales, no ensucian :root, igual que el resto de las hojas.
+   Las fuentes ya vienen de index.html. */
+
+.al-pila {
+  --al-superficie:  #fff;
+  --al-tinta:       var(--text, #1f2937);
+  --al-tinta-suave: var(--text-light, #6b7280);
+  --al-borde:       #e6ecf5;
+  /* Los mismos verdes y rojos que el ERP ya usa para el status de una fila: en
+     operación el color YA significa algo, y una paleta nueva pelearía con él. */
+  --al-exito:       #15803d;
+  --al-error:       #dc2626;
+  --al-aviso:       #b45309;
+
+  position: fixed;
+  /* Debajo del botón Inicio, que vive en top:14px y mide ~48px de alto: la pila
+     arranca donde el botón termina para no taparlo nunca. Es un desplazamiento
+     fijo a propósito — el botón es `absolute` y se va con el scroll, pero medirlo
+     en vivo costaría un observer para ahorrar 78px de hueco. */
+  top: 78px;
+  left: 20px;
+  /* El techo del resto de la app (modales, desplegables) es 9999. */
+  z-index: 10000;
+  display: flex;
+  /* column-reverse pone el ÚLTIMO del DOM arriba: el aviso más nuevo queda
+     pegado al borde superior y los viejos bajan. */
+  flex-direction: column-reverse;
+  gap: 12px;
+  width: min(400px, calc(100vw - 40px));
+  /* La pila no intercepta clics: debajo hay una tabla que se sigue usando. */
+  pointer-events: none;
+}
+
+.al-tarjeta {
+  pointer-events: auto;
+  position: relative;
+  padding: 14px 40px 15px 18px;
+  background: var(--al-superficie);
+  border: 1px solid var(--al-borde);
+  /* El lomo de 4px es el mismo device con el que las filas de la tabla declaran
+     su estado (box-shadow: inset 4px 0 0). Citarlo es lo que hace que el aviso
+     se lea como parte de este ERP y no como un toast traído de fuera. */
+  border-left: 4px solid var(--al-acento);
+  border-radius: 10px;
+  box-shadow:
+    0 12px 30px rgba(16, 40, 80, 0.14),
+    0 2px 6px rgba(16, 40, 80, 0.06);
+}
+
+.al-tarjeta--exito { --al-acento: var(--al-exito); }
+.al-tarjeta--error { --al-acento: var(--al-error); }
+.al-tarjeta--aviso { --al-acento: var(--al-aviso); }
+
+/* Desenlace en una palabra. Es el canal que dice qué pasó sin depender del
+   color — mismo tratamiento que los títulos de panel del ERP (Oswald, versales,
+   entreletrado). */
+.al-desenlace {
+  margin: 0 0 4px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--al-acento);
+}
+
+.al-mensaje {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  color: var(--al-tinta);
+}
+
+/* El valor escrito: folio, contenedor, placas. Son códigos, y en monoespaciada
+   se verifican carácter a carácter. Tinta más oscura que el resto de lo
+   secundario (10.4:1 sobre blanco): es justo lo que hay que poder leer bien. */
+.al-dato {
+  margin: 7px 0 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #374151;
+  word-break: break-word;
+}
+
+.al-cerrar {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--al-tinta-suave);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.al-cerrar:hover { background: #f1f5f9; color: var(--al-tinta); }
+.al-cerrar:focus-visible {
+  outline: 2px solid var(--al-acento);
+  outline-offset: 1px;
+}
+
+@media (max-width: 640px) {
+  .al-pila {
+    left: 12px;
+    right: 12px;
+    /* En móvil el botón Inicio se queda solo con el icono y encoge. */
+    top: 70px;
+    width: auto;
+  }
+}

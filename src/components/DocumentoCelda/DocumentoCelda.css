@@ -1,0 +1,179 @@
+/* El clip que vive dentro de la celda, al lado de la fecha. Discreto cuando no
+   hay nada subido y azul cuando sí, para que la falta de un documento se vea de
+   un vistazo en toda la columna. */
+.doc-clip {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-left: 8px;
+  padding: 0;
+  vertical-align: middle;
+  border: 1px solid #d5dbe5;
+  border-radius: 6px;
+  background: #fff;
+  color: #9aa4b2;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.doc-clip:hover { border-color: var(--primary); color: var(--primary); }
+
+.doc-clip:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.doc-clip--lleno {
+  border-color: var(--primary);
+  background: var(--primary-light, #eaf1ff);
+  color: var(--primary);
+}
+
+.doc-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.doc-cerrar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.doc-cerrar:hover { background: #f3f4f6; }
+
+.doc-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid #eef1f6;
+}
+
+.doc-nombre { font-size: 0.95rem; color: #1f2937; }
+
+.doc-vacio { color: #9aa4b2; font-style: italic; }
+
+.doc-acciones { display: flex; gap: 8px; }
+
+.doc-error {
+  margin: 8px 0 0;
+  color: #b42318;
+  font-size: 0.9rem;
+}
+
+.doc-nota {
+  margin: 12px 0 0;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doc-clip { transition: none; }
+}
+
+/* ── El modal ─────────────────────────────────────────────────────────────── */
+/* Estilos propios y no los .modal-overlay de la página: este modal sale por un
+   portal a <body>, donde el CSS de la página (que los tiene bajo
+   .noeco-container) ya no lo alcanza. */
+.doc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.doc-caja {
+  width: 100%;
+  max-width: 420px;
+  padding: 20px 22px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.doc-titulo {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #111827;
+}
+
+.doc-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #d5dbe5;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--primary, #2563eb);
+  cursor: pointer;
+}
+
+.doc-btn:hover { background: var(--primary-light, #eaf1ff); }
+
+.doc-btn:disabled { opacity: 0.5; cursor: default; }
+
+.doc-btn--rojo { color: #b42318; }
+
+.doc-btn--rojo:hover { background: #fee4e2; }
+
+/* ── El visor ─────────────────────────────────────────────────────────────── */
+/* La caja crece solo cuando hay algo que ver: para elegir archivo con 420px
+   sobra, y un PDF a ese ancho no se lee. */
+.doc-caja--ancha { max-width: min(900px, 95vw); }
+
+.doc-visor {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #eef1f6;
+}
+
+.doc-visor-marco {
+  width: 100%;
+  height: min(70vh, 640px);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.doc-visor-imagen {
+  display: block;
+  width: 100%;
+  max-height: min(70vh, 640px);
+  object-fit: contain;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.doc-aparte {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  color: var(--primary, #2563eb);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.doc-aparte:hover { text-decoration: underline; }
+
+.doc-btn--activo {
+  border-color: var(--primary, #2563eb);
+  background: var(--primary-light, #eaf1ff);
+}
