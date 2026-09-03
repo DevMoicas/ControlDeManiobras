@@ -23,15 +23,16 @@ marca TERCERO— juntos, porque marcar TERCERO se le puede pasar al capturista.
 
 Solo corre con:  Manage.py test api --settings=config.settings_test
 """
-from datetime import datetime
+from datetime import date, datetime, timezone as tz
 from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
 from django.db import connections
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from rest_framework.test import APIClient
 
 from api.models import Chofer, Gasto, Maniobra, ReporteViaje, Tracto, Vacio
+from api.views import _fecha_de_ruta_inicio
 
 URL = '/api/maniobras/'
 REPORTES = '/api/reportes-viaje/'
@@ -405,6 +406,21 @@ class PrecargaAlAbrirloAManoTests(BaseReporteAutomatico):
         self.assertEqual(folio['recoleccion'], 'propio')
         self.assertEqual(folio['coordinador'], 'ANA LOPEZ')
 
+    def test_manda_el_dia_de_ruta_inicio_ya_resuelto(self):
+        """El modal precarga la FECHA con esto. Viaja calculado en la hora de
+        operacion para que el reporte abierto a mano y el que abre solo el folio
+        digan el mismo dia — 18:00 de aqui es del dia siguiente en UTC."""
+        self.maniobra(folio='F-2279',
+                      ruta_inicio=datetime(2026, 1, 13, 0, 0, tzinfo=tz.utc))
+
+        folio = self.ofrecidos()['F-2279']
+
+        self.assertEqual(folio['fecha_ruta_inicio'], '2026-01-12')
+
+    def test_sin_ruta_inicio_el_dia_viaja_vacio(self):
+        self.maniobra(folio='F-2279')
+        self.assertEqual(self.ofrecidos()['F-2279']['fecha_ruta_inicio'], '')
+
     def test_una_sola_consulta_para_todos_los_coordinadores(self):
         """El selector ofrece hasta 50 folios: resolver el chofer folio a folio
         seria una consulta por fila cada vez que se abre el desplegable."""
@@ -417,3 +433,141 @@ class PrecargaAlAbrirloAManoTests(BaseReporteAutomatico):
         # catalogo de tractos y el de choferes, cada uno de una tacada.
         with self.assertNumQueries(3, using='standard'):
             self.cliente.get(self.FOLIOS)
+
+
+class FechaDelViajeTests(BaseReporteAutomatico):
+    """La FECHA del reporte sale de RUTA INICIO, y la hora real vuelve alli.
+
+    El capturista anota el dia de salida sin saber la hora, asi que RUTA INICIO
+    queda a las 00:00. Dias despues el coordinador escribe en su reporte la hora
+    real, y esa vuelve a la maniobra: sin el viaje de vuelta las dos fechas se
+    quedan distintas para siempre (usuario, 2026-09-03).
+    """
+    REPORTES = '/api/reportes-viaje/'
+
+    def test_la_fecha_del_reporte_es_el_dia_de_ruta_inicio(self):
+        m = self.maniobra(ruta_inicio=datetime(2026, 1, 12, 6, 0, tzinfo=tz.utc))
+
+        self.poner_folio(m.id)
+
+        self.assertEqual(str(self.reporte().fecha), '2026-01-12')
+
+    def test_el_dia_se_lee_en_la_hora_de_operacion_no_en_utc(self):
+        """Una salida de las 18:00 de aqui ya es del dia siguiente en UTC.
+        Recortando la fecha sobre el ISO, TODA salida de tarde saldria con el dia
+        equivocado — y nadie lo notaria hasta ver el papel."""
+        # 2026-01-13 00:00 UTC == 2026-01-12 18:00 en Manzanillo.
+        m = self.maniobra(ruta_inicio=datetime(2026, 1, 13, 0, 0, tzinfo=tz.utc))
+
+        self.poner_folio(m.id)
+
+        self.assertEqual(str(self.reporte().fecha), '2026-01-12')
+
+    def test_sin_ruta_inicio_la_fecha_queda_vacia(self):
+        m = self.maniobra()
+        self.poner_folio(m.id)
+        self.assertIsNone(self.reporte().fecha)
+
+    def test_capturar_ruta_inicio_despues_rellena_la_fecha(self):
+        """El folio se asigna antes de saber cuando sale, como todo lo demas."""
+        m = self.maniobra()
+        self.poner_folio(m.id)
+        self.assertIsNone(self.reporte().fecha)
+
+        self.patch(m.id, ruta_inicio='2026-01-12T06:00:00Z')
+
+        self.assertEqual(str(self.reporte().fecha), '2026-01-12')
+
+    def test_no_pisa_la_fecha_que_ya_escribio_el_coordinador(self):
+        m = self.maniobra()
+        self.poner_folio(m.id)
+        self.cliente.patch(f'{self.REPORTES}{self.reporte().id}/',
+                           {'fecha': '2026-02-02'}, format='json')
+
+        self.patch(m.id, ruta_inicio='2026-01-12T06:00:00Z')
+
+        self.assertEqual(str(self.reporte().fecha), '2026-02-02')
+
+    # ── El viaje de vuelta ───────────────────────────────────────────────
+    def test_la_salida_real_vuelve_a_ruta_inicio(self):
+        """El caso que motiva la regla: 12/01 00:00 pasa a 12/01 13:37."""
+        m = self.maniobra(ruta_inicio=datetime(2026, 1, 12, 6, 0, tzinfo=tz.utc))
+        self.poner_folio(m.id)
+        salida = '2026-01-12T19:37:00Z'      # 13:37 en Manzanillo
+
+        self.cliente.patch(f'{self.REPORTES}{self.reporte().id}/',
+                           {'salida_real': salida}, format='json')
+
+        m.refresh_from_db()
+        self.assertEqual(m.ruta_inicio, datetime(2026, 1, 12, 19, 37, tzinfo=tz.utc))
+
+    def test_pisa_aunque_ya_hubiera_una_hora_puesta(self):
+        """Siempre, decision del usuario: el reporte es lo que paso de verdad."""
+        m = self.maniobra(ruta_inicio=datetime(2026, 1, 12, 15, 0, tzinfo=tz.utc))
+        self.poner_folio(m.id)
+
+        self.cliente.patch(f'{self.REPORTES}{self.reporte().id}/',
+                           {'salida_real': '2026-01-12T19:37:00Z'}, format='json')
+
+        m.refresh_from_db()
+        self.assertEqual(m.ruta_inicio.hour, 19)
+
+    def test_una_salida_de_otro_dia_mueve_la_maniobra_de_dia(self):
+        """Se copia ENTERA, dia incluido (usuario, 2026-09-03). Se fija aqui
+        porque `ruta_inicio` alimenta la torre de control: la consecuencia es que
+        la maniobra tambien se mueve alli."""
+        m = self.maniobra(ruta_inicio=datetime(2026, 1, 12, 6, 0, tzinfo=tz.utc))
+        self.poner_folio(m.id)
+
+        self.cliente.patch(f'{self.REPORTES}{self.reporte().id}/',
+                           {'salida_real': '2026-01-13T15:00:00Z'}, format='json')
+
+        m.refresh_from_db()
+        self.assertEqual(m.ruta_inicio, datetime(2026, 1, 13, 15, 0, tzinfo=tz.utc))
+
+    def test_sin_salida_real_no_toca_la_maniobra(self):
+        m = self.maniobra(ruta_inicio=datetime(2026, 1, 12, 6, 0, tzinfo=tz.utc))
+        self.poner_folio(m.id)
+
+        self.cliente.patch(f'{self.REPORTES}{self.reporte().id}/',
+                           {'comentarios': 'algo'}, format='json')
+
+        m.refresh_from_db()
+        self.assertEqual(m.ruta_inicio, datetime(2026, 1, 12, 6, 0, tzinfo=tz.utc))
+
+    def test_un_reporte_sin_maniobra_no_revienta(self):
+        """Un folio viejo, capturado a mano, sin maniobra que le corresponda."""
+        r = self.cliente.post(self.REPORTES, {
+            'folio': 'SIN-MANIOBRA', 'salida_real': '2026-01-12T19:37:00Z',
+        }, format='json')
+        self.assertEqual(r.status_code, 201, r.data)
+
+
+class FechaDeRutaInicioNaiveTests(SimpleTestCase):
+    """`maniobras.ruta_inicio` es `timestamp WITHOUT time zone` en la base de
+    verdad, aunque el modelo diga DateTimeField: la tabla es managed=False.
+
+    Django devuelve entonces un datetime NAIVE y localtime() revienta con uno.
+    Esto costo un 500 en la primera lectura contra la base real, y las pruebas de
+    arriba no lo ven porque settings_test crea la columna DESDE el modelo, o sea
+    con zona. De ahi que esta prueba llame al helper con un naive a mano.
+    """
+
+    def dia(self, instante):
+        return _fecha_de_ruta_inicio(Maniobra(ruta_inicio=instante))
+
+    def test_un_naive_se_lee_como_UTC(self):
+        # Lo guardado es UTC: settings.TIME_ZONE es 'UTC' y por eso la API
+        # devuelve estos valores con la Z. 06:00Z son las 00:00 en Manzanillo.
+        self.assertEqual(self.dia(datetime(2026, 1, 12, 6, 0)), date(2026, 1, 12))
+
+    def test_un_naive_de_tarde_no_se_va_al_dia_siguiente(self):
+        # 2026-01-13 00:00 UTC son las 18:00 del 12 aqui.
+        self.assertEqual(self.dia(datetime(2026, 1, 13, 0, 0)), date(2026, 1, 12))
+
+    def test_un_aware_sigue_funcionando(self):
+        self.assertEqual(self.dia(datetime(2026, 1, 13, 0, 0, tzinfo=tz.utc)),
+                         date(2026, 1, 12))
+
+    def test_sin_fecha_no_hay_dia(self):
+        self.assertIsNone(self.dia(None))

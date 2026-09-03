@@ -2,7 +2,7 @@ import re
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD, ReporteViaje, CargaCombustible
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD, ReporteViaje, CargaCombustible, NominaEmpleado, VacacionDia
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
@@ -506,6 +506,30 @@ FORMULA_VALIDA = re.compile(r'^=\s*[-+]?\s*\d+(?:\.\d+)?(?:\s*[-+]\s*\d+(?:\.\d+
 FORMULA_MAX = 200
 
 
+def validar_formulas(valor, campos):
+    """El desglose de las celdas que se capturan sumando: {campo: "=150+230"}.
+
+    Se guarda solo para volver a enseñarlo al editar, nunca se recalcula a partir
+    de él: el número que manda es el de la columna. Aun así se valida entero
+    —claves, tipo, gramática y longitud— porque es un jsonb abierto y cualquiera
+    con sesión podría escribir en él.
+
+    Compartido por Gastos y Nómina, igual que validar_color_de_fila: es una
+    comprobación de SEGURIDAD y duplicarla es pedir que las dos copias se
+    separen con el tiempo. `campos` es lo único que cambia entre las dos.
+    """
+    if not isinstance(valor, dict):
+        raise serializers.ValidationError('Debe ser un objeto {campo: fórmula}.')
+    for campo, formula in valor.items():
+        if campo not in campos:
+            raise serializers.ValidationError(f'"{campo}" no admite fórmula.')
+        if not isinstance(formula, str) or len(formula) > FORMULA_MAX:
+            raise serializers.ValidationError(f'Fórmula demasiado larga en "{campo}".')
+        if not FORMULA_VALIDA.match(formula):
+            raise serializers.ValidationError(f'Fórmula inválida en "{campo}": {formula!r}')
+    return valor
+
+
 class GastoSerializer(serializers.ModelSerializer):
     folio = serializers.CharField(source='maniobra.folio', read_only=True)
     # Operador y destino del folio elegido. Se leen de la maniobra enlazada en vez
@@ -557,23 +581,7 @@ class GastoSerializer(serializers.ModelSerializer):
         return validar_colores_de_celda(valor)
 
     def validate_formulas(self, valor):
-        """El desglose de las celdas de dinero: {campo: "=150+230"}.
-
-        Se guarda solo para volver a enseñarlo al editar, nunca se recalcula a
-        partir de él: el número que manda es el de la columna. Aun así se valida
-        entero —claves, tipo, gramática y longitud— porque es un jsonb abierto y
-        cualquiera con sesión podría escribir en él.
-        """
-        if not isinstance(valor, dict):
-            raise serializers.ValidationError('Debe ser un objeto {campo: fórmula}.')
-        for campo, formula in valor.items():
-            if campo not in CAMPOS_CON_FORMULA:
-                raise serializers.ValidationError(f'"{campo}" no admite fórmula.')
-            if not isinstance(formula, str) or len(formula) > FORMULA_MAX:
-                raise serializers.ValidationError(f'Fórmula demasiado larga en "{campo}".')
-            if not FORMULA_VALIDA.match(formula):
-                raise serializers.ValidationError(f'Fórmula inválida en "{campo}": {formula!r}')
-        return valor
+        return validar_formulas(valor, CAMPOS_CON_FORMULA)
 
     def get_maniobra_info(self, obj):
         return {
@@ -929,6 +937,7 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
             # Después de las cargas: las dos cosas las necesitan.
             reporte.refrescar_rendimiento()
             reporte.volcar_diesel_al_gasto(self._usuario())
+            reporte.volcar_salida_a_la_maniobra(self._usuario())
         return reporte
 
     def update(self, instance, validated_data):
@@ -945,8 +954,133 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
             # cambia al tocar el kilometraje.
             instance.refrescar_rendimiento()
             instance.volcar_diesel_al_gasto(self._usuario())
+            # La hora real de salida vuelve a la maniobra. En CADA escritura, como
+            # el diesel: el reporte se llena por etapas y la salida real puede
+            # llegar en cualquiera de ellas.
+            instance.volcar_salida_a_la_maniobra(self._usuario())
         return instance
 
     def _usuario(self):
         peticion = self.context.get('request')
         return getattr(getattr(peticion, 'user', None), 'username', '') or ''
+
+
+# ── Nómina ───────────────────────────────────────────────────────────────────
+# Solo DÍAS TOMADOS admite fórmula: es la única celda que se captura sumando
+# —tres días en marzo más dos en agosto—. El sueldo y el finiquito son un
+# importe, no un desglose de renglones.
+CAMPOS_CON_FORMULA_NOMINA = frozenset({'dias_tomados'})
+
+
+class NominaEmpleadoSerializer(serializers.ModelSerializer):
+    """Una fila de la tabla de Nómina.
+
+    Serializa instancias que pueden NO estar guardadas: la nómina lista el
+    CATÁLOGO de empleados, y a quien todavía no tiene nada capturado se le
+    fabrica aquí un NominaEmpleado en blanco (ver NominaViewSet.list). Por eso
+    `id` puede llegar en null, y la clave con la que trabaja el frontend es
+    `empleado`, que siempre está.
+
+    Nombre y puesto se leen del catálogo y son read_only: la nómina no renombra
+    a nadie ni le cambia el puesto — eso se hace en Catálogos, que es donde vive
+    el dato, y así no hay dos versiones del mismo nombre.
+    """
+    nombre        = serializers.CharField(source='empleado.nombre_trabajador', read_only=True)
+    puesto        = serializers.CharField(source='empleado.cargo', read_only=True)
+    fecha_ingreso = serializers.CharField(source='empleado.fecha_ingreso', read_only=True)
+    fecha_salida  = serializers.DateField(source='empleado.fecha_salida', read_only=True)
+
+    # Calculados en cada lectura, nunca guardados: ver el docstring del modelo.
+    # La prima cambia sola el día que el empleado cumple otro año, y una columna
+    # guardada al lado de sus operandos acabaría contradiciéndolos.
+    antiguedad_anios = serializers.SerializerMethodField()
+    dias_vacaciones  = serializers.SerializerMethodField()
+    prima_vacacional = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = NominaEmpleado
+        # En el ORDEN de la pantalla, que es el que pidió el usuario: NOMBRE,
+        # PUESTO, SUELDO, PRIMA, DÍAS DE VACACIONES, DÍAS TOMADOS, FINIQUITO.
+        fields = ('id', 'empleado', 'nombre', 'puesto',
+                  'sueldo', 'prima_vacacional', 'dias_vacaciones', 'dias_tomados',
+                  'finiquito',
+                  'fecha_ingreso', 'fecha_salida', 'antiguedad_anios', 'formulas')
+        # `empleado` no se manda: la fila se direcciona por él en la URL.
+        read_only_fields = ('id', 'empleado')
+
+    def get_antiguedad_anios(self, obj):
+        return obj.anios()
+
+    def get_dias_vacaciones(self, obj):
+        return obj.dias_vacaciones()
+
+    def get_prima_vacacional(self, obj):
+        # str() y no un número: DRF serializa los DecimalField como cadena
+        # (COERCE_DECIMAL_TO_STRING, el valor por defecto que settings no toca).
+        # Devolver un número aquí mezclaría los dos tipos en el mismo JSON.
+        prima = obj.prima_vacacional()
+        return str(prima) if prima is not None else None
+
+    def validate_formulas(self, valor):
+        return validar_formulas(valor, CAMPOS_CON_FORMULA_NOMINA)
+
+
+class VacacionDiaSerializer(serializers.ModelSerializer):
+    """Un día del calendario de vacaciones.
+
+    `empleado_nombre` viaja resuelto para que el calendario pinte el nombre sin
+    cruzar nada en el navegador: el mes entero son 31 filas y el catálogo de
+    empleados es otra petición.
+    """
+    empleado_nombre = serializers.CharField(source='empleado.nombre_trabajador', read_only=True)
+    # validators=[] desactiva el UniqueValidator automático de `fecha`: su mensaje
+    # es genérico ("already exists") y no dice DE QUIÉN es el día, que es justo lo
+    # que hay que saber para reprogramar. La comprobación se hace en validate(),
+    # con un mensaje legible y bajo la clave 'detail', que es la única que lee el
+    # apiClient del frontend. Mismo motivo que en ReporteViajeSerializer.folio.
+    fecha = serializers.DateField(validators=[])
+    # allow_null en los dos: el apiClient del frontend convierte "" en null al
+    # escribir, así que dejar la nota vacía o quitar el color llega aquí como
+    # null — y las dos columnas son NOT NULL con default ''. Sin esto, guardar un
+    # evento sin nota daría un 400 que solo se descubre en el navegador. Mismo
+    # caso que ReporteViajeSerializer, que lo resuelve en to_internal_value
+    # porque allí son treinta campos; aquí son dos.
+    nota  = serializers.CharField(max_length=255, required=False,
+                                  allow_blank=True, allow_null=True, default='')
+    color = serializers.CharField(max_length=7, required=False,
+                                  allow_blank=True, allow_null=True, default='')
+
+    class Meta:
+        model  = VacacionDia
+        fields = ('id', 'fecha', 'empleado', 'empleado_nombre', 'nota', 'color')
+
+    def validate_nota(self, valor):
+        return valor or ''
+
+    def validate_color(self, valor):
+        # La columna es NOT NULL con default '': el validador compartido
+        # devuelve None para "sin color" y aquí eso es la cadena vacía.
+        return validar_color_de_fila(valor) or ''
+
+    def validate(self, attrs):
+        """Un día ocupado se rechaza diciendo POR QUIÉN.
+
+        El UNIQUE de la columna es lo que de verdad impide el solape —y lo que
+        hace que dos peticiones simultáneas no puedan colar dos—, pero saltaría
+        como IntegrityError, o sea un 500 en pantalla. Esto lo convierte en un
+        400 que se puede leer. La regla existe justo para eso: que dos empleados
+        no salgan los mismos días.
+        """
+        fecha = attrs.get('fecha')
+        if fecha is None:
+            return attrs
+        ocupados = VacacionDia.objects.filter(fecha=fecha)
+        if self.instance is not None:
+            ocupados = ocupados.exclude(pk=self.instance.pk)
+        ocupado = ocupados.select_related('empleado').first()
+        if ocupado is not None:
+            raise serializers.ValidationError({
+                'detail': 'El %s ya lo tiene %s.' % (
+                    fecha.strftime('%d/%m/%Y'), ocupado.empleado.nombre_trabajador),
+            })
+        return attrs

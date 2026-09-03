@@ -1,4 +1,5 @@
-from datetime import timedelta
+import re
+from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.conf import settings
@@ -465,10 +466,23 @@ class Patio(models.Model):
 
 class Empleado(models.Model):
     nombre_trabajador = models.CharField(max_length=255)
+    # OJO: el modelo MIENTE sobre el tipo. Aqui pone CharField, pero la columna
+    # real es `date` (la tabla es managed=False, la creo pgAdmin, y cambiar el
+    # modelo nunca altero el esquema — mismo caso que Maniobra.fecha_pis). Django
+    # devuelve un objeto date, no una cadena.
+    #
+    # No se corrige a DateField para no tocar lo que ya lee este campo. Quien
+    # necesite la fecha usa `fecha_de_ingreso()`, que acepta las dos formas.
     fecha_ingreso = models.CharField(max_length=50, null=True, blank=True)
     nss = models.CharField(max_length=255, null=True, blank=True)
     cargo = models.CharField(max_length=255, null=True, blank=True)
     telefono = models.CharField(max_length=20, null=True, blank=True)
+    # Fecha de BAJA. DateField de verdad —y no varchar como fecha_ingreso—
+    # porque la columna la crea la migracion 0067 y no pgAdmin: no hay historico
+    # de texto libre que respetar. Con ella puesta, la nomina sigue enseñando al
+    # empleado pero marcado de baja, para poder capturarle el finiquito despues
+    # (usuario, 2026-09-03). Columna real en la 0067 (tabla managed=False).
+    fecha_salida = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return self.nombre_trabajador
@@ -477,6 +491,169 @@ class Empleado(models.Model):
         managed = False  # Usa tu propia tabla de pgAdmin
         db_table = 'empleados'
         ordering = ['id']
+
+
+# ── Nomina ───────────────────────────────────────────────────────────────────
+# La tabla de Finanzas > Nomina. Lee el catalogo de empleados y le añade lo que
+# se captura: sueldo, dias tomados y finiquito.
+
+# Dias de vacaciones por año cumplido. Es la tabla que dicto el usuario
+# (2026-09-03), que sigue a la Ley Federal del Trabajo reformada en 2023.
+#
+# De 31 años en adelante NO se dijo nada y aqui se queda en 30: es el ultimo
+# tramo conocido. Si algun dia hay que seguir subiendo (la ley suma dos dias por
+# cada cinco años), el sitio es este.
+def dias_de_vacaciones(anios):
+    """Los dias que le tocan a quien lleva `anios` años cumplidos."""
+    if anios < 1:
+        return 0
+    if anios <= 5:
+        return 10 + anios * 2       # 1→12, 2→14, 3→16, 4→18, 5→20
+    if anios <= 10:
+        return 22
+    if anios <= 15:
+        return 24
+    if anios <= 20:
+        return 26
+    if anios <= 25:
+        return 28
+    return 30
+
+
+def fecha_de_ingreso(empleado):
+    """La fecha de ingreso como `date`, o None si no hay una legible.
+
+    Acepta las DOS formas a proposito, y no por prudencia gratuita: el modelo
+    declara `fecha_ingreso` como CharField pero la columna REAL es `date`, asi
+    que Django devuelve un objeto date. Fiarse del modelo aqui costo un 500 en la
+    primera lectura contra la base de verdad, y las pruebas no lo veian porque
+    settings_test crea la tabla DESDE el modelo — o sea, como texto.
+
+    El camino de la cadena se queda igualmente: si en otro entorno la columna es
+    varchar, lo que no case con 'YYYY-MM-DD' cuenta como sin fecha y ese empleado
+    sale con 0 dias de vacaciones en vez de con un numero inventado.
+    """
+    valor = empleado.fecha_ingreso
+    if isinstance(valor, date):
+        return valor
+    casa = re.match(r'^(\d{4})-(\d{2})-(\d{2})$', (valor or '').strip())
+    if not casa:
+        return None
+    try:
+        return date(int(casa.group(1)), int(casa.group(2)), int(casa.group(3)))
+    except ValueError:      # '2026-02-31' y demas fechas que no existen
+        return None
+
+
+def anios_cumplidos(ingreso, hoy=None):
+    """Años COMPLETOS trabajados. Es lo que decide los dias de vacaciones.
+
+    Cumplidos y no empezados: quien entro el 30/01/2022 lleva 4 años hasta el
+    29/01/2027 y 5 a partir del 30. De ahi que la prima vacacional se actualice
+    sola el dia del aniversario, sin que nadie toque nada.
+    """
+    if ingreso is None:
+        return 0
+    hoy = hoy or date.today()
+    anios = hoy.year - ingreso.year
+    if (hoy.month, hoy.day) < (ingreso.month, ingreso.day):
+        anios -= 1
+    return max(anios, 0)
+
+
+class NominaEmpleado(models.Model):
+    """Lo que la nomina CAPTURA de cada empleado. Uno por empleado.
+
+    Aqui vive solo lo que escribe una persona. El nombre y el puesto se leen del
+    catalogo en cada lectura, y la antiguedad, los dias de vacaciones y la prima
+    se CALCULAN en el serializer: guardar un dato al lado de sus operandos es
+    garantizar que algun dia se contradigan, y ademas la prima tiene que cambiar
+    sola el dia que el empleado cumple otro año.
+
+    La fila nace la primera vez que se escribe algo (get_or_create en el
+    ViewSet). Un empleado al que nadie le ha puesto sueldo no necesita fila para
+    salir en la tabla: la nomina lista el CATALOGO, no esta tabla.
+    """
+    # db_constraint=False por el mismo motivo que ManiobraCostoExtra.maniobra:
+    # `api` corre sin migraciones en la base de test, donde `empleados`
+    # (managed=False) no existe, y un constraint contra ella romperia la creacion
+    # de la BD de pruebas. El CASCADE del ORM sigue actuando en los borrados por
+    # Django, que es por donde se borra un empleado.
+    empleado = models.OneToOneField(
+        'api.Empleado', on_delete=models.CASCADE,
+        db_column='empleado_id', related_name='nomina', db_constraint=False,
+    )
+    # Sueldo SEMANAL (usuario, 2026-09-03). El salario diario es este entre 7, y
+    # de ahi sale la prima vacacional. Va en el nombre de la columna de la
+    # pantalla para que nadie capture aqui un mensual: descuadraria la prima de
+    # esa persona sin avisar de nada.
+    sueldo = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    # Dias de vacaciones ya disfrutados. Con decimales porque la celda acepta la
+    # misma suma desglosada que las de Gastos (=5+3) y esa devuelve 2 decimales.
+    dias_tomados = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    finiquito = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    # El texto de la formula de `dias_tomados`, para poder volver a enseñarlo al
+    # editar. Un solo jsonb y no una columna por celda, igual que Gasto.formulas.
+    formulas = models.JSONField(default=dict, blank=True)
+
+    creado_en      = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed  = True
+        ordering = ['empleado_id']
+
+    def __str__(self):
+        return f"Nomina de {self.empleado.nombre_trabajador}"
+
+    # ── Calculados. No se guardan: ver el docstring ─────────────────────────
+    def anios(self, hoy=None):
+        return anios_cumplidos(fecha_de_ingreso(self.empleado), hoy)
+
+    def dias_vacaciones(self, hoy=None):
+        return dias_de_vacaciones(self.anios(hoy))
+
+    def prima_vacacional(self, hoy=None):
+        """Salario diario × dias de vacaciones × 0.25.
+
+        None y no 0 cuando falta el sueldo: "todavia no se ha capturado" no es
+        "no le toca prima", y en la pantalla se leen distinto.
+        """
+        if self.sueldo is None:
+            return None
+        diario = self.sueldo / Decimal(7)
+        prima = diario * self.dias_vacaciones(hoy) * Decimal('0.25')
+        return prima.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+
+class VacacionDia(models.Model):
+    """Un dia de vacaciones en el calendario de la nomina.
+
+    UNA fila por DIA, y no un rango con inicio y fin: la regla es que dos
+    empleados no salgan el mismo dia, y con `fecha` unica la impone la BASE. Con
+    rangos habria que buscar solapes a mano en cada escritura, y dos peticiones
+    simultaneas podrian colar dos. El modal captura un rango y crea sus dias de
+    una vez, asi que registrar una semana sigue siendo un solo gesto.
+    """
+    fecha = models.DateField(unique=True)
+    # db_constraint=False por lo mismo que NominaEmpleado.empleado.
+    empleado = models.ForeignKey(
+        'api.Empleado', on_delete=models.CASCADE,
+        db_column='empleado_id', related_name='vacaciones', db_constraint=False,
+    )
+    nota = models.CharField(max_length=255, blank=True, default='')
+    # "#rrggbb" o vacio. Mismo contrato que Maniobra.color y validado en el
+    # serializer por el mismo motivo: el valor acaba en el CSS del calendario.
+    color = models.CharField(max_length=7, blank=True, default='')
+
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed  = True
+        ordering = ['fecha']
+
+    def __str__(self):
+        return f"{self.fecha} — {self.empleado.nombre_trabajador}"
 
 
 class Cliente(models.Model):
@@ -1098,17 +1275,57 @@ class ReporteViaje(models.Model):
         return (Decimal(km) / litros).quantize(Decimal('0.01'),
                                                rounding=ROUND_HALF_UP)
 
-    def gasto_del_folio(self):
-        """El gasto al que le toca el diesel de este reporte, o None.
+    def maniobra_del_folio(self):
+        """La maniobra de la que sale este reporte, o None.
 
-        El folio puede estar en cualquiera de las dos columnas de la maniobra: un
-        Full repartido gasta un folio por operador. Mismo criterio que la torre.
+        El folio puede estar en cualquiera de las dos columnas: un Full repartido
+        gasta un folio por operador. Mismo criterio que la torre, que tambien se
+        enlaza por el folio y no por placas ni fechas.
         """
-        maniobra = Maniobra.objects.filter(
+        return Maniobra.objects.filter(
             models.Q(folio=self.folio) | models.Q(folio_2=self.folio)).first()
+
+    def gasto_del_folio(self):
+        """El gasto al que le toca el diesel de este reporte, o None."""
+        maniobra = self.maniobra_del_folio()
         if maniobra is None:
             return None
         return Gasto.objects.filter(maniobra=maniobra).first()
+
+    def volcar_salida_a_la_maniobra(self, usuario=''):
+        """Copia FECHA Y HORA REAL DE SALIDA al RUTA INICIO de la maniobra.
+
+        El capturista anota en Maniobras el dia de salida sin saber la hora, asi
+        que RUTA INICIO queda a las 00:00 —que es "todavia no se sabe"—. Dias
+        despues el coordinador escribe en su reporte la hora a la que se salio de
+        verdad. Sin este volcado las dos fechas se quedan distintas para siempre y
+        nadie se entera, que es justo lo que se viene a evitar.
+
+        Pisa SIEMPRE y entero, dia incluido (usuario, 2026-09-03): el reporte es
+        lo que paso de verdad y manda sobre lo que hubiera en Maniobras. Con una
+        consecuencia que conviene tener presente: `ruta_inicio` alimenta la Torre
+        de Control, asi que si la salida real cae en otro dia, la maniobra se
+        mueve de dia tambien alli.
+
+        Un Full repartido tiene DOS reportes y una sola columna `ruta_inicio`: el
+        ultimo que se guarde manda. No hay forma de separarlos sin una columna
+        por operador, y no se pidio.
+        """
+        if self.salida_real is None:
+            return False
+        maniobra = self.maniobra_del_folio()
+        if maniobra is None:
+            return False
+        if maniobra.ruta_inicio == self.salida_real:
+            return False
+        maniobra.ruta_inicio = self.salida_real
+        if usuario:
+            maniobra.updated_by = usuario
+        # update_fields con updated_at dentro: es auto_now, asi que se refresca y
+        # el sondeo de Maniobras (CambiosMixin) repinta la fila sola en las demas
+        # pantallas abiertas. Sin el campo en la lista, no se escribiria.
+        maniobra.save(update_fields=['ruta_inicio', 'updated_by', 'updated_at'])
+        return True
 
     def diesel_descuadrado(self):
         """(total del reporte, importe en Gastos, si coinciden).

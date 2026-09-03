@@ -4,7 +4,7 @@ from decimal import Decimal
 from zoneinfo import ZoneInfo
 import django_filters
 from rest_framework import viewsets, mixins
-from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_EN_EL_PAPEL
+from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_EN_EL_PAPEL, NominaEmpleado, VacacionDia
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
@@ -13,24 +13,25 @@ from .Serializers import ReporteViajeSerializer, TorreFolioSerializer, TractoSer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from .throttling import SondeoThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .Serializers import CustomTokenObtainPairSerializer, DispositivoConfianzaSerializer
+from .Serializers import (CustomTokenObtainPairSerializer, DispositivoConfianzaSerializer,
+                          NominaEmpleadoSerializer, VacacionDiaSerializer)
 from . import confianza
 from .db_context import get_db_alias
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 import os
 import subprocess
 import tempfile
 import logging
 import io
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone as dt_timezone
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
+from django.utils.dateparse import parse_date, parse_datetime
 from django.db.models import Case, CharField, Count, F, IntegerField, Max, Q, Value, When
 from django.db.models.functions import Concat, Substr
 from django.http import FileResponse, HttpResponse
@@ -832,6 +833,29 @@ def _cita_del_folio(maniobra):
                     int(hora.group(1)), int(hora.group(2)), tzinfo=_ZONA_OPERACION)
 
 
+def _fecha_de_ruta_inicio(maniobra):
+    """El DIA de RUTA INICIO, en la hora de operacion. None si no hay.
+
+    Dos cuidados, los dos aprendidos contra la base de verdad y no contra el
+    modelo, que aqui vuelve a mentir:
+
+    · `maniobras.ruta_inicio` es `timestamp WITHOUT time zone` (la tabla es
+      managed=False y la creo pgAdmin), asi que Django devuelve un datetime NAIVE
+      y localtime() revienta con uno. Lo guardado ES UTC —settings.TIME_ZONE es
+      'UTC', y por eso la API lo devuelve con la Z y el navegador lo lee bien—,
+      asi que se marca como tal antes de convertir.
+    · Y se convierte a la hora de operacion en vez de recortar el dia en UTC: una
+      salida de las 18:00 de aqui ya es del dia siguiente alla, asi que TODA
+      salida de tarde saldria con el dia equivocado.
+    """
+    instante = maniobra.ruta_inicio
+    if not instante:
+        return None
+    if timezone.is_naive(instante):
+        instante = instante.replace(tzinfo=dt_timezone.utc)
+    return timezone.localtime(instante, _ZONA_OPERACION).date()
+
+
 def _reportes_del_viaje(maniobra):
     """(folio, datos precargados) de cada reporte que le toca a este viaje.
 
@@ -849,6 +873,10 @@ def _reportes_del_viaje(maniobra):
         'destino':     maniobra.destino or '',
         'recoleccion': _recoleccion_del_puerto(maniobra),
         'cita':        _cita_del_folio(maniobra),
+        # La FECHA del reporte es el dia en que arranco la ruta. Solo el dia: la
+        # hora de `ruta_inicio` nace en 00:00 y la escribe despues el coordinador
+        # desde su reporte (ver volcar_salida_a_la_maniobra).
+        'fecha':       _fecha_de_ruta_inicio(maniobra),
     }
     partes = (
         (maniobra.folio,   maniobra.asignacion_operador_status, maniobra.unidad,
@@ -893,8 +921,9 @@ def _crear_reportes_del_folio(maniobra):
 # que cuelgan. El folio se pone casi siempre ANTES de saber quien lo llevara (ver
 # _sincronizar_asignacion_folios) y antes de capturar las placas del puerto, asi
 # que sin este remate los tres se teclearian a mano en cada viaje.
-_HUECOS_DEL_REPORTE  = ('operador', 'coordinador', 'recoleccion')
-_FUENTES_DEL_REPORTE = ('placas_pis', 'asignacion_operador_status', 'operador_2')
+_HUECOS_DEL_REPORTE  = ('operador', 'coordinador', 'recoleccion', 'fecha')
+_FUENTES_DEL_REPORTE = ('placas_pis', 'asignacion_operador_status', 'operador_2',
+                        'ruta_inicio')
 
 
 def _completar_reportes_del_folio(maniobra):
@@ -1431,6 +1460,12 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
                 # petición. Vacías si la maniobra aún no las tiene — entonces la
                 # torre no acomoda nada y las bolitas se colocan a mano.
                 'ruta_inicio': m.ruta_inicio.isoformat() if m.ruta_inicio else '',
+                # El DIA de ruta_inicio, ya resuelto en la hora de operacion: es
+                # la FECHA con la que nace el reporte. Se manda calculado para
+                # que el que se abre a mano precargue lo MISMO que el que abre
+                # solo el folio, sin repetir la regla en el navegador.
+                'fecha_ruta_inicio': (_fecha_de_ruta_inicio(m).isoformat()
+                                      if m.ruta_inicio else ''),
                 'ruta_fin':    m.ruta_fin.isoformat() if m.ruta_fin else '',
             }
 
@@ -3263,3 +3298,143 @@ class ReporteViajeViewSet(viewsets.ModelViewSet):
             return Response(
                 {'detail': 'No se pudo generar el documento. Contacte al administrador.'},
                 status=500)
+
+
+# ── Nómina ───────────────────────────────────────────────────────────────────
+# Sueldos, primas y finiquitos. Admin-only, y no solo aquí: la migración 0067
+# NO otorga permisos al rol estándar sobre estas dos tablas, así que un usuario
+# no-admin no puede leerlas ni aunque un fallo en una vista futura le dejara
+# llegar. Es la misma línea del ADR-0014 (ingresos y utilidad solo para staff),
+# apretada un punto más porque esto son nóminas.
+
+class SoloAdminMixin:
+    """403 para quien no sea staff, en cualquier método.
+
+    Un solo sitio y no un `if` por acción: una vista con seis métodos y el
+    candado en cinco es exactamente el agujero que nadie ve al revisarla.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if not request.user.is_staff:
+            raise PermissionDenied('La nómina es solo para administradores.')
+
+
+class NominaViewSet(SoloAdminMixin, viewsets.ViewSet):
+    """La tabla de Nómina: el catálogo de empleados con lo que se les captura.
+
+    Lista EMPLEADOS y no filas de nómina: quien todavía no tiene sueldo puesto
+    tiene que salir igual, o no habría dónde escribírselo. A esos se les fabrica
+    un NominaEmpleado en blanco, sin guardar nada — la fila real nace en el
+    primer PATCH.
+
+    Se direcciona por el ID DEL EMPLEADO y no por el de la fila: es el único que
+    el frontend conoce siempre, y así no hay que crear nada antes de escribir.
+
+    Sin paginar: son los empleados de la empresa, no una tabla que crezca sin
+    techo, y la pantalla los enseña todos de una vez.
+    """
+
+    def _empleados(self):
+        # select_related sobre el OneToOne inverso: sin él, una consulta por
+        # empleado solo para saber si tiene fila.
+        return Empleado.objects.select_related('nomina').all()
+
+    @staticmethod
+    def _fila(empleado):
+        """La nómina de ese empleado, o una en blanco sin guardar."""
+        return getattr(empleado, 'nomina', None) or NominaEmpleado(empleado=empleado)
+
+    def list(self, request):
+        filas = [self._fila(e) for e in self._empleados()]
+        return Response(NominaEmpleadoSerializer(filas, many=True).data)
+
+    def partial_update(self, request, pk=None):
+        """PATCH /api/nomina/{empleado_id}/ — captura sueldo, días o finiquito.
+
+        get_or_create: la fila nace aquí, en la primera escritura. Es lo que
+        permite que la tabla liste a todo el mundo sin haber creado antes una
+        fila vacía por empleado.
+        """
+        empleado = Empleado.objects.filter(pk=pk).first()
+        if empleado is None:
+            return Response({'detail': 'Ese empleado no existe.'},
+                            status=status.HTTP_404_NOT_FOUND)
+        with transaction.atomic(using=get_db_alias()):
+            fila, _ = NominaEmpleado.objects.get_or_create(empleado=empleado)
+            serializer = NominaEmpleadoSerializer(fila, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        return Response(serializer.data)
+
+
+class VacacionDiaViewSet(SoloAdminMixin, viewsets.ModelViewSet):
+    """El calendario de vacaciones de la nómina. Un día, un empleado.
+
+    `?anio=2026` acota al año que se está mirando: el calendario enseña un año
+    entero y pedir el histórico completo crecería sin freno. Sin el parámetro
+    devuelve el año en curso, que es lo que abre la pantalla.
+
+    Sin paginar por el mismo motivo: un año son 365 días como mucho, y el
+    calendario los necesita TODOS a la vez para pintar los doce meses — una
+    página de 60 dejaría los meses del final en blanco.
+    """
+    queryset               = VacacionDia.objects.select_related('empleado')
+    serializer_class       = VacacionDiaSerializer
+    pagination_class       = None
+
+    def get_queryset(self):
+        # El año acota SOLO la lista. Aplicarlo tambien al detalle sacaba del
+        # queryset cualquier dia de otro año, asi que editarlo o quitarlo
+        # devolvia un 404: el id que la lista acaba de dar tiene que seguir
+        # siendo direccionable aunque cambie el año que se esta mirando.
+        if self.action != 'list':
+            return super().get_queryset()
+        anio = (self.request.query_params.get('anio') or '').strip()
+        try:
+            anio = int(anio) if anio else date.today().year
+        except ValueError:
+            anio = date.today().year
+        return super().get_queryset().filter(fecha__year=anio)
+
+    def create(self, request, *args, **kwargs):
+        """Da de alta un RANGO de días de una vez.
+
+        `desde`/`hasta` en vez de un día suelto porque unas vacaciones son una
+        semana, no una fecha: sin esto habría que hacer cinco peticiones desde la
+        pantalla y un choque a mitad dejaría media alta hecha. `hasta` es
+        opcional — sin él, es un solo día.
+
+        Atómico: si CUALQUIER día del rango ya está ocupado no se crea ninguno y
+        se dice cuál y de quién es. Media semana registrada y media no es peor
+        que no registrar nada, porque nadie se entera.
+        """
+        desde = parse_date((request.data.get('desde') or '').strip() or '')
+        hasta = parse_date((request.data.get('hasta') or '').strip() or '') or desde
+        if desde is None:
+            return Response({'detail': 'Falta la fecha de inicio.'}, status=400)
+        if hasta < desde:
+            return Response({'detail': 'La fecha final es anterior a la inicial.'}, status=400)
+        # Tope de seguridad: el rango llega del cliente y sin límite un
+        # "2026-01-01 a 2999-12-31" intentaría crear 350.000 filas.
+        dias = (hasta - desde).days + 1
+        if dias > 366:
+            return Response({'detail': 'El rango no puede pasar de un año.'}, status=400)
+
+        creados = []
+        with transaction.atomic(using=get_db_alias()):
+            for i in range(dias):
+                datos = {
+                    'fecha':    (desde + timedelta(days=i)).isoformat(),
+                    'empleado': request.data.get('empleado'),
+                    'nota':     request.data.get('nota', ''),
+                    'color':    request.data.get('color', ''),
+                }
+                serializer = self.get_serializer(data=datos)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                creados.append(serializer.data)
+        return Response(creados, status=status.HTTP_201_CREATED)

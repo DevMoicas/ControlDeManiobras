@@ -35,6 +35,8 @@ from .views import (
     CostoExtraViewSet,
     PendienteViewSet,
     ReporteViajeViewSet,
+    NominaViewSet,
+    VacacionDiaViewSet,
 )
  
 router = DefaultRouter()
@@ -58,6 +60,8 @@ router.register(r'operadores-terceros', OperadorTerceroViewSet, basename='operad
 router.register(r'dispositivos-confianza', DispositivoConfianzaViewSet, basename='dispositivos-confianza')
 router.register(r'folios', FolioViewSet, basename='folios')
 router.register(r'costos-extra', CostoExtraViewSet, basename='costos-extra')
+router.register(r'nomina', NominaViewSet, basename='nomina')
+router.register(r'vacaciones', VacacionDiaViewSet, basename='vacaciones')
 router.register(r'pendientes', PendienteViewSet, basename='pendientes')
 router.register(r'reportes-viaje', ReporteViajeViewSet, basename='reportes-viaje')
 router.register(r'torre-control', TorreControlViewSet, basename='torre-control')
