@@ -243,10 +243,20 @@
   --tabla-tope: 230px;
   border-radius: 6px;
   /* La barra VERTICAL sigue siendo del navegador, con grosor y tinta propios.
-     La horizontal se mueve arriba (BarraScrollTabla), así que aquí se anula:
-     abajo del todo, con ~30 columnas, quedaba lejos de los encabezados. */
-  scrollbar-width: thin;
-  scrollbar-color: #cec4b0 transparent;
+     La horizontal se mueve arriba (BarraScrollTabla), así que aquí se anula
+     con ::-webkit-scrollbar:horizontal: abajo del todo, con ~30 columnas,
+     quedaba lejos de los encabezados. */
+}
+/* scrollbar-width y scrollbar-color son para Firefox Y SOLO PARA FIREFOX: desde
+   Chromium 121, declarar cualquiera de las dos en un elemento hace que se
+   ignoren TODOS sus ::-webkit-scrollbar. Puestas sin condición resucitaban la
+   barra horizontal que la línea de abajo anula, y con dos barras del mismo
+   scroll en pantalla la rueda daba tirones. */
+@supports not selector(::-webkit-scrollbar) {
+  .maniobras-container .table-scroll-wrapper {
+    scrollbar-width: thin;
+    scrollbar-color: #cec4b0 transparent;
+  }
 }
 .maniobras-container .table-scroll-wrapper::-webkit-scrollbar { width: 12px; height: 12px; }
 /* Solo el eje horizontal. Firefox no distingue ejes (scrollbar-width los apaga

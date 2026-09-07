@@ -42,15 +42,23 @@ export default function BarraScrollTabla({ contenedorRef }) {
       if (desborda) espacio.style.width = `${caja.scrollWidth}px`;
     };
 
-    // Escribir scrollLeft dispara otro evento scroll: sin la guarda, barra y
-    // tabla se reescriben la una a la otra y el arrastre tirita. Se libera en
-    // el frame siguiente, cuando el evento rebotado ya pasó.
-    let sincronizando = false;
+    // Escribir scrollLeft dispara otro evento scroll: sin guarda, barra y tabla
+    // se reescriben la una a la otra y el scroll tirita. La guarda no puede ser
+    // temporal (un rAF): con la rueda, el desplazamiento lo lleva el compositor
+    // y el evento rebotado llega uno o varios frames tarde, cuando la ventana ya
+    // se cerró. Tampoco basta comparar posiciones: para cuando llega el rebote
+    // el origen ya avanzó más, y la diferencia parece movimiento legítimo.
+    //
+    // Lo que sí distingue un rebote es su VALOR: cada elemento recuerda lo
+    // último que se le escribió, y el evento que trae justo ese valor es el eco
+    // de esa escritura, no un gesto del usuario. Se ignora y la cadena muere ahí.
+    // El margen de 1px absorbe el redondeo a subpíxel de las pantallas con
+    // devicePixelRatio > 1, donde el destino no cae exacto donde se le manda.
+    const escrito = new WeakMap();
     const espejar = (desde, hacia) => () => {
-      if (sincronizando) return;
-      sincronizando = true;
+      if (Math.abs(desde.scrollLeft - escrito.get(desde)) < 1) return;
+      escrito.set(hacia, desde.scrollLeft);
       hacia.scrollLeft = desde.scrollLeft;
-      requestAnimationFrame(() => { sincronizando = false; });
     };
     const deCaja = espejar(caja, barra);
     const deBarra = espejar(barra, caja);

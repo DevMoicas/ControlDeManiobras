@@ -17,9 +17,15 @@
   background: var(--card-bg, #fff);
   border: 1px solid var(--sheet-edge, #e5e7eb);
   border-radius: 6px;
-  /* Misma tinta cálida que las barras nativas de Maniobras y Gastos, pero sin
-     `thin`: esta se arrastra a propósito, así que se le deja grosor cómodo. */
-  scrollbar-color: #cec4b0 transparent;
+}
+
+/* Misma tinta cálida que las barras nativas de Maniobras y Gastos, pero sin
+   `thin`: esta se arrastra a propósito, así que se le deja grosor cómodo.
+   Solo para Firefox: en Chromium 121+ esta declaración anula los
+   ::-webkit-scrollbar de más abajo, y la barra se queda en el grosor flotante
+   del sistema — justo lo que no se quiere en la barra que se arrastra. */
+@supports not selector(::-webkit-scrollbar) {
+  .bst { scrollbar-color: #cec4b0 transparent; }
 }
 
 .bst--visible { display: block; }
