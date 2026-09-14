@@ -128,6 +128,18 @@ class ReporteViajeTests(BaseReporte):
         r = self.crear(km_inicial=124500, km_final=125380)
         self.assertEqual(r.data['km_totales'], 880)
 
+    def test_el_kilometraje_admite_decimales(self):
+        """El odómetro marca décimas y el capturista las copia (migración 0068).
+        Antes eran PositiveIntegerField y un '124500.20' se rechazaba con 400."""
+        r = self.crear(km_inicial='124500.20', km_final='125380.50')
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(r.data['km_inicial'], '124500.20')
+        self.assertEqual(r.data['km_totales'], Decimal('880.30'))
+
+    def test_el_kilometraje_sigue_sin_admitir_negativos(self):
+        r = self.crear(km_inicial='-1')
+        self.assertEqual(r.status_code, 400, r.data)
+
     def test_km_totales_es_none_mientras_falte_un_operando(self):
         for campos in ({'km_inicial': 124500}, {'km_final': 125380}, {}):
             ReporteViaje.objects.all().delete()
@@ -495,7 +507,9 @@ class ReporteViajeCampanaOpcionalTests(BaseReporte):
 
         self.assertEqual(r.status_code, 200, r.data)
         self.assertEqual(r.data['coordinador'], 'Ali')          # lo de la primera tanda
-        self.assertEqual(r.data['km_inicial'], 124500)          # lo de la segunda
+        # Desde la 0068 los km son Decimal, y DRF los sirve como texto igual que
+        # el resto de los decimales del reporte (litros, precios).
+        self.assertEqual(r.data['km_inicial'], '124500.00')     # lo de la segunda
         self.assertEqual(len(r.data['cargas']), 1)              # lo de la tercera
         self.assertEqual(r.data['km_totales'], 880)             # y el calculado al día
 

@@ -244,13 +244,21 @@ def _sumar_peso(peso_raw):
     full con dos pesos). Devuelve la suma numérica de las partes. Un solo valor
     se devuelve como número; si nada es numérico devuelve '' (celda en blanco,
     sin error).
+
+    Los separadores de millares que escribe el capturista —coma "1,332" y
+    apóstrofo "1'332"— se quitan antes de convertir. Sin esto, float() fallaba y
+    el documento salía con el peso EN BLANCO, en silencio y sin error.
+
+    ponytail: la coma se trata siempre como millares, nunca como decimal. Es lo
+    que usa el capturista en kilos ("1,332" son 1332 kg). Si algún día hiciera
+    falta la coma decimal, el sitio es este.
     """
     partes = [p.strip() for p in re.split(r'[-/]', str(peso_raw)) if p.strip()]
     total = 0.0
     encontrado = False
     for p in partes:
         try:
-            total += float(p)
+            total += float(p.replace(',', '').replace("'", ''))
             encontrado = True
         except (ValueError, TypeError):
             continue

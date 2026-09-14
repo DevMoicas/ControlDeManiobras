@@ -1184,8 +1184,15 @@ class ReporteViaje(models.Model):
     unidad          = models.CharField(max_length=100, blank=True, default='')  # ←
     remolque_1      = models.CharField(max_length=255, blank=True, default='')  # ←
     remolque_2      = models.CharField(max_length=255, blank=True, default='')  # ←
-    km_inicial      = models.PositiveIntegerField(null=True, blank=True)
-    km_final        = models.PositiveIntegerField(null=True, blank=True)
+    # Decimal y no entero: el odómetro marca décimas y el capturista las copia
+    # tal cual. MinValueValidator conserva el "no negativo" que daba el
+    # PositiveIntegerField anterior (migración 0068).
+    km_inicial      = models.DecimalField(max_digits=10, decimal_places=2,
+                                          null=True, blank=True,
+                                          validators=[MinValueValidator(0)])
+    km_final        = models.DecimalField(max_digits=10, decimal_places=2,
+                                          null=True, blank=True,
+                                          validators=[MinValueValidator(0)])
     llegada_cliente = models.DateTimeField(null=True, blank=True)
     descarga        = models.DateTimeField(null=True, blank=True)
 
