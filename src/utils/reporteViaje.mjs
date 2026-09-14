@@ -101,7 +101,9 @@ export function kmTotales({ km_inicial, km_final } = {}) {
   const ini = numero(km_inicial);
   const fin = numero(km_final);
   if (ini === null || fin === null) return null;
-  return fin - ini;
+  // Redondeado como totalCarga: con décimas, 125380.5 - 124500.2 saldría
+  // 880.3000000000029 en pantalla.
+  return Math.round((fin - ini) * 100) / 100;
 }
 
 export function litrosDiesel({ cargas } = {}) {

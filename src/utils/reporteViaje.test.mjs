@@ -128,6 +128,11 @@ test("km totales es la resta", () => {
   assert.equal(kmTotales({ km_inicial: 124500, km_final: 125380 }), 880);
 });
 
+test("km totales admite decimales sin arrastrar basura de coma flotante", () => {
+  // La API los devuelve como texto: km son Decimal desde la migración 0068.
+  assert.equal(kmTotales({ km_inicial: "124500.20", km_final: "125380.50" }), 880.3);
+});
+
 test("km totales es null mientras falte un operando", () => {
   assert.equal(kmTotales({ km_inicial: 124500 }), null);
   assert.equal(kmTotales({ km_final: 125380 }), null);

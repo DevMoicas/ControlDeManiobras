@@ -470,12 +470,14 @@ export default function ReporteViajePage() {
             <RemolqueSelector currentValue={abierto.remolque_2}
                               onSelect={(v) => cambiar("remolque_2", v)} />
           </Campo>
+          {/* step="0.01" como el resto de los números del reporte: sin él, el
+              navegador da por inválidas las décimas que marca el odómetro. */}
           <Campo label="Km inicial">
-            <input type="number" min="0" value={abierto.km_inicial ?? ""}
+            <input type="number" step="0.01" min="0" value={abierto.km_inicial ?? ""}
                    onChange={(e) => cambiar("km_inicial", e.target.value)} />
           </Campo>
           <Campo label="Km final">
-            <input type="number" min="0" value={abierto.km_final ?? ""}
+            <input type="number" step="0.01" min="0" value={abierto.km_final ?? ""}
                    onChange={(e) => cambiar("km_final", e.target.value)} />
           </Campo>
           <Calculado label="Km totales" valor={mostrarNumero(km)} />
