@@ -79,7 +79,7 @@ class StatusCanceladoTests(TestCase):
 
     def test_el_filtro_encuentra_cancelado_dentro_de_un_combo(self):
         """El campo guarda hasta dos status: un filtro exacto dejaria fuera esta."""
-        Maniobra.objects.create(solicita='A', status='activo,cancelado')
+        Maniobra.objects.create(solicita='A', status='cancelado,activo')
 
         r = self.cliente.get(URL, {'status': 'cancelado'})
 
@@ -88,7 +88,7 @@ class StatusCanceladoTests(TestCase):
     def test_los_combos_con_cancelado_son_choices_validos(self):
         """Sin el choice, guardar devuelve un 400 que en pantalla solo se ve como
         "no se pudo guardar", sin decir cual de los dos status sobra."""
-        for combo in ('por_salir,cancelado', 'activo,cancelado',
+        for combo in ('cancelado,por_salir', 'cancelado,activo',
                       'quemada,cancelado', 'cancelado,pendiente'):
             with self.subTest(combo=combo):
                 m = Maniobra.objects.create(solicita='PRUEBA')
@@ -105,9 +105,9 @@ class StatusCanceladoTests(TestCase):
         self.assertEqual(r.status_code, 400, r.data)
 
     def test_el_combo_mas_largo_cabe_en_la_columna(self):
-        """max_length=20. 'por_salir,cancelado' y 'cancelado,pendiente' miden 19:
+        """max_length=20. 'cancelado,por_salir' y 'pendiente,por_salir' miden 19:
         si algun dia se anade un status de nombre mas largo, esto lo avisa."""
-        for combo in ('por_salir,cancelado', 'cancelado,pendiente'):
+        for combo in ('cancelado,por_salir', 'pendiente,por_salir'):
             self.assertLessEqual(len(combo), 20)
 
     def test_cancelado_no_entra_en_el_resumen_del_panel(self):

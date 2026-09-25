@@ -53,8 +53,8 @@ class ResumenStatusTests(TestCase):
         self.assertEqual(self.resumen(), {'activo': 2, 'pendiente': 1})
 
     def test_un_combo_cuenta_en_los_dos_status(self):
-        """El corazón: "activo,pendiente" es UNA maniobra que está en los dos."""
-        Maniobra.objects.create(solicita='a', status='activo,pendiente')
+        """El corazón: "pendiente,activo" es UNA maniobra que está en los dos."""
+        Maniobra.objects.create(solicita='a', status='pendiente,activo')
         self.assertEqual(self.resumen(), {'activo': 1, 'pendiente': 1})
 
     def test_cuenta_el_status_que_va_en_segundo_lugar(self):

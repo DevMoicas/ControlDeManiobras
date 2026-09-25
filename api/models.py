@@ -191,17 +191,19 @@ class Maniobra(models.Model):
 
     # Una maniobra puede tener hasta 2 status a la vez. Se guardan en este mismo
     # campo separados por coma, SIEMPRE en orden de prioridad descendente:
-    #     por_salir > activo > quemada > cancelado > pendiente
+    #     quemada > cancelado > pendiente > por_salir > activo
     # (mismo orden que PRIORITY_ORDER en el frontend, src/config/statusConfig.js).
+    # Jerarquía cambiada el 2026-09-25 a pedido del usuario: antes por_salir (Lázaro)
+    # ganaba a todo; ahora QUEMADA/EN FALSO es la que pinta sobre las demás.
     #
     # Ese orden canónico hace dos cosas gratis:
     #   1. El primer segmento antes de la coma es siempre el color que gana en la fila.
-    #   2. Un combo mal ordenado ("quemada,activo") no está en la lista → DRF lo
+    #   2. Un combo mal ordenado ("pendiente,cancelado") no está en la lista → DRF lo
     #      rechaza con 400 automáticamente, sin escribir validación.
     #
-    # Los combos más largos, "por_salir,cancelado" y "cancelado,pendiente", miden 19
-    # caracteres: caben en el max_length=20 que ya tenía la columna, así que añadir
-    # CANCELADO tampoco necesita tocar el esquema.
+    # Los combos más largos, "cancelado,por_salir" y "pendiente,por_salir", miden 19
+    # caracteres: caben en el max_length=20 que ya tenía la columna, así que cambiar
+    # la jerarquía tampoco necesita tocar el esquema.
     STATUS_CHOICES = [
         ("activo",    "Activo / En viaje"),
         ("pendiente", "Pendiente"),
@@ -217,16 +219,31 @@ class Maniobra(models.Model):
         # saltandose el front. En la tabla pinta la fila del color por defecto.
         ("entregado", "Entregado"),
         # Combinaciones de 2 (orden canónico: mayor prioridad primero)
-        ("por_salir,activo",    "Por salir + Activo"),
-        ("por_salir,quemada",   "Por salir + Quemada"),
-        ("por_salir,cancelado", "Por salir + Cancelado"),
-        ("por_salir,pendiente", "Por salir + Pendiente"),
-        ("activo,quemada",      "Activo + Quemada"),
-        ("activo,cancelado",    "Activo + Cancelado"),
-        ("activo,pendiente",    "Activo + Pendiente"),
         ("quemada,cancelado",   "Quemada + Cancelado"),
         ("quemada,pendiente",   "Quemada + Pendiente"),
+        ("quemada,por_salir",   "Quemada + Por salir"),
+        ("quemada,activo",      "Quemada + Activo"),
         ("cancelado,pendiente", "Cancelado + Pendiente"),
+        ("cancelado,por_salir", "Cancelado + Por salir"),
+        ("cancelado,activo",    "Cancelado + Activo"),
+        ("pendiente,por_salir", "Pendiente + Por salir"),
+        ("pendiente,activo",    "Pendiente + Activo"),
+        ("por_salir,activo",    "Por salir + Activo"),
+        # ponytail: los 6 de abajo son el orden canónico ANTERIOR al cambio de
+        # jerarquía del 2026-09-25. Se quedan por dos razones, las dos temporales:
+        #   1. El frontend en producción sigue mandando este orden hasta que se
+        #      despliegue el suyo — sin estos, guardar un combo daría 400.
+        #   2. Las filas ya guardadas en `maniobras` los tienen, y así siguen
+        #      siendo choices válidos si algo revalida el objeto completo.
+        # Se pueden borrar cuando el frontend nuevo esté publicado y las filas
+        # viejas se hayan reguardado. Leerlas nunca dependió del orden:
+        # getPredominantStatusId recalcula la prioridad venga como venga.
+        ("por_salir,quemada",   "Por salir + Quemada (orden anterior)"),
+        ("por_salir,cancelado", "Por salir + Cancelado (orden anterior)"),
+        ("por_salir,pendiente", "Por salir + Pendiente (orden anterior)"),
+        ("activo,quemada",      "Activo + Quemada (orden anterior)"),
+        ("activo,cancelado",    "Activo + Cancelado (orden anterior)"),
+        ("activo,pendiente",    "Activo + Pendiente (orden anterior)"),
     ]
     status = models.CharField(
         max_length=20,
