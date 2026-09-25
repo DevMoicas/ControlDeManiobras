@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* Con cualquier modal abierto, congelar el scroll del fondo (el scroller real es el body).
+   ponytail: scroll-lock por CSS :has(); si hay que soportar navegadores sin :has(), pasar a un hook que ponga overflow:hidden en body */
+body:has(.modal-overlay, .cpm-overlay, .bsm-overlay, .im-overlay, .ml-overlay, .fm-lightbox) {
+  overflow: hidden;
+}
+
+/* Evita que el scroll interno del modal se encadene al fondo al llegar al tope */
+.modal-grid, .cpm-body, .bsm-body, .ml-modal-body {
+  overscroll-behavior: contain;
+}
+
+/* Entrada suave de tarjetas del home */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Login — yard board: franja de patio + LED de estado */
+@keyframes lane-sweep {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+.lane-stripe { animation: lane-sweep 6s linear infinite; }
+
+@keyframes status-blink {
+  0%, 70%   { opacity: 1; }
+  85%, 100% { opacity: 0.25; }
+}
+.status-led { animation: status-blink 2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lane-stripe { animation: none; transform: translateX(0); }
+  .status-led  { animation: none; }
+}

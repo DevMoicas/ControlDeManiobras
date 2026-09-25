@@ -1,0 +1,138 @@
+/* Confirmación — hermana de la pila de avisos (components/Alertas).
+   Mismos tokens, mismo lomo de 4px, mismas tres funciones de tipo: Oswald para
+   la acción, Inter para la consecuencia, IBM Plex Mono para el registro.
+   Las fuentes ya vienen de index.html. */
+
+.cf-dialogo {
+  /* El <dialog> nativo trae márgenes de UA y un borde: se anulan y se centra a
+     mano, porque `margin: auto` con position:fixed es lo que lo centra en los
+     dos ejes dentro del top layer. */
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  max-width: min(420px, calc(100vw - 32px));
+  width: 100%;
+  overflow: visible;
+}
+
+.cf-dialogo::backdrop {
+  /* El mismo velo que los modales de página (.modal-overlay del ERP). */
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.cf-cuerpo {
+  --cf-tinta:       var(--text, #1f2937);
+  --cf-tinta-suave: var(--text-light, #6b7280);
+  --cf-borde:       #e6ecf5;
+  --cf-primario:    var(--primary, #2563eb);
+  --cf-peligro:     #dc2626;
+  /* El acento manda en el lomo y en el botón que confirma. */
+  --cf-acento:      var(--cf-primario);
+
+  padding: 18px 20px 16px;
+  background: #fff;
+  border: 1px solid var(--cf-borde);
+  border-left: 4px solid var(--cf-acento);
+  border-radius: 12px;
+  box-shadow:
+    0 18px 48px rgba(16, 40, 80, 0.18),
+    0 4px 12px rgba(16, 40, 80, 0.08);
+}
+
+.cf-cuerpo--peligro { --cf-acento: var(--cf-peligro); }
+
+/* La acción, no una pregunta. Mismo tratamiento que los títulos de panel. */
+.cf-titulo {
+  margin: 0 0 7px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cf-acento);
+}
+
+.cf-mensaje {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--cf-tinta);
+}
+
+/* Sobre qué registro se está actuando. */
+.cf-dato {
+  margin: 9px 0 0;
+  padding: 6px 9px;
+  background: #f8fafc;
+  border-radius: 7px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  font-size: 0.8rem;
+  color: var(--cf-tinta-suave);
+  word-break: break-word;
+}
+
+.cf-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.cf-btn {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.cf-btn:focus-visible {
+  outline: 2px solid var(--cf-acento);
+  outline-offset: 2px;
+}
+
+.cf-btn--cancelar {
+  background: #fff;
+  border-color: var(--cf-borde);
+  color: var(--cf-tinta);
+}
+.cf-btn--cancelar:hover { background: #f1f5f9; }
+
+.cf-btn--confirmar {
+  background: var(--cf-acento);
+  color: #fff;
+}
+.cf-btn--confirmar:hover { filter: brightness(0.93); }
+
+/* Entrada: sube y aparece, como el contenido de los modales. @starting-style es
+   el equivalente nativo del `initial` de motion; donde no exista, el diálogo
+   simplemente sale ya puesto, que es un degradado aceptable. */
+@media (prefers-reduced-motion: no-preference) {
+  .cf-dialogo[open] {
+    transition: opacity 0.16s ease-out, transform 0.16s ease-out;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @starting-style {
+    .cf-dialogo[open] {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+  .cf-dialogo[open]::backdrop {
+    transition: opacity 0.16s ease-out;
+    opacity: 1;
+  }
+  @starting-style {
+    .cf-dialogo[open]::backdrop { opacity: 0; }
+  }
+}

@@ -1,0 +1,402 @@
+/* Bitácora de Sueño — mismo diseño de modal que Movimientos Locales y Catálogos:
+   tarjeta con borde suave y radio 16, lomo azul, título en Oswald, etiquetas en
+   IBM Plex Mono.
+
+   El TAMAÑO y la disposición no se tocan: 640px de ancho, 90vh de alto y las
+   rejillas internas se conservan tal cual.
+
+   La animación de entrada/salida la maneja Motion (motion/react) en el JSX, no
+   CSS. Ver src/animations/modalMotion.js. */
+.bsm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.bsm-modal {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e6ecf5;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(16, 40, 80, 0.24);
+}
+/* Lomo izquierdo azul — la firma de Movimientos Locales y Documentos de Viaje */
+.bsm-modal::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--primary, #2563eb);
+}
+
+/* ── Cabecera ─────────────────────────────────────────────────────────────── */
+.bsm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid #eef2f7;
+  flex-shrink: 0;
+}
+.bsm-titulo {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+  color: var(--text, #1f2937);
+  margin: 0;
+}
+.bsm-cerrar {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-light, #6b7280);
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.bsm-cerrar:hover {
+  background: #f7f9fc;
+  color: var(--text, #1f2937);
+  transform: none; /* anula el scale(1.05) del button global de App.css */
+}
+.bsm-cerrar:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+/* ── Cuerpo ───────────────────────────────────────────────────────────────── */
+.bsm-body {
+  padding: 18px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bsm-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bsm-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-light, #6b7280);
+}
+.bsm-req { color: #dc2626; }
+.bsm-sub-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-light, #6b7280);
+  font-weight: 500;
+}
+
+/* Rejillas internas — sin cambios */
+.bsm-fila-dos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.bsm-fila-selectores {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+.bsm-selector-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bsm-input {
+  font-family: 'Inter', sans-serif;
+  padding: 7px 10px;
+  border: 1px solid #e6ecf5;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: var(--text, #1f2937);
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+.bsm-input:focus {
+  outline: none;
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+.bsm-input--readonly {
+  background: #f7f9fc;
+  color: var(--text-light, #6b7280);
+  cursor: default;
+}
+.bsm-datepicker {
+  width: 100% !important;
+}
+
+.bsm-hint {
+  font-size: 0.75rem;
+  color: var(--text-light, #6b7280);
+  margin: 0;
+}
+
+/* ── Folio + Empate ───────────────────────────────────────────────────────── */
+/* Mismo patrón visual que la Bitácora de Gastos: el botón va pegado al selector
+   porque el empate es una propiedad de la elección de folio, no un campo más. */
+.bsm-folio-fila {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.bsm-folio-selector {
+  flex: 1;
+  min-width: 0;
+}
+
+.bsm-btn-empate {
+  flex-shrink: 0;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0 16px;
+  border: 1px dashed var(--primary, #2563eb);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--primary, #2563eb);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-style 0.15s;
+}
+.bsm-btn-empate:hover {
+  background: #eff6ff;
+}
+.bsm-btn-empate--activo {
+  border-style: solid;
+  background: var(--primary, #2563eb);
+  color: #fff;
+}
+.bsm-btn-empate--activo:hover {
+  background: #1d4ed8;
+}
+.bsm-btn-empate:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.bsm-campo--empate {
+  border-left: 3px solid var(--primary, #2563eb);
+  padding-left: 12px;
+}
+
+.bsm-error {
+  color: #dc2626;
+  font-size: 0.82rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+}
+.bsm-exito {
+  color: #15803d;
+  font-size: 0.82rem;
+  background: #ecfdf3;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+}
+
+/* ── Pie ──────────────────────────────────────────────────────────────────── */
+.bsm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid #eef2f7;
+  flex-shrink: 0;
+}
+
+/* Cancelar en rojo, igual que en toda la app: es el color con el que el equipo
+   ya identifica la acción de descartar. */
+.bsm-btn-cancelar {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.bsm-btn-cancelar:hover {
+  background: #dc2626;
+  color: #fff;
+  transform: none;
+}
+
+.bsm-btn-generar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary, #2563eb);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.bsm-btn-generar:hover:not(:disabled) {
+  background: #1d4ed8;
+  color: #fff;
+  transform: none;
+}
+.bsm-btn-generar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Verde: es el color con el que la gente reconoce Excel. Se mantiene, solo
+   adopta la tipografía del sistema. */
+.bsm-btn-excel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #16a34a;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.bsm-btn-excel:hover:not(:disabled) {
+  background: #15803d;
+  color: #fff;
+  transform: none;
+}
+.bsm-btn-excel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bsm-btn-cancelar:focus-visible,
+.bsm-btn-generar:focus-visible,
+.bsm-btn-excel:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.bsm-spin {
+  animation: spin 0.8s linear infinite;
+}
+
+/* ── Movimiento reducido ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .bsm-cerrar,
+  .bsm-btn-empate,
+  .bsm-btn-cancelar,
+  .bsm-btn-generar,
+  .bsm-btn-excel { transition: none; }
+}
+
+/* ── Empate de varios folios ──────────────────────────────────────────────── */
+/* Cada folio del empate lleva su propio botón de quitar al lado, y el de añadir
+   desaparece al llegar al tope (MAX_FOLIOS, el principal incluido). */
+.bsm-empate-fila {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.bsm-empate-selector {
+  flex: 1;
+  min-width: 0;
+}
+
+.bsm-btn-quitar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-light, #6b7280);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.bsm-btn-quitar:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+.bsm-btn-quitar:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.bsm-btn-anadir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  margin-bottom: 4px;
+  border: 1px dashed var(--primary, #2563eb);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--primary, #2563eb);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.bsm-btn-anadir:hover {
+  background: #eff6ff;
+}
+.bsm-btn-anadir:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}

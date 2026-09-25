@@ -1,0 +1,351 @@
+/* CTA Porte Terceros — mismo diseño de modal que Movimientos Locales y Catálogos: tarjeta
+   con borde suave y radio 16, lomo azul, título en Oswald, etiquetas en IBM Plex
+   Mono.
+
+   El TAMAÑO y la disposición no se tocan: 700px de ancho, 92vh de alto y las
+   rejillas internas (dos, tres y cuatro columnas) se conservan tal cual.
+
+   OJO: CtaPortModal.css declara estas mismas clases .cpm-*. Ambas hojas
+   son globales, así que cualquier cambio aquí debe replicarse allí o una pisará a
+   la otra según el orden del bundle.
+
+   La animación de entrada/salida la maneja Motion (motion/react) en el JSX, no
+   CSS. Ver src/animations/modalMotion.js. */
+.cpm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.cpm-modal {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e6ecf5;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 700px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(16, 40, 80, 0.24);
+}
+/* Lomo izquierdo azul — la firma de Movimientos Locales y Documentos de Viaje */
+.cpm-modal::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--primary, #2563eb);
+}
+
+/* ── Cabecera ─────────────────────────────────────────────────────────────── */
+.cpm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid #eef2f7;
+  flex-shrink: 0;
+}
+.cpm-titulo {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+  color: var(--text, #1f2937);
+  margin: 0;
+}
+.cpm-cerrar {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-light, #6b7280);
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.cpm-cerrar:hover {
+  background: #f7f9fc;
+  color: var(--text, #1f2937);
+  transform: none; /* anula el scale(1.05) del button global de App.css */
+}
+.cpm-cerrar:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+/* ── Cuerpo ───────────────────────────────────────────────────────────────── */
+.cpm-body {
+  padding: 18px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cpm-seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom: 1px solid #eef2f7;
+  padding-bottom: 16px;
+}
+.cpm-seccion:last-of-type { border-bottom: none; }
+
+.cpm-seccion-titulo {
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary, #2563eb);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.cpm-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cpm-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-light, #6b7280);
+}
+.cpm-req { color: #dc2626; }
+
+/* Rejillas internas — sin cambios */
+.cpm-fila-dos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.cpm-fila-tres {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+.cpm-grid-cuatro {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.cpm-input {
+  font-family: 'Inter', sans-serif;
+  padding: 7px 10px;
+  border: 1px solid #e6ecf5;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: var(--text, #1f2937);
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+.cpm-input:focus {
+  outline: none;
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+.cpm-input--readonly {
+  background: #f7f9fc;
+  color: var(--text-light, #6b7280);
+  cursor: default;
+}
+
+.cpm-textarea {
+  font-family: 'Inter', sans-serif;
+  padding: 8px 10px;
+  border: 1px solid #e6ecf5;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: var(--text, #1f2937);
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+.cpm-textarea:focus {
+  outline: none;
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+.cpm-cliente-info {
+  background: #f8faff;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cpm-cliente-dato {
+  font-size: 0.8rem;
+  color: var(--text, #1f2937);
+  margin: 0;
+}
+
+.cpm-hint {
+  font-size: 0.75rem;
+  color: var(--text-light, #6b7280);
+  margin: 0;
+}
+.cpm-hint code {
+  font-family: 'IBM Plex Mono', monospace;
+  background: #f7f9fc;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.cpm-error {
+  color: #dc2626;
+  font-size: 0.82rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+}
+.cpm-exito {
+  color: #15803d;
+  font-size: 0.82rem;
+  background: #ecfdf3;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+}
+
+/* ── Pie ──────────────────────────────────────────────────────────────────── */
+.cpm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid #eef2f7;
+  flex-shrink: 0;
+}
+
+/* Cancelar en rojo, igual que en toda la app: es el color con el que el equipo
+   ya identifica la acción de descartar. */
+.cpm-btn-cancelar {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cpm-btn-cancelar:hover {
+  background: #dc2626;
+  color: #fff;
+  transform: none;
+}
+
+.cpm-btn-generar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary, #2563eb);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.cpm-btn-generar:hover:not(:disabled) {
+  background: #1d4ed8;
+  color: #fff;
+  transform: none;
+}
+.cpm-btn-generar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Verde: es el color con el que la gente reconoce Excel. Se mantiene, solo
+   adopta la tipografía del sistema. */
+.cpm-btn-excel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #16a34a;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.cpm-btn-excel:hover:not(:disabled) {
+  background: #15803d;
+  color: #fff;
+  transform: none;
+}
+.cpm-btn-excel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cpm-btn-cancelar:focus-visible,
+.cpm-btn-generar:focus-visible,
+.cpm-btn-excel:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+@keyframes cpm-spin {
+  to { transform: rotate(360deg); }
+}
+.cpm-spin {
+  animation: cpm-spin 0.8s linear infinite;
+}
+
+/* Input numérico para Total de Gastos */
+.cpm-input--money {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #15803d;
+}
+.cpm-input--money:focus {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.16);
+}
+
+/* ── Movimiento reducido ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .cpm-cerrar,
+  .cpm-btn-cancelar,
+  .cpm-btn-generar,
+  .cpm-btn-excel { transition: none; }
+}

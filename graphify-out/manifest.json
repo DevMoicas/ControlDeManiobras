@@ -1,0 +1,287 @@
+{
+  "AlterTractosSepararAnioUnidad.sql": {
+    "mtime": 1776813769.7220528,
+    "ast_hash": "5d92d32f1aef39657fc7d269339c5ae3",
+    "semantic_hash": "5d92d32f1aef39657fc7d269339c5ae3"
+  },
+  "InsertChoferes.sql": {
+    "mtime": 1776527843.1361725,
+    "ast_hash": "446d9a7563ed675ff797df6e70eff5d3",
+    "semantic_hash": "446d9a7563ed675ff797df6e70eff5d3"
+  },
+  "InsertEmpleados.sql": {
+    "mtime": 1779466643.1132245,
+    "ast_hash": "31a9c95b57e034f6325498e4bf139310",
+    "semantic_hash": "31a9c95b57e034f6325498e4bf139310"
+  },
+  "InsertGastos.sql": {
+    "mtime": 1777912531.7656105,
+    "ast_hash": "168d659a23cd78024de622725435959f",
+    "semantic_hash": "168d659a23cd78024de622725435959f"
+  },
+  "InsertManiobras.sql": {
+    "mtime": 1776527843.1397882,
+    "ast_hash": "43133ee30cf2a87ad3d263c0f56828cc",
+    "semantic_hash": "43133ee30cf2a87ad3d263c0f56828cc"
+  },
+  "InsertRemolques.sql": {
+    "mtime": 1776527843.1397882,
+    "ast_hash": "6ecd6d82cd9983f2e17281011b65ddb3",
+    "semantic_hash": "6ecd6d82cd9983f2e17281011b65ddb3"
+  },
+  "InsertTractos.sql": {
+    "mtime": 1776813769.7220528,
+    "ast_hash": "e8eddf2c323926ca1e98ce12853006d0",
+    "semantic_hash": "e8eddf2c323926ca1e98ce12853006d0"
+  },
+  "InsertVacios.sql": {
+    "mtime": 1778386276.2792876,
+    "ast_hash": "a6964c102024b03b411b40b2dc699b60",
+    "semantic_hash": "a6964c102024b03b411b40b2dc699b60"
+  },
+  "package.json": {
+    "mtime": 1782154236.975045,
+    "ast_hash": "b15f976fce3f8fe9b7ab571061db06b4",
+    "semantic_hash": "b15f976fce3f8fe9b7ab571061db06b4"
+  },
+  "postcss.config.js": {
+    "mtime": 1776093157.4259443,
+    "ast_hash": "762a94d1749c8e97eebf3f94102e8eb2",
+    "semantic_hash": "762a94d1749c8e97eebf3f94102e8eb2"
+  },
+  "public/Manifest.json": {
+    "mtime": 1776527843.1439278,
+    "ast_hash": "6f2c7cc063463f7446e996430009f409",
+    "semantic_hash": "6f2c7cc063463f7446e996430009f409"
+  },
+  "schema.sql": {
+    "mtime": 1779467705.3956196,
+    "ast_hash": "c88bb0eeb2da5fd5a2c62ef9d8eae02c",
+    "semantic_hash": "c88bb0eeb2da5fd5a2c62ef9d8eae02c"
+  },
+  "src/App.js": {
+    "mtime": 1782322089.9476461,
+    "ast_hash": "6f1369fad8e994231679ba0b1e7fb76d",
+    "semantic_hash": "6f1369fad8e994231679ba0b1e7fb76d"
+  },
+  "src/Login/Login.jsx": {
+    "mtime": 1782314794.1209369,
+    "ast_hash": "18fb24ac5ea3f92b636d822c93a3e703",
+    "semantic_hash": "18fb24ac5ea3f92b636d822c93a3e703"
+  },
+  "src/ProtectedRoute.js": {
+    "mtime": 1777133175.4375584,
+    "ast_hash": "1d0e196fc9700df9b75678d0f410b884",
+    "semantic_hash": "1d0e196fc9700df9b75678d0f410b884"
+  },
+  "src/ReportWebVitals.js": {
+    "mtime": 1776527843.1480625,
+    "ast_hash": "7b53dd6884cebc3c01f67ae53965b296",
+    "semantic_hash": "7b53dd6884cebc3c01f67ae53965b296"
+  },
+  "src/api/apiClient.js": {
+    "mtime": 1782432428.5090368,
+    "ast_hash": "aad2468069de98b225b2921e134d793b",
+    "semantic_hash": "aad2468069de98b225b2921e134d793b"
+  },
+  "src/components/BitacoraSuenoModal/BitacoraSuenoModal.jsx": {
+    "mtime": 1782455685.6551442,
+    "ast_hash": "55cd56e26fd90a8452bcd4ae88ba7f4f",
+    "semantic_hash": "55cd56e26fd90a8452bcd4ae88ba7f4f"
+  },
+  "src/components/ClienteSelector/ClienteSelector.jsx": {
+    "mtime": 1782432520.2682211,
+    "ast_hash": "4b61dddd45f68e7b486cfb5745b96376",
+    "semantic_hash": "4b61dddd45f68e7b486cfb5745b96376"
+  },
+  "src/components/CtaPortModal/CtaPortModal.jsx": {
+    "mtime": 1782455687.507393,
+    "ast_hash": "47a6ad627f4bcf2786558995c1163199",
+    "semantic_hash": "47a6ad627f4bcf2786558995c1163199"
+  },
+  "src/components/FolioSelector/FolioSelector.jsx": {
+    "mtime": 1782432502.8819215,
+    "ast_hash": "c3f58b16f61cdf06febdf3aff05e986d",
+    "semantic_hash": "c3f58b16f61cdf06febdf3aff05e986d"
+  },
+  "src/components/FotoModal/FotoModal.jsx": {
+    "mtime": 1782404543.931389,
+    "ast_hash": "4105175005d667da1f101de91b1ed5c9",
+    "semantic_hash": "4105175005d667da1f101de91b1ed5c9"
+  },
+  "src/components/OperadorSelector/OperadorSelector.jsx": {
+    "mtime": 1782161532.6505663,
+    "ast_hash": "d4f7891e22a40d32b8e67ec78cd54ee1",
+    "semantic_hash": "d4f7891e22a40d32b8e67ec78cd54ee1"
+  },
+  "src/components/PatioSelector/PatioSelector.jsx": {
+    "mtime": 1782161547.695501,
+    "ast_hash": "9d7c4c59e527b686a0c4d1cad909de58",
+    "semantic_hash": "9d7c4c59e527b686a0c4d1cad909de58"
+  },
+  "src/components/PlacasSelector/PlacasSelector.jsx": {
+    "mtime": 1782432461.190716,
+    "ast_hash": "db4425cccff8b604d65fd6cd5f5d3dff",
+    "semantic_hash": "db4425cccff8b604d65fd6cd5f5d3dff"
+  },
+  "src/components/ProtectedRoute/ProtectedRoute.jsx": {
+    "mtime": 1776725040.0505352,
+    "ast_hash": "57dd2175cac573ddc2fa874301b5a4f5",
+    "semantic_hash": "57dd2175cac573ddc2fa874301b5a4f5"
+  },
+  "src/components/RemolqueSelector/RemolqueSelector.jsx": {
+    "mtime": 1782432464.7033255,
+    "ast_hash": "8b416e512af891c2aa4192e07892163e",
+    "semantic_hash": "8b416e512af891c2aa4192e07892163e"
+  },
+  "src/components/SearchBar/SearchBar.jsx": {
+    "mtime": 1777133175.4390953,
+    "ast_hash": "b9124deb98a23c5da0c4f0b04921b435",
+    "semantic_hash": "b9124deb98a23c5da0c4f0b04921b435"
+  },
+  "src/components/StatusBadge/StatusBadge.jsx": {
+    "mtime": 1776744322.2677739,
+    "ast_hash": "6951448ffd34f623ce32e71761327bf6",
+    "semantic_hash": "6951448ffd34f623ce32e71761327bf6"
+  },
+  "src/components/StatusSelector/StatusSelector.jsx": {
+    "mtime": 1776745033.026406,
+    "ast_hash": "a8d47115983e1c1277e19212aeb79b59",
+    "semantic_hash": "a8d47115983e1c1277e19212aeb79b59"
+  },
+  "src/components/VacioStatusSelector/VacioStatusSelector.jsx": {
+    "mtime": 1782161542.6073997,
+    "ast_hash": "f654aff0578ebd56295849ddc10ec54b",
+    "semantic_hash": "f654aff0578ebd56295849ddc10ec54b"
+  },
+  "src/config/statusConfig.js": {
+    "mtime": 1782403018.4954703,
+    "ast_hash": "bdc5924c8c7a857a23a755566f5e6b91",
+    "semantic_hash": "bdc5924c8c7a857a23a755566f5e6b91"
+  },
+  "src/context/AuthContext.jsx": {
+    "mtime": 1782253396.038698,
+    "ast_hash": "c435ae22d8583ac2f57849e0bff1eda4",
+    "semantic_hash": "c435ae22d8583ac2f57849e0bff1eda4"
+  },
+  "src/hooks/useGastos.js": {
+    "mtime": 1782259147.7408438,
+    "ast_hash": "3f191deb80dcef8363ec7778bbafdb09",
+    "semantic_hash": "3f191deb80dcef8363ec7778bbafdb09"
+  },
+  "src/hooks/useManiobras.js": {
+    "mtime": 1779471101.1804996,
+    "ast_hash": "06f443911800909f533f3a7a25cb2349",
+    "semantic_hash": "06f443911800909f533f3a7a25cb2349"
+  },
+  "src/hooks/useNoEco.js": {
+    "mtime": 1776527942.07645,
+    "ast_hash": "8b6bb1b740a9c17826fef53bc94676a6",
+    "semantic_hash": "8b6bb1b740a9c17826fef53bc94676a6"
+  },
+  "src/hooks/useStatusUpdate.js": {
+    "mtime": 1776747477.3854268,
+    "ast_hash": "c5af83ac5b27ef27e6e99fa7e7bd82fd",
+    "semantic_hash": "c5af83ac5b27ef27e6e99fa7e7bd82fd"
+  },
+  "src/hooks/useVacioStatusUpdate.js": {
+    "mtime": 1782154544.1665716,
+    "ast_hash": "966b5ed53ee9c1de427a793a8764fe6d",
+    "semantic_hash": "966b5ed53ee9c1de427a793a8764fe6d"
+  },
+  "src/hooks/useVacios.js": {
+    "mtime": 1778383446.1186783,
+    "ast_hash": "61b455e43ea128229b7f371ad1de0aa2",
+    "semantic_hash": "61b455e43ea128229b7f371ad1de0aa2"
+  },
+  "src/index.js": {
+    "mtime": 1776727490.4545949,
+    "ast_hash": "c66b59f868fad740b62d4334d25e4c11",
+    "semantic_hash": "c66b59f868fad740b62d4334d25e4c11"
+  },
+  "src/pages/AdminVaciosPage.jsx": {
+    "mtime": 1778359188.966271,
+    "ast_hash": "c286df3cb396f4b2210cef6bfc1fcb20",
+    "semantic_hash": "c286df3cb396f4b2210cef6bfc1fcb20"
+  },
+  "src/pages/AdministracionGastos.jsx": {
+    "mtime": 1778380451.30119,
+    "ast_hash": "89e069282dc7c7d1a2b1f4620bbece45",
+    "semantic_hash": "89e069282dc7c7d1a2b1f4620bbece45"
+  },
+  "src/pages/AdministracionNoEco.jsx": {
+    "mtime": 1782324856.1325414,
+    "ast_hash": "e55a9c765dcebe9867d32e4f38f9b032",
+    "semantic_hash": "e55a9c765dcebe9867d32e4f38f9b032"
+  },
+  "src/pages/CatalogosPage.jsx": {
+    "mtime": 1782432474.134631,
+    "ast_hash": "b4aa3f6c6182228f605199a67d1ed800",
+    "semantic_hash": "b4aa3f6c6182228f605199a67d1ed800"
+  },
+  "src/pages/DocumentosViajePage.jsx": {
+    "mtime": 1782454650.6950057,
+    "ast_hash": "a3559f20e773bf7c2dcbddf4d02eeeda",
+    "semantic_hash": "a3559f20e773bf7c2dcbddf4d02eeeda"
+  },
+  "src/pages/GastosPage.jsx": {
+    "mtime": 1782324592.786171,
+    "ast_hash": "88cffd9f7235e93748fa2b4f510fa3fa",
+    "semantic_hash": "88cffd9f7235e93748fa2b4f510fa3fa"
+  },
+  "src/pages/ManiobrasPage.jsx": {
+    "mtime": 1782432448.6464655,
+    "ast_hash": "304eb86700e712ce49a731d66e5b8eef",
+    "semantic_hash": "304eb86700e712ce49a731d66e5b8eef"
+  },
+  "src/pages/PerfilPage.jsx": {
+    "mtime": 1780432948.3694763,
+    "ast_hash": "0c7ccdd283f4fb9965afb1dd5a4f48f2",
+    "semantic_hash": "0c7ccdd283f4fb9965afb1dd5a4f48f2"
+  },
+  "src/pages/VaciosPage.jsx": {
+    "mtime": 1782404602.2856908,
+    "ast_hash": "f091a6c54add7beda0f16a34ce7fd960",
+    "semantic_hash": "f091a6c54add7beda0f16a34ce7fd960"
+  },
+  "tailwind.config.js": {
+    "mtime": 1776093157.4274883,
+    "ast_hash": "4b757fe4570d340309ba8a38eeec6168",
+    "semantic_hash": "4b757fe4570d340309ba8a38eeec6168"
+  },
+  "vite.config.js": {
+    "mtime": 1782169546.360955,
+    "ast_hash": "948cce69e49d11fe6eccf77e9909a17d",
+    "semantic_hash": "948cce69e49d11fe6eccf77e9909a17d"
+  },
+  "public/index.html": {
+    "mtime": 1782280599.210641,
+    "ast_hash": "55fdc6f39399262d13f0c4aec4ce1bc5",
+    "semantic_hash": "55fdc6f39399262d13f0c4aec4ce1bc5"
+  },
+  "public/robots.txt": {
+    "mtime": 1776057005.5653827,
+    "ast_hash": "61c27d2cd39a713f7829422c3d9edcc7",
+    "semantic_hash": "61c27d2cd39a713f7829422c3d9edcc7"
+  },
+  "src/PLAN_DOCUMENTOS_VIAJE.md": {
+    "mtime": 1782431795.557399,
+    "ast_hash": "58fa05b3993f17bae2691a4c038f15b1",
+    "semantic_hash": "58fa05b3993f17bae2691a4c038f15b1"
+  },
+  "public/Logo192.png": {
+    "mtime": 1776527843.141337,
+    "ast_hash": "33dbdd0177549353eeeb785d02c294af",
+    "semantic_hash": "33dbdd0177549353eeeb785d02c294af"
+  },
+  "public/Logo512.png": {
+    "mtime": 1776527843.1434166,
+    "ast_hash": "917515db74ea8d1aee6a246cfbcc0b45",
+    "semantic_hash": "917515db74ea8d1aee6a246cfbcc0b45"
+  },
+  "src/pages/Logo Fraba.png": {
+    "mtime": 1774639924.9920852,
+    "ast_hash": "03ae6d114e59302a94ea48e9ccf10cec",
+    "semantic_hash": "03ae6d114e59302a94ea48e9ccf10cec"
+  }
+}
