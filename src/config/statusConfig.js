@@ -113,17 +113,17 @@ export const MAX_STATUSES = 2;
 
 /**
  * Jerarquía de color: cuando hay 2 status, el de más arriba es el que pinta la fila.
- * Lázaro (por_salir) siempre domina; si no está, domina Activo.
+ * Quemada/En falso domina sobre todo lo demás (usuario, 2026-09-25); Lázaro ya no.
  * Debe coincidir con el orden de los combos en STATUS_CHOICES del backend (models.py).
  * @type {ReadonlyArray<ManiobraStatus>}
  */
 export const PRIORITY_ORDER = Object.freeze([
-  "por_salir",  // Lázaro — gana siempre
-  "activo",
-  "quemada",
+  "quemada",    // Quemada/En falso — gana siempre
   "cancelado",  // pegado a Quemada: comparten color, así que el orden entre
                 // los dos no cambia lo que se ve, solo fija la forma canónica
   "pendiente",
+  "por_salir",  // Lázaro
+  "activo",
   // Entregado nunca comparte fila con otro status, asi que su sitio aqui no
   // decide ningun color. Esta igualmente porque parseStatusValue/joinStatusIds
   // consultan indexOf(): sin el daria -1 y lo ordenaria por delante de todos.
