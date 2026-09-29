@@ -545,7 +545,9 @@ class GastoSerializer(serializers.ModelSerializer):
         # gastos_totales es calculado en Gasto.save() (suma de los campos). Se marca
         # read_only para que el valor del cliente nunca lo sobrescriba: el servidor es
         # la única fuente de verdad. Se sigue devolviendo en la respuesta (solo lectura).
-        read_only_fields = ('gastos_totales',)
+        # gasto_diesel lo escribe SOLO el reporte de viaje (volcar_diesel_al_gasto,
+        # usuario 2026-09-29): un PUT/PATCH que lo traiga lo ignora.
+        read_only_fields = ('gastos_totales', 'gasto_diesel')
         extra_kwargs = {
             'maniobra': {'required': False}  # para que PUT no lo exija
         }

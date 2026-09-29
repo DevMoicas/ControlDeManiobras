@@ -274,33 +274,35 @@ class DieselDelReporteAlGastoTests(BaseGastoAutomatico):
         gasto.refresh_from_db()
         self.assertEqual(gasto.gastos_totales, Decimal('7940.00'))  # 7440 + 500
 
-    def test_NO_pisa_el_diesel_capturado_a_mano(self):
-        """El caso que motivo la regla (usuario, 2026-08-27): alguien anota el
-        diesel en Gastos hoy y el coordinador guarda su reporte pasado manana.
-        Antes, lo del reporte se llevaba por delante ese trabajo sin avisar."""
+    def test_el_reporte_pisa_el_diesel_capturado_a_mano(self):
+        """El reporte SIEMPRE manda (usuario, 2026-09-29). Sustituye a la regla
+        del 2026-08-27: con la columna bloqueada en Gastos, un importe manual que
+        no se pisara quedaria fijo para siempre."""
         m, gasto = self.maniobra_con_gasto()
-        gasto.gasto_diesel = Decimal('10000')
-        gasto.save()
-
-        self.crear_reporte('F-2279', [
-            {'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80'}])
-
-        gasto.refresh_from_db()
-        self.assertEqual(gasto.gasto_diesel, Decimal('10000.00'))
-
-    def test_el_descuadre_se_ve_en_la_lista_de_reportes(self):
-        """No basta con no pisar: si nadie se entera, las dos cifras se quedan
-        distintas para siempre. El aviso viaja en el propio reporte."""
-        m, gasto = self.maniobra_con_gasto()
-        gasto.gasto_diesel = Decimal('10000')
-        gasto.save()
+        Gasto.objects.filter(pk=gasto.pk).update(gasto_diesel=Decimal('10000'))
 
         r = self.crear_reporte('F-2279', [
             {'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80'}])
 
+        gasto.refresh_from_db()
+        self.assertEqual(gasto.gasto_diesel, Decimal('7440.00'))
+        self.assertIs(r.data['diesel_coincide'], True)
+
+    def test_un_descuadre_anterior_se_sigue_viendo_hasta_volver_a_guardar(self):
+        """Los gastos con diesel a mano de antes del cambio discrepan hasta que
+        alguien vuelve a guardar su reporte. El aviso los deja a la vista."""
+        m, gasto = self.maniobra_con_gasto()
+        rid = self.crear_reporte('F-2279', [
+            {'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80'}]).data['id']
+        Gasto.objects.filter(pk=gasto.pk).update(gasto_diesel=Decimal('10000'))
+
+        r = self.cliente.get('%s%s/' % (self.REPORTES, rid))
         self.assertIs(r.data['diesel_coincide'], False)
-        self.assertEqual(Decimal(r.data['diesel_reporte']), Decimal('7440.00'))
-        self.assertEqual(Decimal(r.data['diesel_gasto']),   Decimal('10000.00'))
+        self.assertEqual(Decimal(r.data['diesel_gasto']), Decimal('10000.00'))
+
+        r = self.cliente.patch('%s%s/' % (self.REPORTES, rid), {'coordinador': 'Ali'},
+                               format='json')
+        self.assertIs(r.data['diesel_coincide'], True)
 
     def test_si_coinciden_no_se_avisa_de_nada(self):
         m, gasto = self.maniobra_con_gasto()
@@ -323,29 +325,6 @@ class DieselDelReporteAlGastoTests(BaseGastoAutomatico):
         self.assertIs(r.data['diesel_coincide'], True)   # ya lo acaba de escribir
         gasto.refresh_from_db()
         self.assertEqual(gasto.gasto_diesel, Decimal('7440.00'))
-
-    def test_cuadrarlo_a_mano_devuelve_el_mando_al_reporte(self):
-        """Una persona resuelve el descuadre poniendo en Gastos lo que dice el
-        reporte. A partir de ahi el importe vuelve a ser del reporte, o su
-        siguiente carga se leeria como un descuadre nuevo y no volcaria jamas."""
-        m, gasto = self.maniobra_con_gasto()
-        gasto.gasto_diesel = Decimal('10000')
-        gasto.save()
-        rid = self.crear_reporte('F-2279', [
-            {'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80'}]).data['id']
-
-        # Se cuadra a mano en Gastos y se vuelve a guardar el reporte.
-        self.cliente.patch('/api/gastos/%s/' % gasto.id,
-                           {'gasto_diesel': '7440'}, format='json')
-        self.cliente.patch('%s%s/' % (self.REPORTES, rid), {'coordinador': 'Ali'},
-                           format='json')
-
-        # Y ahora una carga mas: ya puede volcar.
-        self.cliente.patch('%s%s/' % (self.REPORTES, rid), {'cargas': [
-            {'orden': 2, 'litros_diesel': '100', 'precio_litro': '24.50'}]}, format='json')
-
-        gasto.refresh_from_db()
-        self.assertEqual(gasto.gasto_diesel, Decimal('9890.00'))
 
     def test_anadir_una_carga_despues_actualiza_el_gasto(self):
         """La razon de que pise: el reporte se llena por etapas."""
@@ -370,11 +349,11 @@ class DieselDelReporteAlGastoTests(BaseGastoAutomatico):
         gasto.refresh_from_db()
         self.assertEqual(gasto.gasto_diesel, Decimal('7440.00'))
 
-    def test_el_campo_sigue_siendo_editable_a_mano(self):
-        """Lo que se escriba en Gastos aguanta hasta que alguien vuelva a guardar
-        el reporte (decision del usuario, 2026-08-24)."""
+    def test_el_diesel_no_se_edita_desde_gastos(self):
+        """Solo lo escribe el reporte de viaje (usuario, 2026-09-29): un PATCH a
+        Gastos que lo traiga responde 200 y no lo toca."""
         from api.Serializers import GastoSerializer
-        self.assertFalse(GastoSerializer().fields['gasto_diesel'].read_only)
+        self.assertTrue(GastoSerializer().fields['gasto_diesel'].read_only)
 
         m, gasto = self.maniobra_con_gasto()
         self.crear_reporte('F-2279', [
@@ -384,7 +363,7 @@ class DieselDelReporteAlGastoTests(BaseGastoAutomatico):
                                {'gasto_diesel': '8000'}, format='json')
         self.assertEqual(r.status_code, 200, r.data)
         gasto.refresh_from_db()
-        self.assertEqual(gasto.gasto_diesel, Decimal('8000.00'))
+        self.assertEqual(gasto.gasto_diesel, Decimal('7440.00'))
 
     # -- No se vuelca -----------------------------------------------------
     def test_sin_gasto_el_reporte_se_guarda_igual(self):

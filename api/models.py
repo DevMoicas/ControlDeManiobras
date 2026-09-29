@@ -1252,11 +1252,10 @@ class ReporteViaje(models.Model):
     rendimiento = models.DecimalField(max_digits=6, decimal_places=2,
                                       null=True, blank=True, editable=False)
 
-    # Lo ULTIMO que este reporte escribio en gastos.gasto_diesel. No es un dato
-    # del viaje: es la memoria del volcado, y es lo unico que distingue "ese
-    # importe lo puse yo" de "lo capturo una persona". Sin ella no se puede
-    # respetar lo capturado a mano sin romper el llenado por etapas, que necesita
-    # pisar su propio valor cada vez que se anade una carga.
+    # SIN USO desde el 2026-09-29, cuando el reporte paso a mandar siempre sobre
+    # gastos.gasto_diesel (ver volcar_diesel_al_gasto). Era la memoria que
+    # distinguia "ese importe lo puse yo" de "lo capturo una persona". Se deja la
+    # columna para no meter una migracion solo para borrarla.
     diesel_volcado = models.DecimalField(max_digits=10, decimal_places=2,
                                          null=True, blank=True)
 
@@ -1365,13 +1364,6 @@ class ReporteViaje(models.Model):
             return total, actual, None
         return total, actual, actual == total
 
-    def _recordar_volcado(self, total):
-        """Deja constancia de que este importe es el que puso el reporte."""
-        if self.diesel_volcado == total:
-            return
-        self.diesel_volcado = total
-        self.save(update_fields=['diesel_volcado', 'actualizado_en'])
-
     def total_diesel(self):
         """Lo que costo el diesel del viaje: suma de litros x precio de las cinco
         cargas. None si ninguna tiene los dos datos — no es lo mismo que cero.
@@ -1390,17 +1382,12 @@ class ReporteViaje(models.Model):
     def volcar_diesel_al_gasto(self, usuario=''):
         """Escribe el costo del diesel en el gasto del folio. Devuelve si escribio.
 
-        NO pisa lo que capturo una persona (usuario, 2026-08-27). Alguien anota
-        el diesel a mano en Gastos hoy y el coordinador guarda su reporte pasado
-        manana: antes, lo del reporte se llevaba por delante ese trabajo sin
-        avisar. Ahora, si las dos cifras no coinciden, el gasto se queda como
-        esta y la pantalla de reportes ensena el descuadre para que una persona
-        decida cual vale (ver diesel_descuadrado).
-
-        Lo que SI sigue pisando es su propio volcado anterior, que es lo que hace
-        posible el llenado por etapas: sin eso, la primera carga fijaria el valor
-        y las cuatro siguientes nunca llegarian al gasto. La diferencia entre
-        "esto lo puse yo" y "esto lo puso una persona" es `diesel_volcado`.
+        El reporte SIEMPRE manda (usuario, 2026-09-29). La columna Diesel de
+        Gastos es de solo lectura (GastoSerializer) y este volcado es la unica
+        via para llenarla: se acaba el trabajo doble y el descuadre entre las dos
+        cifras. Sustituye a la regla del 2026-08-27, que no pisaba lo capturado a
+        mano: con la columna bloqueada, un importe manual se quedaria fijo para
+        siempre sin nadie que pudiera corregirlo.
 
         Si no hay gasto no se crea ninguno: los folios antiguos son manuales y los
         viajes de terceros no llevan gasto. El reporte se guarda igual.
@@ -1409,18 +1396,7 @@ class ReporteViaje(models.Model):
         if total is None:
             return False
         gasto = self.gasto_del_folio()
-        if gasto is None:
-            return False
-        actual = gasto.gasto_diesel
-        if actual == total:
-            # Nada que escribir, pero si que recordar: si alguien cuadro el gasto
-            # a mano con el reporte y no lo anotaramos, este reporte no volveria a
-            # poder volcar nunca — su siguiente carga se leeria como descuadre.
-            self._recordar_volcado(total)
-            return False
-        if actual is not None and actual != self.diesel_volcado:
-            # El importe que hay no lo puso este reporte: lo capturo o lo corrigio
-            # una persona. No se toca.
+        if gasto is None or gasto.gasto_diesel == total:
             return False
         gasto.gasto_diesel = total
         if usuario:
@@ -1428,7 +1404,6 @@ class ReporteViaje(models.Model):
         # save() completo y no update(): gastos_totales se recalcula en
         # Gasto.save(), asi que un UPDATE directo dejaria el total desfasado.
         gasto.save()
-        self._recordar_volcado(total)
         return True
 
     def refrescar_rendimiento(self):
