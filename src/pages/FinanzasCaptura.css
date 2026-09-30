@@ -101,6 +101,8 @@
 }
 .fz-dialogo-acciones .primario { background: #2563eb; border-color: #2563eb; color: #fff; }
 
+/* Aire entre los botones de volver (Inicio / Finanzas) y el selector de mes. */
+.nomina-container .fz-barra-mes { margin-top: 20px; }
 .nomina-container .fz-mes-selector { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
 .nomina-container .fz-mes-selector input {
   padding: 7px 10px;

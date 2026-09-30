@@ -93,7 +93,7 @@ export default function GastosFinancierosPage() {
 
   return (
     <div className="nomina-container">
-      <div className="toolbar">
+      <div className="toolbar fz-barra-mes">
         <label className="fz-mes-selector">Mes
           <input type="month" value={mes} onChange={(e) => setMes(e.target.value)} />
         </label>
