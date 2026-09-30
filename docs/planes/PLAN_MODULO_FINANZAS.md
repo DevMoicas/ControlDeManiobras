@@ -4,6 +4,13 @@ Fecha: 2026-09-29. Fuentes: `FRABA_Modulo_Finanzas_Resumen.md` (líneas 142–16
 respuestas 1–71 de `PREGUNTAS_MODULO_FINANZAS.md`. El número entre paréntesis, p. ej.
 (P34), remite a la pregunta que lo decidió.
 
+**Estado (2026-09-30):** fases **0 a 6 implementadas**. La 0 está en producción; de la 1 a
+la 6 **solo en local, sin desplegar** (migraciones 0070–0074 pendientes a propósito). Lo
+que se decidió por el camino y no está escrito abajo —casilla Pagada en cuentas por pagar,
+fletes y locales desde agosto de 2026, un solo DASHBOARDS en vez de páginas por grupo,
+días de crédito opcionales, etc.— está en `docs/PENDIENTE.md`, sección 11. Este plan
+describe lo que se pensó; el código manda.
+
 **Fuera de alcance:** el resto del resumen (bancos, estados financieros, balance, flujo de
 efectivo, tabulador, costeo estimado, alertas, reportes PDF/Excel). Costos extra solo
 informativos, en otra tabla futura (P59).
