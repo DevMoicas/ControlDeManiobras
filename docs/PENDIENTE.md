@@ -1,6 +1,6 @@
 # Pendiente
 
-Anotado el 2026-08-25 y **actualizado el 2026-09-29** al cerrar la sesión.
+Anotado el 2026-08-25 y **actualizado el 2026-09-30** al cerrar la sesión.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
@@ -543,8 +543,8 @@ lo que lista *Queda abierto* al final de esta sección.
   **`docs/planes/PLAN_MODULO_FINANZAS.md`**. Dos puntos marcados *Por defecto (validar)*
   dentro del plan.
 
-**Al retomar:** empezar por la Fase 0 del plan. El usuario no está ligado a un empleado y
-sin eso no hay permisos por cargo.
+**Al retomar:** las fases 0 a 6 están hechas (ver sección 11). Lo que queda del plan está
+allí.
 
 ---
 
@@ -562,7 +562,12 @@ sin eso no hay permisos por cargo.
 - Commit y push los hace Claude a partir de ahora, a petición del usuario. Las reglas de
   permiso están en `front/.claude/settings.local.json`.
 
-### Decidir al retomar (lo primero)
+### Decidir al retomar — CERRADO el 2026-09-30
+
+Las tres se decidieron el 2026-09-30: el diésel **se queda como está** (1 y 2: opción (a),
+aceptarlo, y los descuadres viejos se curan solos al volver a guardar cada reporte), y
+Reparaciones va con **la regla vieja** (3), ya implementada en la Fase 5. Se conserva el
+texto original debajo como registro.
 
 1. **Diésel de viajes sin reporte.** ADR-0013 había descartado bloquear el campo porque hay
    viajes sin reporte y folios antiguos donde el diésel solo se captura a mano. Con el
@@ -581,10 +586,100 @@ sin eso no hay permisos por cargo.
   `PREGUNTAS_MODULO_FINANZAS.md`.
 - **Única abierta: la 62**, a propósito (semana de nómina → mes y sueldo sin historial).
   Solo bloquea la nómina administrativa de la utilidad.
-- **Siguiente paso: Fase 0.** Hoy ningún usuario está ligado a un empleado, así que no hay
-  permisos por cargo posibles. El plan de roles por cargo (`PLAN_ROLES_POR_CARGO.md`)
-  nunca se implementó.
+- ~~Siguiente paso: Fase 0.~~ Hecha el 2026-09-30, con el resto de fases: ver sección 11.
+  El plan de roles por cargo (`PLAN_ROLES_POR_CARGO.md`) sigue sin implementarse; de él
+  solo se tomó el perfil usuario → empleado.
 - Siguen sin commitear, a propósito y sin relación con Finanzas: `PLAN_TORRE_CONTROL.md`
   (con cambios), `PLAN_GASTO_AUTOMATICO.md`, `PLAN_REPORTE_COORDINADORES.md`,
   `REPORTE COORDINADORES.md`, `analisis_de_costos.md` y el resto de la carpeta de Canva.
 
+---
+
+## 11. Sesión del 2026-09-30 — Módulo Finanzas, fases 0 a 6
+
+### Desplegado
+
+- **Fase 0 en producción:** backend `99ca5eae`, con la **migración 0069** aplicada antes de
+  empujar. Tabla `api_perfilusuario` (usuario 1:1 → empleado 1:1 nullable), asignada en
+  `/admin` → Perfiles de usuario. El rol estándar solo tiene SELECT. El usuario ya ligó los
+  usuarios de producción a sus empleados.
+
+### Hecho y probado en local, SIN DESPLEGAR
+
+Todo con suite en verde (605 pruebas al cerrar), `npm run build` limpio, `pip-audit` limpio
+y humo por HTTP contra el backend local levantado y Postgres real al cerrar cada fase.
+
+| Fase | Backend | Frontend | Migración |
+|---|---|---|---|
+| 1 · Facturación: carga del Excel (.xlsx/.xls/.csv), liga por `no_factura`, Ingresos en Gastos | `c16fcbe6` | `0370e35` | 0070 |
+| 2 · Clientes principales; Catálogos → Clientes pasa a **Direcciones** | `9eeb0eab`, `8441e3ae` | `35b13be`, `ab3523f` | 0071 |
+| 3 · Cuentas por cobrar (antigüedad), cobranza semanal, casilla Cobrada | `0b0b5e85` | `d3b4fa6` | 0072 |
+| 4 · Cuentas por pagar (fletes, locales, mantenimiento), gastos fijos, gastos financieros | `355c722f` | `9ae36b8` + 4 de ajustes visuales | 0073 |
+| 5 · Reparaciones del reporte a Gastos, con aviso de descuadre | `9842defb` | `dda8292` | 0074 |
+| 6 · Dashboards (4 páginas + DASHBOARDS con un botón por dashboard) | `57270c8e` | `4855da1`, `ae3efc7`, `d5038cc` | — |
+| Botón Cancelar igual en toda la app (clase `btn-cancelar-app`) | — | `f476538` | — |
+
+En total **7 commits de backend** (sobre `99ca5eae`) y **14 de frontend** (sobre `79977b1`).
+Además, `PyJWT` sube a **2.15.0** (CVE-2026-101918 en la 2.14.0) y entra **`xlrd` 2.0.2**, la
+única dependencia nueva, solo para leer `.xls` (P12).
+
+### Decisiones tomadas con el usuario hoy (no están en el plan)
+
+- **Acceso:** se cerró por cargo Facturación, Cuentas por pagar, Gastos financieros y los
+  dashboards. El hub de Finanzas, Costos extra y Nómina siguen como estaban.
+- **Serie desconocida** en el Excel (ni SEF ni S): se omite y sale en el resumen.
+- **Días de crédito opcionales** en clientes principales y cuentas por pagar: vacío = 0.
+- **Factura sin maniobra ligada, o ligada sin cliente principal:** fuera de la antigüedad de
+  saldos, listada aparte.
+- **Cuentas por pagar:** casilla **Pagada** (no estaba en el plan); fletes y locales solo
+  **desde agosto de 2026**; dos tarjetas en Finanzas (Cuentas por pagar con 4 pestañas y
+  Gastos financieros).
+- **Fase 5:** regla vieja del diésel para Reparaciones (no pisa lo capturado a mano).
+- **Fase 6:** una maniobra sin factura cuenta como servicio en el mes de su **fecha PIS**,
+  con nota (el "por defecto (validar)" del plan, aceptado).
+
+### Decisiones de Claude que conviene conocer
+
+- **Una factura ligada a otra maniobra no se le quita** al guardar un No. Factura que la
+  nombra: con un número mal tecleado, quitársela a la maniobra correcta sería silencioso.
+  Si dos maniobras la nombran al cargar, queda pendiente de ligar y se avisa.
+- **Ingresos de Gastos** solo se recalcula en maniobras cuya liga cambia: un ingreso escrito
+  a mano antes de Facturación no se toca.
+- **Costo de ventas** se agrupa por `maniobras.fecha_entrega_mercancia` (`date`) y no por la
+  copia de `gastos`, que es texto con formatos mezclados (`20/10/2026`, `2026-06-28`, vacío).
+- **El "hoy"** de antigüedades y vencimientos es el de `America/Mexico_City`, no el UTC del
+  servidor.
+- **Permisos por columna** en `api_factura` y `api_cuentaporpagar`: el rol estándar no puede
+  tocar importes, `estado` (cancelar es solo staff) ni la maniobra. Por eso la edición de
+  una cuenta por pagar guarda solo los campos tocados (`save(update_fields=...)`).
+- Las cuentas por pagar **no se borran nunca** (P55); gastos fijos y capturas mensuales, solo
+  staff.
+
+### Lo que falta
+
+1. **Desplegar las fases 1 a 6.** `migrar_prod.sh` ya está preparado para **0070 a 0074** y
+   comprueba los permisos reales en Postgres. Orden de siempre: el usuario corre `abrir` →
+   `ver` → `migrar` → `cerrar`; luego backend en verde; luego frontend.
+   - En `ver`, deben faltar exactamente de la 0070 a la 0074.
+   - Presupuestar `pip-audit` (pasa casi siempre tras una pausa).
+2. **Revisar en el navegador** las pantallas nuevas: se compilaron y se probaron por HTTP,
+   pero **las gráficas de los dashboards no se han mirado en pantalla**.
+3. **Pregunta 62 — sigue PENDIENTE a propósito.** Mientras tanto la utilidad mensual enseña
+   la nómina administrativa como pendiente y la operacional no la resta.
+4. **Estados de cuenta** sigue siendo una tarjeta vacía en Finanzas (bancos, fuera del plan).
+5. **Regla `autoMode` en `front/.claude/settings.local.json`** para que Claude pueda empujar:
+   quedó escrita pero sin validar; el usuario decide si la deja o la quita. Sin ella, el
+   push lo lanza el usuario con `!`.
+6. **Datos para probar Fletes y Locales en local:** la base local solo tiene una maniobra
+   desde agosto y es de FRABA; hace falta un transportista ajeno o placas PIS de terceros.
+
+### Límites conocidos (anotados con `ponytail:` o en el código)
+
+- La lista de Facturación trae todas las páginas de golpe; si pesa, paginar como Gastos.
+- La caché de pestañas de Catálogos no se invalida al editar (coordinador, Con Cita…). Solo
+  la asignación de cliente principal la actualiza; lo demás es un problema previo.
+- Placas de terceros y transportistas se comparan sin mayúsculas ni espacios, pero **sin
+  quitar guiones**: `ABC-123` y `ABC 123` no casan.
+- Borrar un gasto fijo (staff) borra también sus pagos de meses pasados.
+- Los dashboards comparan contra otro periodo en las tarjetas; las gráficas no superponen
+  las dos series.
