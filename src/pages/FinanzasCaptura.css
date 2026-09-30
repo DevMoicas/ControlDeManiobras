@@ -113,6 +113,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 16px;
+  margin-top: 30px; /* aire entre el selector de mes y las tarjetas */
 }
 .nomina-container .fz-bloque {
   padding: 16px;
