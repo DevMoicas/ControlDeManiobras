@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView, TokenBlacklistView
 
 
 from .facturacion import FacturaViewSet
+from .finanzas import CapturaMensualViewSet, CuentaPorPagarViewSet, GastoFijoViewSet
 from .views import (
     TractoViewSet,
     TorreControlViewSet,
@@ -70,6 +71,9 @@ router.register(r'reportes-viaje', ReporteViajeViewSet, basename='reportes-viaje
 router.register(r'torre-control', TorreControlViewSet, basename='torre-control')
 router.register(r'torre-folios', TorreFolioViewSet, basename='torre-folios')
 router.register(r'facturas', FacturaViewSet, basename='facturas')
+router.register(r'cuentas-por-pagar', CuentaPorPagarViewSet, basename='cuentas-por-pagar')
+router.register(r'gastos-fijos', GastoFijoViewSet, basename='gastos-fijos')
+router.register(r'capturas-mensuales', CapturaMensualViewSet, basename='capturas-mensuales')
 
 urlpatterns = [
     path('', include(router.urls)),

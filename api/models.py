@@ -1160,6 +1160,113 @@ class Factura(models.Model):
         return f"{self.serie} {self.folio}"
 
 
+# ── Cuentas por pagar y capturas manuales (Fase 4 de PLAN_MODULO_FINANZAS.md) ─
+class CuentaPorPagar(models.Model):
+    """La factura de un proveedor (P34, P35).
+
+    Flete y local cuelgan de una maniobra de tercero; mantenimiento no tiene
+    maniobra. Se CANCELA, no se borra, para que los meses cerrados no se muevan
+    (P55). `pagada` se marca a mano (decidido con el usuario el 2026-09-30):
+    lo pagado sale de lo pendiente pero sigue siendo costo de su mes.
+    """
+    ORIGENES = [('flete', 'Flete'), ('local', 'Local'), ('mantenimiento', 'Mantenimiento')]
+
+    origen = models.CharField(max_length=15, choices=ORIGENES)
+    # db_constraint=False: `maniobras` es managed=False (mismo motivo que Factura).
+    maniobra = models.ForeignKey(
+        'api.Maniobra', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='cuentas_por_pagar', db_constraint=False,
+    )
+    empresa = models.CharField(max_length=20, choices=Factura.EMPRESAS)
+    no_factura = models.CharField(max_length=100, blank=True, default='')
+    total = models.DecimalField(max_digits=14, decimal_places=2)
+    concepto = models.CharField(max_length=255, blank=True, default='')
+    fecha = models.DateField()
+    # Opcional como en los clientes: vacío = 0, vence el día de la factura.
+    dias_credito = models.PositiveIntegerField(default=0)
+    estado = models.CharField(max_length=10, choices=Factura.ESTADOS, default='activa')
+    pagada = models.BooleanField(default=False)
+
+    created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = True
+        ordering = ['-fecha', '-id']
+        # Una cuenta activa por maniobra y origen: la fila de la maniobra en
+        # Fletes o Locales tiene UNA factura de proveedor. Cancelarla deja
+        # capturar otra.
+        constraints = [models.UniqueConstraint(
+            fields=['maniobra', 'origen'],
+            condition=models.Q(maniobra__isnull=False, estado='activa'),
+            name='cxp_una_activa_por_maniobra_y_origen',
+        )]
+
+
+class GastoFijo(models.Model):
+    """La parte fija de la rejilla de gastos fijos (P19, P20, P30): renta,
+    luz, internet, costo de patio… El monto es de referencia; lo pagado de
+    verdad cada mes vive en GastoFijoPago (P31)."""
+    PERIODICIDADES = [(1, 'Mensual'), (2, 'Bimestral'), (3, 'Trimestral'),
+                      (6, 'Semestral'), (12, 'Anual')]  # P68, P71
+
+    empresa = models.CharField(max_length=20, choices=Factura.EMPRESAS)
+    concepto = models.CharField(max_length=255)
+    dia_pago = models.PositiveSmallIntegerField(null=True, blank=True)
+    monto = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    periodicidad = models.PositiveSmallIntegerField(choices=PERIODICIDADES, default=1)
+
+    created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = True
+        ordering = ['empresa', 'concepto']
+
+
+class GastoFijoPago(models.Model):
+    """Una celda de la rejilla: lo pagado de un gasto fijo en un mes (P30).
+    `monto` NULL = no pagado. Vaciar la celda la deja en NULL en vez de borrar
+    la fila, así nadie más que el admin necesita permiso de borrado."""
+    gasto_fijo = models.ForeignKey(GastoFijo, on_delete=models.CASCADE, related_name='pagos')
+    mes = models.DateField()  # siempre día 1
+    monto = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    updated_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = True
+        ordering = ['mes']
+        constraints = [models.UniqueConstraint(fields=['gasto_fijo', 'mes'],
+                                               name='gasto_fijo_un_pago_por_mes')]
+
+
+class CapturaMensual(models.Model):
+    """Lo que se captura a mano cada mes en Gastos financieros (P23–P25, P53).
+    Tres tipos, cada uno se resta en su paso de la utilidad; un mes sin
+    capturas vale 0 (las comisiones empiezan vacías, P25)."""
+    TIPOS = [('financiero', 'Gasto financiero'), ('impuesto', 'Impuesto'),
+             ('comision', 'Comisión de ventas')]
+
+    mes = models.DateField()  # siempre día 1
+    tipo = models.CharField(max_length=15, choices=TIPOS)
+    concepto = models.CharField(max_length=255)
+    monto = models.DecimalField(max_digits=14, decimal_places=2)
+
+    created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = True
+        ordering = ['mes', 'tipo', 'id']
+
+
 # Dos bolitas por unidad: la 1 es la VERDE (día en que sale) y la 2 la ROJA
 # (día en que vuelve). El CHECK de TorreControl ya admitía las dos, así que
 # pasar de 1 a 2 no tocó el esquema — para eso estaba.

@@ -31,11 +31,11 @@ from .models import Empleado, Factura, Gasto, Maniobra, PerfilUsuario
 # Cerrado por defecto (P45, P64): staff o uno de estos cargos EXACTOS. Sin
 # perfil, sin empleado, empleado borrado u otro cargo → fuera. Al revés que el
 # plan de roles por cargo, que deja pasar: aquí se trata de dinero.
-CARGOS_FACTURACION = {'COMERCIAL', 'DIRECTOR GENERAL', 'DIRECTOR OPERATIVO',
+CARGOS_FINANZAS = {'COMERCIAL', 'DIRECTOR GENERAL', 'DIRECTOR OPERATIVO',
                       'DIRECTORA COMERCIAL'}
 
 
-def puede_facturacion(usuario):
+def puede_finanzas(usuario):
     if usuario.is_staff:
         return True
     try:
@@ -43,7 +43,7 @@ def puede_facturacion(usuario):
     except (PerfilUsuario.DoesNotExist, Empleado.DoesNotExist):
         return False
     # strip/upper: empleados.cargo es texto libre editable a mano en pgAdmin.
-    return bool(empleado) and (empleado.cargo or '').strip().upper() in CARGOS_FACTURACION
+    return bool(empleado) and (empleado.cargo or '').strip().upper() in CARGOS_FINANZAS
 
 
 # ── Serie + folio ────────────────────────────────────────────────────────────
@@ -395,7 +395,7 @@ class FacturaViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         super().initial(request, *args, **kwargs)
         # `acceso` responde a cualquiera: es como el frontend sabe si pintar
         # la tarjeta. Todo lo demás, solo quien puede.
-        if self.action != 'acceso' and not puede_facturacion(request.user):
+        if self.action != 'acceso' and not puede_finanzas(request.user):
             raise PermissionDenied('Facturación es solo para dirección, comercial y administradores.')
 
     def get_queryset(self):
@@ -405,7 +405,7 @@ class FacturaViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     @action(detail=False, methods=['get'])
     def acceso(self, request):
-        return Response({'ver': puede_facturacion(request.user),
+        return Response({'ver': puede_finanzas(request.user),
                          'cancelar': request.user.is_staff})
 
     @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])
