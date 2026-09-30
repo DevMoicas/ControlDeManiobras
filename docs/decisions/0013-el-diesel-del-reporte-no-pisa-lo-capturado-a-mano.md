@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptada
+Sustituida por ADR-0023 (2026-09-29): el diésel ya no se edita en Gastos y el reporte pisa siempre.
 
 ## Fecha
 

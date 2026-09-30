@@ -1,6 +1,6 @@
 # Pendiente
 
-Anotado el 2026-08-25 y **actualizado el 2026-09-09** al cerrar la sesión.
+Anotado el 2026-08-25 y **actualizado el 2026-09-29** al cerrar la sesión.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
@@ -545,3 +545,46 @@ lo que lista *Queda abierto* al final de esta sección.
 
 **Al retomar:** empezar por la Fase 0 del plan. El usuario no está ligado a un empleado y
 sin eso no hay permisos por cargo.
+
+---
+
+## 10. Sesión del 2026-09-29
+
+### Desplegado
+
+- **Backend `e3618db6` + `e41b8f55`, frontend `79977b1`, sin migración.** El diésel ya no se
+  edita en Gastos: solo lo escribe el reporte de viaje, y pisa siempre (ADR-0023, que
+  sustituye a ADR-0013).
+- El primer push del backend lo paró `pip-audit`: diez avisos nuevos en PyJWT 2.13.0. Se
+  subió a **2.14.0**, se volvió a pasar la auditoría en local (limpia) y las 549 pruebas
+  (verde). Es la situación que ya estaba anotada en memoria: cuenta con ello en cada
+  despliegue tras una pausa.
+- Commit y push los hace Claude a partir de ahora, a petición del usuario. Las reglas de
+  permiso están en `front/.claude/settings.local.json`.
+
+### Decidir al retomar (lo primero)
+
+1. **Diésel de viajes sin reporte.** ADR-0013 había descartado bloquear el campo porque hay
+   viajes sin reporte y folios antiguos donde el diésel solo se captura a mano. Con el
+   bloqueo de hoy, **esos gastos no pueden registrar diésel**. Opciones: (a) aceptarlo;
+   (b) dejarlo editable solo cuando la maniobra no tiene reporte de viaje; (c) editable
+   solo para staff. Se implementó sin plantearlo; el fallo es de Claude, no del usuario.
+2. **Gastos con diésel manual anterior** siguen con el aviso "Diésel" en Reportes de viaje
+   hasta que alguien vuelva a guardar su reporte. ¿Se hace un volcado masivo, o se van
+   curando solos?
+3. **Reparaciones (fase 5 del plan):** ¿también de solo lectura, como el diésel, o con la
+   regla vieja? Con solo lectura, la fase se simplifica y no necesita migración.
+
+### Finanzas: planificación cerrada
+
+- **Plan:** `docs/planes/PLAN_MODULO_FINANZAS.md`. Preguntas 1–71 respondidas en
+  `PREGUNTAS_MODULO_FINANZAS.md`.
+- **Única abierta: la 62**, a propósito (semana de nómina → mes y sueldo sin historial).
+  Solo bloquea la nómina administrativa de la utilidad.
+- **Siguiente paso: Fase 0.** Hoy ningún usuario está ligado a un empleado, así que no hay
+  permisos por cargo posibles. El plan de roles por cargo (`PLAN_ROLES_POR_CARGO.md`)
+  nunca se implementó.
+- Siguen sin commitear, a propósito y sin relación con Finanzas: `PLAN_TORRE_CONTROL.md`
+  (con cambios), `PLAN_GASTO_AUTOMATICO.md`, `PLAN_REPORTE_COORDINADORES.md`,
+  `REPORTE COORDINADORES.md`, `analisis_de_costos.md` y el resto de la carpeta de Canva.
+
