@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="es-MX"><head><script>window["__codeletBootstrap__"]=JSON.parse('{"A":"A","B":"20260929-05-baae6c9","C":{"Abril Fatface":"YACgEZbkUVE,0","Alfa Slab One":"YACgEYS9sJU,0","Anton":"YACgEcYqQ-A,0","Archivo":"YACgEZulLoA,0","Arial Narrow":"YAGyDvJ_4Ts,0","Arial Rounded MT Bold":"YAFcfoaHu-s,0","Arial":"YAGyDvJ_4Ts,0","Avenir Next":"YAFcfmNq6UY,0","Baloo 2":"YADK30bC6HQ,0","Bebas Neue":"YACgESME5ew,0","Bricolage Grotesque":"YAFyMcdwzpc,0","Broken Glyph":"YADZ-exUkv0,0","Canva Sans":"YAFdJjTk5UU,1","Caveat":"YALBs2ploWQ,0","Comic Sans MS":"YAFcfvtOAUY,1","Cormorant Garamond":"YAFdJhX-538,0","Courier New":"YAGzXiGs0_8,0","Courier Prime":"YAD1aFjegN8,0","DM Sans":"YAD1aU3sLnI,0","DM Serif Display":"YAD1aYG82rc,0","Forum":"YACgEcnnqB4,0","Fraunces":"YAFdJpU7Kkk,0","Georgia":"YAGzXkO0pEM,0","Ghost Mono":"YAHQutsX00Q,0","Hanken Grotesk":"YAFcfhwp99E,0","Helvetica Neue":"YAFcf6CtJfI,0","Helvetica":"YAFcf6CtJfI,0","IBM Plex Mono":"YAFdJkmvhGI,0","Impact":"YAFcfnjI7Vk,0","Instrument Serif":"YAHFeOnZNEk,0","Inter":"YAFdJvSyp_k,3","Iowan Old Style":"YAGNIFa8j9o,0","Jacques Francois":"YADK3zbC6RM,0","JetBrains Mono":"YAFdJksXcAk,0","Josefin Sans":"YAFdJjvw9Ps,0","Lato":"YAFdJuFCnaw,0","Libre Baskerville":"YACgEUFdPdA,0","Lobster":"YAD8SnSjSFI,0","Lora":"YACgEXvxf8Q,0","Merriweather":"YACgEXvHxxs,0","Montserrat":"YAFdtQi73Xs,0","Nunito":"YAFdJoNRMmU,1","Oleo Script":"YACgEQQ14jI,0","Oswald":"YACgEQY10lw,0","Pacifico":"YADLjORQ1u4,0","Phantom Sans":"YAFdJvgJ5TU,0","Playfair Display":"YAFdJhem5V8,1","Plus Jakarta Sans":"YAGvf3_u0_Q,0","Poppins":"YAFdJjbTu24,1","Press Start 2P":"YAFyGr-8pmQ,0","Quicksand":"YAFdJpYtCxE,1","Raleway":"YAFdJhmxbVQ,1","Roboto Slab":"YAFdJswIKAg,0","Rockwell":"YAFcfyVZnN0,0","Rye":"YACgEdQP21k,0","Segoe UI":"YAHNdRD1Klw,0","Source Sans 3":"YAG4lO1Mj10,0","Source Serif 4":"YACgEfdj394,0","Space Grotesk":"YADZ-dYEmhg,0","Space Mono":"YADW1-vpsoc,0","Times New Roman":"YAGzXW3gftg,0","Times":"YAGzXW3gftg,0","Trebuchet MS":"YAFcfrglpVA,0","UV Display":"YAEdVfSSpYo,0","UV Sans":"YAFdJvgJ5TU,0","Ubuntu":"YACgERDU--Q,0","Verdana":"YAGzXTctYtQ,0","Work Sans":"YAGXhLOKv44,0","Yellowtail":"YACgEYG4kG4,0","ui-monospace":"YAD1aFjegN8,0","ui-sans-serif":"YACkoD1yZN0,0"}}');</script><script src="/_sdk/6542d56fbfe7a3eb.telemetry_sdk.js" integrity="sha512-ECdM0nK7EkwDuOqho2qxgyRQXyBHk9hZqRKMBr+Xsu6zjeHlt+qkO2N2YRiHN7Kg4e1fEHDhjIp4bGJYVypv1g=="></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Financiero Empresarial</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.577.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/6c2ecc939521f244.data_sdk.js" integrity="sha512-gRx8s+XsZDN6mSIQu2sivLZysbV0WHhb5kXNUWlgVb5lCMU1foJYukyMEDPv8Tnoocb8iwqB4XdRrWc7oEGzIQ=="></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet">
+  <style>
+    :root { --ink:#17212b; --navy:#102a43; --teal:#087e8b; --mint:#d9f2ef; --paper:#f5f7f8; --line:#dce4e8; --muted:#687782; --coral:#c9584b; --amber:#d99822; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:"DM Sans",sans-serif; color:var(--ink); background:var(--paper); }
+    .app-shell { width:100%; min-height:calc(100 * min(var(--vh, 1vh), 1vh)); display:flex; }
+    .sidebar { width:244px; background:var(--navy); color:#dbeafe; display:flex; flex-direction:column; padding:24px 14px; flex-shrink:0; }
+    .brand-mark { width:36px;height:36px;border-radius:11px;background:#30b8b1;display:grid;place-items:center;color:#082f38; }
+    .nav-item { width:100%;border:0;background:transparent;color:#adc1d1;padding:11px 12px;border-radius:10px;display:flex;align-items:center;gap:11px;text-align:left;font-size:14px;transition:.18s; }
+    .nav-item:hover,.nav-item:focus-visible { background:rgba(255,255,255,.1);color:#fff;outline:2px solid #72ded8;outline-offset:2px; }
+    .nav-item.active { background:#1c4968;color:#fff;font-weight:700;box-shadow:inset 3px 0 #54d5ce; }
+    .main-area { flex:1; min-width:0; }
+    .topbar { min-height:82px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:space-between;padding:18px 32px;gap:18px;position:sticky;top:0;z-index:10;backdrop-filter:blur(10px); }
+    .content-area { padding:28px 32px 48px;max-width:1600px;margin:auto; }
+    .eyebrow { font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--teal);font-weight:700; }
+    .page-title { font-family:"Fraunces",serif; font-size:27px;line-height:1.1;margin:3px 0 0; }
+    .period-select,.field-input,.field-select { border:1px solid var(--line);background:white;border-radius:9px;padding:9px 11px;color:var(--ink);font:inherit;min-height:38px; }
+    .period-select:focus,.field-input:focus,.field-select:focus { outline:2px solid #5accc7; border-color:transparent; }
+    .view { display:none; animation:reveal .3s ease both; }
+    .view.active { display:block; }
+    @keyframes reveal { from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none} }
+    .metric-card,.panel { background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:0 6px 20px rgba(16,42,67,.045); }
+    .metric-card { padding:17px;min-height:138px;position:relative;overflow:hidden; }
+    .metric-card:before { content:"";position:absolute;width:75px;height:75px;border-radius:100%;right:-22px;top:-22px;background:var(--mint);opacity:.75; }
+    .metric-label { color:var(--muted);font-size:12px;font-weight:600;position:relative; }
+    .metric-value { font-size:24px;font-weight:700;margin-top:16px;letter-spacing:-.04em;position:relative; }
+    .variance { font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;margin-top:10px;position:relative; }
+    .up { color:#16756d; } .down { color:var(--coral); }
+    .panel { padding:20px; }
+    .panel-title { font-weight:700;font-size:15px; }
+    .panel-subtitle { color:var(--muted);font-size:12px;margin-top:3px; }
+    .chart-wrap { position:relative; height:235px;margin-top:18px; }
+    .chart-tip { position:absolute;display:none;background:var(--navy);color:white;font-size:11px;padding:7px 9px;border-radius:7px;pointer-events:none;z-index:2;white-space:nowrap; }
+    .segmented { display:flex;gap:4px;padding:3px;background:#eef2f3;border-radius:10px; }
+    .segment { border:0;border-radius:7px;background:transparent;padding:7px 10px;font:inherit;font-size:12px;color:var(--muted); }
+    .segment.active { background:white;color:var(--navy);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    .table-wrap { overflow:auto;border:1px solid var(--line);border-radius:12px; }
+    table { width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap; }
+    th { text-align:left;background:#f7f9fa;color:#596871;font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:11px 12px;border-bottom:1px solid var(--line);cursor:pointer; }
+    td { padding:12px;border-bottom:1px solid #edf0f2; }
+    tr:last-child td { border-bottom:0; } tbody tr:hover { background:#f8fcfc; }
+    .badge { display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:700; }
+    .badge-paid { background:#def4e9;color:#176a50; }.badge-pending { background:#fff1cf;color:#8a5a05; }.badge-overdue { background:#fce3e1;color:#a93d35; }.badge-soon { background:#e3f0fa;color:#28678e; }
+    .btn { border:0;border-radius:9px;padding:10px 13px;font:inherit;font-size:13px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:.18s;cursor:pointer; }
+    .btn:focus-visible { outline:2px solid #0a9d98;outline-offset:2px; }.btn-primary { background:var(--teal);color:white; }.btn-primary:hover { background:#056974; }.btn-secondary { background:#eef3f4;color:var(--navy); }.btn-secondary:hover { background:#dfe9ea; }.btn-danger { background:#f9e2e0;color:#a33e36; }
+    .icon-btn { border:0;background:transparent;padding:6px;color:#57707d;border-radius:6px; }.icon-btn:hover,.icon-btn:focus-visible { background:#e6f1f2;color:var(--teal);outline:2px solid #5accc7; }
+    .filter-row { display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:15px; }
+    .filter-row .field-input { min-width:210px; }
+    .modal { position:fixed;inset:0;display:none;background:rgba(8,25,39,.52);z-index:40;padding:20px;align-items:center;justify-content:center; }
+    .modal.open { display:flex; }
+    .modal-card { width:min(820px,100%);max-height:92%;overflow:auto;background:white;border-radius:18px;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.25); }
+    .form-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px; }
+    label { display:block;font-size:12px;font-weight:700;color:#425460;margin-bottom:5px; }
+    .field-input,.field-select { width:100%; }
+    .validation { min-height:17px;color:#b13e37;font-size:11px;margin-top:4px; }
+    .empty { text-align:center;padding:35px 18px;color:var(--muted); }
+    .financial-row { display:grid;grid-template-columns:1fr auto auto;gap:15px;padding:10px 0;border-bottom:1px solid #edf0f2;font-size:13px; }
+    .financial-row.total { font-weight:700;font-size:15px;border-top:2px solid var(--navy);border-bottom:0;margin-top:5px; }
+    .aging-bar { height:10px;border-radius:99px;background:#e8eef0;overflow:hidden; }.aging-fill { height:100%;border-radius:99px; }
+    .toast { position:fixed;bottom:22px;right:22px;background:var(--navy);color:white;padding:12px 15px;border-radius:10px;font-size:13px;box-shadow:0 10px 25px rgba(0,0,0,.2);display:none;z-index:60; }
+    .toast.show { display:block;animation:reveal .25s ease; }
+    @media(max-width:900px){.sidebar{width:70px;padding:17px 9px}.brand-copy,.nav-copy,.sidebar-foot{display:none}.nav-item{justify-content:center;padding:12px}.topbar{padding:16px 20px}.content-area{padding:22px 18px}.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:620px){.app-shell{display:block}.sidebar{width:100%;height:auto;flex-direction:row;overflow:auto;gap:4px;padding:10px}.brand-block{display:none}.nav-item{min-width:48px}.topbar{position:static;align-items:flex-start}.topbar-controls{display:none}.content-area{padding:18px 13px}.form-grid{grid-template-columns:1fr}.metric-value{font-size:21px}}
+    @media print{.sidebar,.topbar,.no-print{display:none!important}.content-area{padding:0}.view{display:none!important}#financial-view{display:block!important}.panel{box-shadow:none;border:0}}
+  </style>
+  <script src="/_sdk/ddcab3e45959c817.resizing_sdk.js" type="text/javascript" integrity="sha512-VAviUKfZVzugWBSeULYjSljTX+nb84wc6Zzbx5GQaQgh6X2ISSjXi8eIiCDGdwDh10esJMY0+QFQgUy9NcrTlQ=="></script>
+ </head>
+ <body data-template-id="__page-root" style="background: rgb(245, 247, 248);">
+  <div class="app-shell">
+   <aside class="sidebar" aria-label="Navegación principal">
+    <div class="brand-block flex items-center gap-3 px-2 mb-8">
+     <div class="brand-mark">
+      <i data-lucide="landmark" width="19"></i>
+     </div>
+     <div class="brand-copy">
+      <div data-template-id="brand-name" class="canva-text text-white font-bold text-sm" style="color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 14px;">Núcleo Finanzas</div>
+      <div data-template-id="brand-subtitle" class="canva-text text-blue-200 text-[10px]" style="color: rgb(191, 219, 254); font-weight: 400; font-style: normal; font-size: 9px; letter-spacing: 0.08rem;">ADMINISTRACIÓN EMPRESARIAL</div>
+     </div>
+    </div>
+    <nav class="space-y-1"><button class="nav-item active" data-view="dashboard-view"><i data-lucide="layout-dashboard" width="18"></i><span data-template-id="nav-dashboard" class="canva-text nav-copy" style="color: rgb(219, 234, 254); font-weight: 600; font-style: normal; font-size: 14px;">Dashboard</span></button> <button class="nav-item" data-view="billing-view"><i data-lucide="receipt-text" width="18"></i><span data-template-id="nav-billing" class="canva-text nav-copy" style="color: rgb(219, 234, 254); font-weight: 600; font-style: normal; font-size: 14px;">Facturación</span></button> <button class="nav-item" data-view="financial-view"><i data-lucide="chart-no-axes-combined" width="18"></i><span data-template-id="nav-financial" class="canva-text nav-copy" style="color: rgb(219, 234, 254); font-weight: 600; font-style: normal; font-size: 14px;">Estados financieros</span></button> <button class="nav-item" data-view="collections-view"><i data-lucide="badge-dollar-sign" width="18"></i><span data-template-id="nav-collections" class="canva-text nav-copy" style="color: rgb(219, 234, 254); font-weight: 600; font-style: normal; font-size: 14px;">Cobranza</span></button> <button class="nav-item" data-view="payables-view"><i data-lucide="hand-coins" width="18"></i><span data-template-id="nav-payables" class="canva-text nav-copy" style="color: rgb(219, 234, 254); font-weight: 600; font-style: normal; font-size: 14px;">Cuentas por pagar</span></button>
+    </nav>
+    <div class="sidebar-foot mt-auto px-2 pt-6 text-[10px] text-blue-200 leading-relaxed"><span data-template-id="sidebar-demo-note" class="canva-text" style="color: rgb(191, 219, 254); font-weight: 400; font-style: normal; font-size: 10px;">Entorno de demostración · cifras ilustrativas</span>
+    </div>
+   </aside>
+   <div class="main-area">
+    <header class="topbar">
+     <div>
+      <div data-template-id="header-overline" class="canva-text eyebrow" style="color: rgb(8, 126, 139); font-weight: 700; font-style: normal; font-size: 11px; letter-spacing: 0.1rem;">Operación financiera</div>
+      <h1 id="current-title" class="page-title">Dashboard financiero</h1>
+     </div>
+     <div class="topbar-controls flex items-center gap-3"><label for="global-period" class="sr-only">Periodo de consulta</label> <select id="global-period" class="period-select"> <option>Septiembre 2026</option><option>Agosto 2026</option><option>Julio 2026</option><option>Ejercicio 2026</option> </select> <span class="badge badge-soon"><i data-lucide="flask-conical" width="12" class="mr-1"></i><span data-template-id="demo-badge" class="canva-text" style="color: rgb(40, 103, 142); font-weight: 700; font-style: normal; font-size: 10px;">Datos demo</span></span>
+     </div>
+    </header>
+    <main class="content-area">
+     <section id="dashboard-view" class="view active" aria-labelledby="current-title">
+      <div class="flex flex-wrap justify-between gap-3 mb-5">
+       <div>
+        <p data-template-id="dashboard-description" class="canva-text text-sm text-slate-500" style="color: rgb(104, 119, 130); font-weight: 400; font-style: normal; font-size: 14px;">Vista consolidada de desempeño mensual. Todas las cifras mostradas son datos de demostración.</p>
+       </div>
+       <div class="text-xs text-slate-500 flex items-center gap-2">
+        <i data-lucide="refresh-cw" width="14"></i><span data-template-id="dashboard-updated" class="canva-text" style="color: rgb(104, 119, 130); font-weight: 400; font-style: normal; font-size: 12px;">Actualizado para septiembre de 2026</span>
+       </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+       <article class="metric-card">
+        <div data-template-id="metric-income-month-label" class="canva-text metric-label" style="color: rgb(104, 119, 130); font-weight: 600; font-style: normal; font-size: 14px;">Ingresos totales del mes</div>
+        <div class="metric-value">
+         $482,650
+        </div>
+        <div class="variance up">
+         <i data-lucide="trending-up" width="13"></i> 12.4% vs. mes anterior
+        </div>
+       </article>
+       <article class="metric-card">
+        <div data-template-id="metric-income-year-label" class="canva-text metric-label" style="color: rgb(104, 119, 130); font-weight: 600; font-style: normal; font-size: 14px;">Ingresos totales del año</div>
+        <div class="metric-value">
+         $4,183,200
+        </div>
+        <div class="variance up">
+         <i data-lucide="trending-up" width="13"></i> 18.1% avance anual
+        </div>
+       </article>
+       <article class="metric-card">
+        <div data-template-id="metric-profit-month-label" class="canva-text metric-label" style="color: rgb(104, 119, 130); font-weight: 600; font-style: normal; font-size: 14px;">Utilidad neta del mes</div>
+        <div class="metric-value">
+         $106,183
+        </div>
+        <div class="variance up">
+         <i data-lucide="trending-up" width="13"></i> 8.7% vs. mes anterior
+        </div>
+       </article>
+       <article class="metric-card">
+        <div data-template-id="metric-profit-year-label" class="canva-text metric-label" style="color: rgb(104, 119, 130); font-weight: 600; font-style: normal; font-size: 14px;">Utilidad neta del año</div>
+        <div class="metric-value">
+         $879,605
+        </div>
+        <div class="variance up">
+         <i data-lucide="trending-up" width="13"></i> 16.5% avance anual
+        </div>
+       </article>
+       <article class="metric-card">
+        <div data-template-id="metric-expenses-label" class="canva-text metric-label" style="color: rgb(104, 119, 130); font-weight: 600; font-style: normal; font-size: 14px;">Gastos del mes</div>
+        <div class="metric-value">
+         $176,460
+        </div>
+        <div class="variance down">
+         <i data-lucide="trending-down" width="13"></i> 3.2% vs. mes anterior
+        </div>
+       </article>
+       <article class="metric-card">
+        <div data-template-id="metric-margin-label" class="canva-text metric-label" style="color: rgb(104, 119, 130); font-weight: 600; font-style: normal; font-size: 14px;">Rentabilidad del mes</div>
+        <div class="metric-value">
+         22.0%
+        </div>
+        <div class="variance up">
+         <i data-lucide="trending-up" width="13"></i> 1.6 pp vs. mes anterior
+        </div>
+       </article>
+      </div>
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-4">
+       <article class="panel xl:col-span-2">
+        <div class="flex justify-between gap-4 flex-wrap">
+         <div>
+          <h2 data-template-id="trend-title" class="canva-text panel-title" style="color: rgb(23, 33, 43); font-weight: 700; font-style: normal; font-size: 21px;">Tendencia mensual</h2>
+          <p data-template-id="trend-subtitle" class="canva-text panel-subtitle" style="color: rgb(104, 119, 130); font-weight: 400; font-style: normal; font-size: 14px;">Ingresos y gastos · marzo a septiembre 2026</p>
+         </div><span class="text-xs font-bold text-teal-700">$4.18M acumulado</span>
+        </div>
+        <div class="chart-wrap" id="trend-chart">
+         <div id="chart-tip" class="chart-tip"></div>
+         <svg viewBox="0 0 680 230" role="img" aria-label="Tendencia mensual demostrativa de ingresos y gastos" class="w-full h-full overflow-visible"><defs>
+           <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+            <stop stop-color="#25a99f" stop-opacity=".25"></stop>
+            <stop offset="1" stop-color="#25a99f" stop-opacity="0"></stop>
+           </linearGradient>
+          </defs> <g stroke="#e5ecee" stroke-width="1">
+           <line x1="30" y1="30" x2="660" y2="30"></line>
+           <line x1="30" y1="80" x2="660" y2="80"></line>
+           <line x1="30" y1="130" x2="660" y2="130"></line>
+           <line x1="30" y1="180" x2="660" y2="180"></line>
+          </g> <path d="M38 166 L150 141 L262 120 L374 128 L486 86 L598 58 L650 50 L650 180 L38 180Z" fill="url(#area)"></path> <path d="M38 166 L150 141 L262 120 L374 128 L486 86 L598 58 L650 50" fill="none" stroke="#087e8b" stroke-width="4" stroke-linecap="round"></path> <path d="M38 179 L150 166 L262 151 L374 160 L486 139 L598 129 L650 117" fill="none" stroke="#d99822" stroke-width="3" stroke-linecap="round" stroke-dasharray="5 5"></path> <g fill="#087e8b" class="chart-points">
+           <circle cx="38" cy="166" r="5" data-month="Mar" data-income="$338,000" tabindex="0"></circle>
+           <circle cx="150" cy="141" r="5" data-month="Abr" data-income="$361,500" tabindex="0"></circle>
+           <circle cx="262" cy="120" r="5" data-month="May" data-income="$389,200" tabindex="0"></circle>
+           <circle cx="374" cy="128" r="5" data-month="Jun" data-income="$379,000" tabindex="0"></circle>
+           <circle cx="486" cy="86" r="5" data-month="Jul" data-income="$431,900" tabindex="0"></circle>
+           <circle cx="598" cy="58" r="5" data-month="Ago" data-income="$468,400" tabindex="0"></circle>
+           <circle cx="650" cy="50" r="5" data-month="Sep" data-income="$482,650" tabindex="0"></circle>
+          </g> <g fill="#73828c" font-size="11">
+           <text x="30" y="213">
+            Mar
+           </text>
+           <text x="142" y="213">
+            Abr
+           </text>
+           <text x="254" y="213">
+            May
+           </text>
+           <text x="366" y="213">
+            Jun
+           </text>
+           <text x="478" y="213">
+            Jul
+           </text>
+           <text x="590" y="213">
+            Ago
+           </text>
+           <text x="640" y="213">
+            Sep
+           </text>
+          </g>
+         </svg>
+        </div>
+        <div class="flex gap-5 text-[11px] text-slate-500">
+         <span><b class="inline-block w-2 h-2 rounded-full bg-teal-600 mr-1"></b>Ingresos</span><span><b class="inline-block w-3 border-t-2 border-dashed border-amber-500 mr-1"></b>Gastos</span>
+        </div>
+       </article>
+       <article class="panel">
+        <h2 data-template-id="distribution-title" class="canva-text panel-title" style="color: rgb(23, 33, 43); font-weight: 700; font-style: normal; font-size: 21px;">Distribución de ingresos</h2>
+        <p data-template-id="distribution-subtitle" class="canva-text panel-subtitle" style="color: rgb(104, 119, 130); font-weight: 400; font-style: normal; font-size: 14px;">Participación por línea de negocio</p>
+        <div class="flex justify-center py-5">
+         <div class="w-36 h-36 rounded-full" style="background:conic-gradient(#087e8b 0 46%,#38b6ae 46% 72%,#d99822 72% 88%,#e5ecee 88% 100%);position:relative">
+          <div class="absolute inset-7 bg-white rounded-full grid place-items-center text-center">
+           <b class="text-lg">100%</b><span class="text-[9px] text-slate-500">Ingresos</span>
+          </div>
+         </div>
+        </div>
+        <div class="space-y-2 text-xs">
+         <div class="flex justify-between">
+          <span><b class="inline-block w-2 h-2 rounded-full bg-teal-700 mr-2"></b>Servicios recurrentes</span><b>46%</b>
+         </div>
+         <div class="flex justify-between">
+          <span><b class="inline-block w-2 h-2 rounded-full bg-teal-400 mr-2"></b>Proyectos</span><b>26%</b>
+         </div>
+         <div class="flex justify-between">
+          <span><b class="inline-block w-2 h-2 rounded-full bg-amber-500 mr-2"></b>Consultoría</span><b>16%</b>
+         </div>
+        </div>
+       </article>
+      </div>
+      <article class="panel mt-4">
+       <div class="flex justify-between gap-3 flex-wrap items-start">
+        <div>
+         <h2 data-template-id="analytics-title" class="canva-text panel-title" style="color: rgb(23, 33, 43); font-weight: 700; font-style: normal; font-size: 21px;">Análisis de rentabilidad</h2>
+         <p data-template-id="analytics-subtitle" class="canva-text panel-subtitle" style="color: rgb(104, 119, 130); font-weight: 400; font-style: normal; font-size: 14px;">Comparativo de ingresos, gastos y margen sobre datos demostrativos.</p>
+        </div><label for="analytics-select" class="sr-only">Desglose analítico</label><select id="analytics-select" class="field-select w-auto"><option value="month">Rentabilidad por mes</option><option value="service">Por servicio</option><option value="client">Por cliente</option><option value="unit">Por unidad</option><option value="operator">Por operador</option></select>
+       </div>
+       <div class="table-wrap mt-4">
+        <table>
+         <thead>
+          <tr>
+           <th id="analytics-head">Periodo</th>
+           <th>Ingresos</th>
+           <th>Gastos</th>
+           <th>Utilidad</th>
+           <th>Margen</th>
+          </tr>
+         </thead>
+         <tbody id="analytics-body"></tbody>
+        </table>
+       </div>
+      </article>
+     </section>
+     <section id="billing-view" class="view">
+      <div class="flex justify-between flex-wrap gap-3 mb-5">
+       <p data-template-id="billing-description" class="canva-text text-sm text-slate-500" style="color: rgb(104, 119, 130); font-weight: 400; font-style: normal; font-size: 14px;">Consulta, filtra y administra facturas. Los registros agregados se guardan en tu Canva Sheet.</p><button class="btn btn-primary no-print" id="add-invoice"><i data-lucide="plus" width="16"></i><span data-template-id="add-invoice-label" class="canva-text" style="background: rgb(8, 126, 139); color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 14px;">Agregar factura</span></button>
+      </div>
+      <div class="filter-row no-print">
+       <label for="invoice-search" class="sr-only">Buscar facturas</label>
+       <div class="relative">
+        <i data-lucide="search" width="15" class="absolute left-3 top-3 text-slate-400"></i><input id="invoice-search" class="field-input pl-9" placeholder="Buscar cliente, RFC o factura">
+       </div><label for="invoice-status" class="sr-only">Filtrar por estatus</label><select id="invoice-status" class="field-select w-auto"><option value="">Todos los estatus</option><option>Pendiente</option><option>Pagada</option><option>Vencida</option></select><label for="invoice-date" class="sr-only">Fecha de emisión desde</label><input id="invoice-date" type="date" class="field-input w-auto">
+      </div>
+      <div class="table-wrap">
+       <table id="invoice-table">
+        <thead>
+         <tr>
+          <th data-key="cliente">Cliente</th>
+          <th data-key="rfc">RFC</th>
+          <th data-key="num_factura">Factura</th>
+          <th data-key="fecha_emision">Emisión</th>
+          <th data-key="total">Total</th>
+          <th>Servicio</th>
+          <th>Concepto</th>
+          <th>Días</th>
+          <th data-key="fecha_vencimiento">Vencimiento</th>
+          <th data-key="estatus_pago">Estatus</th>
+          <th>Pago</th>
+          <th>Rastro</th>
+          <th class="no-print">Acciones</th>
+         </tr>
+        </thead>
+        <tbody id="invoice-body"></tbody>
+       </table>
+      </div>
+      <div class="flex justify-between items-center mt-3 text-xs text-slate-500">
+       <span id="invoice-count"></span>
+       <div class="flex gap-2">
+        <button id="invoice-prev" class="btn btn-secondary py-1.5">Anterior</button><button id="invoice-next" class="btn btn-secondary py-1.5">Siguiente</button>
+       </div>
+      </div>
+     </section>
+     <section id="financial-view" class="view">
+      <div class="flex justify-between gap-3 flex-wrap mb-5">
+       <p data-template-id="financial-description" class="canva-text text-sm text-slate-500" style="color: rgb(104, 119, 130); font-weight: 400; font-style: normal; font-size: 14px;">Estados financieros de demostración con comparativo respecto al periodo anterior.</p><button class="btn btn-secondary no-print" id="print-financial"><i data-lucide="printer" width="16"></i><span data-template-id="print-label" class="canva-text" style="background: rgb(238, 243, 244); color: rgb(16, 42, 67); font-weight: 700; font-style: normal; font-size: 14px;">Imprimir reporte</span></button>
+      </div>
+      <div class="segmented w-fit mb-4 no-print" role="tablist">
+       <button class="segment active" data-financial="balance" role="tab">Balance general</button><button class="segment" data-financial="results" role="tab">Estado de resultados</button>
+      </div>
+      <article id="balance-panel" class="panel max-w-4xl">
+       <div class="flex justify-between border-b pb-4 mb-3">
+        <div>
+         <h2 data-template-id="balance-title" class="canva-text panel-title" style="color: rgb(23, 33, 43); font-weight: 700; font-style: normal; font-size: 21px;">Balance general</h2>
+         <p data-template-id="balance-subtitle" class="canva-text panel-subtitle" style="color: rgb(104, 119, 130); font-weight: 400; font-style: normal; font-size: 14px;">Al 30 de septiembre de 2026 · MXN</p>
+        </div><span class="text-xs text-slate-500">Comparativo ago. 2026</span>
+       </div>
+       <div class="financial-row">
+        <b>Activo circulante</b><span>$1,486,200</span><span class="text-slate-500">$1,392,800</span>
+       </div>
+       <div class="financial-row">
+        <span>Cuentas por cobrar</span><span>$684,950</span><span class="text-slate-500">$621,300</span>
+       </div>
+       <div class="financial-row">
+        <span>Bancos y caja</span><span>$801,250</span><span class="text-slate-500">$771,500</span>
+       </div>
+       <div class="financial-row">
+        <b>Activo no circulante</b><span>$928,400</span><span class="text-slate-500">$942,000</span>
+       </div>
+       <div class="financial-row total">
+        <span>Total activo</span><span>$2,414,600</span><span>$2,334,800</span>
+       </div>
+       <div class="financial-row mt-6">
+        <b>Pasivo circulante</b><span>$714,800</span><span class="text-slate-500">$685,400</span>
+       </div>
+       <div class="financial-row">
+        <span>Cuentas por pagar</span><span>$496,300</span><span class="text-slate-500">$468,000</span>
+       </div>
+       <div class="financial-row">
+        <b>Capital contable</b><span>$1,699,800</span><span class="text-slate-500">$1,649,400</span>
+       </div>
+       <div class="financial-row total">
+        <span>Total pasivo y capital</span><span>$2,414,600</span><span>$2,334,800</span>
+       </div>
+      </article>
+      <article id="results-panel" class="panel max-w-4xl hidden">
+       <div class="flex justify-between border-b pb-4 mb-3">
+        <div>
+         <h2 data-template-id="results-title" class="canva-text panel-title" style="color: rgb(23, 33, 43); font-weight: 700; font-style: normal; font-size: 21px;">Estado de resultados</h2>
+         <p data-template-id="results-subtitle" class="canva-text panel-subtitle" style="color: rgb(104, 119, 130); font-weight: 400; font-style: normal; font-size: 14px;">Del 1 al 30 de septiembre de 2026 · MXN</p>
+        </div><span class="text-xs text-slate-500">Comparativo ago. 2026</span>
+       </div>
+       <div class="financial-row">
+        <span>Ingresos netos</span><span>$482,650</span><span class="text-slate-500">$468,400</span>
+       </div>
+       <div class="financial-row">
+        <span>Costo de ventas</span><span>($142,307)</span><span class="text-slate-500">($138,950)</span>
+       </div>
+       <div class="financial-row total">
+        <span>Utilidad bruta</span><span>$340,343</span><span>$329,450</span>
+       </div>
+       <div class="financial-row">
+        <span>Gastos operativos</span><span>($176,460)</span><span class="text-slate-500">($170,220)</span>
+       </div>
+       <div class="financial-row total">
+        <span>Utilidad operativa</span><span>$163,883</span><span>$159,230</span>
+       </div>
+       <div class="financial-row">
+        <span>Impuestos</span><span>($57,700)</span><span class="text-slate-500">($55,750)</span>
+       </div>
+       <div class="financial-row total">
+        <span>Utilidad neta</span><span>$106,183</span><span>$103,480</span>
+       </div>
+      </article>
+     </section>
+     <section id="collections-view" class="view">
+      <p data-template-id="collections-description" class="canva-text text-sm text-slate-500 mb-5" style="color: rgb(104, 119, 130); font-weight: 400; font-style: normal; font-size: 14px;">Seguimiento de cartera por cobrar derivada de las facturas de demostración y registros guardados.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+       <article class="metric-card">
+        <div data-template-id="ar-total-label" class="canva-text metric-label" style="color: rgb(104, 119, 130); font-weight: 600; font-style: normal; font-size: 14px;">Cuentas por cobrar</div>
+        <div class="metric-value">
+         $684,950
+        </div>
+        <div class="variance up">
+         7 facturas activas
+        </div>
+       </article>
+       <article class="metric-card">
+        <div data-template-id="ar-overdue-label" class="canva-text metric-label" style="color: rgb(104, 119, 130); font-weight: 600; font-style: normal; font-size: 14px;">Total vencido</div>
+        <div class="metric-value">
+         $128,400
+        </div>
+        <div class="variance down">
+         18.7% de cartera
+        </div>
+       </article>
+       <article class="metric-card">
+        <div data-template-id="ar-upcoming-label" class="canva-text metric-label" style="color: rgb(104, 119, 130); font-weight: 600; font-style: normal; font-size: 14px;">Por vencer</div>
+        <div class="metric-value">
+         $391,750
+        </div>
+        <div class="variance up">
+         Próximos 15 días
+        </div>
+       </article>
+       <article class="metric-card">
+        <div data-template-id="ar-collected-label" class="canva-text metric-label" style="color: rgb(104, 119, 130); font-weight: 600; font-style: normal; font-size: 14px;">Cobrado</div>
+        <div class="metric-value">
+         $353,200
+        </div>
+        <div class="variance up">
+         Cobrado en septiembre
+        </div>
+       </article>
+      </div>
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-4">
+       <article class="panel">
+        <h2 data-template-id="aging-title" class="canva-text panel-title" style="color: rgb(23, 33, 43); font-weight: 700; font-style: normal; font-size: 21px;">Antigüedad de saldos</h2>
+        <div class="space-y-4 mt-5 text-xs">
+         <div>
+          <div class="flex justify-between mb-1">
+           <span>0–30 días</span><b>$432,550</b>
+          </div>
+          <div class="aging-bar">
+           <div class="aging-fill bg-teal-600" style="width:63%"></div>
+          </div>
+         </div>
+         <div>
+          <div class="flex justify-between mb-1">
+           <span>31–60 días</span><b>$86,400</b>
+          </div>
+          <div class="aging-bar">
+           <div class="aging-fill bg-amber-500" style="width:28%"></div>
+          </div>
+         </div>
+         <div>
+          <div class="flex justify-between mb-1">
+           <span>61–90 días</span><b>$27,000</b>
+          </div>
+          <div class="aging-bar">
+           <div class="aging-fill bg-orange-500" style="width:13%"></div>
+          </div>
+         </div>
+         <div>
+          <div class="flex justify-between mb-1">
+           <span>Más de 90 días</span><b>$15,000</b>
+          </div>
+          <div class="aging-bar">
+           <div class="aging-fill bg-red-500" style="width:8%"></div>
+          </div>
+         </div>
+        </div>
+       </article>
+       <article class="panel xl:col-span-2">
+        <div class="filter-row">
+         <label for="collection-search" class="sr-only">Buscar cobranza</label><input id="collection-search" class="field-input" placeholder="Buscar cliente o factura"><label for="collection-group" class="sr-only">Agrupar cobranza</label><select id="collection-group" class="field-select w-auto"><option>Sin agrupación</option><option>Por responsable</option><option>Por estatus</option></select>
+        </div>
+        <div class="table-wrap">
+         <table>
+          <thead>
+           <tr>
+            <th>Cliente</th>
+            <th>Factura</th>
+            <th>Vencimiento</th>
+            <th>Días vencidos</th>
+            <th>Saldo</th>
+            <th>Estatus</th>
+            <th>Responsable</th>
+            <th>Acción</th>
+           </tr>
+          </thead>
+          <tbody id="collection-body"></tbody>
+         </table>
+        </div>
+       </article>
+      </div>
+     </section>
+     <section id="payables-view" class="view">
+      <div class="flex justify-between flex-wrap gap-3 mb-5">
+       <p data-template-id="payables-description" class="canva-text text-sm text-slate-500" style="color: rgb(104, 119, 130); font-weight: 400; font-style: normal; font-size: 14px;">Controla obligaciones con proveedores y registra pagos desde una única vista.</p><button class="btn btn-primary no-print" id="add-payable"><i data-lucide="plus" width="16"></i><span data-template-id="add-payable-label" class="canva-text" style="background: rgb(8, 126, 139); color: rgb(255, 255, 255); font-weight: 700; font-style: normal; font-size: 14px;">Agregar cuenta</span></button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+       <article class="metric-card">
+        <div data-template-id="ap-total-label" class="canva-text metric-label" style="color: rgb(104, 119, 130); font-weight: 600; font-style: normal; font-size: 14px;">Obligaciones activas</div>
+        <div class="metric-value">
+         $496,300
+        </div>
+        <div class="variance up">
+         6 obligaciones activas
+        </div>
+       </article>
+       <article class="metric-card">
+        <div data-template-id="ap-next-label" class="canva-text metric-label" style="color: rgb(104, 119, 130); font-weight: 600; font-style: normal; font-size: 14px;">Próximos vencimientos</div>
+        <div class="metric-value">
+         $192,400
+        </div>
+        <div class="variance up">
+         Próximos 7 días
+        </div>
+       </article>
+       <article class="metric-card">
+        <div data-template-id="ap-overdue-label" class="canva-text metric-label" style="color: rgb(104, 119, 130); font-weight: 600; font-style: normal; font-size: 14px;">Obligaciones vencidas</div>
+        <div class="metric-value">
+         $47,850
+        </div>
+        <div class="variance down">
+         Requiere atención
+        </div>
+       </article>
+      </div>
+      <article class="panel mt-4">
+       <div class="flex justify-between flex-wrap gap-3">
+        <div>
+         <h2 data-template-id="due-title" class="canva-text panel-title" style="color: rgb(23, 33, 43); font-weight: 700; font-style: normal; font-size: 21px;">Calendario de vencimientos</h2>
+         <p data-template-id="due-subtitle" class="canva-text panel-subtitle" style="color: rgb(104, 119, 130); font-weight: 400; font-style: normal; font-size: 14px;">Fechas relevantes de las obligaciones registradas.</p>
+        </div>
+        <div class="flex gap-2">
+         <span class="badge badge-overdue">12 Sep · vencido</span><span class="badge badge-soon">18 Sep · próximo</span>
+        </div>
+       </div>
+      </article>
+      <div class="filter-row mt-4 no-print">
+       <label for="payable-status" class="sr-only">Filtrar cuentas por pagar</label><select id="payable-status" class="field-select w-auto"><option value="">Todos los estatus</option><option>Pendiente</option><option>Pagada</option><option>Vencida</option></select><label for="payable-search" class="sr-only">Buscar proveedores</label><input id="payable-search" class="field-input" placeholder="Buscar proveedor, RFC o factura">
+      </div>
+      <div class="table-wrap">
+       <table>
+        <thead>
+         <tr>
+          <th>Proveedor</th>
+          <th>RFC</th>
+          <th>Factura</th>
+          <th>Concepto</th>
+          <th>Emisión</th>
+          <th>Vencimiento</th>
+          <th>Importe</th>
+          <th>Días</th>
+          <th>Estatus</th>
+          <th>Pago</th>
+          <th>Responsable</th>
+          <th class="no-print">Acciones</th>
+         </tr>
+        </thead>
+        <tbody id="payable-body"></tbody>
+       </table>
+      </div>
+     </section>
+    </main>
+   </div>
+  </div>
+  <div id="record-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+   <div class="modal-card">
+    <div class="flex justify-between items-center mb-5">
+     <div>
+      <h2 id="modal-title" class="text-xl font-bold">Nuevo registro</h2>
+      <p class="text-xs text-slate-500 mt-1">Los campos con * son obligatorios.</p>
+     </div><button id="close-modal" class="icon-btn" aria-label="Cerrar formulario"><i data-lucide="x" width="20"></i></button>
+    </div>
+    <form id="record-form"><input id="edit-id" type="hidden"><input id="record-type" type="hidden">
+     <div class="form-grid">
+      <div>
+       <label for="record-party" id="party-label">Cliente *</label><input id="record-party" class="field-input" required="">
+      </div>
+      <div>
+       <label for="record-rfc">RFC *</label><input id="record-rfc" class="field-input" required="" maxlength="13" placeholder="XAXX010101000">
+      </div>
+      <div>
+       <label for="record-number">Número de factura *</label><input id="record-number" class="field-input" required="">
+      </div>
+      <div>
+       <label for="record-issue">Fecha de emisión *</label><input id="record-issue" type="date" class="field-input" required="">
+      </div>
+      <div>
+       <label for="record-amount" id="amount-label">Total (MXN) *</label><input id="record-amount" type="number" min="0.01" step="0.01" class="field-input" required="">
+      </div>
+      <div>
+       <label for="record-credit">Días de crédito *</label><input id="record-credit" type="number" min="0" max="365" class="field-input" value="30" required="">
+      </div>
+      <div>
+       <label for="record-due">Fecha de vencimiento</label><input id="record-due" type="date" class="field-input" readonly="">
+      </div>
+      <div>
+       <label for="record-status">Estatus *</label><select id="record-status" class="field-select"><option>Pendiente</option><option>Pagada</option><option>Vencida</option></select>
+      </div>
+      <div>
+       <label for="record-paid">Fecha de pago</label><input id="record-paid" type="date" class="field-input">
+      </div>
+      <div>
+       <label for="record-service">Clave de servicio</label><input id="record-service" class="field-input">
+      </div>
+      <div>
+       <label for="record-concept">Concepto *</label><input id="record-concept" class="field-input" required="">
+      </div>
+      <div>
+       <label for="record-owner">Responsable</label><input id="record-owner" class="field-input" value="Finanzas">
+      </div>
+      <div>
+       <label for="record-trace">Clave de rastro</label><input id="record-trace" class="field-input">
+      </div>
+     </div>
+     <p id="form-error" class="validation mt-3" aria-live="polite"></p>
+     <div class="flex justify-end gap-2 mt-4">
+      <button type="button" id="cancel-modal" class="btn btn-secondary">Cancelar</button><button type="submit" id="save-record" class="btn btn-primary"><i data-lucide="save" width="15"></i><span>Guardar registro</span></button>
+     </div>
+    </form>
+   </div>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/_sdk/6bf4579cc4c25151.editing_sdk.js" integrity="sha512-12l4JxmokLfWaGAHNO68l5Ev8ahSshUKfuxnYUB8nkqSU1+WiCvimsPjHzPjw1k7DcHL+eZ+K9Bld04jnd5gkg=="></script>
+  <script>
+    const demoInvoices = [
+      {id:"d1",type:"factura",cliente:"Grupo Altura",rfc:"GAL190824P45",num_factura:"FAC-2026-0918",fecha_emision:"2026-09-02",total:128400,clave_servicio:"SRV-001",concepto:"Consultoría estratégica",dias_credito:30,fecha_vencimiento:"2026-10-02",estatus_pago:"Pendiente",fecha_pago:"",clave_rastro:"",responsable:"Mariana López"},
+      {id:"d2",type:"factura",cliente:"Logística del Centro",rfc:"LCE160415AB2",num_factura:"FAC-2026-0909",fecha_emision:"2026-08-14",total:86400,clave_servicio:"SRV-014",concepto:"Implementación operativa",dias_credito:30,fecha_vencimiento:"2026-09-13",estatus_pago:"Vencida",fecha_pago:"",clave_rastro:"",responsable:"Daniel Ríos"},
+      {id:"d3",type:"factura",cliente:"Nexo Comercial",rfc:"NCO200903GX1",num_factura:"FAC-2026-0901",fecha_emision:"2026-08-25",total:152750,clave_servicio:"SRV-008",concepto:"Servicio mensual",dias_credito:15,fecha_vencimiento:"2026-09-09",estatus_pago:"Pagada",fecha_pago:"2026-09-07",clave_rastro:"SPEI-827145",responsable:"Mariana López"},
+      {id:"d4",type:"factura",cliente:"Innovación del Pacífico",rfc:"IPA180626QF3",num_factura:"FAC-2026-0921",fecha_emision:"2026-09-04",total:115100,clave_servicio:"SRV-001",concepto:"Consultoría tecnológica",dias_credito:45,fecha_vencimiento:"2026-10-19",estatus_pago:"Pendiente",fecha_pago:"",clave_rastro:"",responsable:"Sofía Vega"}
+    ];
+    const demoPayables = [
+      {id:"p1",type:"pagar",proveedor:"Servicios Cloud MX",rfc:"SCM180210PZ9",num_factura:"SC-39082",fecha_emision:"2026-08-18",importe:78400,concepto:"Infraestructura cloud",dias_credito:30,fecha_vencimiento:"2026-09-17",estatus_pago:"Pendiente",fecha_pago:"",responsable:"Carlos Méndez",cliente:"",total:0,clave_servicio:"",clave_rastro:""},
+      {id:"p2",type:"pagar",proveedor:"Talento Ejecutivo SA",rfc:"TES170814MZ7",num_factura:"TE-11203",fecha_emision:"2026-08-10",importe:47850,concepto:"Honorarios especializados",dias_credito:30,fecha_vencimiento:"2026-09-09",estatus_pago:"Vencida",fecha_pago:"",responsable:"Carlos Méndez",cliente:"",total:0,clave_servicio:"",clave_rastro:""},
+      {id:"p3",type:"pagar",proveedor:"Oficinas y Diseño",rfc:"ODI150702LR4",num_factura:"OD-8821",fecha_emision:"2026-08-29",importe:114000,concepto:"Adecuación de oficinas",dias_credito:20,fecha_vencimiento:"2026-09-18",estatus_pago:"Pendiente",fecha_pago:"",responsable:"Andrea Solís",cliente:"",total:0,clave_servicio:"",clave_rastro:""}
+    ];
+    let storedRecords = [], invoicePage = 0, invoiceSort = "fecha_emision", invoiceSortAsc = false, editingRecord = null;
+    const money = n => new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN",maximumFractionDigits:0}).format(Number(n || 0));
+    const dateMx = d => d ? new Intl.DateTimeFormat("es-MX",{day:"2-digit",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00")) : "—";
+    const today = "2026-09-08";
+    const records = () => [...demoInvoices,...demoPayables,...storedRecords];
+    const invoices = () => records().filter(x => x.type === "factura");
+    const payables = () => records().filter(x => x.type === "pagar");
+    const escapeHtml = text => String(text || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+    function toast(message){ const el=document.getElementById("toast"); el.textContent=message; el.classList.add("show"); clearTimeout(window.toastTimer); window.toastTimer=setTimeout(()=>el.classList.remove("show"),3200); }
+    function statusBadge(status){ const c=status==="Pagada"?"paid":status==="Vencida"?"overdue":"pending"; return `<span class="badge badge-${c}">${status}</span>`; }
+    function daysOverdue(r){ return r.estatus_pago==="Pagada"?0:Math.max(0,Math.ceil((new Date(today)-new Date(r.fecha_vencimiento))/86400000)); }
+
+    function renderInvoices(){
+      const query=document.getElementById("invoice-search").value.toLowerCase(), status=document.getElementById("invoice-status").value, from=document.getElementById("invoice-date").value;
+      let rows=invoices().filter(r => (!query || [r.cliente,r.rfc,r.num_factura].join(" ").toLowerCase().includes(query)) && (!status || r.estatus_pago===status) && (!from || r.fecha_emision>=from));
+      rows.sort((a,b)=> (a[invoiceSort] > b[invoiceSort] ? 1 : -1) * (invoiceSortAsc?1:-1));
+      const per=5, pageRows=rows.slice(invoicePage*per,invoicePage*per+per); if(!pageRows.length && invoicePage>0){invoicePage=0;return renderInvoices();}
+      document.getElementById("invoice-body").innerHTML=pageRows.length ? pageRows.map(r=>`<tr><td class="font-semibold">${escapeHtml(r.cliente)}</td><td>${escapeHtml(r.rfc)}</td><td>${escapeHtml(r.num_factura)}</td><td>${dateMx(r.fecha_emision)}</td><td class="font-semibold">${money(r.total)}</td><td>${escapeHtml(r.clave_servicio)}</td><td>${escapeHtml(r.concepto)}</td><td>${r.dias_credito}</td><td>${dateMx(r.fecha_vencimiento)}</td><td>${statusBadge(r.estatus_pago)}</td><td>${dateMx(r.fecha_pago)}</td><td>${escapeHtml(r.clave_rastro)}</td><td class="no-print"><button class="icon-btn edit-record" data-id="${r.id}" aria-label="Editar factura"><i data-lucide="pencil" width="15"></i></button><button class="icon-btn pay-record" data-id="${r.id}" aria-label="Registrar pago"><i data-lucide="circle-check" width="15"></i></button>${!r.id.startsWith("d")?`<button class="icon-btn delete-record" data-id="${r.id}" aria-label="Eliminar factura"><i data-lucide="trash-2" width="15"></i></button>`:""}</td></tr>`).join("") : `<tr><td colspan="13"><div class="empty">No hay facturas que coincidan con los filtros.</div></td></tr>`;
+      document.getElementById("invoice-count").textContent=`${rows.length} registros · página ${invoicePage+1} de ${Math.max(1,Math.ceil(rows.length/per))}`;
+      document.getElementById("invoice-prev").disabled=invoicePage===0; document.getElementById("invoice-next").disabled=(invoicePage+1)*per>=rows.length; lucide.createIcons();
+    }
+    function renderPayables(){
+      const q=document.getElementById("payable-search").value.toLowerCase(), s=document.getElementById("payable-status").value;
+      const rows=payables().filter(r=>(!q||[r.proveedor,r.rfc,r.num_factura].join(" ").toLowerCase().includes(q))&&(!s||r.estatus_pago===s));
+      document.getElementById("payable-body").innerHTML=rows.length?rows.map(r=>`<tr><td class="font-semibold">${escapeHtml(r.proveedor)}</td><td>${escapeHtml(r.rfc)}</td><td>${escapeHtml(r.num_factura)}</td><td>${escapeHtml(r.concepto)}</td><td>${dateMx(r.fecha_emision)}</td><td>${dateMx(r.fecha_vencimiento)}</td><td class="font-semibold">${money(r.importe)}</td><td>${r.dias_credito}</td><td>${statusBadge(r.estatus_pago)}</td><td>${dateMx(r.fecha_pago)}</td><td>${escapeHtml(r.responsable)}</td><td class="no-print"><button class="icon-btn edit-record" data-id="${r.id}" aria-label="Editar cuenta"><i data-lucide="pencil" width="15"></i></button><button class="icon-btn pay-record" data-id="${r.id}" aria-label="Registrar pago"><i data-lucide="circle-check" width="15"></i></button>${!r.id.startsWith("p")?`<button class="icon-btn delete-record" data-id="${r.id}" aria-label="Eliminar cuenta"><i data-lucide="trash-2" width="15"></i></button>`:""}</td></tr>`).join(""):`<tr><td colspan="12"><div class="empty">No hay cuentas por pagar que coincidan con los filtros.</div></td></tr>`; lucide.createIcons();
+    }
+    function renderCollections(){
+      const q=document.getElementById("collection-search").value.toLowerCase(); const rows=invoices().filter(r=>r.estatus_pago!=="Pagada"&&(!q||[r.cliente,r.num_factura].join(" ").toLowerCase().includes(q)));
+      document.getElementById("collection-body").innerHTML=rows.length?rows.map(r=>{let days=daysOverdue(r);return `<tr><td class="font-semibold">${escapeHtml(r.cliente)}</td><td>${escapeHtml(r.num_factura)}</td><td>${dateMx(r.fecha_vencimiento)}</td><td class="${days>0?'text-red-700 font-bold':''}">${days||"—"}</td><td>${money(r.total)}</td><td>${statusBadge(days>0?"Vencida":"Pendiente")}</td><td>${escapeHtml(r.responsable)}</td><td><button class="btn btn-secondary py-1.5 text-[11px] pay-record" data-id="${r.id}">${days>0?"Recordatorio":"Registrar pago"}</button></td></tr>`}).join(""):`<tr><td colspan="8"><div class="empty">No hay cuentas por cobrar activas.</div></td></tr>`; 
+    }
+    const analyticsData={month:[["Septiembre",482650,176460],["Agosto",468400,170220],["Julio",431900,162700]],service:[["Consultoría",221800,74800],["Servicio mensual",155050,62500],["Implementación",105800,39200]],client:[["Grupo Altura",128400,45100],["Nexo Comercial",152750,53400],["Innovación del Pacífico",115100,37600]],unit:[["Consultoría",221800,74800],["Operaciones",155050,62500],["Tecnología",105800,39200]],operator:[["Mariana López",281150,95200],["Daniel Ríos",86400,29800],["Sofía Vega",115100,37600]]};
+    function renderAnalytics(){const key=document.getElementById("analytics-select").value, labels={month:"Periodo",service:"Servicio",client:"Cliente",unit:"Unidad",operator:"Operador"};document.getElementById("analytics-head").textContent=labels[key];document.getElementById("analytics-body").innerHTML=analyticsData[key].map(x=>`<tr><td class="font-semibold">${x[0]}</td><td>${money(x[1])}</td><td>${money(x[2])}</td><td>${money(x[1]-x[2])}</td><td>${((x[1]-x[2])/x[1]*100).toFixed(1)}%</td></tr>`).join("");}
+    function renderAll(){renderInvoices();renderPayables();renderCollections();renderAnalytics();}
+
+    function calculateDue(){const issue=document.getElementById("record-issue").value, days=Number(document.getElementById("record-credit").value);if(issue&&!Number.isNaN(days)){let d=new Date(issue+"T12:00:00");d.setDate(d.getDate()+days);document.getElementById("record-due").value=d.toISOString().slice(0,10);}}
+    function openForm(type, record){
+      editingRecord=record||null; document.getElementById("record-form").reset(); document.getElementById("form-error").textContent="";
+      document.getElementById("record-type").value=type; document.getElementById("edit-id").value=record?.__backendId||"";
+      const isPayable=type==="pagar"; document.getElementById("modal-title").textContent=record?"Editar registro":isPayable?"Nueva cuenta por pagar":"Nueva factura";
+      document.getElementById("party-label").textContent=isPayable?"Proveedor *":"Cliente *";document.getElementById("amount-label").textContent=isPayable?"Importe (MXN) *":"Total (MXN) *";
+      const party=record?(isPayable?record.proveedor:record.cliente):""; document.getElementById("record-party").value=party||"";
+      [["rfc","rfc"],["number","num_factura"],["issue","fecha_emision"],["amount",isPayable?"importe":"total"],["credit","dias_credito"],["due","fecha_vencimiento"],["status","estatus_pago"],["paid","fecha_pago"],["service","clave_servicio"],["concept","concepto"],["owner","responsable"],["trace","clave_rastro"]].forEach(([id,key])=>document.getElementById("record-"+id).value=record?.[key]||"");
+      document.getElementById("record-modal").classList.add("open");document.getElementById("record-party").focus();
+    }
+    function closeForm(){document.getElementById("record-modal").classList.remove("open");}
+    async function saveRecord(event){
+      event.preventDefault();const type=document.getElementById("record-type").value,rfc=document.getElementById("record-rfc").value.trim().toUpperCase(),issue=document.getElementById("record-issue").value,due=document.getElementById("record-due").value,amount=Number(document.getElementById("record-amount").value),err=document.getElementById("form-error");
+      if(!/^[A-ZÑ&]{3,4}\d{6}[A-Z\d]{3}$/.test(rfc)){err.textContent="Ingresa un RFC válido (12 o 13 caracteres).";return;}
+      if(!issue||!due||new Date(due)<new Date(issue)){err.textContent="Revisa las fechas de emisión y vencimiento.";return;}
+      if(!amount||amount<=0){err.textContent="El importe debe ser mayor a cero.";return;}
+      const party=document.getElementById("record-party").value.trim();if(!party){err.textContent="Indica el nombre requerido.";return;}
+      const data={type,cliente:type==="factura"?party:"",proveedor:type==="pagar"?party:"",rfc,num_factura:document.getElementById("record-number").value.trim(),fecha_emision:issue,total:type==="factura"?amount:0,importe:type==="pagar"?amount:0,clave_servicio:document.getElementById("record-service").value.trim(),concepto:document.getElementById("record-concept").value.trim(),dias_credito:Number(document.getElementById("record-credit").value),fecha_vencimiento:due,estatus_pago:document.getElementById("record-status").value,fecha_pago:document.getElementById("record-paid").value,clave_rastro:document.getElementById("record-trace").value.trim(),responsable:document.getElementById("record-owner").value.trim()};
+      const button=document.getElementById("save-record");button.disabled=true;button.querySelector("span").textContent="Guardando...";
+      let result;if(editingRecord?.__backendId){result=await window.dataSdk.update({...editingRecord,...data});}else{if(storedRecords.length>=999){err.textContent="Se alcanzó el límite de 999 registros guardados.";button.disabled=false;button.querySelector("span").textContent="Guardar registro";return;}result=await window.dataSdk.create(data);}
+      button.disabled=false;button.querySelector("span").textContent="Guardar registro";if(result.isOk){closeForm();toast("Registro guardado en tu Canva Sheet.");}else err.textContent="No se pudo guardar el registro. Intenta nuevamente.";
+    }
+    async function updatePayment(id){
+      const r=storedRecords.find(x=>x.__backendId===id);if(!r){toast("Este dato es una demostración; crea un registro para editarlo.");return;}
+      const updated={...r,estatus_pago:"Pagada",fecha_pago:today};const res=await window.dataSdk.update(updated);if(res.isOk)toast("Pago registrado correctamente.");else toast("No se pudo registrar el pago.");
+    }
+    async function deleteRecord(id){const r=storedRecords.find(x=>x.__backendId===id);if(!r)return;const res=await window.dataSdk.delete(r);if(res.isOk)toast("Registro eliminado.");else toast("No se pudo eliminar el registro.");}
+
+    const handler={onDataChanged(data){storedRecords=data;renderAll();}};
+    (async()=>{const init=await window.dataSdk.init(handler);if(!init.isOk)toast("No se pudo conectar la hoja de registros.");})();
+    document.querySelectorAll(".nav-item").forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll(".nav-item").forEach(b=>b.classList.remove("active"));btn.classList.add("active");document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById(btn.dataset.view).classList.add("active");const titles={"dashboard-view":"Dashboard financiero","billing-view":"Base de datos de facturación","financial-view":"Estados financieros","collections-view":"Reporte de cobranza","payables-view":"Cuentas por pagar"};document.getElementById("current-title").textContent=titles[btn.dataset.view];}));
+    document.getElementById("add-invoice").addEventListener("click",()=>openForm("factura"));document.getElementById("add-payable").addEventListener("click",()=>openForm("pagar"));
+    ["invoice-search","invoice-status","invoice-date"].forEach(id=>document.getElementById(id).addEventListener("input",()=>{invoicePage=0;renderInvoices();}));document.getElementById("invoice-status").addEventListener("change",()=>{invoicePage=0;renderInvoices();});
+    document.getElementById("invoice-prev").addEventListener("click",()=>{invoicePage--;renderInvoices();});document.getElementById("invoice-next").addEventListener("click",()=>{invoicePage++;renderInvoices();});
+    document.querySelectorAll("#invoice-table th[data-key]").forEach(th=>th.addEventListener("click",()=>{invoiceSortAsc=invoiceSort===th.dataset.key?!invoiceSortAsc:false;invoiceSort=th.dataset.key;renderInvoices();}));
+    ["payable-search","payable-status"].forEach(id=>document.getElementById(id).addEventListener("input",renderPayables));document.getElementById("payable-status").addEventListener("change",renderPayables);document.getElementById("collection-search").addEventListener("input",renderCollections);
+    document.getElementById("analytics-select").addEventListener("change",renderAnalytics);document.getElementById("record-issue").addEventListener("change",calculateDue);document.getElementById("record-credit").addEventListener("input",calculateDue);document.getElementById("record-form").addEventListener("submit",saveRecord);document.getElementById("close-modal").addEventListener("click",closeForm);document.getElementById("cancel-modal").addEventListener("click",closeForm);
+    document.addEventListener("click",e=>{const edit=e.target.closest(".edit-record"),pay=e.target.closest(".pay-record"),del=e.target.closest(".delete-record");if(edit){const r=records().find(x=>x.id===edit.dataset.id||x.__backendId===edit.dataset.id);openForm(r.type,r);}if(pay)updatePayment(pay.dataset.id);if(del)deleteRecord(del.dataset.id);});
+    document.querySelectorAll("[data-financial]").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll("[data-financial]").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById("balance-panel").classList.toggle("hidden",b.dataset.financial!=="balance");document.getElementById("results-panel").classList.toggle("hidden",b.dataset.financial!=="results");}));
+    document.getElementById("print-financial").addEventListener("click",()=>window.print());
+    document.querySelectorAll(".chart-points circle").forEach(p=>{const tip=document.getElementById("chart-tip");const show=e=>{tip.textContent=`${p.dataset.month}: ${p.dataset.income}`;tip.style.display="block";tip.style.left=(p.cx.baseVal.value/680*100)+"%";tip.style.top=(p.cy.baseVal.value-35)+"px";};p.addEventListener("mouseenter",show);p.addEventListener("focus",show);p.addEventListener("mouseleave",()=>tip.style.display="none");p.addEventListener("blur",()=>tip.style.display="none");});
+    lucide.createIcons();renderAll();
+  </script>
+ 
+</body></html>

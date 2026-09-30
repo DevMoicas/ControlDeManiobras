@@ -1,6 +1,6 @@
 # Pendiente
 
-Anotado el 2026-08-25 y **actualizado el 2026-09-03** al cerrar la sesión.
+Anotado el 2026-08-25 y **actualizado el 2026-09-09** al cerrar la sesión.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
@@ -477,3 +477,71 @@ segundo admin en producción, que sea con su TOTP dado de alta.
 Sin cambios desde el 2026-08-27, y ya van tres sesiones: `actions/checkout@v4`,
 `setup-node@v4` y `azure/login@v2` apuntan a Node 20 y GitHub los fuerza a Node 24. Es
 subir esas tres acciones de versión.
+
+---
+
+## 9. Abierto tras la sesión del 2026-09-09
+
+### Módulo Finanzas: en definición, sin una línea de código
+
+La sesión se fue entera en leer `docs/planes/FRABA_Modulo_Finanzas_Resumen.md` y en
+preguntar lo que no se podía deducir. **No se tocó ni el frontend ni el backend.**
+
+Todo lo abierto vive en **`docs/planes/PREGUNTAS_MODULO_FINANZAS.md`**, que es el punto
+de entrada para retomar, no este. Estado al 2026-09-29: respondidas de la 1 a la 69 salvo
+lo que lista *Queda abierto* al final de esta sección.
+
+**Alcance de lo primero que se implementa:** la sección *Gráficas* del plan, líneas 142 a
+169, y la página de Facturación con la lectura del Excel
+`docs/planes/FORMATO_LECTURA_FACTURACION.xlsx`.
+
+**Cuatro decisiones ya cerradas** (D1 a D4 en el archivo de preguntas):
+
+- Ventas mensuales son **dos dashboards**: uno cuenta servicios por tipo, otro cuenta el
+  dinero de la factura. El enlace maniobra-factura es `maniobras.no_factura` contra
+  **serie + folio** del Excel: `SEF 456` casa con serie SEF y folio 456.
+- Las ventas van **con IVA**, columna `Total` del Excel.
+- Los duplicados de factura se detectan por el **UUID fiscal**, columna M del Excel. Se
+  guarda en la base y no se muestra.
+- Los clientes se agrupan con una **tabla nueva de grupos**. La tabla actual **no** se
+  renombra: solo cambia el rótulo en pantalla a Direcciones.
+
+**Lo que condiciona el diseño y conviene no volver a descubrir:**
+
+- **`Gasto.facturado` sí guarda un ingreso** (corregido el 2026-09-29; antes aquí decía
+  lo contrario): es la columna Ingresos de Gastos, solo staff, texto a mano, y hoy nadie la
+  llena. Decisión (pregunta 58): se rellena sola con la suma de las facturas ligadas.
+- **`maniobras.no_factura` es texto libre**, 100 caracteres, sin validación ni
+  normalización — es una celda más de `ManiobrasPage.jsx`. En la base local aparecen
+  `S 155/ 156` para dos facturas de una misma maniobra, con una o dos diagonales, con la
+  serie repetida o sin repetir, y valores que no son factura como `EFECTIVO`. El usuario
+  confirmó que la diagonal significa **suma de las dos facturas** y que EFECTIVO se ignora
+  por no ser deducible.
+- **`maniobras.tipo_servicio` está casi vacío en el histórico**: 12 de 415 en la base
+  local. El usuario dice que hoy se llena siempre. Como respaldo ya existe la heurística
+  del backend para documentos: el texto CARGA SUELTA manda, más de 12 caracteres de
+  contenedor es full y el resto sencillo (`_es_carga_suelta` en `api/views.py`).
+- **La base local no tiene ni una fila de 2024 ni de 2025.** Es una copia parcial: 265
+  maniobras de 2022, 93 de 2023 y 36 de 2026. Ningún conteo sacado de ahí describe
+  producción, y los del archivo de preguntas van marcados como tales.
+- **`openpyxl` ya está en `requirements.txt`.** La lectura del Excel va en el backend. En
+  el navegador haría falta una dependencia nueva que además tropieza con el gate de
+  `npm audit` del CI.
+- **Para las gráficas, `recharts`.** Está instalada y ya se usa en `AdministracionGastos`.
+  `chart.js` también está y se usa en `AdministracionNoEco`. No se añade nada nuevo.
+- **El diseño de referencia es `docs/planes/Frontend Sistema de Finanzas_files/codigo.html`**
+  (el otro `.html` es solo el visor de Canva). Sirve para la **distribución**; colores y
+  tipografía son los del sistema actual (preguntas 49 y 50).
+
+**Queda abierto (2026-09-29):**
+
+- **Pregunta 62 — PENDIENTE a propósito.** A qué mes va cada semana de nómina y si el
+  sueldo se congela por semana. El criterio lo tiene que resolver alguien ajeno al usuario;
+  no se decide por defecto. Bloquea solo el término *nómina administrativa* de la utilidad
+  mensual: Facturación y lo demás pueden avanzar.
+- Todo lo demás está respondido y el plan está escrito:
+  **`docs/planes/PLAN_MODULO_FINANZAS.md`**. Dos puntos marcados *Por defecto (validar)*
+  dentro del plan.
+
+**Al retomar:** empezar por la Fase 0 del plan. El usuario no está ligado a un empleado y
+sin eso no hay permisos por cargo.
