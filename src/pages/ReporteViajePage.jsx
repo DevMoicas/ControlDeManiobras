@@ -316,6 +316,18 @@ export default function ReporteViajePage() {
                           <TriangleAlert size={13} /> Diésel
                         </span>
                       )}
+                      {/* Reparación (Fase 5, P60): aquí el reporte NO pisa lo
+                          capturado a mano en Gastos, así que el descuadre se
+                          resuelve a mano: corrigiendo uno de los dos. */}
+                      {r.reparacion_coincide === false && (
+                        <span
+                          className="rv-descuadre"
+                          title={`Reparación: el reporte dice ${dinero(r.reparacion_reporte)} y en Gastos hay ${dinero(r.reparacion_gasto)}. `
+                                 + `Revisa cuál es la buena y corrige la otra.`}
+                        >
+                          <TriangleAlert size={13} /> Reparación
+                        </span>
+                      )}
                       <button className="rv-btn rv-btn--mini" title="Descargar en Excel"
                               onClick={() => bajar(r, "excel")} disabled={bajando}>
                         <FileSpreadsheet size={13} /> Excel
