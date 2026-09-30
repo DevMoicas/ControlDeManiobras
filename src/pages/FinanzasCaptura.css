@@ -40,11 +40,14 @@
   place-items: center;
   width: 32px;
   height: 32px;
+  /* El <button> global (App.css) trae padding: 12px: en 32px deja 8px de hueco
+     para una flecha de 18 y la saca del centro. */
+  padding: 0;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   background: #fff;
-  /* Explícito: el estilo global de <button> pinta el texto en blanco y la
-     flecha (un SVG con currentColor) desaparecía sobre el fondo blanco. */
+  /* Explícito: el mismo estilo global pinta el texto en blanco y la flecha (un
+     SVG con currentColor) desaparecía sobre el fondo blanco. */
   color: #111827;
   cursor: pointer;
 }
