@@ -616,10 +616,10 @@ y humo por HTTP contra el backend local levantado y Postgres real al cerrar cada
 | 3 · Cuentas por cobrar (antigüedad), cobranza semanal, casilla Cobrada | `0b0b5e85` | `d3b4fa6` | 0072 |
 | 4 · Cuentas por pagar (fletes, locales, mantenimiento), gastos fijos, gastos financieros | `355c722f` | `9ae36b8` + 4 de ajustes visuales | 0073 |
 | 5 · Reparaciones del reporte a Gastos, con aviso de descuadre | `9842defb` | `dda8292` | 0074 |
-| 6 · Dashboards (4 páginas + DASHBOARDS con un botón por dashboard) | `57270c8e` | `4855da1`, `ae3efc7`, `d5038cc` | — |
+| 6 · Dashboards: una sola tarjeta DASHBOARDS con un botón por cada uno de los nueve (las páginas por grupo se quitaron por redundantes) | `57270c8e` | `4855da1`, `ae3efc7`, `d5038cc`, `575d024` | — |
 | Botón Cancelar igual en toda la app (clase `btn-cancelar-app`) | — | `f476538` | — |
 
-En total **7 commits de backend** (sobre `99ca5eae`) y **14 de frontend** (sobre `79977b1`).
+En total **7 commits de backend** (sobre `99ca5eae`) y **15 de frontend** (sobre `79977b1`).
 Además, `PyJWT` sube a **2.15.0** (CVE-2026-101918 en la 2.14.0) y entra **`xlrd` 2.0.2**, la
 única dependencia nueva, solo para leer `.xls` (P12).
 
