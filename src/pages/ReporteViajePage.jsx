@@ -303,16 +303,15 @@ export default function ReporteViajePage() {
                         a 16px no se distinguen, y el title obliga a esperar el
                         tooltip para saber cuál es cuál. */}
                     <div className="rv-acciones">
-                      {/* Aviso de descuadre del diésel. Solo cuando las dos
-                          cifras existen y difieren: el backend ya se negó a
-                          pisar lo capturado en Gastos, así que sin esto nadie se
-                          enteraría de que hay dos números distintos. Lo decide
-                          el servidor (diesel_coincide), no esta pantalla. */}
+                      {/* Aviso de descuadre del diésel. Desde el 2026-09-29 el
+                          reporte siempre pisa Gastos al guardarse, así que solo
+                          queda en los gastos con diésel a mano de antes de ese
+                          cambio. Lo decide el servidor (diesel_coincide). */}
                       {r.diesel_coincide === false && (
                         <span
                           className="rv-descuadre"
                           title={`Diésel: el reporte suma ${dinero(r.diesel_reporte)} y en Gastos hay ${dinero(r.diesel_gasto)}. `
-                                 + `No se sobrescribió lo capturado en Gastos: corrige una de las dos y vuelve a guardar el reporte.`}
+                                 + `Vuelve a guardar el reporte para pasar su importe a Gastos.`}
                         >
                           <TriangleAlert size={13} /> Diésel
                         </span>

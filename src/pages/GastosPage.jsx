@@ -62,7 +62,9 @@ const COLUMNAS = [
   { key: "gastos_adicionales", label: "G. Adicionales" },
   { key: "entregado", label: "Entregado" },
   { key: "gasto_tag", label: "Tag" },
-  { key: "gasto_diesel", label: "Diesel" },
+  // Solo lo escribe el reporte de viaje (volcar_diesel_al_gasto): read_only en
+  // el GastoSerializer desde el 2026-09-29, para no capturarlo dos veces.
+  { key: "gasto_diesel", label: "Diesel", readOnly: true },
   { key: "comision_operador", label: "Comisión Op." },
   { key: "reparaciones", label: "Reparaciones" },
   { key: "gastos_totales", label: "G. Totales", style: { fontWeight: 'bold', color: '#d61b1b' } },
@@ -548,7 +550,9 @@ export default function GastosPage() {
                       {col.key === "maniobra"
                         ? (gasto.folio || gasto.maniobra) /* folio del servicio; fallback al id para registros viejos */
                         : col.readOnly
-                        ? (gasto[col.key] || "") /* viene de la maniobra: se edita en Maniobras, no aquí */
+                        ? (COLUMNAS_MONEDA.includes(col.key)
+                            ? formatMoneda(gasto[col.key]) /* diesel: lo escribe el reporte de viaje */
+                            : (gasto[col.key] || "")) /* viene de la maniobra: se edita en Maniobras, no aquí */
                         : col.isComputed
                         ? formatMoneda(Number(gasto.facturado || 0) - Number(gasto.gastos_totales || 0))
                         : col.key === "gastos_totales"
