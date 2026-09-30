@@ -1,0 +1,110 @@
+.ps-container {
+  position: relative;
+  display: inline-block;
+}
+
+.ps-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+  font-family: inherit;
+  max-width: 160px;
+}
+
+.ps-trigger span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ps-trigger--empty {
+  background: #f9fafb;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+}
+
+.ps-trigger:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+.ps-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ps-chevron {
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+.ps-dropdown {
+  /* position: fixed + coords (JSX) → se renderiza en un portal fuera de la tabla
+     para que el overflow no lo recorte. Mismo patrón que VacioStatusSelector,
+     StatusSelector y OperadorSelector. `top`/`left` los pone el JSX. */
+  position: fixed;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  z-index: 9999;
+  min-width: 190px;
+  max-height: 220px;
+  overflow-y: auto;
+  animation: ps-fadeIn 0.12s ease;
+}
+
+@keyframes ps-fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ps-state {
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.ps-state--error {
+  color: #ef4444;
+}
+
+.ps-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: background 0.1s ease;
+}
+
+.ps-option:hover {
+  background: #f0fdf4;
+}
+
+.ps-option--selected {
+  background: #dcfce7;
+  font-weight: 600;
+}
+
+.ps-check {
+  font-size: 0.75rem;
+  color: #166534;
+}

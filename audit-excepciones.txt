@@ -1,0 +1,30 @@
+# Excepciones de `npm audit` — tarea 7.3 (OWASP A06)
+#
+# Un identificador de aviso (GHSA-…) por línea. Las líneas vacías y las que
+# empiezan por # se ignoran.
+#
+# Regla: toda excepción lleva escrito su MOTIVO y su CONDICIÓN DE RETIRADA.
+# Una excepción sin motivo es un silencio, no una decisión — y dentro de seis
+# meses nadie sabrá si seguía siendo cierta.
+#
+# Revisar en cada actualización de dependencias.
+
+# GHSA-qwww-vcr4-c8h2 — react-router: "RSC Mode CSRF Bypass Allows Action
+# Execution Before 400 Response" (severidad alta).
+#
+#   Motivo: esta aplicación es un SPA 100% de cliente y el modo RSC que el
+#   aviso explota no existe aquí. Verificado sobre el código el 2026-07-24:
+#   cero apariciones de RSC, createStaticHandler, StaticRouterProvider,
+#   ServerRouter, unstable_*, renderToPipeableStream o renderToReadableStream.
+#   Todo el enrutado entra por BrowserRouter (src/index.jsx) y hooks de cliente
+#   (useNavigate, useLocation, Routes, Route, Navigate). El bundle se sirve como
+#   ficheros estáticos desde Static Web Apps: no hay servidor de React.
+#
+#   Y no hay arreglo hacia adelante: el rango vulnerable es 7.12.0–8.2.0 y lo
+#   único que propone npm es BAJAR a react-router-dom@7.11.0, que es un cambio
+#   que rompe. Sería cambiar un riesgo que no aplica por una regresión que sí.
+#
+#   Retirar: en cuanto exista una versión con arreglo por encima de 8.2.0 (o un
+#   parche dentro de la línea 7.x). Comprobar con `npm audit` tras cada
+#   actualización de react-router-dom.
+GHSA-qwww-vcr4-c8h2

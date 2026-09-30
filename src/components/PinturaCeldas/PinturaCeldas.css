@@ -1,0 +1,70 @@
+/* El balde de celdas vive en la BARRA de la tabla, a la izquierda de "⇤ Inicio".
+   Se viste como los botones de salto que tiene al lado (mismo alto, mismo borde,
+   misma letra monoespaciada) para que se lea como uno más de esa fila y no como
+   un injerto. Las variables van con valor por defecto porque el mismo botón sale
+   en Maniobras, Vacíos y Gastos, y cada página define su paleta. */
+
+.pc-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 10px 15px;
+  border: 1px solid var(--paper-line, #e2e8f0);
+  border-radius: 8px;
+  background: var(--card-bg, #fff);
+  color: var(--text-main, #1f2937);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.pc-boton:hover {
+  background: var(--ink, #1f2937);
+  border-color: var(--ink, #1f2937);
+  color: var(--card-bg, #fff);
+  transform: none;   /* anula el scale(1.05) del button global de App.css */
+}
+
+.pc-boton:focus-visible {
+  outline: 2px solid var(--primary-blue, var(--primary, #2563eb));
+  outline-offset: 2px;
+}
+
+/* Encendido: relleno azul fijo con halo. El modo se come el clic de TODAS las
+   celdas, así que mientras el botón esté a la vista tiene que gritarlo; cuando
+   la barra se va con el scroll, el relevo lo toma el cursor de cruz de abajo. */
+.pc-boton--activo,
+.pc-boton--activo:hover {
+  background: var(--primary-blue, var(--primary, #2563eb));
+  border-color: var(--primary-blue, var(--primary, #2563eb));
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22);
+}
+
+/* Barra con el color activo, igual que la del balde de la fila: el balde solo
+   no dice de qué color se va a pintar. */
+.pc-barra {
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+  background: currentColor;
+}
+.pc-barra--vacia {
+  background: repeating-linear-gradient(
+    45deg, currentColor 0 2px, transparent 2px 4px
+  );
+  opacity: 0.55;
+}
+
+/* Modo pintura encendido: el cursor de las celdas lo dice en toda la página.
+   Va en el <body> y no en cada tabla porque la clase la pone el hook, que no
+   sabe —ni tiene por qué— en qué página está montado. */
+body.pc-pintando td { cursor: crosshair; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-boton { transition: none; }
+}
