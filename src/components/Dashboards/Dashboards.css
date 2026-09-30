@@ -1,0 +1,135 @@
+/* Dashboards de Finanzas. Tipografía y tinta del sistema (P50): Oswald en
+   títulos, Inter en el cuerpo. Los colores de las series viven en el JSX
+   (paleta validada); aquí solo superficie, texto y rejilla. */
+
+.db-panel {
+  margin: 0 0 24px;
+  padding: 20px 22px;
+  border: 1px solid #e6ecf5;
+  border-radius: 14px;
+  background: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #1f2937;
+}
+.db-panel h2 { margin: 0 0 14px; font-family: 'Oswald', sans-serif; font-size: 22px; }
+.db-panel h3 { margin: 18px 0 6px; font-size: 14px; font-weight: 600; color: #374151; }
+.db-panel[aria-busy="true"] { opacity: 0.7; }
+
+/* Filtros en una fila, encima de las gráficas. */
+.db-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+  margin-bottom: 16px;
+}
+.db-filtros label {
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+.db-filtros input[type="date"],
+.db-filtros select {
+  min-width: 130px;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2937;
+  font: inherit;
+  font-weight: 400;
+  font-size: 13px;
+}
+.db-filtros .db-comparar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 7px;
+  color: #374151;
+}
+
+.db-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.db-kpi {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid #eef0f3;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+.db-kpi-titulo { font-size: 12px; font-weight: 600; color: #6b7280; }
+.db-kpi strong { font-family: 'Oswald', sans-serif; font-size: 26px; font-weight: 600; color: #111827; }
+/* La variación va en tinta de texto con su flecha: el color nunca va solo. */
+.db-kpi-comparado { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #4b5563; }
+
+.db-aviso {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fef3c7;
+  color: #78350f;
+  font-size: 13px;
+}
+.db-nota { margin: 4px 0 8px; font-size: 13px; color: #6b7280; }
+
+.db-dos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.db-tabla { margin-top: 14px; overflow-x: auto; }
+.db-tabla table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.db-tabla th {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+.db-tabla td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.db-tabla .db-vacio { color: #9ca3af; text-align: center; }
+
+/* Página de un grupo: selector de vista centrado arriba, con margen (P40). */
+.db-pagina {
+  min-height: calc(100vh - 40px);
+  padding: 52px 28px 64px;
+  background: var(--bg, #f4f7fb);
+}
+.db-selector {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 24px auto 24px;
+}
+.db-selector button {
+  padding: 9px 16px;
+  border: 1px solid #e6ecf5;
+  border-radius: 10px;
+  background: #fff;
+  color: #6b7280;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.db-selector button.activo { background: #2563eb; border-color: #2563eb; color: #fff; }
+.db-selector button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.db-titulo-pagina { margin: 8px 0 0; text-align: center; font-family: 'Oswald', sans-serif; font-size: 28px; }
