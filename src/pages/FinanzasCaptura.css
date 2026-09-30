@@ -43,8 +43,12 @@
   border: 1px solid var(--border-color);
   border-radius: 8px;
   background: #fff;
+  /* Explícito: el estilo global de <button> pinta el texto en blanco y la
+     flecha (un SVG con currentColor) desaparecía sobre el fondo blanco. */
+  color: #111827;
   cursor: pointer;
 }
+.nomina-container .fz-periodo button:hover { background: #f3f4f6; }
 
 .nomina-container .fz-rejilla .fz-mes { text-transform: capitalize; }
 /* Toca pagar y está vacío (P54): se ve sin tener que leer cada celda. */
