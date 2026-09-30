@@ -19,6 +19,7 @@ import PerfilPage from './pages/PerfilPage';
 import MovimientosLocalesPage from './pages/MovimientosLocalesPage';
 import FoliosPage from './pages/FoliosPage';
 import FinanzasPage from './pages/FinanzasPage';
+import FacturacionPage from './pages/FacturacionPage';
 import CostosExtraPage from './pages/CostosExtraPage';
 import NominaPage from './pages/NominaPage';
 import PendientesPage from './pages/PendientesPage';
@@ -238,7 +239,7 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
-          <Route path="finanzas/facturacion" element={<BlankPage title="FACTURACIÓN" />} />
+          <Route path="finanzas/facturacion" element={<FacturacionPage />} />
           <Route path="finanzas/estados-cuenta" element={<BlankPage title="ESTADOS DE CUENTA" />} />
           <Route path="perfil" element={<PerfilPage />} />
 

@@ -1,0 +1,79 @@
+/* Facturación: lo propio de esta página. La tabla, la barra y los estados de
+   carga vienen de NominaPage.css (misma familia), con sus tokens. */
+
+.nomina-container .fc-filtro {
+  display: inline-flex;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+.nomina-container .fc-filtro button {
+  padding: 8px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.nomina-container .fc-filtro button.activo {
+  background: var(--primary-blue);
+  color: #fff;
+}
+.nomina-container .fc-filtro button:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: -2px;
+}
+
+.nomina-container .fc-resumen {
+  position: relative;
+  margin: 0 0 16px;
+  padding: 14px 44px 14px 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+}
+.nomina-container .fc-resumen p { margin: 0; }
+.nomina-container .fc-resumen .fc-subtitulo { margin-top: 10px; color: var(--text-muted); }
+.nomina-container .fc-resumen ul { margin: 6px 0 0; padding-left: 20px; }
+.nomina-container .fc-cerrar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.nomina-container .fc-cerrar:hover { background: var(--paper-deep); }
+
+.nomina-container .fc-total { font-variant-numeric: tabular-nums; text-align: right; }
+
+.nomina-container .fc-pendiente {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.nomina-container .fc-accion {
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.nomina-container .fc-accion:hover { border-color: var(--danger); color: var(--danger); }

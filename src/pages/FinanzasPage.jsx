@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bitcoin, UserCircle, CirclePlus, Users, Receipt, Landmark, ChevronRight } from "lucide-react";
+import { apiClient } from "../api/apiClient";
 import "./FinanzasPage.css";
 
 // Mismo contrato que HOME_MODULES en App.jsx: la rejilla de tarjetas es la de la
@@ -17,6 +19,16 @@ const MODULOS = [
 
 export default function FinanzasPage() {
   const navigate = useNavigate();
+  // Facturación se abre por cargo, y eso lo sabe el backend: hasta que responda
+  // la tarjeta no sale, para no enseñar una puerta que da 403.
+  const [verFacturacion, setVerFacturacion] = useState(false);
+  useEffect(() => {
+    apiClient.get("/facturas/acceso/")
+      .then((a) => setVerFacturacion(Boolean(a?.ver)))
+      .catch(() => setVerFacturacion(false));
+  }, []);
+  const modulos = MODULOS.filter(
+    (m) => m.to !== "/home/finanzas/facturacion" || verFacturacion);
 
   return (
     <div className="home-page finanzas-page">
@@ -39,7 +51,7 @@ export default function FinanzasPage() {
         </div>
 
         <div className="grid">
-          {MODULOS.map(({ to, icon: Icon, title, desc }, i) => (
+          {modulos.map(({ to, icon: Icon, title, desc }, i) => (
             <button
               key={to}
               className="card"
