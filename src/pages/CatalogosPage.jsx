@@ -182,10 +182,11 @@ export default function NoEcoPage() {
       { name: "colonia", label: "Colonia", type: "text", required: false },
       { name: "ciudad", label: "Ciudad", type: "text", required: false }
     ],
-    // Los días de crédito cuentan desde la emisión de la factura (P28).
+    // Los días de crédito cuentan desde la emisión de la factura (P28). Son
+    // opcionales: no a todos se les da crédito, y vacío se guarda como 0.
     "clientes-principales": [
       { name: "nombre", label: "Nombre", type: "text" },
-      { name: "dias_credito", label: "Días de Crédito", type: "number" }
+      { name: "dias_credito", label: "Días de Crédito", type: "number", required: false }
     ],
     origenes: [
       { name: "ciudad", label: "Ciudad", type: "text" }
