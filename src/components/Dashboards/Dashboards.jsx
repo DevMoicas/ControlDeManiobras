@@ -484,14 +484,17 @@ export function Rentabilidad() {
   );
 }
 
-// Los grupos de páginas (P40, P44) y DASHBOARDS con todos juntos (P41).
-export const GRUPOS = {
-  "ventas-gastos-utilidad": { titulo: "Ventas, gastos y utilidad",
-    vistas: [["Ventas mensuales", Ventas], ["Gastos mensuales", Gastos], ["Utilidad mensual", Utilidad]] },
-  "cobranza-pagos": { titulo: "Cobranza y cuentas por pagar",
-    vistas: [["Cuentas por cobrar / Cobranza semanal", CuentasPorCobrar], ["Cuentas por pagar", CuentasPorPagar]] },
-  "clientes-servicios": { titulo: "Ventas por cliente y por servicio",
-    vistas: [["Ventas por cliente", VentasPorCliente], ["Ventas por servicio", VentasPorServicio]] },
-  "costos-rentabilidad": { titulo: "Costos y rentabilidad",
-    vistas: [["Costos por unidad", CostosPorUnidad], ["Rentabilidad por operación", Rentabilidad]] },
-};
+// Los nueve, en el orden de la agrupación de la P44. Viven todos en una sola
+// página, DASHBOARDS, con un botón cada uno: las páginas por grupo se quitaron
+// porque repetían lo mismo sin capturar nada (usuario, 2026-09-30).
+export const DASHBOARDS = [
+  ["Ventas mensuales", Ventas],
+  ["Gastos mensuales", Gastos],
+  ["Utilidad mensual", Utilidad],
+  ["Cuentas por cobrar / Cobranza semanal", CuentasPorCobrar],
+  ["Cuentas por pagar", CuentasPorPagar],
+  ["Ventas por cliente", VentasPorCliente],
+  ["Ventas por servicio", VentasPorServicio],
+  ["Costos por unidad", CostosPorUnidad],
+  ["Rentabilidad por operación", Rentabilidad],
+];

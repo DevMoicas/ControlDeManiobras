@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bitcoin, UserCircle, CirclePlus, Users, Receipt, Landmark, ChevronRight, Wallet, Percent,
-  ChartColumn, CalendarClock, ChartPie, Gauge, LayoutDashboard } from "lucide-react";
+  LayoutDashboard } from "lucide-react";
 import { apiClient } from "../api/apiClient";
 import "./FinanzasPage.css";
 
@@ -18,24 +18,21 @@ const MODULOS = [
   { to: "/home/finanzas/cuentas-por-pagar", icon: Wallet,  title: "Cuentas por pagar", desc: "Gastos fijos, fletes y locales de terceros, y mantenimiento." },
   { to: "/home/finanzas/gastos-financieros", icon: Percent, title: "Gastos financieros", desc: "Intereses, impuestos y comisiones de cada mes." },
   { to: "/home/finanzas/estados-cuenta", icon: Landmark,   title: "Estados de cuenta", desc: "Saldos y movimientos por cuenta." },
-  // Dashboards (Fase 6): los cuatro grupos de la P44 y todos juntos (P41).
-  { to: "/home/finanzas/tablero/ventas-gastos-utilidad", icon: ChartColumn, title: "Ventas, gastos y utilidad", desc: "Ventas, costo de ventas y utilidad de cada mes." },
-  { to: "/home/finanzas/tablero/cobranza-pagos", icon: CalendarClock, title: "Cobranza y pagos", desc: "Cuentas por cobrar, cobranza semanal y cuentas por pagar." },
-  { to: "/home/finanzas/tablero/clientes-servicios", icon: ChartPie, title: "Clientes y servicios", desc: "Ventas por cliente y por tipo de servicio." },
-  { to: "/home/finanzas/tablero/costos-rentabilidad", icon: Gauge, title: "Costos y rentabilidad", desc: "Costo por unidad y rentabilidad por operación." },
-  { to: "/home/finanzas/tablero/todos", icon: LayoutDashboard, title: "Dashboards", desc: "Todos los dashboards juntos, para comparar." },
+  // Dashboards (Fase 6): los nueve en una sola tarjeta. Las páginas por grupo
+  // se quitaron por repetir lo mismo sin capturar nada (usuario, 2026-09-30).
+  { to: "/home/finanzas/dashboards", icon: LayoutDashboard, title: "Dashboards", desc: "Ventas, gastos, utilidad, cobranza, pagos, clientes, servicios, costos y rentabilidad." },
 ];
 
 const POR_CARGO = new Set([
   "/home/finanzas/facturacion",
   "/home/finanzas/cuentas-por-pagar",
   "/home/finanzas/gastos-financieros",
+  "/home/finanzas/dashboards",
 ]);
-const porCargo = (to) => POR_CARGO.has(to) || to.startsWith("/home/finanzas/tablero/");
 
 export default function FinanzasPage() {
   const navigate = useNavigate();
-  // Estas tres se abren por cargo, y eso lo sabe el backend: hasta que responda
+  // Estas cuatro se abren por cargo, y eso lo sabe el backend: hasta que responda
   // no salen, para no enseñar una puerta que da 403.
   const [verFinanzas, setVerFinanzas] = useState(false);
   useEffect(() => {
@@ -43,7 +40,7 @@ export default function FinanzasPage() {
       .then((a) => setVerFinanzas(Boolean(a?.ver)))
       .catch(() => setVerFinanzas(false));
   }, []);
-  const modulos = MODULOS.filter((m) => !porCargo(m.to) || verFinanzas);
+  const modulos = MODULOS.filter((m) => !POR_CARGO.has(m.to) || verFinanzas);
 
   return (
     <div className="home-page finanzas-page">

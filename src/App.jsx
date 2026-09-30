@@ -245,7 +245,7 @@ function AppRoutes() {
           <Route path="finanzas/facturacion" element={<FacturacionPage />} />
           <Route path="finanzas/cuentas-por-pagar" element={<CuentasPorPagarPage />} />
           <Route path="finanzas/gastos-financieros" element={<GastosFinancierosPage />} />
-          <Route path="finanzas/tablero/:grupo" element={<TableroFinanzasPage />} />
+          <Route path="finanzas/dashboards" element={<TableroFinanzasPage />} />
           <Route path="finanzas/estados-cuenta" element={<BlankPage title="ESTADOS DE CUENTA" />} />
           <Route path="perfil" element={<PerfilPage />} />
 
