@@ -77,3 +77,11 @@
   cursor: pointer;
 }
 .nomina-container .fc-accion:hover { border-color: var(--danger); color: var(--danger); }
+
+.nomina-container .fc-centro { text-align: center; }
+.nomina-container .fc-check {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-blue);
+  cursor: pointer;
+}

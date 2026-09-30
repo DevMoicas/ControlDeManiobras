@@ -21,8 +21,10 @@ const COLUMNAS = [
   { key: "serie",         label: "Serie" },
   { key: "folio",         label: "Folio" },
   { key: "fecha_emision", label: "Fecha emisión" },
+  { key: "vencimiento",   label: "Vence" },
   { key: "total",         label: "Total" },
   { key: "maniobra",      label: "Maniobra ligada" },
+  { key: "cobrada",       label: "Cobrada" },
 ];
 
 const moneda = (v) =>
@@ -90,6 +92,19 @@ export default function FacturacionPage() {
       alerta({ tipo: "error", msg: err.message || "No se pudo cargar el archivo." });
     } finally {
       setSubiendo(false);
+    }
+  };
+
+  // Se marca a mano (P27). Optimista: si el servidor dice que no, vuelve atrás.
+  const alternarCobrada = async (f) => {
+    const valor = !f.cobrada;
+    const poner = (v) => setFilas((prev) => prev.map((x) => (x.id === f.id ? { ...x, cobrada: v } : x)));
+    poner(valor);
+    try {
+      await apiClient.post(`/facturas/${f.id}/cobrada/`, { cobrada: valor });
+    } catch (err) {
+      poner(!valor);
+      alerta({ tipo: "error", msg: err.message || "No se pudo marcar la factura." });
     }
   };
 
@@ -222,6 +237,13 @@ export default function FacturacionPage() {
                   <td>{f.serie}</td>
                   <td>{f.folio}</td>
                   <td>{fechaLegible(f.fecha_emision)}</td>
+                  {/* Emisión + días de crédito del cliente principal. Sin
+                      principal no hay días que aplicar: queda fuera de la
+                      antigüedad de saldos hasta que se ligue. */}
+                  <td title={f.vencimiento ? undefined
+                    : "Sin cliente principal: queda fuera de la antigüedad de saldos"}>
+                    {f.vencimiento ? fechaLegible(f.vencimiento) : "—"}
+                  </td>
                   <td className="fc-total">{moneda(f.total)}</td>
                   <td>
                     {f.maniobra ? (f.maniobra_folio || `Maniobra ${f.maniobra}`) : (
@@ -230,6 +252,11 @@ export default function FacturacionPage() {
                         Pendiente de ligar
                       </span>
                     )}
+                  </td>
+                  <td className="fc-centro">
+                    <input type="checkbox" className="fc-check" checked={f.cobrada}
+                      onChange={() => alternarCobrada(f)}
+                      aria-label={`${f.serie} ${f.folio}: ${f.cobrada ? "desmarcar" : "marcar"} como cobrada`} />
                   </td>
                   {acceso?.cancelar && (
                     <td>
