@@ -33,14 +33,17 @@ export default function TableroFinanzasPage() {
     ? { titulo: "Dashboards", vistas: Object.values(GRUPOS).flatMap((x) => x.vistas) }
     : GRUPOS[grupo];
   if (!g) return <div className="db-pagina"><section className="db-panel"><h2>No existe esa página</h2></section></div>;
-  const Componente = g.vistas[vista][1];
+  // Al cambiar de página sin desmontar (Dashboards → un grupo), `vista` puede
+  // apuntar más allá de las vistas del nuevo grupo durante un render.
+  const actual = vista < g.vistas.length ? vista : 0;
+  const Componente = g.vistas[actual][1];
   return (
     <div className="db-pagina">
       <h1 className="db-titulo-pagina">{g.titulo}</h1>
       <div className="db-selector" role="tablist" aria-label="Vista">
         {g.vistas.map(([nombre], i) => (
-          <button key={nombre} role="tab" aria-selected={vista === i}
-            className={vista === i ? "activo" : ""} onClick={() => setVista(i)}>{nombre}</button>
+          <button key={nombre} role="tab" aria-selected={actual === i}
+            className={actual === i ? "activo" : ""} onClick={() => setVista(i)}>{nombre}</button>
         ))}
       </div>
       <Componente />
