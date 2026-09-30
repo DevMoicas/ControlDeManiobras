@@ -5,7 +5,7 @@ import { GRUPOS } from "../components/Dashboards/Dashboards";
 import "../components/Dashboards/Dashboards.css";
 
 // Una página por grupo de dashboards, con el selector de vista centrado arriba
-// (P40), y "todos" = DASHBOARDS: los mismos componentes juntos, para comparar
+// (P40), y "todos" = DASHBOARDS: los nueve componentes, cada uno con su botón
 // (P41). Quién entra lo decide el backend; aquí solo se evita pintar un 403.
 export default function TableroFinanzasPage() {
   const { grupo } = useParams();
@@ -27,18 +27,11 @@ export default function TableroFinanzasPage() {
     );
   }
 
-  if (grupo === "todos") {
-    return (
-      <div className="db-pagina">
-        <h1 className="db-titulo-pagina">Dashboards</h1>
-        {Object.values(GRUPOS).flatMap((g) => g.vistas).map(([nombre, Componente]) => (
-          <Componente key={nombre} />
-        ))}
-      </div>
-    );
-  }
-
-  const g = GRUPOS[grupo];
+  // DASHBOARDS: los nueve con un botón cada uno, como las páginas de grupo, para
+  // no tener que bajar por todos (usuario, 2026-09-30).
+  const g = grupo === "todos"
+    ? { titulo: "Dashboards", vistas: Object.values(GRUPOS).flatMap((x) => x.vistas) }
+    : GRUPOS[grupo];
   if (!g) return <div className="db-pagina"><section className="db-panel"><h2>No existe esa página</h2></section></div>;
   const Componente = g.vistas[vista][1];
   return (
