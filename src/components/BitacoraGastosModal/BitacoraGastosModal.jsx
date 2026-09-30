@@ -385,7 +385,7 @@ export default function BitacoraGastosModal({ onCerrar }) {
 
         {/* Footer */}
         <div className="bgm-footer">
-          <button type="button" className="bgm-btn-cancelar" onClick={onCerrar}>
+          <button type="button" className="bgm-btn-cancelar btn-cancelar-app" onClick={onCerrar}>
             Cancelar
           </button>
           <button

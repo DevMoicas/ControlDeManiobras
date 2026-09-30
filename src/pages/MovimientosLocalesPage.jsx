@@ -463,7 +463,7 @@ export default function MovimientosLocalesPage() {
                   </button>
                   <button
                     type="button"
-                    className="ml-btn-cancelar"
+                    className="ml-btn-cancelar btn-cancelar-app"
                     onClick={cancelarFilaNueva}
                   >
                     Cancelar
@@ -541,7 +541,7 @@ export default function MovimientosLocalesPage() {
               ))}
             </div>
             <div className="ml-modal-footer">
-              <button type="button" className="ml-btn-cancelar" onClick={cerrarModal}>
+              <button type="button" className="ml-btn-cancelar btn-cancelar-app" onClick={cerrarModal}>
                 Cancelar
               </button>
               <button

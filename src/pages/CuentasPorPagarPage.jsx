@@ -230,7 +230,7 @@ function GastosFijos({ esStaff }) {
             </select>
           </label>
           <div className="fz-dialogo-acciones">
-            <button type="button" onClick={() => dialogo.current?.close()}>Cancelar</button>
+            <button type="button" className="btn-cancelar-app" onClick={() => dialogo.current?.close()}>Cancelar</button>
             <button type="submit" className="primario">Guardar</button>
           </div>
         </form>
@@ -410,7 +410,7 @@ function Cuentas({ origen, esStaff }) {
                           aria-label={`${c.no_factura || "Factura"}: ${c.pagada ? "desmarcar" : "marcar"} como pagada`} />
                       </td>
                       {esStaff && (
-                        <td><button className="fc-accion" onClick={() => cancelar(c)}>Cancelar</button></td>
+                        <td><button className="fc-accion btn-cancelar-app" onClick={() => cancelar(c)}>Cancelar</button></td>
                       )}
                     </>
                   )}
@@ -439,7 +439,7 @@ function Cuentas({ origen, esStaff }) {
           <label>Fecha de la factura<input name="fecha" type="date" required /></label>
           <label>Días de crédito<input name="dias_credito" type="number" min={0} placeholder="Sin crédito" /></label>
           <div className="fz-dialogo-acciones">
-            <button type="button" onClick={() => dialogo.current?.close()}>Cancelar</button>
+            <button type="button" className="btn-cancelar-app" onClick={() => dialogo.current?.close()}>Cancelar</button>
             <button type="submit" className="primario">Guardar</button>
           </div>
         </form>

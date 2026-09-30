@@ -221,7 +221,7 @@ export default function CostosExtraPage() {
                   />
                 </div>
                 <div className="modal-actions">
-                  <button type="button" className="btn-cancel" onClick={cerrarModal} disabled={isSubmitting}>
+                  <button type="button" className="btn-cancel btn-cancelar-app" onClick={cerrarModal} disabled={isSubmitting}>
                     Cancelar
                   </button>
                   <button type="submit" className="btn-save" disabled={isSubmitting}>

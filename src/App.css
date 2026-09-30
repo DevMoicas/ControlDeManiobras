@@ -309,6 +309,32 @@ button:hover {
   color: white;
 }
 
+/* ── Botón Cancelar, el mismo en toda la app (usuario, 2026-09-30) ───────────
+   Blanco con borde y letra rojos; en hover, fondo rojo. Solo toca colores: el
+   tamaño y la tipografía siguen siendo los de cada pantalla.
+
+   La clase va repetida para ganar en especificidad a las reglas locales de cada
+   modal (la más fuerte es `.maniobras-container .btn-cancelar:hover:not(:disabled)`,
+   0,4,0) sin recurrir a !important. #dc2626 sobre blanco da 4.8:1 (AA). */
+.btn-cancelar-app.btn-cancelar-app.btn-cancelar-app {
+  border: 1px solid #dc2626;
+  background: #fff;
+  color: #dc2626;
+}
+.btn-cancelar-app.btn-cancelar-app.btn-cancelar-app:hover:not(:disabled) {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #fff;
+}
+.btn-cancelar-app.btn-cancelar-app.btn-cancelar-app:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+.btn-cancelar-app.btn-cancelar-app.btn-cancelar-app:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* PÁGINAS VACÍAS */
 .blank-page {
   min-height: calc(100vh - 40px);

@@ -74,7 +74,7 @@ export function ConfirmacionProvider({ children }) {
             <div className="cf-acciones">
               <button
                 type="button"
-                className="cf-btn cf-btn--cancelar"
+                className="cf-btn cf-btn--cancelar btn-cancelar-app"
                 onClick={() => responder(false)}
                 autoFocus={!!pregunta.peligro}
               >

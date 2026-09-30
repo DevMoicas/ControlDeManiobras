@@ -321,7 +321,7 @@ export default function CalendarioVacaciones({ onCerrar }) {
                   <span className="cv-espacio" />
                   <button
                     type="button"
-                    className="cv-btn-cancelar"
+                    className="cv-btn-cancelar btn-cancelar-app"
                     onClick={() => setBorrador(null)}
                     disabled={guardando}
                   >

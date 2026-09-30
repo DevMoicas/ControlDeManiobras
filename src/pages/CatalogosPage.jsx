@@ -1121,7 +1121,7 @@ export default function NoEcoPage() {
               <div className="modal-actions">
                 <button
                   type="button"
-                  className="btn-cancel"
+                  className="btn-cancel btn-cancelar-app"
                   onClick={() => {
                     setModalAbierto(false);
                     setFormData({});

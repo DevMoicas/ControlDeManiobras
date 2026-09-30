@@ -260,7 +260,8 @@ export default function FacturacionPage() {
                   </td>
                   {acceso?.cancelar && (
                     <td>
-                      <button className="fc-accion" onClick={() => cambiarEstado(f)}>
+                      <button className={f.estado === "activa" ? "fc-accion btn-cancelar-app" : "fc-accion"}
+                        onClick={() => cambiarEstado(f)}>
                         {f.estado === "activa" ? "Cancelar" : "Reactivar"}
                       </button>
                     </td>

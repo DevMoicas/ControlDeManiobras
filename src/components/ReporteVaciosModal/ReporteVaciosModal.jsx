@@ -106,7 +106,7 @@ export default function ReporteVaciosModal({ endpoint, onCerrar }) {
           <div className="modal-acciones">
             <button
               type="button"
-              className="btn-cancelar"
+              className="btn-cancelar btn-cancelar-app"
               onClick={onCerrar}
               disabled={generando}
             >

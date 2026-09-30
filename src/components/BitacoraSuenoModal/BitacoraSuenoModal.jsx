@@ -377,7 +377,7 @@ export default function BitacoraSuenoModal({ onCerrar }) {
 
         {/* Footer */}
         <div className="bsm-footer">
-          <button type="button" className="bsm-btn-cancelar" onClick={onCerrar}>
+          <button type="button" className="bsm-btn-cancelar btn-cancelar-app" onClick={onCerrar}>
             Cancelar
           </button>
           <button

@@ -507,7 +507,7 @@ export default function CtaPorteTercerosModal({ onCerrar }) {
 
         {/* Footer */}
         <div className="cpm-footer">
-          <button type="button" className="cpm-btn-cancelar" onClick={onCerrar}>
+          <button type="button" className="cpm-btn-cancelar btn-cancelar-app" onClick={onCerrar}>
             Cancelar
           </button>
           <button

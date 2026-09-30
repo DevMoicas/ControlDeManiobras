@@ -649,7 +649,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
       <td>
         <div style={{ display: "flex", gap: "4px" }}>
           <button className="btn-accion btn-guardar-fila" onClick={onGuardar} disabled={isSubmitting}>{isSubmitting ? '...' : 'Guardar'}</button>
-          <button className="btn-accion btn-cancelar-fila" onClick={onCancelar} disabled={isSubmitting}>Cancelar</button>
+          <button className="btn-accion btn-cancelar-fila btn-cancelar-app" onClick={onCancelar} disabled={isSubmitting}>Cancelar</button>
         </div>
       </td>
     </tr>
@@ -862,7 +862,7 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
             ))}
           </div>
           <div className="modal-acciones">
-            <button type="button" className="btn-cancelar" onClick={onCerrar} disabled={isSubmitting}>Cancelar</button>
+            <button type="button" className="btn-cancelar btn-cancelar-app" onClick={onCerrar} disabled={isSubmitting}>Cancelar</button>
             <button type="submit" className="btn-guardar" disabled={isSubmitting}>{isSubmitting ? 'Guardando...' : 'Guardar Cambios'}</button>
           </div>
         </form>
