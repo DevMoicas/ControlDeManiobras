@@ -46,6 +46,13 @@ class ClientesPrincipalesTests(TestCase):
         d.refresh_from_db()
         self.assertIsNone(d.cliente_principal_id)
 
+    def test_los_dias_de_credito_son_opcionales(self):
+        cap = self.cliente_api()
+        for cuerpo in ({'nombre': 'SIN CREDITO A'}, {'nombre': 'SIN CREDITO B', 'dias_credito': None}):
+            r = cap.post('/api/clientes-principales/', cuerpo, format='json')
+            self.assertEqual(r.status_code, 201, r.data)
+            self.assertEqual(r.data['dias_credito'], 0)
+
     def test_el_nombre_no_se_repite(self):
         ClientePrincipal.objects.create(nombre='REAL SHIPPING')
         r = self.cliente_api().post('/api/clientes-principales/', {'nombre': 'REAL SHIPPING'}, format='json')

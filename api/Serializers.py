@@ -626,6 +626,14 @@ class ClienteSerializer(serializers.ModelSerializer):
 
 
 class ClientePrincipalSerializer(serializers.ModelSerializer):
+    # Opcional: no a todos los clientes se les da crédito. Vacío = 0 días, o sea
+    # la factura vence el día de su emisión. Se guarda 0 y no NULL para que el
+    # vencimiento de Cuentas por cobrar no tenga que tratar un caso aparte.
+    dias_credito = serializers.IntegerField(min_value=0, required=False, allow_null=True)
+
+    def validate_dias_credito(self, valor):
+        return valor or 0
+
     class Meta:
         model = ClientePrincipal
         fields = ['id', 'nombre', 'dias_credito']
