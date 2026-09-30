@@ -20,6 +20,10 @@ import CatalogoSelector from "../components/CiudadSelector/CiudadSelector";
 // /empleados/ filtra por cargo en el servidor (cargo__iexact).
 const ENDPOINT_COORDINADORES = "/empleados/?cargo=Coordinador";
 
+// Direcciones pinta el nombre del principal dentro de la celda de su selector;
+// la columna con el nombre suelto sobraría.
+const COLUMNAS_OCULTAS = new Set(["cliente_principal_nombre"]);
+
 // Todas las tablas de catálogos se muestran estrictamente por id ascendente.
 const porId = (arr) => [...arr].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
 
@@ -118,6 +122,8 @@ export default function NoEcoPage() {
     telefono: "Teléfono",
     transportista: "Transportista",
     con_cita: "Con Cita",
+    cliente_principal: "Cliente Principal",
+    dias_credito: "Días de Crédito",
     // Se leen por el concepto y no por el nombre de la columna: la celda enseña
     // la fecha de vencimiento y el clip de su documento.
     fecha_vencimiento_permisos_full: "Permisos Full",
@@ -175,6 +181,11 @@ export default function NoEcoPage() {
       { name: "domicilio", label: "Domicilio", type: "text" },
       { name: "colonia", label: "Colonia", type: "text", required: false },
       { name: "ciudad", label: "Ciudad", type: "text", required: false }
+    ],
+    // Los días de crédito cuentan desde la emisión de la factura (P28).
+    "clientes-principales": [
+      { name: "nombre", label: "Nombre", type: "text" },
+      { name: "dias_credito", label: "Días de Crédito", type: "number" }
     ],
     origenes: [
       { name: "ciudad", label: "Ciudad", type: "text" }
@@ -371,6 +382,26 @@ export default function NoEcoPage() {
     }
   };
 
+  // El principal de una dirección, desde su propia celda, como el coordinador.
+  // Aquí además se actualiza la caché de la pestaña: sin eso, volver a
+  // Direcciones enseñaría la asignación de antes.
+  const asignarPrincipal = async (direccion, principal) => {
+    const poner = (id, nombre) => {
+      const cambiar = (lista) => lista.map((c) => (c.id === direccion.id
+        ? { ...c, cliente_principal: id, cliente_principal_nombre: nombre } : c));
+      setData(cambiar);
+      if (cacheRef.current.clientes) cacheRef.current.clientes = cambiar(cacheRef.current.clientes);
+    };
+    poner(principal?.id ?? null, principal?.nombre ?? null);
+    try {
+      await apiClient.patch(`/clientes/${direccion.id}/`, { cliente_principal: principal?.id ?? null });
+    } catch (error) {
+      console.error("Error:", error);
+      poner(direccion.cliente_principal, direccion.cliente_principal_nombre);
+      alerta({ tipo: "error", msg: "No se pudo asignar el cliente principal." });
+    }
+  };
+
   const iniciarEdicion = (item, vistaLocal) => {
     setSubVista(vistaLocal || null);
     setEditando(true);
@@ -477,7 +508,8 @@ export default function NoEcoPage() {
     choferes: "Chofer",
     empleados: "Empleado",
     patios: "Patio",
-    clientes: "Cliente",
+    clientes: "Dirección",
+    "clientes-principales": "Cliente principal",
     origenes: "Origen",
     destinos: "Destino",
     transportistas: "Transportista",
@@ -594,10 +626,17 @@ export default function NoEcoPage() {
           Patios
         </button>
         <button
+          className={`tab-button ${vista === "clientes-principales" ? "active" : ""}`}
+          onClick={() => { setSubVista(null); setVista("clientes-principales"); }}
+        >
+          Clientes principales
+        </button>
+        {/* La tabla sigue siendo `clientes` (D4): solo cambia el rótulo. */}
+        <button
           className={`tab-button ${vista === "clientes" ? "active" : ""}`}
           onClick={() => { setSubVista(null); setVista("clientes"); }}
         >
-          Clientes
+          Direcciones
         </button>
         <button
           className={`tab-button ${vista === "origenes_destinos" ? "active" : ""}`}
@@ -924,7 +963,7 @@ export default function NoEcoPage() {
               className="btn-add"
               disabled={isSubmitting}
             >
-              <span>+</span> Agregar Nuevo {nombresSingulares[vista] || "Registro"}
+              <span>+</span> Agregar {nombresSingulares[vista] || "Registro"}
             </button>
           </div>
 
@@ -933,7 +972,7 @@ export default function NoEcoPage() {
               <thead>
                 <tr>
                   {data.length > 0 &&
-                    Object.keys(data[0]).map((key) => (
+                    Object.keys(data[0]).filter((key) => !COLUMNAS_OCULTAS.has(key)).map((key) => (
                       <th key={key}>
                         {TRADUCCIONES_COLUMNAS[key] || key.replace('_', ' ')}
                       </th>
@@ -954,7 +993,7 @@ export default function NoEcoPage() {
                 ) : (
                   dataFiltrada.map((item) => (
                     <tr key={item.id}>
-                      {Object.entries(item).map(([clave, val]) => (
+                      {Object.entries(item).filter(([clave]) => !COLUMNAS_OCULTAS.has(clave)).map(([clave, val]) => (
                         <td key={clave}>
                           {DOCUMENTOS_EN_FECHA[vista]?.[clave] ? (
                             <>
@@ -973,6 +1012,14 @@ export default function NoEcoPage() {
                               campo="nombre_trabajador"
                               currentValue={val || ""}
                               onSelect={(nombre) => asignarCoordinador(item, nombre)}
+                              disabled={isSubmitting}
+                            />
+                          ) : clave === "cliente_principal" ? (
+                            <CatalogoSelector
+                              endpoint="/clientes-principales/"
+                              campo="nombre"
+                              currentValue={item.cliente_principal_nombre || ""}
+                              onSelect={(nombre, principal) => asignarPrincipal(item, nombre ? principal : null)}
                               disabled={isSubmitting}
                             />
                           ) : clave === "con_cita" ? (
