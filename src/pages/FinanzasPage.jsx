@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bitcoin, UserCircle, CirclePlus, Users, Receipt, Landmark, ChevronRight } from "lucide-react";
+import { Bitcoin, UserCircle, CirclePlus, Users, Receipt, Landmark, ChevronRight, Wallet, Percent } from "lucide-react";
 import { apiClient } from "../api/apiClient";
 import "./FinanzasPage.css";
 
@@ -14,21 +14,28 @@ const MODULOS = [
   { to: "/home/finanzas/costos-extra",   icon: CirclePlus, title: "Costos extra",      desc: "Da de alta los movimientos que se cobran aparte y su importe." },
   { to: "/home/finanzas/nomina",         icon: Users,      title: "Nómina",            desc: "Sueldos y pagos al personal." },
   { to: "/home/finanzas/facturacion",    icon: Receipt,    title: "Facturación",       desc: "Facturas emitidas y su seguimiento." },
+  { to: "/home/finanzas/cuentas-por-pagar", icon: Wallet,  title: "Cuentas por pagar", desc: "Gastos fijos, fletes y locales de terceros, y mantenimiento." },
+  { to: "/home/finanzas/gastos-financieros", icon: Percent, title: "Gastos financieros", desc: "Intereses, impuestos y comisiones de cada mes." },
   { to: "/home/finanzas/estados-cuenta", icon: Landmark,   title: "Estados de cuenta", desc: "Saldos y movimientos por cuenta." },
 ];
 
+const POR_CARGO = new Set([
+  "/home/finanzas/facturacion",
+  "/home/finanzas/cuentas-por-pagar",
+  "/home/finanzas/gastos-financieros",
+]);
+
 export default function FinanzasPage() {
   const navigate = useNavigate();
-  // Facturación se abre por cargo, y eso lo sabe el backend: hasta que responda
-  // la tarjeta no sale, para no enseñar una puerta que da 403.
-  const [verFacturacion, setVerFacturacion] = useState(false);
+  // Estas tres se abren por cargo, y eso lo sabe el backend: hasta que responda
+  // no salen, para no enseñar una puerta que da 403.
+  const [verFinanzas, setVerFinanzas] = useState(false);
   useEffect(() => {
     apiClient.get("/facturas/acceso/")
-      .then((a) => setVerFacturacion(Boolean(a?.ver)))
-      .catch(() => setVerFacturacion(false));
+      .then((a) => setVerFinanzas(Boolean(a?.ver)))
+      .catch(() => setVerFinanzas(false));
   }, []);
-  const modulos = MODULOS.filter(
-    (m) => m.to !== "/home/finanzas/facturacion" || verFacturacion);
+  const modulos = MODULOS.filter((m) => !POR_CARGO.has(m.to) || verFinanzas);
 
   return (
     <div className="home-page finanzas-page">
