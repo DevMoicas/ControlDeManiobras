@@ -8,11 +8,14 @@ import csv
 import io
 import re
 import unicodedata
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
+from zoneinfo import ZoneInfo
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Q, Sum
+from django.db.models.functions import TruncWeek
 from django.utils import timezone
 from openpyxl import load_workbook
 from rest_framework import mixins, serializers, status, viewsets
@@ -270,17 +273,116 @@ def cargar_facturas(archivo, usuario):
     }
 
 
+# ── Cuentas por cobrar (Fase 3) ──────────────────────────────────────────────
+# Tramos de antigüedad por días VENCIDOS (P28). `por_vencer` son las que aún no
+# llegan a su vencimiento.
+# El "hoy" de la antigüedad es el de México, no el del servidor (TIME_ZONE =
+# 'UTC'): con UTC, desde las 18:00 locales todas las facturas envejecerían un
+# día antes de tiempo. Misma zona que _ZONA_OPERACION en views.py.
+ZONA_OPERACION = ZoneInfo('America/Mexico_City')
+
+TRAMOS = [('por_vencer', None), ('0_30', 30), ('31_60', 60), ('61_90', 90), ('mas_90', None)]
+
+
+def _dinero(valor):
+    """Como el resto de la API (DecimalField del serializer): texto con dos
+    decimales. Un Decimal suelto en un Response saldría como float en el JSON."""
+    return str(Decimal(valor or 0).quantize(Decimal('0.01')))
+
+
+def principal_de(factura):
+    """El cliente principal de la factura, vía maniobra → dirección. None si
+    falta cualquier eslabón."""
+    try:
+        direccion = factura.maniobra.cliente_fk if factura.maniobra_id else None
+        return direccion.cliente_principal if direccion else None
+    except (AttributeError, ObjectDoesNotExist):
+        # Maniobra o dirección borradas a mano (sin FK en la base): sin cliente.
+        return None
+
+
+def vencimiento(factura):
+    """Emisión + días de crédito del principal, en días naturales (P28, P36).
+    Calculado y no guardado: cambiar los días de un cliente mueve sus facturas.
+    None sin maniobra ligada o sin cliente principal: no hay días que aplicar."""
+    principal = principal_de(factura)
+    return factura.fecha_emision + timedelta(days=principal.dias_credito) if principal else None
+
+
+def tramo(dias_vencida):
+    if dias_vencida < 0:
+        return 'por_vencer'
+    for clave, tope in TRAMOS[1:-1]:
+        if dias_vencida <= tope:
+            return clave
+    return 'mas_90'
+
+
+def cuentas_por_cobrar(hoy):
+    """Facturas activas sin cobrar, con su antigüedad.
+
+    Una factura sin maniobra ligada o cuya dirección no tiene cliente principal
+    no tiene días de crédito: se lista aparte y queda FUERA de la antigüedad
+    hasta que se ligue (decidido con el usuario el 2026-09-30).
+    """
+    antiguedad = {clave: Decimal('0') for clave, _ in TRAMOS}
+    fuera = {'pendiente_de_ligar': Decimal('0'), 'sin_cliente_principal': Decimal('0')}
+    filas = []
+    qs = (Factura.objects.filter(estado='activa', cobrada=False)
+          .select_related('maniobra__cliente_fk__cliente_principal')
+          .order_by('fecha_emision', 'id'))
+    for f in qs:
+        principal, venc = principal_de(f), vencimiento(f)
+        if venc is None:
+            situacion = 'pendiente_de_ligar' if not f.maniobra_id else 'sin_cliente_principal'
+            fuera[situacion] += f.total
+            dias, clave = None, None
+        else:
+            situacion = 'con_credito'
+            dias = (hoy - venc).days
+            clave = tramo(dias)
+            antiguedad[clave] += f.total
+        filas.append({
+            'id': f.id, 'empresa': f.empresa, 'serie': f.serie, 'folio': f.folio,
+            'nombre': f.nombre, 'fecha_emision': f.fecha_emision, 'total': _dinero(f.total),
+            'cliente_principal': principal.nombre if principal else None,
+            'vencimiento': venc, 'dias_vencida': dias, 'tramo': clave,
+            'situacion': situacion,
+        })
+    return {'facturas': filas,
+            'antiguedad': {k: _dinero(v) for k, v in antiguedad.items()},
+            'fuera_de_antiguedad': {k: _dinero(v) for k, v in fuera.items()},
+            'total': _dinero(sum(antiguedad.values()) + sum(fuera.values()))}
+
+
+def cobranza_semanal(desde=None, hasta=None):
+    """Total de las facturas activas por semana (lunes) de su EMISIÓN (P67,
+    P70). No depende de si están cobradas."""
+    qs = Factura.objects.filter(estado='activa')
+    if desde:
+        qs = qs.filter(fecha_emision__gte=desde)
+    if hasta:
+        qs = qs.filter(fecha_emision__lte=hasta)
+    return [{'semana': fila['semana'], 'total': _dinero(fila['total'])}
+            for fila in (qs.annotate(semana=TruncWeek('fecha_emision'))
+                         .values('semana').annotate(total=Sum('total')).order_by('semana'))]
+
+
 # ── API ──────────────────────────────────────────────────────────────────────
 class FacturaSerializer(serializers.ModelSerializer):
     # El folio de la maniobra ligada (P15). El UUID no sale nunca (P16).
     maniobra_folio = serializers.CharField(source='maniobra.folio', default=None,
                                            read_only=True)
+    vencimiento = serializers.SerializerMethodField()
+
+    def get_vencimiento(self, factura):
+        return vencimiento(factura)
 
     class Meta:
         model = Factura
         fields = ['id', 'empresa', 'serie', 'folio', 'nombre', 'rfc',
                   'fecha_emision', 'subtotal', 'iva', 'total', 'estado',
-                  'cobrada', 'maniobra', 'maniobra_folio']
+                  'cobrada', 'maniobra', 'maniobra_folio', 'vencimiento']
         read_only_fields = fields
 
 
@@ -297,7 +399,7 @@ class FacturaViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             raise PermissionDenied('Facturación es solo para dirección, comercial y administradores.')
 
     def get_queryset(self):
-        qs = Factura.objects.select_related('maniobra')
+        qs = Factura.objects.select_related('maniobra__cliente_fk__cliente_principal')
         estado = self.request.query_params.get('estado')
         return qs.filter(estado=estado) if estado in ('activa', 'cancelada') else qs
 
@@ -316,6 +418,30 @@ class FacturaViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(resumen, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path='cuentas-por-cobrar')
+    def cuentas_por_cobrar(self, request):
+        return Response(cuentas_por_cobrar(datetime.now(ZONA_OPERACION).date()))
+
+    @action(detail=False, methods=['get'], url_path='cobranza-semanal')
+    def cobranza_semanal(self, request):
+        desde = _fecha(request.query_params.get('desde')) if request.query_params.get('desde') else None
+        hasta = _fecha(request.query_params.get('hasta')) if request.query_params.get('hasta') else None
+        return Response(cobranza_semanal(desde, hasta))
+
+    @action(detail=True, methods=['post'])
+    def cobrada(self, request, pk=None):
+        """Marca o desmarca a mano (P27). La puede usar quien entra a
+        Facturación: va con el grupo que edita (plan, Fase 0)."""
+        # El apiClient del frontend manda todo como texto: "true" / "false".
+        valor = {True: True, 'true': True, False: False, 'false': False}.get(request.data.get('cobrada'))
+        if valor is None:
+            return Response({'detail': 'cobrada debe ser true o false.'}, status=status.HTTP_400_BAD_REQUEST)
+        factura = self.get_object()
+        factura.cobrada = valor
+        factura.updated_by = request.user.username
+        factura.save(update_fields=['cobrada', 'updated_by', 'updated_at'])
+        return Response(self.get_serializer(factura).data)
 
     def _cambiar_estado(self, request, estado):
         if not request.user.is_staff:  # P65: cancelar solo staff

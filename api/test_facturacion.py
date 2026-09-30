@@ -217,3 +217,72 @@ class CancelarTests(Base):
 
         admin.post(f'{URL}{f.id}/reactivar/')
         self.assertEqual(Decimal(Gasto.objects.get(maniobra=m).facturado), Decimal('100'))
+
+
+class TramoTests(SimpleTestCase):
+
+    def test_limites_de_cada_tramo(self):
+        from api.facturacion import tramo
+        casos = {-1: 'por_vencer', 0: '0_30', 30: '0_30', 31: '31_60',
+                 60: '31_60', 61: '61_90', 90: '61_90', 91: 'mas_90'}
+        for dias, esperado in casos.items():
+            self.assertEqual(tramo(dias), esperado, dias)
+
+
+class CuentasPorCobrarTests(Base):
+
+    def factura(self, uuid, dias_atras, maniobra=None, **campos):
+        from datetime import datetime, timedelta
+        from api.facturacion import ZONA_OPERACION
+        campos.setdefault('total', Decimal('100'))
+        hoy = datetime.now(ZONA_OPERACION).date()  # el mismo "hoy" que la vista
+        return Factura.objects.create(
+            empresa='soluciones', serie='SEF', folio=uuid, uuid=uuid,
+            fecha_emision=hoy - timedelta(days=dias_atras),
+            subtotal=campos['total'], maniobra=maniobra, **campos)
+
+    def test_antiguedad_y_lo_que_queda_fuera(self):
+        from api.models import Cliente, ClientePrincipal
+        p = ClientePrincipal.objects.create(nombre='REAL', dias_credito=30)
+        con_principal = Maniobra.objects.create(
+            cliente_fk=Cliente.objects.create(nombre_cliente='REAL MZO', cliente_principal=p))
+        sin_principal = Maniobra.objects.create(
+            cliente_fk=Cliente.objects.create(nombre_cliente='SUELTA'))
+        self.factura('vencida', 45, con_principal)                     # vence hace 15 días
+        self.factura('al-dia', 10, con_principal)                      # vence en 20 días
+        self.factura('huerfana', 5)                                    # sin maniobra
+        self.factura('sin-p', 5, sin_principal)
+        self.factura('cobrada', 45, con_principal, cobrada=True)
+        self.factura('cancelada', 45, con_principal, estado='cancelada')
+
+        d = self.usuario('com', cargo='COMERCIAL').get(f'{URL}cuentas-por-cobrar/').data
+        por_uuid = {f['folio']: f for f in d['facturas']}
+        self.assertEqual(set(por_uuid), {'vencida', 'al-dia', 'huerfana', 'sin-p'})
+        self.assertEqual((por_uuid['vencida']['tramo'], por_uuid['vencida']['dias_vencida']), ('0_30', 15))
+        self.assertEqual(por_uuid['al-dia']['tramo'], 'por_vencer')
+        self.assertEqual(por_uuid['huerfana']['situacion'], 'pendiente_de_ligar')
+        self.assertIsNone(por_uuid['huerfana']['tramo'])
+        self.assertEqual(d['antiguedad']['0_30'], '100.00')
+        self.assertEqual(d['fuera_de_antiguedad'],
+                         {'pendiente_de_ligar': '100.00', 'sin_cliente_principal': '100.00'})
+
+    def test_marcar_cobrada_con_el_texto_que_manda_el_frontend(self):
+        f = self.factura('a', 1)
+        com = self.usuario('com', cargo='COMERCIAL')
+        self.assertEqual(com.post(f'{URL}{f.id}/cobrada/', {'cobrada': 'true'}, format='json').status_code, 200)
+        self.assertTrue(Factura.objects.get(pk=f.pk).cobrada)
+        self.assertEqual(com.post(f'{URL}{f.id}/cobrada/', {'cobrada': 'quiza'}, format='json').status_code, 400)
+        self.assertEqual(self.usuario('coord', cargo='Coordinador')
+                         .post(f'{URL}{f.id}/cobrada/', {'cobrada': 'false'}, format='json').status_code, 403)
+
+    def test_cobranza_por_semana_de_emision(self):
+        from datetime import date
+        for uuid, dia, estado, cobrada in (('lun', date(2026, 9, 7), 'activa', False),
+                                          ('dom', date(2026, 9, 13), 'activa', True),
+                                          ('sig', date(2026, 9, 14), 'activa', False),
+                                          ('can', date(2026, 9, 8), 'cancelada', False)):
+            Factura.objects.create(empresa='fraba', serie='S', folio=uuid, uuid=uuid, fecha_emision=dia,
+                                   subtotal=100, total=100, estado=estado, cobrada=cobrada)
+        d = self.usuario('admin', staff=True).get(f'{URL}cobranza-semanal/').data
+        self.assertEqual([(str(s['semana'])[:10], s['total']) for s in d],
+                         [('2026-09-07', '200.00'), ('2026-09-14', '100.00')])
