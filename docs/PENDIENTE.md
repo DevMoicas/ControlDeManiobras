@@ -672,10 +672,10 @@ Además, `PyJWT` sube a **2.15.0** (CVE-2026-101918 en la 2.14.0) y entra **`xlr
 5. **Regla `autoMode` en `front/.claude/settings.local.json`** para que Claude pueda empujar:
    quedó escrita pero sin validar; el usuario decide si la deja o la quita. Sin ella, el
    push lo lanza el usuario con `!`.
-7. **Si antes de desplegar entra otra migración (0075…),** `migrar_prod.sh` se AMPLÍA, no
-   se reescribe: hoy comprueba de la 0070 a la 0074 y todas tienen que llegar juntas.
 6. **Datos para probar Fletes y Locales en local:** la base local solo tiene una maniobra
    desde agosto y es de FRABA; hace falta un transportista ajeno o placas PIS de terceros.
+7. **Si antes de desplegar entra otra migración (0075…),** `migrar_prod.sh` se AMPLÍA, no
+   se reescribe: hoy comprueba de la 0070 a la 0074 y todas tienen que llegar juntas.
 
 ### Límites conocidos (anotados con `ponytail:` o en el código)
 
