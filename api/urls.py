@@ -16,6 +16,7 @@ from .views import (
     VacioViewSet,
     PatioViewSet,
     ClienteViewSet,
+    ClientePrincipalViewSet,
     OrigenViewSet,
     DestinoViewSet,
     FotoRegistroViewSet,
@@ -50,6 +51,7 @@ router.register(r'vacios', VacioViewSet, basename='vacios')
 router.register(r'empleados', EmpleadoViewSet, basename='empleados')
 router.register(r'patios', PatioViewSet, basename='patios')
 router.register(r'clientes',  ClienteViewSet,  basename='clientes')
+router.register(r'clientes-principales', ClientePrincipalViewSet, basename='clientes-principales')
 router.register(r'origenes',  OrigenViewSet,   basename='origenes')
 router.register(r'destinos',  DestinoViewSet,  basename='destinos')
 router.register(r'fotos',     FotoRegistroViewSet, basename='fotos')

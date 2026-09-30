@@ -4,12 +4,12 @@ from decimal import Decimal
 from zoneinfo import ZoneInfo
 import django_filters
 from rest_framework import viewsets, mixins
-from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_EN_EL_PAPEL, NominaEmpleado, VacacionDia
+from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, ClientePrincipal, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_EN_EL_PAPEL, NominaEmpleado, VacacionDia
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .Serializers import ReporteViajeSerializer, TorreFolioSerializer, TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer, CostoExtraSerializer, PendienteSerializer, TorreControlSerializer
+from .Serializers import ReporteViajeSerializer, TorreFolioSerializer, TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, ClientePrincipalSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer, CostoExtraSerializer, PendienteSerializer, TorreControlSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from .throttling import SondeoThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -1778,6 +1778,20 @@ class ClienteViewSet(viewsets.ModelViewSet):
                 {'detail': 'No tienes permisos para eliminar registros.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
+        return super().destroy(request, *args, **kwargs)
+
+
+class ClientePrincipalViewSet(viewsets.ModelViewSet):
+    # Sin paginar: son los clientes de la empresa, decenas, y el desplegable de
+    # Direcciones los necesita todos.
+    queryset               = ClientePrincipal.objects.all()
+    serializer_class       = ClientePrincipalSerializer
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+    pagination_class       = None
+
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response({'detail': 'No tienes permisos para eliminar registros.'}, status=403)
         return super().destroy(request, *args, **kwargs)
 
 

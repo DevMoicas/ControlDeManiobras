@@ -2,7 +2,7 @@ import re
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD, ReporteViaje, CargaCombustible, NominaEmpleado, VacacionDia
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, ClientePrincipal, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD, ReporteViaje, CargaCombustible, NominaEmpleado, VacacionDia
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
@@ -615,9 +615,20 @@ class PatioSerializer(serializers.ModelSerializer):
 
 
 class ClienteSerializer(serializers.ModelSerializer):
+    # Para pintar el principal en la tabla de Direcciones sin otra consulta. Se
+    # escribe por `cliente_principal` (el id); este es solo de lectura.
+    cliente_principal_nombre = serializers.CharField(
+        source='cliente_principal.nombre', default=None, read_only=True)
+
     class Meta:
         model = Cliente
         fields = '__all__'
+
+
+class ClientePrincipalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClientePrincipal
+        fields = ['id', 'nombre', 'dias_credito']
 
 
 class OrigenSerializer(serializers.ModelSerializer):

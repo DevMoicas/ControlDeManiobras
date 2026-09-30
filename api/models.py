@@ -673,11 +673,34 @@ class VacacionDia(models.Model):
         return f"{self.fecha} — {self.empleado.nombre_trabajador}"
 
 
+class ClientePrincipal(models.Model):
+    """El cliente de verdad, que agrupa varias direcciones (Fase 2 de
+    PLAN_MODULO_FINANZAS.md, D4). Las ventas por cliente se agrupan aquí y de
+    aquí salen los días de crédito de las cuentas por cobrar (P28, P47)."""
+    nombre = models.CharField(max_length=255, unique=True)
+    # Días naturales desde la fecha de emisión de la factura (P28, P36).
+    dias_credito = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        managed = True
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
+
 class Cliente(models.Model):
+    # En pantalla este catálogo se llama DIRECCIONES (D4). La tabla no se
+    # renombra: `maniobras.cliente_fk` y todo lo que ya la lee siguen igual.
     nombre_cliente = models.CharField(max_length=255)
     domicilio = models.TextField(blank=True, default='')
     colonia = models.CharField(max_length=255, blank=True, default='')
     ciudad = models.CharField(max_length=255, blank=True, default='')
+    # Sin principal = "sin cliente asignado" en los dashboards (P48).
+    cliente_principal = models.ForeignKey(
+        ClientePrincipal, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='direcciones',
+    )
 
     class Meta:
         managed = True
