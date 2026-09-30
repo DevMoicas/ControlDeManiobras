@@ -473,3 +473,57 @@ class FechaEntregaSincronizadaTests(BaseGastoAutomatico):
         salida = self.cliente.patch(f'{URL}{maniobra_id}/',
                                     {'fecha_entrega_mercancia': '2026-08-29'}, format='json')
         self.assertEqual(salida.status_code, 200, salida.data)
+
+
+class ReparacionDelReporteAlGastoTests(BaseGastoAutomatico):
+    """La reparacion del reporte llega a Reparaciones de Gastos sin pisar lo
+    capturado a mano, y si las dos cifras no coinciden se avisa (Fase 5 de
+    PLAN_MODULO_FINANZAS.md, P60; usuario 2026-09-30). Es la regla que tenia el
+    diesel antes del 2026-09-29: Reparaciones SIGUE editable en Gastos."""
+    REPORTES = DieselDelReporteAlGastoTests.REPORTES
+    crear_reporte = DieselDelReporteAlGastoTests.crear_reporte
+    maniobra_con_gasto = DieselDelReporteAlGastoTests.maniobra_con_gasto
+
+    def test_llena_la_celda_vacia_y_recalcula_el_total(self):
+        m, gasto = self.maniobra_con_gasto()
+        self.crear_reporte('F-2279', reparacion=True, reparacion_costo='1500')
+        gasto.refresh_from_db()
+        self.assertEqual((gasto.reparaciones, gasto.gastos_totales),
+                         (Decimal('1500.00'), Decimal('1500.00')))
+
+    def test_corregir_el_costo_en_el_reporte_llega_a_gastos(self):
+        m, gasto = self.maniobra_con_gasto()
+        self.crear_reporte('F-2279', reparacion_costo='1500')
+        self.crear_reporte('F-2279', reparacion_costo='1800')
+        gasto.refresh_from_db()
+        self.assertEqual(gasto.reparaciones, Decimal('1800.00'))
+
+    def test_no_pisa_lo_capturado_a_mano_y_avisa(self):
+        m, gasto = self.maniobra_con_gasto()
+        gasto.reparaciones = Decimal('2000')
+        gasto.save()
+        r = self.crear_reporte('F-2279', reparacion_costo='1500')
+        gasto.refresh_from_db()
+        self.assertEqual(gasto.reparaciones, Decimal('2000.00'))
+        self.assertIs(r.data['reparacion_coincide'], False)
+        self.assertEqual((r.data['reparacion_reporte'], r.data['reparacion_gasto']),
+                         ('1500.00', '2000.00'))
+
+    def test_cuadrado_a_mano_el_reporte_vuelve_a_poder_volcar(self):
+        m, gasto = self.maniobra_con_gasto()
+        gasto.reparaciones = Decimal('1500')
+        gasto.save()
+        r = self.crear_reporte('F-2279', reparacion_costo='1500')
+        self.assertIs(r.data['reparacion_coincide'], True)
+        self.crear_reporte('F-2279', reparacion_costo='1700')
+        gasto.refresh_from_db()
+        self.assertEqual(gasto.reparaciones, Decimal('1700.00'))
+
+    def test_sin_costo_en_el_reporte_no_hay_nada_que_avisar(self):
+        m, gasto = self.maniobra_con_gasto()
+        gasto.reparaciones = Decimal('900')
+        gasto.save()
+        r = self.crear_reporte('F-2279', reparacion=False)
+        self.assertIsNone(r.data['reparacion_coincide'])
+        gasto.refresh_from_db()
+        self.assertEqual(gasto.reparaciones, Decimal('900.00'))

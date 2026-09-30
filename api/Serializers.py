@@ -849,6 +849,11 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
     diesel_reporte  = serializers.SerializerMethodField()
     diesel_gasto    = serializers.SerializerMethodField()
     diesel_coincide = serializers.SerializerMethodField()
+    # Lo mismo para reparaciones (Fase 5, P60): el reporte no pisa lo capturado
+    # a mano en Gastos, así que aquí el descuadre sí puede aparecer.
+    reparacion_reporte  = serializers.SerializerMethodField()
+    reparacion_gasto    = serializers.SerializerMethodField()
+    reparacion_coincide = serializers.SerializerMethodField()
     # rendimiento NO es un SerializerMethodField: es una columna de verdad, que
     # el modelo recalcula en cada escritura. read_only para que nadie la mande
     # desde fuera — el frontend manda el reporte entero y ahí viaja su copia
@@ -869,7 +874,7 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
         # desde fuera, cualquiera desactivaria la proteccion de lo capturado a
         # mano con solo declarar el importe que quisiera pisar.
         read_only_fields = ('creado_en', 'actualizado_en', 'rendimiento',
-                            'diesel_volcado')
+                            'diesel_volcado', 'reparacion_volcado')
 
     # Los CharField/TextField del modelo son blank=True, default='': NOT NULL en
     # la base. Se derivan del modelo y no se listan a mano para que añadir un
@@ -912,6 +917,22 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
 
     def get_diesel_coincide(self, reporte):
         return self._diesel(reporte)[2]
+
+    def _reparacion(self, reporte):
+        if not hasattr(reporte, '_cache_reparacion'):
+            reporte._cache_reparacion = reporte.reparacion_descuadrada()
+        return reporte._cache_reparacion
+
+    def get_reparacion_reporte(self, reporte):
+        costo = self._reparacion(reporte)[0]
+        return str(costo) if costo is not None else None
+
+    def get_reparacion_gasto(self, reporte):
+        actual = self._reparacion(reporte)[1]
+        return str(actual) if actual is not None else None
+
+    def get_reparacion_coincide(self, reporte):
+        return self._reparacion(reporte)[2]
 
     # ── Calculados. No se guardan: ver el docstring del modelo ──────────────
     def get_km_totales(self, reporte):
@@ -958,6 +979,7 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
             # Después de las cargas: las dos cosas las necesitan.
             reporte.refrescar_rendimiento()
             reporte.volcar_diesel_al_gasto(self._usuario())
+            reporte.volcar_reparacion_al_gasto(self._usuario())
             reporte.volcar_salida_a_la_maniobra(self._usuario())
         return reporte
 
@@ -975,6 +997,7 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
             # cambia al tocar el kilometraje.
             instance.refrescar_rendimiento()
             instance.volcar_diesel_al_gasto(self._usuario())
+            instance.volcar_reparacion_al_gasto(self._usuario())
             # La hora real de salida vuelve a la maniobra. En CADA escritura, como
             # el diesel: el reporte se llena por etapas y la salida real puede
             # llegar en cualquiera de ellas.

@@ -1473,6 +1473,14 @@ class ReporteViaje(models.Model):
     diesel_volcado = models.DecimalField(max_digits=10, decimal_places=2,
                                          null=True, blank=True)
 
+    # Lo ULTIMO que este reporte escribio en gastos.reparaciones (Fase 5 de
+    # PLAN_MODULO_FINANZAS.md, P60). Es la memoria que distinguia el diesel
+    # antes del 2026-09-29, recuperada para reparaciones: Reparaciones sigue
+    # editable en Gastos, asi que el reporte NO pisa lo capturado a mano, pero
+    # si su propio volcado anterior (llenado por etapas).
+    reparacion_volcado = models.DecimalField(max_digits=10, decimal_places=2,
+                                             null=True, blank=True)
+
     creado_en      = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
 
@@ -1618,6 +1626,53 @@ class ReporteViaje(models.Model):
         # save() completo y no update(): gastos_totales se recalcula en
         # Gasto.save(), asi que un UPDATE directo dejaria el total desfasado.
         gasto.save()
+        return True
+
+    # ── Reparaciones: la regla vieja del diesel (P60, usuario 2026-09-30) ──
+    def reparacion_descuadrada(self):
+        """(costo del reporte, importe en Gastos, si coinciden). `coinciden` es
+        None si falta una de las dos cifras: no hay nada que comparar."""
+        costo = self.reparacion_costo
+        gasto = self.gasto_del_folio()
+        actual = gasto.reparaciones if gasto else None
+        if costo is None or actual is None:
+            return costo, actual, None
+        return costo, actual, actual == costo
+
+    def _recordar_reparacion(self, costo):
+        if self.reparacion_volcado != costo:
+            self.reparacion_volcado = costo
+            self.save(update_fields=['reparacion_volcado', 'actualizado_en'])
+
+    def volcar_reparacion_al_gasto(self, usuario=''):
+        """Pasa el costo de la reparacion al gasto del folio. Devuelve si escribio.
+
+        NO pisa lo que capturo una persona: si Reparaciones de Gastos tiene un
+        importe que no puso este reporte, se queda como esta y la tabla de
+        reportes avisa del descuadre (reparacion_descuadrada). Lo que SI pisa es
+        su propio volcado anterior, para que corregir el costo en el reporte
+        llegue a Gastos. La diferencia la guarda `reparacion_volcado`.
+        """
+        costo = self.reparacion_costo
+        if costo is None:
+            return False
+        gasto = self.gasto_del_folio()
+        if gasto is None:
+            return False
+        actual = gasto.reparaciones
+        if actual == costo:
+            # Nada que escribir, pero si que recordar: si alguien lo cuadro a
+            # mano y no se anotara, este reporte ya no podria volver a volcar.
+            self._recordar_reparacion(costo)
+            return False
+        if actual is not None and actual != self.reparacion_volcado:
+            return False  # lo puso una persona: no se toca
+        gasto.reparaciones = costo
+        if usuario:
+            gasto.updated_by = usuario
+        # save() completo: gastos_totales se recalcula en Gasto.save().
+        gasto.save()
+        self._recordar_reparacion(costo)
         return True
 
     def refrescar_rendimiento(self):
