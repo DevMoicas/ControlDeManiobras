@@ -1053,6 +1053,41 @@ class DispositivoConfianza(models.Model):
         )
 
 
+class PerfilUsuario(models.Model):
+    """Qué empleado es cada usuario (Fase 0 de PLAN_MODULO_FINANZAS.md).
+
+    Sin esto el sistema no sabe el cargo de quien inicia sesión. El cargo NO se
+    copia aquí: se lee de `empleado.cargo`, así que cambiarlo en Catálogos cambia
+    lo que ese usuario puede hacer. Se asigna en el admin de Django.
+
+    Un empleado borrado a mano en pgAdmin deja el perfil apuntando a nada:
+    `perfil.empleado` lanza DoesNotExist y quien lo lea debe tratarlo como
+    "sin empleado".
+    """
+    # db_constraint=False en las dos, por los motivos de siempre: hacia auth_user
+    # el de DispositivoConfianza.usuario; hacia `empleados` (managed=False) el de
+    # NominaEmpleado.empleado.
+    usuario = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='perfil', db_constraint=False,
+    )
+    # OneToOne y no FK: dos usuarios con el mismo empleado serían dos cuentas de
+    # una persona, y el cargo de una abriría la otra.
+    empleado = models.OneToOneField(
+        'api.Empleado', on_delete=models.DO_NOTHING,
+        db_column='empleado_id', related_name='perfil', db_constraint=False,
+        null=True, blank=True,
+    )
+
+    class Meta:
+        managed = True
+        verbose_name = 'perfil de usuario'
+        verbose_name_plural = 'perfiles de usuario'
+
+    def __str__(self):
+        return f"{self.usuario} → {self.empleado_id or 'sin empleado'}"
+
+
 # Dos bolitas por unidad: la 1 es la VERDE (día en que sale) y la 2 la ROJA
 # (día en que vuelve). El CHECK de TorreControl ya admitía las dos, así que
 # pasar de 1 a 2 no tocó el esquema — para eso estaba.

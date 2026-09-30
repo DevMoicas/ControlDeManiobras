@@ -1,8 +1,23 @@
 from django.contrib import admin
 from django.utils import timezone
 
-from .models import DispositivoConfianza
+from .models import DispositivoConfianza, Empleado, PerfilUsuario
 from .views import _cerrar_todas_las_sesiones
+
+
+@admin.register(PerfilUsuario)
+class PerfilUsuarioAdmin(admin.ModelAdmin):
+    """Donde se liga cada usuario a su empleado (Fase 0 de Finanzas)."""
+
+    list_display  = ('usuario', 'empleado', 'cargo')
+    search_fields = ('usuario__username',)
+
+    @admin.display(description='Cargo')
+    def cargo(self, obj):
+        try:
+            return obj.empleado.cargo if obj.empleado_id else '—'
+        except Empleado.DoesNotExist:
+            return 'empleado borrado'
 
 
 @admin.register(DispositivoConfianza)
