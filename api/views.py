@@ -17,6 +17,7 @@ from .Serializers import (CustomTokenObtainPairSerializer, DispositivoConfianzaS
                           NominaEmpleadoSerializer, VacacionDiaSerializer)
 from . import confianza
 from .db_context import get_db_alias
+from .facturacion import religar_maniobra
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
@@ -1223,6 +1224,8 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
             if (maniobra.folio or '').strip() or (maniobra.folio_2 or '').strip():
                 _crear_reportes_del_folio(maniobra)
             _sincronizar_asignacion_folios(maniobra, {})
+            if (maniobra.no_factura or '').strip():
+                religar_maniobra(maniobra, self._usuario())
 
     def perform_update(self, serializer):
         # Los folios de ANTES: hasta el save(), serializer.instance trae la fila
@@ -1242,6 +1245,7 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
         # La fecha de entrega de ANTES, por el mismo motivo: solo se propaga al
         # gasto cuando cambia de verdad.
         fecha_entrega_antes = serializer.instance.fecha_entrega_mercancia
+        no_factura_antes = serializer.instance.no_factura
         with transaction.atomic(using=get_db_alias()):
             super().perform_update(serializer)
             maniobra = serializer.instance
@@ -1276,6 +1280,10 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
             # La asignacion, en cambio, se recalcula siempre: el folio suele
             # ponerse antes de saber quien lo llevara.
             _sincronizar_asignacion_folios(maniobra, antes)
+            # La liga con Facturación: solo si cambió el No. Factura, para no
+            # tocar facturas ni Gastos en cada edición de otra celda.
+            if maniobra.no_factura != no_factura_antes:
+                religar_maniobra(maniobra, self._usuario())
 
     def _usuario(self):
         return getattr(self.request.user, 'username', '') or ''

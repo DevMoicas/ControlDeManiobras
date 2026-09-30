@@ -1088,6 +1088,55 @@ class PerfilUsuario(models.Model):
         return f"{self.usuario} → {self.empleado_id or 'sin empleado'}"
 
 
+class Factura(models.Model):
+    """Una factura emitida, leída del Excel de facturación (Fase 1 de
+    PLAN_MODULO_FINANZAS.md). La crea la carga del Excel; nadie la captura a mano.
+
+    Sin borrado (P65): se CANCELA, y una cancelada no suma en ningún sitio. Así
+    los meses ya revisados no se mueven.
+    """
+    EMPRESAS = [('fraba', 'Fraba'), ('soluciones', 'Soluciones')]
+    ESTADOS  = [('activa', 'Activa'), ('cancelada', 'Cancelada')]
+
+    empresa = models.CharField(max_length=20, choices=EMPRESAS)
+    serie   = models.CharField(max_length=20)
+    folio   = models.CharField(max_length=40)
+    # El UUID fiscal es la clave de duplicados (P3, D3). Se guarda y NO se
+    # muestra nunca (P16): el serializer no lo expone.
+    uuid    = models.CharField(max_length=36, unique=True)
+    nombre  = models.CharField(max_length=255, blank=True, default='')
+    rfc     = models.CharField(max_length=20, blank=True, default='')
+    # Solo la fecha: el mes de la venta y la semana de cobranza salen de aquí
+    # (P9, P70), y guardar la hora obligaría a decidir la zona horaria.
+    fecha_emision = models.DateField()
+    subtotal = models.DecimalField(max_digits=14, decimal_places=2)
+    iva      = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    total    = models.DecimalField(max_digits=14, decimal_places=2)
+    moneda   = models.CharField(max_length=5, default='MXN')
+    estado   = models.CharField(max_length=10, choices=ESTADOS, default='activa')
+    cobrada  = models.BooleanField(default=False)
+    # La liga la decide `maniobras.no_factura` (D1) y se recalcula al cargar y
+    # al guardar esa celda. db_constraint=False: `maniobras` es managed=False y
+    # no existe en la base de test (mismo motivo que Vacio.maniobra).
+    maniobra = models.ForeignKey(
+        'api.Maniobra', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='facturas', db_constraint=False,
+    )
+
+    created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = True
+        ordering = ['-fecha_emision', '-id']
+        indexes = [models.Index(fields=['serie', 'folio'])]
+
+    def __str__(self):
+        return f"{self.serie} {self.folio}"
+
+
 # Dos bolitas por unidad: la 1 es la VERDE (día en que sale) y la 2 la ROJA
 # (día en que vuelve). El CHECK de TorreControl ya admitía las dos, así que
 # pasar de 1 a 2 no tocó el esquema — para eso estaba.
