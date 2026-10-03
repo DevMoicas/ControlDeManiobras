@@ -160,6 +160,17 @@ class ReporteViajeTests(BaseReporte):
         r = self.crear(cargas=[{'orden': 1, 'litros_urea': '20', 'total_urea': '496.00'}])
         self.assertEqual(r.data['cargas'][0]['total_urea'], '496.00')
 
+    def test_el_diesel_acepta_mas_de_dos_decimales(self):
+        """Usuario, 2026-10-02: litros y precio sin tope práctico de decimales.
+        Vuelven tal cual (sin ceros de relleno) y el total sigue en centavos."""
+        r = self.crear(cargas=[{'orden': 1, 'litros_diesel': '300.125',
+                                'precio_litro': '24.3579', 'litros_urea': '20.5'}])
+        carga = r.data['cargas'][0]
+        self.assertEqual(carga['litros_diesel'], '300.125')
+        self.assertEqual(carga['precio_litro'], '24.3579')
+        self.assertEqual(carga['litros_urea'], '20.50')
+        self.assertEqual(carga['total'], '7310.41')  # 7310.4146...
+
     def test_el_rendimiento_suma_el_diesel_de_todas_las_cargas(self):
         """El rendimiento es del viaje entero, no de una parada: 880 km entre los
         300 + 100 litros de las dos cargas."""

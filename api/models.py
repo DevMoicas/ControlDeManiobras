@@ -1706,10 +1706,12 @@ class CargaCombustible(models.Model):
                                 related_name='cargas')
     orden   = models.PositiveSmallIntegerField()
 
-    litros_diesel = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    precio_litro  = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    litros_urea   = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    total_urea    = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    # 10 decimales: "sin límite" en la práctica (usuario, 2026-10-02). Los totales
+    # se siguen redondeando a centavos al calcularse, no al capturarse.
+    litros_diesel = models.DecimalField(max_digits=20, decimal_places=10, null=True, blank=True)
+    precio_litro  = models.DecimalField(max_digits=20, decimal_places=10, null=True, blank=True)
+    litros_urea   = models.DecimalField(max_digits=20, decimal_places=10, null=True, blank=True)
+    total_urea    = models.DecimalField(max_digits=20, decimal_places=10, null=True, blank=True)
 
     class Meta:
         managed  = True

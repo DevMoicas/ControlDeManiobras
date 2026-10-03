@@ -812,6 +812,19 @@ class CargaCombustibleSerializer(serializers.ModelSerializer):
         # UNIQUE(reporte, orden) sobre un campo que el cliente no manda.
         validators = []
 
+    def to_representation(self, carga):
+        """Las columnas guardan 10 decimales: sin esto un "300" capturado volvería
+        a la pantalla como "300.0000000000". Sale con centavos y, si hay más, solo
+        los que significan algo. format 'f' y no str: str(1E-7) es notación
+        científica."""
+        datos = super().to_representation(carga)
+        for campo in ('litros_diesel', 'precio_litro', 'litros_urea', 'total_urea'):
+            valor = getattr(carga, campo)
+            if valor is not None:
+                centavos = valor.quantize(Decimal('0.01'))
+                datos[campo] = format(centavos if centavos == valor else valor.normalize(), 'f')
+        return datos
+
     def get_total(self, carga):
         if carga.litros_diesel is None or carga.precio_litro is None:
             return None
