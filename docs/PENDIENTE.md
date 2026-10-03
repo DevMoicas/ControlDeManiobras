@@ -659,10 +659,12 @@ Además, `PyJWT` sube a **2.15.0** (CVE-2026-101918 en la 2.14.0) y entra **`xlr
 
 1. **Desplegar las fases 1 a 6 — PENDIENTE por decisión del usuario al cerrar la sesión
    del 2026-09-30** ("las migraciones las dejaremos pendientes"). Nada de las fases 1 a 6
-   está en producción. `migrar_prod.sh` ya está preparado para **0070 a 0074** y
+   está en producción. `migrar_prod.sh` ya está preparado para **0070 a 0075** (ver §12) y
    comprueba los permisos reales en Postgres. Orden de siempre: el usuario corre `abrir` →
    `ver` → `migrar` → `cerrar`; luego backend en verde; luego frontend.
-   - En `ver`, deben faltar exactamente de la 0070 a la 0074.
+   - En `ver`, deben faltar exactamente de la 0070 a la 0075.
+   - **Espera además a definir lo pendiente de Finanzas con respecto a la nómina**
+     (usuario, 2026-10-02): se despliega todo junto cuando eso quede resuelto.
    - Presupuestar `pip-audit` (pasa casi siempre tras una pausa).
 2. **Revisar en el navegador** las pantallas nuevas: se compilaron y se probaron por HTTP,
    pero **las gráficas de los dashboards no se han mirado en pantalla**.
@@ -674,8 +676,8 @@ Además, `PyJWT` sube a **2.15.0** (CVE-2026-101918 en la 2.14.0) y entra **`xlr
    push lo lanza el usuario con `!`.
 6. **Datos para probar Fletes y Locales en local:** la base local solo tiene una maniobra
    desde agosto y es de FRABA; hace falta un transportista ajeno o placas PIS de terceros.
-7. **Si antes de desplegar entra otra migración (0075…),** `migrar_prod.sh` se AMPLÍA, no
-   se reescribe: hoy comprueba de la 0070 a la 0074 y todas tienen que llegar juntas.
+7. **Si antes de desplegar entra otra migración (0076…),** `migrar_prod.sh` se AMPLÍA, no
+   se reescribe: hoy comprueba de la 0070 a la 0075 y todas tienen que llegar juntas.
 
 ### Límites conocidos (anotados con `ponytail:` o en el código)
 
@@ -687,3 +689,32 @@ Además, `PyJWT` sube a **2.15.0** (CVE-2026-101918 en la 2.14.0) y entra **`xlr
 - Borrar un gasto fijo (staff) borra también sus pagos de meses pasados.
 - Los dashboards comparan contra otro periodo en las tarjetas; las gráficas no superponen
   las dos series.
+
+## 12. Sesión del 2026-10-02 — Decimales del diésel, SIN DESPLEGAR
+
+### Hecho y probado en local
+
+Reporte de viaje, bloque EN TRAYECTO: **litros de diésel, precio por litro, litros de urea
+y total de urea** aceptan hasta **10 decimales** (antes 2). El usuario pidió "sin límite";
+se eligió con él `numeric(20,10)` en vez de `numeric` sin precisión, que en Django exige un
+campo propio. Los totales calculados (litros × precio, volcado al gasto) siguen
+redondeándose a centavos al calcularse, no al capturarse.
+
+- Backend: modelo `CargaCombustible`, **migración 0075** (`AlterField` de las cuatro
+  columnas: solo ensancha, nada se trunca) y `CargaCombustibleSerializer.to_representation`,
+  que devuelve `300.00` y no `300.0000000000`, y `24.3579` sin ceros de relleno. Prueba
+  `test_el_diesel_acepta_mas_de_dos_decimales`. Suite: 606 en verde.
+- Frontend: los cuatro inputs pasan de `step="0.01"` a `step="any"`. Build limpio.
+- `migrar_prod.sh` ampliado: cabecera, `ver` (0070 a 0075) y `migrar` comprueba en
+  `information_schema` que las cuatro columnas son `numeric(20,10)`. Ya validado contra la
+  base local con la 0075 aplicada.
+
+### Por qué no se desplegó
+
+La 0075 depende de la 0074 (Finanzas), así que no puede salir sola. Separarla obligaría a
+rebasarla sobre la 0069, hacer una migración de unión y un cherry-pick a otra rama: el
+usuario decidió **desplegar todo junto** con Finanzas, que a su vez espera a definir lo de
+la nómina (§11, «Lo que falta», punto 1).
+
+- Al desplegar, levantar local y capturar a mano un renglón con 3 o más decimales antes de
+  empujar: las pruebas no ven la pantalla.
