@@ -516,9 +516,9 @@ export default function ReporteViajePage() {
               {abierto.cargas.map((c) => (
                 <tr key={c.orden}>
                   <td className="rv-orden">{c.orden}</td>
-                  <td><input type="number" step="0.01" min="0" value={c.litros_diesel ?? ""}
+                  <td><input type="number" step="any" min="0" value={c.litros_diesel ?? ""}
                              onChange={(e) => cambiarCarga(c.orden, "litros_diesel", e.target.value)} /></td>
-                  <td><input type="number" step="0.01" min="0" value={c.precio_litro ?? ""}
+                  <td><input type="number" step="any" min="0" value={c.precio_litro ?? ""}
                              onChange={(e) => cambiarCarga(c.orden, "precio_litro", e.target.value)} /></td>
                   {/* Calculado: litros × precio */}
                   <td className="rv-celda-calc">{mostrarNumero(totalCarga(c))}</td>
@@ -531,10 +531,10 @@ export default function ReporteViajePage() {
                     </>
                   ) : (
                     <>
-                      <td><input type="number" step="0.01" min="0" value={c.litros_urea ?? ""}
+                      <td><input type="number" step="any" min="0" value={c.litros_urea ?? ""}
                                  onChange={(e) => cambiarCarga(c.orden, "litros_urea", e.target.value)} /></td>
                       {/* Se captura: el papel no trae precio por litro para la urea */}
-                      <td><input type="number" step="0.01" min="0" value={c.total_urea ?? ""}
+                      <td><input type="number" step="any" min="0" value={c.total_urea ?? ""}
                                  onChange={(e) => cambiarCarga(c.orden, "total_urea", e.target.value)} /></td>
                     </>
                   )}
