@@ -722,7 +722,8 @@ la nómina (§11, «Lo que falta», punto 1).
 
 ## 13. Sesión del 2026-10-06 — Nómina en la utilidad, SIN DESPLEGAR
 
-Sin migración: `migrar_prod.sh` no cambia (sigue de 0070 a 0075).
+Con la **migración 0076** (historial de sueldos). `migrar_prod.sh` cubre ya de **0070 a
+0076**: en `ver` deben faltar exactamente esas siete.
 
 Decidido por el usuario, y con ello **cerrada la P62**:
 
@@ -739,6 +740,18 @@ Decidido por el usuario, y con ello **cerrada la P62**:
   nómina con la conexión de administrador (`ALIAS_NOMINA` en `dashboards.py`) porque el rol
   estándar no tiene permisos sobre ella (0067).
 
-**Sin confirmar todavía (segunda mitad de la P62):** el sueldo no tiene historial, así que
-cambiarlo mueve también los meses pasados de la utilidad. Implementado así; falta que el
-usuario diga si lo acepta o si hay que guardar el sueldo de cada mes.
+**Historial de sueldos (segunda mitad de la P62, decidido por el usuario):**
+
+- Tabla `api_sueldohistorial`: un renglón por cambio de sueldo con su fecha `desde`. Lo
+  escribe el PATCH de la nómina; la tabla de Nómina sigue enseñando el sueldo actual.
+- Un mes de la utilidad cuenta el sueldo **vigente su último día**: subirlo en noviembre no
+  mueve agosto.
+- Corregir el mismo día **pisa** el renglón de hoy. Un error de días anteriores se corrige
+  en **/admin → Historial de sueldos**.
+- Los sueldos que ya existían entran **desde siempre** (`desde` vacío), así que la utilidad
+  pasada no se mueve al desplegar.
+- **Decisión de Claude, a validar:** el **primer** sueldo que se le captura a un empleado
+  también vale desde siempre, como los ya existentes: es el dato inicial, no un cambio. Si no
+  fuera así, quien reciba hoy su primer sueldo saldría con nómina 0 en todos los meses
+  anteriores. Está en `NominaViewSet._anotar_sueldo`.
+- Sin GRANT al rol estándar, como la 0067.
