@@ -663,13 +663,12 @@ Además, `PyJWT` sube a **2.15.0** (CVE-2026-101918 en la 2.14.0) y entra **`xlr
    comprueba los permisos reales en Postgres. Orden de siempre: el usuario corre `abrir` →
    `ver` → `migrar` → `cerrar`; luego backend en verde; luego frontend.
    - En `ver`, deben faltar exactamente de la 0070 a la 0075.
-   - **Espera además a definir lo pendiente de Finanzas con respecto a la nómina**
-     (usuario, 2026-10-02): se despliega todo junto cuando eso quede resuelto.
+   - ~~Espera además a definir lo pendiente de la nómina~~: resuelto el 2026-10-06 (§13).
+     Ya no hay nada que bloquee el despliegue salvo que el usuario lo lance.
    - Presupuestar `pip-audit` (pasa casi siempre tras una pausa).
 2. **Revisar en el navegador** las pantallas nuevas: se compilaron y se probaron por HTTP,
    pero **las gráficas de los dashboards no se han mirado en pantalla**.
-3. **Pregunta 62 — sigue PENDIENTE a propósito.** Mientras tanto la utilidad mensual enseña
-   la nómina administrativa como pendiente y la operacional no la resta.
+3. ~~Pregunta 62~~ — cerrada el 2026-10-06 (§13).
 4. **Estados de cuenta** sigue siendo una tarjeta vacía en Finanzas (bancos, fuera del plan).
 5. **Regla `autoMode` en `front/.claude/settings.local.json`** para que Claude pueda empujar:
    quedó escrita pero sin validar; el usuario decide si la deja o la quita. Sin ella, el
@@ -718,3 +717,28 @@ la nómina (§11, «Lo que falta», punto 1).
 
 - Al desplegar, levantar local y capturar a mano un renglón con 3 o más decimales antes de
   empujar: las pruebas no ven la pantalla.
+
+---
+
+## 13. Sesión del 2026-10-06 — Nómina en la utilidad, SIN DESPLEGAR
+
+Sin migración: `migrar_prod.sh` no cambia (sigue de 0070 a 0075).
+
+Decidido por el usuario, y con ello **cerrada la P62**:
+
+- La columna **Sueldo** se llama **Sueldo Semanal**, solo en pantalla. La columna de la base
+  sigue siendo `sueldo`.
+- Nueva columna **Sueldo Diario** = semanal × 4 ÷ días del **mes en curso**. Calculada y no
+  guardada, así que cambia sola al cambiar de mes.
+- La **prima vacacional no cambia**: sigue usando semanal ÷ 7, así que el diario de la tabla y
+  el de la prima son distintos a propósito.
+- **Nómina administrativa** del mes = Σ semanal × 4 de los empleados con usuario staff (P63)
+  dados de alta algún día de ese mes: mes completo, sin prorratear. Un empleado sin fecha de
+  ingreso legible cuenta siempre. La utilidad operacional ya la resta.
+- Los cargos de Finanzas que no son staff ven **solo el total** del mes: el cálculo lee la
+  nómina con la conexión de administrador (`ALIAS_NOMINA` en `dashboards.py`) porque el rol
+  estándar no tiene permisos sobre ella (0067).
+
+**Sin confirmar todavía (segunda mitad de la P62):** el sueldo no tiene historial, así que
+cambiarlo mueve también los meses pasados de la utilidad. Implementado así; falta que el
+usuario diga si lo acepta o si hay que guardar el sueldo de cada mes.
