@@ -1053,13 +1053,15 @@ class NominaEmpleadoSerializer(serializers.ModelSerializer):
     antiguedad_anios = serializers.SerializerMethodField()
     dias_vacaciones  = serializers.SerializerMethodField()
     prima_vacacional = serializers.SerializerMethodField()
+    sueldo_diario    = serializers.SerializerMethodField()
 
     class Meta:
         model  = NominaEmpleado
         # En el ORDEN de la pantalla, que es el que pidió el usuario: NOMBRE,
-        # PUESTO, SUELDO, PRIMA, DÍAS DE VACACIONES, DÍAS TOMADOS, FINIQUITO.
+        # PUESTO, SUELDO SEMANAL, SUELDO DIARIO, PRIMA, DÍAS DE VACACIONES,
+        # DÍAS TOMADOS, FINIQUITO.
         fields = ('id', 'empleado', 'nombre', 'puesto',
-                  'sueldo', 'prima_vacacional', 'dias_vacaciones', 'dias_tomados',
+                  'sueldo', 'sueldo_diario', 'prima_vacacional', 'dias_vacaciones', 'dias_tomados',
                   'finiquito',
                   'fecha_ingreso', 'fecha_salida', 'antiguedad_anios', 'formulas')
         # `empleado` no se manda: la fila se direcciona por él en la URL.
@@ -1077,6 +1079,11 @@ class NominaEmpleadoSerializer(serializers.ModelSerializer):
         # Devolver un número aquí mezclaría los dos tipos en el mismo JSON.
         prima = obj.prima_vacacional()
         return str(prima) if prima is not None else None
+
+    def get_sueldo_diario(self, obj):
+        # str() por lo mismo que la prima.
+        diario = obj.sueldo_diario()
+        return str(diario) if diario is not None else None
 
     def validate_formulas(self, valor):
         return validar_formulas(valor, CAMPOS_CON_FORMULA_NOMINA)

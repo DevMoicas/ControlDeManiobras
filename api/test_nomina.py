@@ -260,6 +260,13 @@ class CalculosDeLaFilaTests(BaseNomina):
         self.assertEqual(Decimal(self.filas()['ANA LOPEZ']['prima_vacacional']),
                          Decimal('4500.00'))
 
+    def test_el_diario_es_semanal_por_4_entre_los_dias_del_mes(self):
+        """700 × 4 = 2800 al mes: 2800/31 = 90.32 en octubre, 100 en febrero."""
+        n = NominaEmpleado(sueldo=Decimal('700'))
+        self.assertEqual(n.sueldo_diario(date(2026, 10, 6)), Decimal('90.32'))
+        self.assertEqual(n.sueldo_diario(date(2026, 2, 6)), Decimal('100.00'))
+        self.assertIsNone(NominaEmpleado().sueldo_diario())
+
     def test_sin_sueldo_la_prima_esta_vacia_y_no_es_cero(self):
         """"Todavia no se ha capturado" no es "no le toca prima"."""
         self.empleado(ingreso=hace_anios(4))

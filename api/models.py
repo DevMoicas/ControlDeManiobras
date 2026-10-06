@@ -1,3 +1,4 @@
+import calendar
 import re
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
@@ -600,8 +601,8 @@ class NominaEmpleado(models.Model):
         'api.Empleado', on_delete=models.CASCADE,
         db_column='empleado_id', related_name='nomina', db_constraint=False,
     )
-    # Sueldo SEMANAL (usuario, 2026-09-03). El salario diario es este entre 7, y
-    # de ahi sale la prima vacacional. Va en el nombre de la columna de la
+    # Sueldo SEMANAL (usuario, 2026-09-03). La prima vacacional usa este entre 7;
+    # el SUELDO DIARIO de la tabla es otro calculo (ver sueldo_diario). Va en el nombre de la columna de la
     # pantalla para que nadie capture aqui un mensual: descuadraria la prima de
     # esa persona sin avisar de nada.
     sueldo = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -629,6 +630,22 @@ class NominaEmpleado(models.Model):
 
     def dias_vacaciones(self, hoy=None):
         return dias_de_vacaciones(self.anios(hoy))
+
+    def sueldo_mensual(self):
+        """Semanal × 4 (usuario, 2026-10-06). Es tambien lo que cuesta al mes en
+        la utilidad: cuatro semanas fijas, sin repartir semanas entre meses."""
+        return None if self.sueldo is None else self.sueldo * 4
+
+    def sueldo_diario(self, hoy=None):
+        """Mensual entre los dias del mes EN CURSO: cambia solo al cambiar de mes.
+
+        No lo usa la prima, que sigue con semanal ÷ 7 (usuario, 2026-10-06).
+        """
+        if self.sueldo is None:
+            return None
+        hoy = hoy or date.today()
+        dias = calendar.monthrange(hoy.year, hoy.month)[1]
+        return (self.sueldo_mensual() / dias).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     def prima_vacacional(self, hoy=None):
         """Salario diario × dias de vacaciones × 0.25.

@@ -9,6 +9,7 @@ Solo corre con:  Manage.py test api --settings=config.settings_test
 """
 from datetime import date
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.db import connections
@@ -16,13 +17,17 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from api.models import (CapturaMensual, CargaCombustible, Cliente, ClientePrincipal, CuentaPorPagar,
-                        Empleado, Factura, Gasto, GastoFijo, GastoFijoPago, Maniobra, PerfilUsuario,
+                        Empleado, Factura, Gasto, GastoFijo, GastoFijoPago, Maniobra, NominaEmpleado, PerfilUsuario,
                         ReporteViaje, Vacio)
 
 URL = '/api/dashboards/'
 PERIODO = '?desde=2026-08-01&hasta=2026-09-30'
 
 
+# La nómina se lee como administrador ('default'), pero aquí `empleados` la crea
+# 'standard' dentro de una transacción que 'default' no ve. Los permisos por rol
+# no se pueden probar en esta base: se comprueban contra Postgres real.
+@patch('api.dashboards.ALIAS_NOMINA', 'standard')
 class DashboardsTests(TestCase):
     databases = {'default', 'standard'}
 
@@ -104,8 +109,24 @@ class DashboardsTests(TestCase):
         self.assertEqual(
             [ago[k] for k in ('utilidad_bruta', 'utilidad_operacional', 'utilidad_antes_impuestos', 'utilidad_neta')],
             ['3300.00', '3000.00', '2900.00', '2850.00'])
-        self.assertTrue(ago['nomina_pendiente'])
-        self.assertIsNone(ago['nomina_administrativa'])
+        self.assertEqual(ago['nomina_administrativa'], '0.00')
+
+    def test_la_nomina_administrativa_es_semanal_por_4_de_los_staff_activos(self):
+        """Agosto: Ana (staff) 4×1000 + Luis (staff, baja el 1 de sep) 4×500 = 6000.
+        Septiembre: Luis aún cuenta (baja ese mes), Eva (entra en octubre) y Pepe
+        (no staff) nunca. Bruta de agosto 3300 → operacional -2700."""
+        def empleado(nombre, sueldo, staff=True, **fechas):
+            e = Empleado.objects.create(nombre_trabajador=nombre, **fechas)
+            NominaEmpleado.objects.create(empleado=e, sueldo=Decimal(sueldo))
+            u = get_user_model().objects.create_user(nombre, password='x', is_staff=staff)
+            PerfilUsuario.objects.create(usuario=u, empleado=e)
+        empleado('ana', 1000, fecha_ingreso='2020-01-01')
+        empleado('luis', 500, fecha_salida=date(2026, 9, 1))
+        empleado('eva', 700, fecha_ingreso='2026-10-01')
+        empleado('pepe', 9000, staff=False)
+        ago, sep = self.get('utilidad')['meses']
+        self.assertEqual((ago['nomina_administrativa'], sep['nomina_administrativa']), ('6000.00', '6000.00'))
+        self.assertEqual(ago['utilidad_operacional'], '-2700.00')
 
     def test_ventas_por_cliente_con_porcentaje(self):
         d = self.get('ventas-por-cliente')

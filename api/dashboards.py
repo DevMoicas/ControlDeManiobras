@@ -30,7 +30,7 @@ from .facturacion import (ZONA_OPERACION, _dinero, cobranza_semanal, principal_d
                           puede_finanzas, tramo, vencimiento)
 from .finanzas import falta_pago
 from .models import (CapturaMensual, CargaCombustible, CuentaPorPagar, Factura, Gasto,
-                     GastoFijo, GastoFijoPago, Maniobra)
+                     GastoFijo, GastoFijoPago, Maniobra, NominaEmpleado, fecha_de_ingreso)
 
 SERVICIOS = ('sencillo', 'full', 'carga_suelta')
 SIN_CLIENTE = 'Sin cliente asignado'   # dirección sin principal (P48)
@@ -247,13 +247,41 @@ def gastos_mensuales(f):
     }
 
 
+# El rol estándar no tiene permisos sobre la nómina (0067): ver nomina_administrativa.
+ALIAS_NOMINA = 'default'
+
+
+def nomina_administrativa(claves):
+    """Nómina de los empleados con usuario staff (P63), por mes: sueldo semanal × 4.
+
+    Cuatro semanas fijas por mes (usuario, 2026-10-06), lo que cierra la P62: no
+    hay que decidir a qué mes va cada semana. Cuenta el mes entero, sin
+    prorratear, si el empleado estuvo dado de alta algún día de él; sin fecha de
+    ingreso legible cuenta siempre. El sueldo no tiene historial: cambiarlo
+    mueve también los meses pasados (sin confirmar, ver PENDIENTE §13).
+
+    ALIAS_NOMINA ('default', administrador): el rol estándar no tiene permisos sobre la nómina (0067)
+    y los dashboards también los ven cargos de Finanzas que no son staff. Solo
+    sale el TOTAL del mes, nunca un sueldo.
+    """
+    total = defaultdict(Decimal)
+    filas = (NominaEmpleado.objects.using(ALIAS_NOMINA).select_related('empleado')
+             .filter(sueldo__isnull=False, empleado__perfil__usuario__is_staff=True))
+    for n in filas:
+        ingreso, salida = fecha_de_ingreso(n.empleado), n.empleado.fecha_salida
+        for k in claves:
+            primero = date.fromisoformat(f'{k}-01')
+            ultimo = (primero + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+            if (ingreso is None or ingreso <= ultimo) and (salida is None or salida >= primero):
+                total[k] += n.sueldo_mensual()
+    return total
+
+
 def utilidad_mensual(f):
     """La cascada del resumen, mes a mes (solo filtro de periodo, P42).
 
-    Nómina administrativa: PENDIENTE a propósito (P62, a qué mes va cada semana
-    de nómina). Sale como null y la utilidad operacional se calcula sin ella,
-    con `nomina_pendiente` para que la pantalla lo diga. Un mes con gastos fijos
-    que tocaban y no se capturaron lleva `faltan_pagos` (P54).
+    Un mes con gastos fijos que tocaban y no se capturaron lleva `faltan_pagos`
+    (P54).
     """
     claves = _meses_entre(f.desde, f.hasta)
     ventas = defaultdict(Decimal)
@@ -278,20 +306,21 @@ def utilidad_mensual(f):
     for gid, mes in GastoFijoPago.objects.filter(monto__isnull=False).values_list('gasto_fijo_id', 'mes'):
         pagados[gid].add(mes)
     gastos_fijos = list(GastoFijo.objects.all())
+    nomina = nomina_administrativa(claves)
 
     filas = []
     for k in claves:
         primero = date.fromisoformat(f'{k}-01')
         bruta = ventas[k] - costo_ventas[k]
         comisiones = capturas[(k, 'comision')]
-        operacional = bruta - (fijos[k] + comisiones)
+        operacional = bruta - (fijos[k] + comisiones + nomina[k])
         antes = operacional - capturas[(k, 'financiero')]
         filas.append({
             'mes': k,
             'ventas': _dinero(ventas[k]), 'costo_ventas': _dinero(costo_ventas[k]),
             'utilidad_bruta': _dinero(bruta),
             'gastos_fijos': _dinero(fijos[k]), 'comisiones': _dinero(comisiones),
-            'nomina_administrativa': None, 'nomina_pendiente': True,
+            'nomina_administrativa': _dinero(nomina[k]),
             'utilidad_operacional': _dinero(operacional),
             'financieros': _dinero(capturas[(k, 'financiero')]),
             'utilidad_antes_impuestos': _dinero(antes),
