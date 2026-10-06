@@ -4,7 +4,7 @@ from decimal import Decimal
 from zoneinfo import ZoneInfo
 import django_filters
 from rest_framework import viewsets, mixins
-from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, ClientePrincipal, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_EN_EL_PAPEL, NominaEmpleado, VacacionDia
+from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, ClientePrincipal, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_EN_EL_PAPEL, NominaEmpleado, SueldoHistorial, VacacionDia
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
@@ -3395,10 +3395,27 @@ class NominaViewSet(SoloAdminMixin, viewsets.ViewSet):
                             status=status.HTTP_404_NOT_FOUND)
         with transaction.atomic(using=get_db_alias()):
             fila, _ = NominaEmpleado.objects.get_or_create(empleado=empleado)
+            antes = fila.sueldo
             serializer = NominaEmpleadoSerializer(fila, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+            if fila.sueldo != antes:
+                self._anotar_sueldo(empleado, fila.sueldo)
         return Response(serializer.data)
+
+    @staticmethod
+    def _anotar_sueldo(empleado, sueldo):
+        """Historial para la utilidad (ver SueldoHistorial).
+
+        El primer sueldo de alguien vale desde siempre, como los que ya había al
+        crear la tabla: es el dato inicial, no un cambio. Los siguientes, desde
+        hoy en México; dos cambios el mismo día dejan solo el último.
+        """
+        primero = not SueldoHistorial.objects.filter(empleado=empleado).exists()
+        SueldoHistorial.objects.update_or_create(
+            empleado=empleado,
+            desde=None if primero else timezone.localdate(timezone=_ZONA_OPERACION),
+            defaults={'sueldo': sueldo})
 
 
 class VacacionDiaViewSet(SoloAdminMixin, viewsets.ModelViewSet):

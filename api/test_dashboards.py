@@ -17,7 +17,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from api.models import (CapturaMensual, CargaCombustible, Cliente, ClientePrincipal, CuentaPorPagar,
-                        Empleado, Factura, Gasto, GastoFijo, GastoFijoPago, Maniobra, NominaEmpleado, PerfilUsuario,
+                        Empleado, Factura, Gasto, GastoFijo, GastoFijoPago, Maniobra, PerfilUsuario, SueldoHistorial,
                         ReporteViaje, Vacio)
 
 URL = '/api/dashboards/'
@@ -112,20 +112,22 @@ class DashboardsTests(TestCase):
         self.assertEqual(ago['nomina_administrativa'], '0.00')
 
     def test_la_nomina_administrativa_es_semanal_por_4_de_los_staff_activos(self):
-        """Agosto: Ana (staff) 4×1000 + Luis (staff, baja el 1 de sep) 4×500 = 6000.
-        Septiembre: Luis aún cuenta (baja ese mes), Eva (entra en octubre) y Pepe
+        """Ana (staff) 1000 desde siempre, 1500 desde el 15 de sep; Luis (staff, baja
+        el 1 de sep) 500. Agosto 4×1000 + 4×500 = 6000; septiembre cuenta el
+        sueldo del cierre: 4×1500 + 4×500 = 8000. Eva (entra en octubre) y Pepe
         (no staff) nunca. Bruta de agosto 3300 → operacional -2700."""
-        def empleado(nombre, sueldo, staff=True, **fechas):
+        def empleado(nombre, sueldos, staff=True, **fechas):
             e = Empleado.objects.create(nombre_trabajador=nombre, **fechas)
-            NominaEmpleado.objects.create(empleado=e, sueldo=Decimal(sueldo))
+            for desde, sueldo in sueldos:
+                SueldoHistorial.objects.create(empleado=e, desde=desde, sueldo=Decimal(sueldo))
             u = get_user_model().objects.create_user(nombre, password='x', is_staff=staff)
             PerfilUsuario.objects.create(usuario=u, empleado=e)
-        empleado('ana', 1000, fecha_ingreso='2020-01-01')
-        empleado('luis', 500, fecha_salida=date(2026, 9, 1))
-        empleado('eva', 700, fecha_ingreso='2026-10-01')
-        empleado('pepe', 9000, staff=False)
+        empleado('ana', [(date(2026, 9, 15), 1500), (None, 1000)], fecha_ingreso='2020-01-01')
+        empleado('luis', [(None, 500)], fecha_salida=date(2026, 9, 1))
+        empleado('eva', [(None, 700)], fecha_ingreso='2026-10-01')
+        empleado('pepe', [(None, 9000)], staff=False)
         ago, sep = self.get('utilidad')['meses']
-        self.assertEqual((ago['nomina_administrativa'], sep['nomina_administrativa']), ('6000.00', '6000.00'))
+        self.assertEqual((ago['nomina_administrativa'], sep['nomina_administrativa']), ('6000.00', '8000.00'))
         self.assertEqual(ago['utilidad_operacional'], '-2700.00')
 
     def test_ventas_por_cliente_con_porcentaje(self):

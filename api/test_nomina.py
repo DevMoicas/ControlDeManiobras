@@ -29,7 +29,7 @@ from django.db import connections
 from django.test import SimpleTestCase, TestCase
 from rest_framework.test import APIClient
 
-from api.models import (Empleado, NominaEmpleado, VacacionDia,
+from api.models import (Empleado, NominaEmpleado, SueldoHistorial, VacacionDia,
                         anios_cumplidos, dias_de_vacaciones, fecha_de_ingreso)
 
 NOMINA = '/api/nomina/'
@@ -259,6 +259,22 @@ class CalculosDeLaFilaTests(BaseNomina):
 
         self.assertEqual(Decimal(self.filas()['ANA LOPEZ']['prima_vacacional']),
                          Decimal('4500.00'))
+
+    def test_el_historial_de_sueldos_lo_escribe_el_patch(self):
+        """El primero vale desde siempre; un cambio, desde hoy; corregirlo el mismo
+        día pisa ese renglón, y guardar el mismo importe no anota nada."""
+        empleado = self.empleado()
+        self.guardar(empleado, sueldo='1000')
+        self.guardar(empleado, sueldo='1200')
+        self.guardar(empleado, sueldo='1300')
+        self.guardar(empleado, sueldo='1300.00')
+        self.guardar(empleado, dias_tomados='2')
+        filas = sorted(SueldoHistorial.objects.values_list('desde', 'sueldo'),
+                       key=lambda f: f[0] or date.min)
+        self.assertEqual(len(filas), 2)
+        self.assertEqual(filas[0], (None, Decimal('1000.00')))
+        self.assertIsNotNone(filas[1][0])
+        self.assertEqual(filas[1][1], Decimal('1300.00'))
 
     def test_el_diario_es_semanal_por_4_entre_los_dias_del_mes(self):
         """700 × 4 = 2800 al mes: 2800/31 = 90.32 en octubre, 100 en febrero."""

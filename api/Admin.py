@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils import timezone
 
-from .models import DispositivoConfianza, Empleado, PerfilUsuario
+from .models import DispositivoConfianza, Empleado, PerfilUsuario, SueldoHistorial
 from .views import _cerrar_todas_las_sesiones
 
 
@@ -18,6 +18,15 @@ class PerfilUsuarioAdmin(admin.ModelAdmin):
             return obj.empleado.cargo if obj.empleado_id else '—'
         except Empleado.DoesNotExist:
             return 'empleado borrado'
+
+
+@admin.register(SueldoHistorial)
+class SueldoHistorialAdmin(admin.ModelAdmin):
+    """Donde se corrige un sueldo mal capturado un dia anterior: la tabla de
+    Nomina solo escribe el de hoy. `desde` vacio = desde siempre."""
+
+    list_display  = ('empleado', 'sueldo', 'desde')
+    search_fields = ('empleado__nombre_trabajador',)
 
 
 @admin.register(DispositivoConfianza)

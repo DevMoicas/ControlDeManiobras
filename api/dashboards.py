@@ -30,7 +30,7 @@ from .facturacion import (ZONA_OPERACION, _dinero, cobranza_semanal, principal_d
                           puede_finanzas, tramo, vencimiento)
 from .finanzas import falta_pago
 from .models import (CapturaMensual, CargaCombustible, CuentaPorPagar, Factura, Gasto,
-                     GastoFijo, GastoFijoPago, Maniobra, NominaEmpleado, fecha_de_ingreso)
+                     GastoFijo, GastoFijoPago, Maniobra, SueldoHistorial, fecha_de_ingreso)
 
 SERVICIOS = ('sencillo', 'full', 'carga_suelta')
 SIN_CLIENTE = 'Sin cliente asignado'   # dirección sin principal (P48)
@@ -254,26 +254,33 @@ ALIAS_NOMINA = 'default'
 def nomina_administrativa(claves):
     """Nómina de los empleados con usuario staff (P63), por mes: sueldo semanal × 4.
 
-    Cuatro semanas fijas por mes (usuario, 2026-10-06), lo que cierra la P62: no
-    hay que decidir a qué mes va cada semana. Cuenta el mes entero, sin
-    prorratear, si el empleado estuvo dado de alta algún día de él; sin fecha de
-    ingreso legible cuenta siempre. El sueldo no tiene historial: cambiarlo
-    mueve también los meses pasados (sin confirmar, ver PENDIENTE §13).
+    Cuatro semanas fijas por mes (usuario, 2026-10-06), lo que cierra la P62. El
+    sueldo es el VIGENTE EL ÚLTIMO DÍA del mes según SueldoHistorial: subirlo en
+    noviembre no mueve agosto. Cuenta el mes entero, sin prorratear, si el
+    empleado estuvo dado de alta algún día de él; sin fecha de ingreso legible
+    cuenta siempre.
 
-    ALIAS_NOMINA ('default', administrador): el rol estándar no tiene permisos sobre la nómina (0067)
-    y los dashboards también los ven cargos de Finanzas que no son staff. Solo
-    sale el TOTAL del mes, nunca un sueldo.
+    ALIAS_NOMINA ('default', administrador): el rol estándar no tiene permisos
+    sobre la nómina (0067, 0076) y los dashboards también los ven cargos de
+    Finanzas que no son staff. Solo sale el TOTAL del mes, nunca un sueldo.
     """
+    historial = defaultdict(list)
+    for h in (SueldoHistorial.objects.using(ALIAS_NOMINA).select_related('empleado')
+              .filter(empleado__perfil__usuario__is_staff=True)):
+        historial[h.empleado_id].append(h)
     total = defaultdict(Decimal)
-    filas = (NominaEmpleado.objects.using(ALIAS_NOMINA).select_related('empleado')
-             .filter(sueldo__isnull=False, empleado__perfil__usuario__is_staff=True))
-    for n in filas:
-        ingreso, salida = fecha_de_ingreso(n.empleado), n.empleado.fecha_salida
+    for filas in historial.values():
+        filas.sort(key=lambda h: h.desde or date.min)   # null = desde siempre
+        empleado = filas[0].empleado
+        ingreso, salida = fecha_de_ingreso(empleado), empleado.fecha_salida
         for k in claves:
             primero = date.fromisoformat(f'{k}-01')
             ultimo = (primero + timedelta(days=32)).replace(day=1) - timedelta(days=1)
-            if (ingreso is None or ingreso <= ultimo) and (salida is None or salida >= primero):
-                total[k] += n.sueldo_mensual()
+            if (ingreso and ingreso > ultimo) or (salida and salida < primero):
+                continue
+            vigentes = [h.sueldo for h in filas if (h.desde or date.min) <= ultimo]
+            if vigentes and vigentes[-1] is not None:
+                total[k] += vigentes[-1] * 4
     return total
 
 

@@ -660,6 +660,37 @@ class NominaEmpleado(models.Model):
         return prima.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
 
+class SueldoHistorial(models.Model):
+    """Cada sueldo semanal que ha tenido un empleado y desde cuando (usuario, 2026-10-06).
+
+    Lo usa SOLO la utilidad: un mes cuenta el sueldo vigente su ultimo dia, asi
+    que subir un sueldo en noviembre no mueve agosto. La tabla de Nomina sigue
+    leyendo NominaEmpleado.sueldo, que es el actual.
+
+    Lo escribe el PATCH de la nomina: un renglon por dia de cambio, y una
+    correccion el mismo dia pisa el suyo. Corregir un dia anterior es cosa del
+    /admin. `desde` null = desde siempre: los sueldos que ya existian al crear
+    esta tabla (0076). `sueldo` null = se borro el sueldo ese dia.
+    """
+    # db_constraint=False por lo mismo que NominaEmpleado.empleado.
+    empleado = models.ForeignKey(
+        'api.Empleado', on_delete=models.CASCADE,
+        db_column='empleado_id', related_name='sueldos', db_constraint=False,
+    )
+    sueldo = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    desde  = models.DateField(null=True, blank=True)
+
+    class Meta:
+        managed  = True
+        ordering = ['empleado_id', 'desde']
+        verbose_name_plural = 'historial de sueldos'
+        constraints = [models.UniqueConstraint(fields=['empleado', 'desde'],
+                                               name='sueldo_unico_por_dia')]
+
+    def __str__(self):
+        return f"{self.empleado_id}: {self.sueldo} desde {self.desde or 'siempre'}"
+
+
 class VacacionDia(models.Model):
     """Un dia de vacaciones en el calendario de la nomina.
 
