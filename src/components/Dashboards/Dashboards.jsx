@@ -285,7 +285,6 @@ export function Utilidad() {
         <Kpi titulo="Utilidad neta" valor={sumar(meses, "utilidad_neta")}
           anterior={previo ? sumar(previo.meses, "utilidad_neta") : undefined} />
       </div>
-      <Aviso>La nómina administrativa está pendiente de definir (a qué mes va cada semana): la utilidad operacional aún no la resta.</Aviso>
       {faltan.length > 0 && <Aviso>Faltan pagos de gastos fijos por capturar en: {faltan.join(", ")}.</Aviso>}
       <ResponsiveContainer width="100%" height={280}>
         <LineChart data={graf(meses)}>
@@ -299,7 +298,8 @@ export function Utilidad() {
       <Tabla filas={meses} columnas={[
         ["etiqueta", "Mes"], ["ventas", "Ventas", dinero], ["costo_ventas", "Costo de ventas", dinero],
         ["utilidad_bruta", "Bruta", dinero], ["gastos_fijos", "Gastos fijos", dinero],
-        ["comisiones", "Comisiones", dinero], ["utilidad_operacional", "Operacional", dinero],
+        ["comisiones", "Comisiones", dinero], ["nomina_administrativa", "Nómina adm.", dinero],
+        ["utilidad_operacional", "Operacional", dinero],
         ["financieros", "Financieros", dinero], ["utilidad_antes_impuestos", "Antes de impuestos", dinero],
         ["impuestos", "Impuestos", dinero], ["utilidad_neta", "Neta", dinero],
       ]} />

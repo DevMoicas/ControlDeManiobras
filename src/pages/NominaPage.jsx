@@ -13,13 +13,14 @@ import "./NominaPage.css";
 
 // Las columnas, EN EL ORDEN que pidió el usuario. `editable: false` no es
 // decorativo: nombre y puesto son del catálogo de empleados —se cambian allí, no
-// aquí— y prima y días de vacaciones los CALCULA el servidor a partir de la
-// fecha de ingreso, así que escribirlos a mano sería inventar un número que el
+// aquí— y sueldo diario, prima y días de vacaciones los CALCULA el servidor
+// (el diario, semanal × 4 entre los días del mes en curso), así que escribirlos a mano sería inventar un número que el
 // siguiente refresco borraría.
 const COLUMNAS = [
   { key: "nombre",           label: "Nombre" },
   { key: "puesto",           label: "Puesto" },
-  { key: "sueldo",           label: "Sueldo",             editable: true, moneda: true },
+  { key: "sueldo",           label: "Sueldo Semanal",     editable: true, moneda: true },
+  { key: "sueldo_diario",    label: "Sueldo Diario",      moneda: true },
   { key: "prima_vacacional", label: "Prima Vacacional",   moneda: true },
   { key: "dias_vacaciones",  label: "Días de Vacaciones" },
   { key: "dias_tomados",     label: "Días Tomados",       editable: true },
