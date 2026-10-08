@@ -603,6 +603,11 @@ texto original debajo como registro.
 > front), y `npm audit fix` con excepción documentada para braces (tailwind 3).
 > Sigue abierto: puntos 2, 4, 5 y 6 de «Lo que falta»; validar la decisión del
 > primer sueldo (§13); y que G. Totales deja deducir la Comisión a quien no la ve.
+>
+> **Cambia P33 (usuario, 2026-10-08, backend `96d63c6e`):** si el dueño de las placas
+> PIS es el mismo transportista del viaje, la maniobra va SOLO a Fletes; Locales es
+> para el tercero que solo la saca de puerto. PIS de X y viaje de Y: sale en las dos.
+> Una maniobra con cuenta activa sigue en su pestaña aunque deje de cumplir la regla.
 
 ### Desplegado
 
