@@ -5,6 +5,7 @@ import { useAuthContext } from "../context/AuthContext";
 import { useNavigate } from 'react-router-dom';
 import { Trash2, SquarePen, Settings, X } from "lucide-react";
 import { useGastos } from "../hooks/useGastos";
+import { apiClient } from "../api/apiClient";
 import FolioSelector from "../components/FolioSelector/FolioSelector";
 import SearchBar from "../components/SearchBar/SearchBar";
 import { filtrarBusqueda } from "../utils/buscar.mjs";
@@ -86,15 +87,16 @@ const COLUMNAS_MONEDA = [
   'comision_operador', 'reparaciones', 'gastos_totales',
 ];
 
-// INGRESOS y UTILIDAD BRUTA son el margen del viaje: solo las ve un usuario
-// staff (rol admin). Esconderlas aqui es comodidad, no seguridad — quien de
-// verdad las oculta es el backend, que no manda `facturado` a un usuario
-// estandar (ver GastoSerializer.get_fields). UTILIDAD BRUTA ni siquiera existe
-// en la base: se calcula restando, asi que se va con ella.
-const SOLO_ADMIN = ["facturado", "utilidad_bruta"];
+// COMISIÓN OP., INGRESOS y UTILIDAD BRUTA son el margen del viaje: solo las ven
+// staff y los cargos de Finanzas (comercial y dirección), lo que responde
+// /facturas/acceso/. Esconderlas aqui es comodidad, no seguridad — quien de
+// verdad las oculta es el backend, que no manda `facturado` ni
+// `comision_operador` a los demas (ver GastoSerializer.get_fields). UTILIDAD
+// BRUTA ni siquiera existe en la base: se calcula restando, asi que se va con ella.
+const SOLO_MARGEN = ["comision_operador", "facturado", "utilidad_bruta"];
 
-const columnasVisibles = (isAdmin) =>
-  (isAdmin ? COLUMNAS : COLUMNAS.filter((col) => !SOLO_ADMIN.includes(col.key)));
+const columnasVisibles = (verMargen) =>
+  (verMargen ? COLUMNAS : COLUMNAS.filter((col) => !SOLO_MARGEN.includes(col.key)));
 
 const GASTO_VACIO = {
   maniobra: "",  // id de la maniobra elegida en el FolioSelector
@@ -122,9 +124,7 @@ const MODAL_CERRADO = { abierto: false, datos: null };
 
 // ── Sub-componente: fila de inputs para nuevo gasto ──────────────────────────
 
-function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
-  const { isAdmin } = useAuthContext();
-  const columnas = columnasVisibles(isAdmin);
+function FilaNueva({ columnas, datos, onChange, onGuardar, onCancelar, isSubmitting }) {
 
   return (
     <tr>
@@ -202,9 +202,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
 
 // ── Sub-componente: modal de edición ──────────────────────────────────────────
 
-function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
-  const { isAdmin } = useAuthContext();
-  const columnas = columnasVisibles(isAdmin);
+function ModalEditar({ columnas, datos, onChange, onGuardar, onCerrar, isSubmitting }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onCerrar(); };
     window.addEventListener("keydown", onKey);
@@ -302,7 +300,13 @@ function Intro() {
 export default function GastosPage() {
   const navigate = useNavigate();
   const { isAdmin } = useAuthContext();
-  const columnas = columnasVisibles(isAdmin);
+  // Cerrado mientras no conteste: mejor que aparezcan un instante tarde a que
+  // se vean de más (y sin el campo en la respuesta saldrían vacías).
+  const [verMargen, setVerMargen] = useState(false);
+  useEffect(() => {
+    apiClient.get("/facturas/acceso/").then((a) => setVerMargen(a.ver)).catch(() => {});
+  }, []);
+  const columnas = columnasVisibles(verMargen);
   // Balde de celdas: modo pintura + paleta del clic derecho.
   const pintura = usePinturaCeldas();
   const {
@@ -519,6 +523,7 @@ export default function GastosPage() {
           <tbody>
             {modoAgregar && (
               <FilaNueva
+                columnas={columnas}
                 datos={nuevoGasto}
                 onChange={handleCambioNueva}
                 onGuardar={handleGuardarNueva}
@@ -638,6 +643,7 @@ export default function GastosPage() {
       <AnimatePresence>
         {modal.abierto && modal.datos && (
           <ModalEditar
+            columnas={columnas}
             datos={modal.datos}
             onChange={handleCambioModal}
             onGuardar={handleGuardarEdicion}
