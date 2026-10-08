@@ -1,0 +1,134 @@
+/* Mismo lenguaje visual que CiudadSelector (la celda de al lado en la tabla),
+   con el código en monoespaciada porque es un identificador de documento. */
+
+.fds-container {
+  position: relative;
+  display: inline-block;
+}
+
+.fds-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+  font-family: inherit;
+  max-width: 170px;
+}
+
+.fds-trigger span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fds-trigger--empty {
+  background: #f9fafb;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+}
+
+.fds-trigger:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+.fds-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fds-chevron {
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+.fds-dropdown {
+  /* position: fixed + coords (JSX) → portal fuera de la tabla para que el
+     overflow no lo recorte. `top`/`left` los pone el JSX. */
+  position: fixed;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  z-index: 9999;
+  min-width: 200px;
+  max-height: 260px;
+  overflow-y: auto;
+  animation: fds-fadeIn 0.12s ease;
+}
+
+@keyframes fds-fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fds-state {
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.fds-state--error {
+  color: #ef4444;
+}
+
+.fds-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: background 0.1s ease;
+}
+
+.fds-option:hover {
+  background: #eff6ff;
+}
+
+.fds-option--selected {
+  background: #dbeafe;
+}
+
+/* Liberar no es elegir: se pinta en el rojo de las acciones destructivas del ERP
+   para que no se confunda con un folio de la lista. */
+.fds-option--quitar {
+  color: #dc2626;
+  font-weight: 600;
+}
+.fds-option--quitar:hover { background: #fef2f2; }
+.fds-option--quitar .fds-codigo { color: #dc2626; }
+
+.fds-separador {
+  height: 1px;
+  margin: 4px 2px;
+  background: #e5e7eb;
+}
+
+.fds-codigo {
+  font-family: ui-monospace, "IBM Plex Mono", monospace;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.fds-asignacion {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

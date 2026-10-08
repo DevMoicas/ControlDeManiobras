@@ -1,0 +1,213 @@
+/* ── Documentos de Viaje — mesa de emisión de documentos ─────────────────────
+   Armonizado con el shell del app: tokens azules, Oswald display, Inter cuerpo.
+   Firma propia: IBM Plex Mono (ya cargada en index.html) para la clase legal del
+   documento y los campos, + lomo izquierdo que evoca un formulario oficial. */
+
+.dvp-page {
+  min-height: calc(100vh - 40px); /* descuenta el footer del layout, como Home */
+  background:
+    radial-gradient(900px 420px at 100% -8%, #e8f0ff 0%, transparent 58%),
+    var(--bg, #f4f7fb);
+}
+
+.dvp {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 52px 28px 64px;
+}
+
+/* ── Intro (centrada, como el resto de páginas de la app) ──────────────────── */
+.dvp-intro { text-align: center; }
+.dvp-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--primary, #2563eb);
+  margin: 0 0 12px;
+}
+.dvp-title {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  font-size: 2.45rem;
+  line-height: 1.02;
+  color: var(--text, #1f2937);
+  margin: 0;
+}
+.dvp-lead {
+  margin: 12px auto 0;
+  color: var(--text-light, #6b7280);
+  font-size: 1rem;
+  line-height: 1.5;
+  max-width: 50ch;
+}
+
+/* ── Grid de documentos ──────────────────────────────────────────────────────── */
+.dvp-grid {
+  margin-top: 42px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 22px;
+}
+
+/* ── Tarjeta-documento ────────────────────────────────────────────────────────── */
+.dvp-doc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #fff;
+  border: 1px solid #e6ecf5;
+  border-radius: 16px;
+  padding: 26px 26px 24px 30px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  animation: dvp-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+/* Lomo izquierdo — margen/encuadernado del formulario */
+.dvp-doc::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--primary, #2563eb);
+  transition: width 0.2s ease;
+}
+.dvp-doc:hover {
+  transform: translateY(-4px);
+  border-color: #c7d9f7;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.14);
+}
+.dvp-doc:hover::before {
+  width: 6px;
+}
+
+/* Cabecera: chip de ícono + clase legal (mono) */
+.dvp-doc-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dvp-doc-chip {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--primary-light, #eaf1ff);
+  color: var(--primary, #2563eb);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.dvp-doc:hover .dvp-doc-chip {
+  background: var(--primary, #2563eb);
+  color: #fff;
+}
+.dvp-doc-class {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-light, #6b7280);
+}
+
+.dvp-doc-title {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.015em;
+  font-weight: 600;
+  font-size: 1.4rem;
+  line-height: 1.1;
+  color: var(--text, #1f2937);
+  margin: 2px 0 0;
+}
+.dvp-doc-desc {
+  margin: 0;
+  color: var(--text-light, #6b7280);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+/* Campos que incluye — etiquetas mono tipo formulario */
+.dvp-doc-fields {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.dvp-doc-fields li {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  color: #475569;
+  background: #f4f7fb;
+  border: 1px solid #e6ecf5;
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+
+/* Acción — botón primario del app (gana especificidad al button global) */
+.dvp-doc-action {
+  margin-top: auto;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 9px;
+  background: var(--primary, #2563eb);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.dvp-doc-action:hover {
+  background: #1d4ed8;
+  transform: none; /* anula el scale(1.05) del button global */
+}
+.dvp-doc-action:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+.dvp-doc-arrow {
+  transition: transform 0.18s ease;
+}
+.dvp-doc-action:hover .dvp-doc-arrow {
+  transform: translateX(3px);
+}
+
+@keyframes dvp-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .dvp-grid { grid-template-columns: 1fr; }
+  .dvp { padding: 40px 20px 52px; }
+  .dvp-title { font-size: 2rem; }
+}
+
+/* ── Accesibilidad: movimiento reducido ───────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .dvp-doc { animation: none; }
+  .dvp-doc,
+  .dvp-doc::before,
+  .dvp-doc-chip,
+  .dvp-doc-arrow,
+  .dvp-doc-action { transition: none; }
+  .dvp-doc:hover { transform: none; }
+}

@@ -1,0 +1,328 @@
+/* Fotos — mismo diseño de modal que Movimientos Locales y Catálogos: tarjeta con
+   borde suave y radio 16, lomo azul, título en Oswald y etiquetas en IBM Plex
+   Mono. El TAMAÑO no se toca: 560px de ancho y la rejilla de dos slots se
+   conservan. El visor a pantalla completa sigue en negro, que es lo correcto
+   para mirar una foto. */
+
+/* ── Modal container ───────────────────────────────────────────────────────── */
+.fm-content {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #e6ecf5;
+  border-radius: 16px;
+  padding: 28px;
+  width: 90%;
+  max-width: 560px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(16, 40, 80, 0.24);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: fm-slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+/* Lomo izquierdo azul — la firma de Movimientos Locales y Documentos de Viaje */
+.fm-content::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--primary, #2563eb);
+}
+
+@keyframes fm-slideUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+.fm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #eef2f7;
+  padding-bottom: 14px;
+}
+
+.fm-titulo {
+  margin: 0;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+  color: var(--text, #1f2937);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fm-btn-cerrar {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-light, #6b7280);
+  padding: 4px 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.fm-btn-cerrar:hover {
+  color: var(--text, #1f2937);
+  background: #f7f9fc;
+  transform: none;
+}
+.fm-btn-cerrar:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+/* ── Error ─────────────────────────────────────────────────────────────────── */
+.fm-error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* ── Loading ───────────────────────────────────────────────────────────────── */
+.fm-loading {
+  text-align: center;
+  color: #6b7280;
+  padding: 30px 0;
+  font-size: 0.95rem;
+}
+
+/* ── Slots ─────────────────────────────────────────────────────────────────── */
+.fm-slots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.fm-slot {
+  border: 2px dashed #e6ecf5;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-height: 180px;
+  cursor: pointer; /* todo el hueco se puede marcar como destino del pegado */
+}
+
+/* Hueco marcado a mano: ahí cae el Ctrl+V. El borde ya existe punteado, así que
+   marcarlo solo lo vuelve sólido y azul — sin desplazar nada. */
+.fm-slot--marcado {
+  border-style: solid;
+  border-color: var(--primary, #2563eb);
+}
+
+.fm-slot-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-light, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin: 0;
+  align-self: flex-start;
+  /* Es un <button> para poder marcar el hueco con el teclado; se le quita el
+     cromo para que siga leyéndose como la etiqueta que era. */
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.fm-slot--marcado .fm-slot-label {
+  color: var(--primary, #2563eb);
+}
+
+.fm-slot-label:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* ── Slot vacío ────────────────────────────────────────────────────────────── */
+.fm-slot-vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  justify-content: center;
+}
+
+.fm-camera-icon {
+  color: #d1d5db;
+}
+
+.fm-slot-vacio-texto {
+  font-size: 0.82rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* ── Foto con imagen ───────────────────────────────────────────────────────── */
+.fm-foto-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.fm-thumbnail {
+  width: 100%;
+  max-height: 130px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.fm-foto-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  width: 100%;
+}
+
+/* ── Botones ───────────────────────────────────────────────────────────────── */
+.fm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.fm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fm-btn:not(:disabled):hover {
+  filter: brightness(0.92);
+  transform: none;
+}
+
+.fm-btn-subir {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.fm-btn-ver {
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.fm-btn-cambiar {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.fm-btn-eliminar {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* ── Nota ──────────────────────────────────────────────────────────────────── */
+.fm-nota {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-align: center;
+  margin: 0;
+}
+
+.fm-nota kbd {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text-light, #6b7280);
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+/* ── Lightbox ──────────────────────────────────────────────────────────────── */
+.fm-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fm-fadeIn 0.15s ease;
+}
+
+@keyframes fm-fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.fm-lightbox-content {
+  position: relative;
+  max-width: 92vw;
+  max-height: 92vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fm-lightbox-cerrar {
+  position: absolute;
+  top: -44px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  color: #ffffff;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.fm-lightbox-cerrar:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: none;
+}
+
+.fm-imagen-completa {
+  max-width: 100%;
+  max-height: 88vh;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 500px) {
+  .fm-slots {
+    grid-template-columns: 1fr;
+  }
+  .fm-content {
+    padding: 20px;
+  }
+}

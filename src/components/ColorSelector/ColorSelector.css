@@ -1,0 +1,106 @@
+/* Balde de pintura de una fila de Maniobras. El panel se pinta en un portal,
+   así que sus estilos no pueden colgar de .color-selector: van sueltos. */
+
+.color-selector {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.color-selector__trigger {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 6px 4px;
+  border: 1px solid #d9e2ef;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.color-selector__trigger:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.color-selector__trigger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* La barra que dice de qué color se va a pintar. */
+.color-selector__barra {
+  width: 16px;
+  height: 4px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+/* Sin color: la diagonal roja de "sin relleno" de las hojas de cálculo. */
+.color-selector__barra--vacia {
+  background:
+    linear-gradient(to bottom right,
+      transparent calc(50% - 1px), #d14343 calc(50% - 1px),
+      #d14343 calc(50% + 1px), transparent calc(50% + 1px)),
+    #fff;
+}
+
+/* ── Panel ────────────────────────────────────────────────────────────────── */
+
+.color-selector__panel {
+  position: fixed;
+  z-index: 1200;
+  padding: 10px;
+  border: 1px solid #e6ecf5;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+}
+
+.color-selector__restablecer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 7px 9px;
+  border: 1px solid #e6ecf5;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.color-selector__restablecer:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.color-selector__rejilla {
+  display: grid;
+  grid-template-columns: repeat(10, 20px);
+  gap: 4px;
+}
+
+.color-selector__muestra {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.color-selector__muestra:hover {
+  transform: scale(1.15);
+}
+
+/* El color puesto ahora mismo. Anillo por fuera y no borde, para no tapar el
+   color de la muestra justo cuando hay que reconocerlo. */
+.color-selector__muestra--activa {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}

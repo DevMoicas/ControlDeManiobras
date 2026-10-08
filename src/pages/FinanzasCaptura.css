@@ -1,0 +1,138 @@
+/* Captura de Finanzas: Cuentas por pagar y Gastos financieros. La tabla y la
+   barra vienen de NominaPage.css; filtros, casillas y botones pequeños, de
+   FacturacionPage.css. Aquí solo lo propio. */
+
+.nomina-container .fz-pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 32px 0 16px;
+}
+.nomina-container .fz-pestanas button {
+  padding: 9px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.nomina-container .fz-pestanas button.activo {
+  background: var(--primary-blue);
+  border-color: var(--primary-blue);
+  color: #fff;
+}
+.nomina-container .fz-pestanas button:focus-visible,
+.nomina-container .fz-periodo button:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+.nomina-container .fz-periodo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.nomina-container .fz-periodo button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  /* El <button> global (App.css) trae padding: 12px: en 32px deja 8px de hueco
+     para una flecha de 18 y la saca del centro. */
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #fff;
+  /* Explícito: el mismo estilo global pinta el texto en blanco y la flecha (un
+     SVG con currentColor) desaparecía sobre el fondo blanco. */
+  color: #111827;
+  cursor: pointer;
+}
+.nomina-container .fz-periodo button:hover { background: #f3f4f6; }
+
+.nomina-container .fz-rejilla .fz-mes { text-transform: capitalize; }
+/* Toca pagar y está vacío (P54): se ve sin tener que leer cada celda. */
+.nomina-container .fz-rejilla td.fz-falta { background: #fef3c7; }
+
+.nomina-container .fz-select {
+  padding: 4px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+}
+
+.fz-dialogo {
+  width: min(420px, calc(100vw - 32px));
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+.fz-dialogo::backdrop { background: rgba(15, 23, 42, 0.45); }
+.fz-dialogo form {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.fz-dialogo h2 { margin: 0 0 4px; font-family: 'Oswald', sans-serif; font-size: 20px; }
+.fz-dialogo label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: #374151; }
+.fz-dialogo input,
+.fz-dialogo select {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 400;
+}
+.fz-dialogo-acciones { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+.fz-dialogo-acciones button {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.fz-dialogo-acciones .primario { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+/* Aire entre los botones de volver (Inicio / Finanzas) y el selector de mes. */
+.nomina-container .fz-barra-mes { margin-top: 20px; }
+.nomina-container .fz-mes-selector { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.nomina-container .fz-mes-selector input {
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.nomina-container .fz-bloques {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 30px; /* aire entre el selector de mes y las tarjetas */
+}
+.nomina-container .fz-bloque {
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: #fff;
+}
+.nomina-container .fz-bloque header { display: flex; justify-content: space-between; align-items: baseline; }
+.nomina-container .fz-bloque h2 { margin: 0; font-family: 'Oswald', sans-serif; font-size: 18px; }
+.nomina-container .fz-ayuda { margin: 4px 0 10px; color: var(--text-muted); font-size: 13px; }
+.nomina-container .fz-agregar { display: flex; gap: 6px; margin-top: 10px; }
+.nomina-container .fz-agregar input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+}
