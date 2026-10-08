@@ -597,6 +597,13 @@ texto original debajo como registro.
 
 ## 11. Sesión del 2026-09-30 — Módulo Finanzas, fases 0 a 6
 
+> **DESPLEGADO COMPLETO el 2026-10-08** (§11, §12 y §13): migraciones 0070–0076 en
+> prod, backend `5f7353ff` y frontend `4210550` en verde. Entró además: Comisión Op.,
+> Ingresos y Utilidad Bruta de Gastos solo para staff y CARGOS_FINANZAS (backend y
+> front), y `npm audit fix` con excepción documentada para braces (tailwind 3).
+> Sigue abierto: puntos 2, 4, 5 y 6 de «Lo que falta»; validar la decisión del
+> primer sueldo (§13); y que G. Totales deja deducir la Comisión a quien no la ve.
+
 ### Desplegado
 
 - **Fase 0 en producción:** backend `99ca5eae`, con la **migración 0069** aplicada antes de
