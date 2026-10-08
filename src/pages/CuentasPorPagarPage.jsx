@@ -256,6 +256,7 @@ const COLUMNAS_MANIOBRA = {
   flete: [["folio", "Folio"], ["fecha_pis", "Fecha PIS", fechaLegible], ["transportista", "Transportista"],
           ["ruta", "Ruta"], ["contenedor", "Contenedor"]],
   local: [["terminal", "Terminal"], ["fecha_pis", "Fecha PIS", fechaLegible], ["placas_pis", "Placas PIS"],
+          ["transportista_pis", "Transportista"], // el del PIS, no el del viaje
           ["tipo_servicio", "Servicio"], ["tipo", "Tipo de carga"], ["peso", "Peso"],
           ["contenedor", "Contenedor"], ["referencia", "Referencia"]],
   mantenimiento: [],
