@@ -86,6 +86,36 @@ class ManiobrasDeTercerosTests(Base):
         Maniobra.objects.create(placas_pis='XYZ999', fecha_pis=AGO)
         self.assertEqual(list(maniobras_de_terceros('local').values_list('id', flat=True)), [si.id])
 
+    def test_mismo_tercero_en_pis_y_viaje_solo_es_flete(self):
+        # La tabla acordada con el usuario el 2026-10-08.
+        UnidadTercero.objects.create(placas='X-1', transportista='Lopez')
+        UnidadTercero.objects.create(placas='DOBLE', transportista='Perez')
+        UnidadTercero.objects.create(placas='DOBLE', transportista='Lopez')
+        casos = {  # (placas_pis, transportista): (¿flete?, ¿local?)
+            ('X-1', ' lopez '): (True, False),
+            ('X-1', 'FRABA CONTAINER'): (False, True),
+            ('X-1', None): (False, True),
+            ('X-1', 'Ramirez'): (True, True),
+            ('FRABA1', 'Ramirez'): (True, False),
+            ('FRABA1', 'FRABA CONTAINER'): (False, False),
+            ('DOBLE', 'LOPEZ'): (True, False),  # cualquiera de sus dueños
+        }
+        ids = {c: Maniobra.objects.create(placas_pis=c[0], transportista=c[1], fecha_pis=AGO).id
+               for c in casos}
+        for origen, i in (('flete', 0), ('local', 1)):
+            dentro = set(maniobras_de_terceros(origen).values_list('id', flat=True))
+            for caso, esperado in casos.items():
+                self.assertEqual(ids[caso] in dentro, esperado[i], (origen, caso))
+
+    def test_con_cuenta_activa_sigue_en_su_pestana(self):
+        # Capturada antes del cambio de regla: no puede quedar escondida.
+        UnidadTercero.objects.create(placas='X-1', transportista='LOPEZ')
+        m = Maniobra.objects.create(placas_pis='X-1', transportista='LOPEZ', fecha_pis=AGO)
+        CuentaPorPagar.objects.create(origen='local', maniobra=m, empresa='fraba',
+                                      total=1, fecha=AGO)
+        r = self.com.get('/api/cuentas-por-pagar/maniobras/?origen=local')
+        self.assertEqual([f['maniobra'] for f in r.data], [m.id])
+
 
 class CuentaPorPagarTests(Base):
     URL = '/api/cuentas-por-pagar/'

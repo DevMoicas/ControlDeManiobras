@@ -8,7 +8,7 @@ cargos. Cancelar y borrar, solo staff.
 """
 from datetime import date, datetime, timedelta
 
-from django.db.models import Q, Value
+from django.db.models import Exists, OuterRef, Q, Value
 from django.db.models.functions import Coalesce, Trim, Upper
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -73,16 +73,26 @@ def maniobras_de_terceros(origen):
 
     Flete: el viaje lo hizo un tercero, transportista distinto de FRABA
     CONTAINER y de vacío (P32, la misma regla de _es_de_fraba). Local: sus
-    placas PIS están en el catálogo de unidades de terceros (P33). En los dos,
-    mayúsculas y espacios no cuentan: son textos escritos a mano.
+    placas PIS están en el catálogo de unidades de terceros (P33) y ese tercero
+    SOLO lo sacó de puerto: si el dueño de las placas PIS es el mismo
+    transportista del viaje, el servicio es un flete y va solo a Fletes
+    (usuario, 2026-10-08). Una placa dada de alta a nombre de varios terceros
+    cuenta como de cualquiera de ellos. En todo, mayúsculas y espacios no
+    cuentan: son textos escritos a mano.
     """
-    qs = Maniobra.objects.filter(fecha_pis__gte=INICIO_CUENTAS_POR_PAGAR)
+    qs = (Maniobra.objects.filter(fecha_pis__gte=INICIO_CUENTAS_POR_PAGAR)
+          .annotate(t=Upper(Trim(Coalesce('transportista', Value(''))))))
     if origen == 'flete':
-        return (qs.annotate(t=Upper(Trim(Coalesce('transportista', Value('')))))
-                .exclude(t__in=['', TRANSPORTISTA_PROPIO]))
+        return qs.exclude(t__in=['', TRANSPORTISTA_PROPIO])
     placas = {p.strip().upper() for p in UnidadTercero.objects.values_list('placas', flat=True) if p}
+    del_mismo_transportista = (UnidadTercero.objects
+                               .annotate(up=Upper(Trim('placas')),
+                                         ut=Upper(Trim(Coalesce('transportista', Value('')))))
+                               .filter(up=OuterRef('p'), ut=OuterRef('t'))
+                               .exclude(ut=''))
     return (qs.annotate(p=Upper(Trim(Coalesce('placas_pis', Value('')))))
-            .filter(p__in=placas))
+            .filter(p__in=placas)
+            .exclude(Exists(del_mismo_transportista)))
 
 
 def empresa_de_maniobra(maniobra_id):
@@ -175,7 +185,12 @@ class CuentaPorPagarViewSet(SoloFinanzasMixin, mixins.ListModelMixin, mixins.Cre
         origen = request.query_params.get('origen')
         if origen not in ('flete', 'local'):
             return Response({'detail': 'origen debe ser flete o local.'}, status=status.HTTP_400_BAD_REQUEST)
-        maniobras = list(maniobras_de_terceros(origen).order_by('-fecha_pis', '-id'))
+        # La que ya tiene su cuenta activa sigue saliendo aunque la regla haya
+        # cambiado: si no, la cuenta seguiría siendo costo sin que nadie la vea.
+        con_cuenta = CuentaPorPagar.objects.filter(origen=origen, estado='activa').values('maniobra_id')
+        maniobras = list(Maniobra.objects.filter(
+            Q(pk__in=maniobras_de_terceros(origen).values('pk')) | Q(pk__in=con_cuenta),
+        ).order_by('-fecha_pis', '-id'))
         ids = [m.pk for m in maniobras]
         cuentas = {c.maniobra_id: c for c in CuentaPorPagar.objects.filter(
             origen=origen, estado='activa', maniobra_id__in=ids)}
