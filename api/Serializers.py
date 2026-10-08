@@ -1,5 +1,6 @@
 import re
 from datetime import date
+from functools import cached_property
 from decimal import Decimal, ROUND_HALF_UP
 from rest_framework import serializers
 from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, ClientePrincipal, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD, ReporteViaje, CargaCombustible, NominaEmpleado, VacacionDia
@@ -12,6 +13,7 @@ from django.db.models import Q
 from django_otp import devices_for_user, match_token
 from .db_context import get_db_alias
 from . import confianza
+from .facturacion import puede_finanzas
 
 class TractoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -530,6 +532,10 @@ def validar_formulas(valor, campos):
     return valor
 
 
+# El margen del viaje: solo staff y CARGOS_FINANZAS (GastoSerializer.get_fields).
+CAMPOS_MARGEN = ('facturado', 'comision_operador')
+
+
 class GastoSerializer(serializers.ModelSerializer):
     folio = serializers.CharField(source='maniobra.folio', read_only=True)
     # Operador y destino del folio elegido. Se leen de la maniobra enlazada en vez
@@ -552,29 +558,44 @@ class GastoSerializer(serializers.ModelSerializer):
             'maniobra': {'required': False}  # para que PUT no lo exija
         }
 
-    def get_fields(self):
-        """INGRESOS (`facturado`) solo para staff.
+    @cached_property
+    def _oculta_margen(self):
+        """¿Hay que esconderle CAMPOS_MARGEN a quien pide? Una consulta (perfil
+        → empleado) por serializer, no por fila: el hijo de un ListSerializer es
+        una sola instancia. Sin `request` (usos internos, pruebas del serializer
+        suelto) no hay usuario al que ocultar nada."""
+        peticion = self.context.get('request')
+        return peticion is not None and not puede_finanzas(peticion.user)
 
-        La utilidad del viaje es el margen del negocio y no la ve un usuario
-        estandar. Se quita AQUI y no solo en la tabla porque la interfaz no es
-        una defensa: cualquiera con la consola abierta lee la respuesta del
-        endpoint. La columna Utilidad Bruta no existe en la base —la calcula el
-        front restando `gastos_totales` a esto—, asi que desaparece con ella.
+    def get_fields(self):
+        """INGRESOS (`facturado`) y COMISIÓN OP. solo para staff y los cargos
+        de Finanzas (comercial y dirección: CARGOS_FINANZAS, la misma regla que
+        Facturación).
+
+        La utilidad del viaje es el margen del negocio y no la ve cualquiera. Se
+        quita AQUI y no solo en la tabla porque la interfaz no es una defensa:
+        cualquiera con la consola abierta lee la respuesta del endpoint. La
+        columna Utilidad Bruta no existe en la base —la calcula el front
+        restando `gastos_totales` a `facturado`—, asi que desaparece con ella.
 
         Quitarlo del serializer lo quita tambien de la ESCRITURA: un PUT de un
         usuario estandar manda la fila entera, y DRF ignora el campo que no
         conoce, asi que el importe guardado se queda como estaba en vez de
         borrarse. `gastos_totales` no se toca: ese lo ve todo el mundo.
-
-        Sin `request` en el contexto (usos internos, pruebas del serializer
-        suelto) se devuelven todos los campos: ahi no hay usuario al que ocultar
-        nada.
         """
         campos = super().get_fields()
-        peticion = self.context.get('request')
-        if peticion is not None and not getattr(peticion.user, 'is_staff', False):
-            campos.pop('facturado', None)
+        if self._oculta_margen:
+            for campo in CAMPOS_MARGEN:
+                campos.pop(campo, None)
         return campos
+
+    def to_representation(self, instance):
+        # El desglose ("=1500+300") enseña el importe igual que la columna.
+        datos = super().to_representation(instance)
+        if self._oculta_margen and datos.get('formulas'):
+            datos['formulas'] = {k: v for k, v in datos['formulas'].items()
+                                 if k not in CAMPOS_MARGEN}
+        return datos
 
     def validate_color(self, valor):
         return validar_color_de_fila(valor)
@@ -583,7 +604,15 @@ class GastoSerializer(serializers.ModelSerializer):
         return validar_colores_de_celda(valor)
 
     def validate_formulas(self, valor):
-        return validar_formulas(valor, CAMPOS_CON_FORMULA)
+        valor = validar_formulas(valor, CAMPOS_CON_FORMULA)
+        if self._oculta_margen:
+            # Quien no ve esas columnas no les escribe fórmula, y su PUT (que
+            # manda `formulas` entero, sin ellas) no borra las que ya había.
+            valor = {k: v for k, v in valor.items() if k not in CAMPOS_MARGEN}
+            if self.instance is not None:
+                valor.update({k: v for k, v in (self.instance.formulas or {}).items()
+                              if k in CAMPOS_MARGEN})
+        return valor
 
     def get_maniobra_info(self, obj):
         return {

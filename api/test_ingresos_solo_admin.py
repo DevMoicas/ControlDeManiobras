@@ -1,4 +1,5 @@
-"""INGRESOS del gasto (`facturado`): solo para staff.
+"""INGRESOS (`facturado`) y COMISIÓN OP. del gasto: solo staff y los cargos de
+Finanzas (comercial y dirección, CARGOS_FINANZAS).
 
 La utilidad del viaje es el margen del negocio. Quitar las columnas de la tabla
 no basta —cualquiera con la consola abierta lee la respuesta del endpoint—, asi
@@ -20,7 +21,7 @@ from django.db import connections
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from api.models import Gasto, Maniobra, Vacio
+from api.models import Empleado, Gasto, Maniobra, PerfilUsuario, Vacio
 
 URL = '/api/gastos/'
 
@@ -40,10 +41,12 @@ class IngresosSoloAdminTests(TestCase):
             # `vacios` tambien: desde la 0061 la maniobra lee de ahi sus fechas y su
             # patio al serializarse, asi que sin esta tabla cualquier lectura revienta.
             editor.create_model(Vacio)
+            editor.create_model(Empleado)  # el cargo de quien pide
 
     @classmethod
     def tearDownClass(cls):
         with connections['standard'].schema_editor() as editor:
+            editor.delete_model(Empleado)
             editor.delete_model(Vacio)
             editor.delete_model(Gasto)
             editor.delete_model(Maniobra)
@@ -56,6 +59,8 @@ class IngresosSoloAdminTests(TestCase):
         maniobra = Maniobra.objects.create(solicita='P', folio='F-2279')
         self.gasto = Gasto.objects.create(
             maniobra=maniobra, facturado='50000', casetas_ida=Decimal('200.00'),
+            comision_operador=Decimal('1800.00'),
+            formulas={'comision_operador': '=1500+300', 'casetas_ida': '=150+50'},
         )
 
     def como(self, usuario):
@@ -111,3 +116,38 @@ class IngresosSoloAdminTests(TestCase):
         self.assertEqual(respuesta.status_code, 200, respuesta.data)
         self.gasto.refresh_from_db()
         self.assertEqual(self.gasto.facturado, '60000')
+
+    # ── Comisión Op. y los cargos de Finanzas ────────────────────────────────
+
+    def con_cargo(self, cargo):
+        u = get_user_model().objects.create_user(cargo, password='x')
+        e = Empleado.objects.create(nombre_trabajador=cargo, cargo=cargo)
+        PerfilUsuario.objects.create(usuario=u, empleado=e)
+        return u
+
+    def test_el_estandar_tampoco_ve_la_comision_ni_su_formula(self):
+        fila = self.fila(self.estandar)
+        self.assertNotIn('comision_operador', fila)
+        self.assertEqual(fila['formulas'], {'casetas_ida': '=150+50'})
+
+    def test_otro_cargo_no_ve_el_margen(self):
+        fila = self.fila(self.con_cargo('Coordinador'))
+        self.assertNotIn('facturado', fila)
+        self.assertNotIn('comision_operador', fila)
+
+    def test_comercial_y_directores_si_lo_ven(self):
+        for cargo in ('Comercial', 'DIRECTOR GENERAL', 'Director Operativo', 'Directora Comercial'):
+            fila = self.fila(self.con_cargo(cargo))
+            self.assertEqual(fila['facturado'], '50000', cargo)
+            self.assertEqual(fila['comision_operador'], '1800.00', cargo)
+            self.assertIn('comision_operador', fila['formulas'], cargo)
+
+    def test_el_put_del_estandar_no_borra_ni_escribe_formulas_ocultas(self):
+        # El front rehace `formulas` con lo que ve: sin la de la comisión.
+        fila = dict(self.fila(self.estandar), formulas={'facturado': '=1+1'})
+        respuesta = self.como(self.estandar).put(f'{URL}{self.gasto.id}/', fila, format='json')
+
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+        self.gasto.refresh_from_db()
+        self.assertEqual(self.gasto.formulas, {'comision_operador': '=1500+300'})
+        self.assertEqual(self.gasto.comision_operador, Decimal('1800.00'))
