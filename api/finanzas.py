@@ -196,8 +196,15 @@ class CuentaPorPagarViewSet(SoloFinanzasMixin, mixins.ListModelMixin, mixins.Cre
             origen=origen, estado='activa', maniobra_id__in=ids)}
         empresas = dict(Factura.objects.filter(maniobra_id__in=ids, estado='activa')
                         .order_by('-id').values_list('maniobra_id', 'empresa'))
+        # Quién hizo el PIS: el dueño de las placas en el catálogo de terceros,
+        # no `transportista`, que es el del viaje. Varios dueños → todos.
+        duenos_pis = {}
+        for placas, dueno in UnidadTercero.objects.values_list('placas', 'transportista'):
+            if placas and dueno and dueno.strip():
+                duenos_pis.setdefault(placas.strip().upper(), set()).add(dueno.strip())
         return Response([{
             'maniobra': m.pk, 'folio': m.folio, 'transportista': m.transportista,
+            'transportista_pis': ', '.join(sorted(duenos_pis.get((m.placas_pis or '').strip().upper(), ()))),
             'terminal': m.terminal, 'fecha_pis': m.fecha_pis, 'placas_pis': m.placas_pis,
             'tipo_servicio': m.tipo_servicio, 'tipo': m.tipo, 'peso': m.peso,
             'contenedor': m.contenedor, 'referencia': m.referencia,

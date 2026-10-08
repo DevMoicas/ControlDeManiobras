@@ -116,6 +116,13 @@ class ManiobrasDeTercerosTests(Base):
         r = self.com.get('/api/cuentas-por-pagar/maniobras/?origen=local')
         self.assertEqual([f['maniobra'] for f in r.data], [m.id])
 
+    def test_local_dice_el_transportista_del_pis_no_el_del_viaje(self):
+        UnidadTercero.objects.create(placas='DOBLE', transportista='Perez')
+        UnidadTercero.objects.create(placas='DOBLE', transportista='Garcia')
+        Maniobra.objects.create(placas_pis=' doble ', transportista='FRABA CONTAINER', fecha_pis=AGO)
+        r = self.com.get('/api/cuentas-por-pagar/maniobras/?origen=local')
+        self.assertEqual([f['transportista_pis'] for f in r.data], ['Garcia, Perez'])
+
 
 class CuentaPorPagarTests(Base):
     URL = '/api/cuentas-por-pagar/'
