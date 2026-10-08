@@ -608,6 +608,11 @@ texto original debajo como registro.
 > PIS es el mismo transportista del viaje, la maniobra va SOLO a Fletes; Locales es
 > para el tercero que solo la saca de puerto. PIS de X y viaje de Y: sale en las dos.
 > Una maniobra con cuenta activa sigue en su pestaña aunque deje de cumplir la regla.
+>
+> **Columna «Transportista» en Locales (2026-10-08, backend `bf77a9a3`, front `41b8b95`):**
+> va tras Placas PIS y es el dueño de esas placas en Unidades de terceros (`transportista_pis`),
+> no el del viaje. Varios dueños: separados por coma; placa sin transportista: vacía.
+> Sin migración. Todo lo de este día está en prod y en verde.
 
 ### Desplegado
 
