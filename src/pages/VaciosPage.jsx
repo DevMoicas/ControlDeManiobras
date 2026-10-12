@@ -30,15 +30,10 @@ import PatioSelector from "../components/PatioSelector/PatioSelector";
 // Mismo componente que usan Origen y Destino en Maniobras; el alias es para que
 // aquí se lea por lo que hace y no por su nombre de fichero.
 import CatalogoSelector from "../components/CiudadSelector/CiudadSelector";
-import DatePicker from "react-datepicker";
-import { shift } from "@floating-ui/react";
-import "react-datepicker/dist/react-datepicker.css";
-import { registerLocale } from "react-datepicker";
-import es from "date-fns/locale/es";
+import CampoFecha from "../components/CampoFecha/CampoFecha";
 import FotoModal from "../components/FotoModal/FotoModal";
 import ReporteVaciosModal from "../components/ReporteVaciosModal/ReporteVaciosModal";
 import "./VaciosPage.css";
-registerLocale("es", es);
 
 function fechaParaMostrar(valor) {
   if (!valor) return "";
@@ -71,24 +66,10 @@ function dateAFechaBackend(dateObject) {
   return `${y}-${m}-${d}`;
 }
 
-// El calendario se saca del árbol a un portal colgado del <body>. Si no, lo
-// recorta el overflow de la tabla en la fila nueva y el `overflow: hidden` del
-// modal. Las filas YA guardadas no lo padecían: usan CeldaEditable, que trae su
-// propio portal. Mismo remedio que Movimientos Locales (ml-fecha-portal) y
-// CeldaEditable (celda-fecha-portal); react-datepicker crea el nodo solo si no
-// existe. Id propio de esta página: los demás DatePicker del sistema no se tocan.
 // El coordinador sale de los empleados con ese cargo. El filtro lo resuelve el
 // backend (EmpleadoViewSet.get_queryset): la lista va paginada y filtrar en el
 // navegador solo miraría los 60 primeros.
 const ENDPOINT_COORDINADORES = "/empleados/?cargo=Coordinador";
-
-const FECHA_PORTAL_ID = "vacios-fecha-portal";
-
-// react-datepicker aplica flip() y offset(), pero NO shift(). flip solo voltea
-// arriba/abajo: no corrige el eje horizontal, y esta tabla hace scroll lateral,
-// así que en las últimas columnas el calendario se salía por la derecha.
-// shift() lo desliza para mantenerlo dentro del viewport con 8px de margen.
-const FECHA_MIDDLEWARE = [shift({ padding: 8 })];
 
 // `max` es el límite del modelo/serializer: cortar aquí evita un 400 que el
 // apiClient solo sabe mostrar como "HTTP 400". Las columnas sin selector ni
@@ -180,7 +161,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               loading={false}
             />
           ) : col.isFechaHora ? (
-            <DatePicker
+            <CampoFecha
               locale="es"
               showTimeSelect
               timeFormat="HH:mm"
@@ -189,13 +170,11 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               placeholderText="DD/MM/YYYY HH:mm"
               className="date-picker-input"
               isClearable
-              portalId={FECHA_PORTAL_ID}
-              popperModifiers={FECHA_MIDDLEWARE}
               selected={aDateHora(datos[col.key])}
               onChange={(d) => onChange(col.key, aBackendHora(d))}
             />
           ) : col.isFecha ? (
-            <DatePicker
+            <CampoFecha
               locale="es"
               dateFormat="dd/MM/yyyy"
               selected={fechaADate(datos[col.key])}
@@ -204,8 +183,6 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               className="date-picker-input"
               isClearable
               disabled={isSubmitting}
-              portalId={FECHA_PORTAL_ID}
-              popperModifiers={FECHA_MIDDLEWARE}
             />
           ) : col.isStatus ? (
             <VacioStatusSelector
@@ -299,7 +276,7 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     loading={false}
                   />
                 ) : col.isFechaHora ? (
-                  <DatePicker
+                  <CampoFecha
                     id={`edit-${col.key}`}
                     locale="es"
                     showTimeSelect
@@ -309,13 +286,11 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     placeholderText="DD/MM/YYYY HH:mm"
                     className="date-picker-input"
                     isClearable
-                    portalId={FECHA_PORTAL_ID}
-                    popperModifiers={FECHA_MIDDLEWARE}
                     selected={aDateHora(datos[col.key] ?? "")}
                     onChange={(d) => onChange(col.key, aBackendHora(d))}
                   />
                 ) : col.isFecha ? (
-                  <DatePicker
+                  <CampoFecha
                     id={`edit-${col.key}`}
                     locale="es"
                     dateFormat="dd/MM/yyyy"
@@ -324,8 +299,6 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     placeholderText="DD/MM/YYYY"
                     className="date-picker-input"
                     isClearable
-                    portalId={FECHA_PORTAL_ID}
-                    popperModifiers={FECHA_MIDDLEWARE}
                   />
                 ) : col.isStatus ? (
                   <VacioStatusSelector

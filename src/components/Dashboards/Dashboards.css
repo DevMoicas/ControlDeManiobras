@@ -31,7 +31,7 @@
   color: #6b7280;
 }
 .db-filtros input[type="date"],
-.db-filtros input[type="month"],
+.db-filtros .campo-fecha > input,
 .db-filtros select {
   min-width: 130px;
   padding: 6px 8px;

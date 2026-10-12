@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { overlayMotion, contentMotion } from "../../animations/modalMotion";
-import DatePicker from "react-datepicker";
-import { registerLocale } from "react-datepicker";
-import es from "date-fns/locale/es";
+import CampoFecha from "../CampoFecha/CampoFecha";
 import { format } from "date-fns";
 import { X, Download, Loader, Plus } from "lucide-react";
 import { apiClient } from "../../api/apiClient";
@@ -11,16 +9,12 @@ import OperadorSelector from "../OperadorSelector/OperadorSelector";
 import PlacasSelector from "../PlacasSelector/PlacasSelector";
 import RemolqueSelector from "../RemolqueSelector/RemolqueSelector";
 import FolioSelector from "../FolioSelector/FolioSelector";
-import "react-datepicker/dist/react-datepicker.css";
 import "./BitacoraSuenoModal.css";
 
 // Tope de folios que pueden salir empatados en un mismo documento, EL PRINCIPAL
 // INCLUIDO: uno propio más tres del empate. Decidido con el usuario el
 // 2026-08-26. El gemelo de este valor vive en el otro modal de bitácora.
 const MAX_FOLIOS = 4;
-
-
-registerLocale("es", es);
 
 const ESTADO_INICIAL = {
   operador:     "",
@@ -346,7 +340,7 @@ export default function BitacoraSuenoModal({ onCerrar }) {
           <div className="bsm-fila-dos">
             <div className="bsm-campo">
               <label className="bsm-label">Fecha de Salida</label>
-              <DatePicker
+              <CampoFecha
                 selected={datos.fecha_salida}
                 onChange={(date) => setDatos((p) => ({ ...p, fecha_salida: date }))}
                 locale="es"
@@ -358,7 +352,7 @@ export default function BitacoraSuenoModal({ onCerrar }) {
             </div>
             <div className="bsm-campo">
               <label className="bsm-label">Fecha de Llegada</label>
-              <DatePicker
+              <CampoFecha
                 selected={datos.fecha_llegada}
                 onChange={(date) => setDatos((p) => ({ ...p, fecha_llegada: date }))}
                 locale="es"

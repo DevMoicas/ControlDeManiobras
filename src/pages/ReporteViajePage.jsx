@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import DatePicker from "react-datepicker";
+import CampoFecha from "../components/CampoFecha/CampoFecha";
 import { ArrowLeft, FileSpreadsheet, FileText, Trash2, Plus, TriangleAlert } from "lucide-react";
 import { useReportesViaje } from "../hooks/useReportesViaje";
 import { useAlerta } from "../components/Alertas/Alertas";
@@ -73,7 +73,7 @@ function Calculado({ label, valor }) {
 
 function FechaHora({ value, onChange, id }) {
   return (
-    <DatePicker
+    <CampoFecha
       id={id}
       locale="es"
       selected={value ? new Date(value) : null}
@@ -417,7 +417,7 @@ export default function ReporteViajePage() {
               : <FolioSelector currentValue={abierto.folio} onSelect={elegirFolio} />}
           </Campo>
           <Campo label="Fecha">
-            <DatePicker
+            <CampoFecha
               locale="es"
               /* aDate/aBackend y no new Date()/toISOString(): un "2026-01-12" se
                  parsea como UTC y al oeste de Greenwich se lee como el día 11.

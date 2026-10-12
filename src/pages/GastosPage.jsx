@@ -18,12 +18,8 @@ import PinturaCeldas, { usePinturaCeldas } from "../components/PinturaCeldas/Pin
 import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { registerLocale } from "react-datepicker";
-import es from "date-fns/locale/es";
+import CampoFecha from "../components/CampoFecha/CampoFecha";
 import "./GastosPage.css";
-registerLocale("es", es);
 
 function fechaParaMostrar(valor) {
   if (!valor) return "";
@@ -48,7 +44,6 @@ function dateAFechaBackend(dateObject) {
   const d = String(dateObject.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
-
 
 // ── Definición de Columnas según tu DB ────────────────────────────────────────
 
@@ -139,7 +134,7 @@ function FilaNueva({ columnas, datos, onChange, onGuardar, onCancelar, isSubmitt
             onChange("operador", m.operador || "");
             onChange("destino", m.destino || "");
             // Si la maniobra no tiene fecha de entrega, se queda vacía y el
-            // DatePicker sigue ahí para ponerla a mano.
+            // CampoFecha sigue ahí para ponerla a mano.
             onChange("fecha_entrega_mercancia", m.fecha_entrega_mercancia || "");
           }}
         />
@@ -149,7 +144,7 @@ function FilaNueva({ columnas, datos, onChange, onGuardar, onCancelar, isSubmitt
       {columnas.slice(1).map((col) => (
         <td key={col.key}>
           {col.isFecha ? (
-            <DatePicker
+            <CampoFecha
               locale="es"
               dateFormat="dd/MM/yyyy"
               selected={fechaADate(datos[col.key])}
@@ -230,7 +225,7 @@ function ModalEditar({ columnas, datos, onChange, onGuardar, onCerrar, isSubmitt
               <div key={col.key} className="modal-campo">
                 <label htmlFor={`edit-${col.key}`}>{col.label}</label>
                 {col.isFecha ? (
-                  <DatePicker
+                  <CampoFecha
                     id={`edit-${col.key}`}
                     locale="es"
                     dateFormat="dd/MM/yyyy"

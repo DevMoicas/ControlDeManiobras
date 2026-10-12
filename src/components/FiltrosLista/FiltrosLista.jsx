@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api/apiClient";
+import CampoFecha from "../CampoFecha/CampoFecha";
+import { aDate, aBackend } from "../CeldaEditable/fechaCelda.mjs";
 // Mismo aspecto que la BarraFiltros de los dashboards: se reutiliza su CSS.
 import "../Dashboards/Dashboards.css";
 
@@ -19,9 +21,17 @@ export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinad
   }, [endpoint]);
 
   const poner = (campo, valor) => onChange({ ...filtros, [campo]: valor });
-  const entrada = (campo, etiqueta, type) => (
+  // CampoFecha y no <input type="date">: el del navegador movía la fecha al
+  // cambiar de mes con las flechas, y cada movimiento recargaba la lista.
+  const entrada = (campo, etiqueta, modo) => (
     <label>{etiqueta}
-      <input type={type} value={filtros[campo] || ""} onChange={(e) => poner(campo, e.target.value)} />
+      <CampoFecha
+        modo={modo}
+        selected={modo === "mes" ? aDate(filtros[campo] && `${filtros[campo]}-01`) : aDate(filtros[campo])}
+        onChange={(d) => poner(campo, modo === "mes" ? (aBackend(d) || "").slice(0, 7) : aBackend(d) || "")}
+        placeholderText={modo === "mes" ? "MM/AAAA" : "DD/MM/AAAA"}
+        isClearable
+      />
     </label>
   );
   const select = (campo, etiqueta, valores = []) => (
@@ -35,11 +45,10 @@ export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinad
 
   return (
     <div className="db-filtros">
-      {entrada("fecha", "Fecha", "date")}
-      {entrada("desde", "Desde", "date")}
-      {entrada("hasta", "Hasta", "date")}
-      {/* ponytail: type="month" es texto libre en Firefox; ahí se escribe AAAA-MM. */}
-      {entrada("mes", "Mes", "month")}
+      {entrada("fecha", "Fecha", "fecha")}
+      {entrada("desde", "Desde", "fecha")}
+      {entrada("hasta", "Hasta", "fecha")}
+      {entrada("mes", "Mes", "mes")}
       {conCoordinador && select("coordinador", "Coordinador", opciones.coordinadores)}
       {select("operador", "Operador", opciones.operadores)}
       {select("ruta", "Ruta", opciones.rutas)}

@@ -302,10 +302,6 @@
   color: var(--text-muted); margin: 10px 0 0; letter-spacing: 0.04em;
 }
 
-/* react-datepicker envuelve el input en un div propio, que por defecto no
-   hereda el ancho del campo. */
-.rv-campo .react-datepicker-wrapper { width: 100%; }
-
 @media (max-width: 640px) {
   .rv-page { padding: 36px 14px 48px; }
   .rv-title { font-size: 2rem; }

@@ -1,26 +1,7 @@
 import { useState } from "react";
-import DatePicker, { registerLocale } from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { shift } from "@floating-ui/react";
-import es from "date-fns/locale/es";
+import CampoFecha from "../CampoFecha/CampoFecha";
 import { aDate, aBackend, aDateHora, aBackendHora } from "./fechaCelda.mjs";
 import "./CeldaEditable.css";
-
-registerLocale("es", es);
-
-// El calendario se saca del árbol a un portal colgado del <body>. Si no, el
-// `overflow` del panel de la tabla —que es deliberado, redondea las esquinas— lo
-// recorta, y con pocas filas no se ve casi nada. Mismo remedio que ya lleva
-// Movimientos Locales (ml-fecha-portal). react-datepicker crea el nodo solo si
-// no existe. Id propio del componente: los otros 7 sitios con DatePicker no se
-// tocan.
-const FECHA_PORTAL_ID = "celda-fecha-portal";
-
-// react-datepicker aplica flip() y offset(), pero NO shift(). flip solo voltea
-// arriba/abajo: no corrige el eje horizontal, y estas tablas hacen scroll
-// lateral, así que en las últimas columnas el calendario se salía por la
-// derecha. shift() lo desliza para mantenerlo dentro del viewport.
-const FECHA_MIDDLEWARE = [shift({ padding: 8 })];
 
 /**
  * Celda de tabla que se edita con un clic encima, sin abrir el modal — el mismo
@@ -34,7 +15,7 @@ const FECHA_MIDDLEWARE = [shift({ padding: 8 })];
  * - `valor`:  lo que se edita y se manda al backend (crudo).
  * - `texto`:  lo que se lee en la tabla cuando difiere del valor ($1,234.00,
  *             DD/MM/YYYY…). Si no se pasa, se muestra `valor`.
- * - `fecha`:  abre un DatePicker en vez de un input. Guarda al CERRAR el
+ * - `fecha`:  abre un CampoFecha en vez de un input. Guarda al CERRAR el
  *             calendario, no en cada clic: elegir día es un paso intermedio.
  * - `fechaHora`: igual, pero con hora — el valor es un instante ISO, no un
  *             'YYYY-MM-DD'. Lo usa la Cita de Vacíos.
@@ -81,15 +62,13 @@ export default function CeldaEditable({ valor, texto, onGuardar, fecha = false, 
   // Sin `onClickOutside`: el clic fuera ya cierra el calendario, así que
   // `onCalendarClose` cubre los dos casos con una sola escritura.
   if (fecha) return (
-    <DatePicker
+    <CampoFecha
       autoFocus
       locale="es"
       dateFormat="dd/MM/yyyy"
       placeholderText="DD/MM/YYYY"
       className="date-picker-input"
       isClearable
-      portalId={FECHA_PORTAL_ID}
-      popperModifiers={FECHA_MIDDLEWARE}
       wrapperClassName="celda-fecha"
       selected={aDate(borrador)}
       onChange={(d) => {
@@ -107,7 +86,7 @@ export default function CeldaEditable({ valor, texto, onGuardar, fecha = false, 
   // Mismo trato que `fecha` —se guarda al cerrar el calendario— porque elegir
   // el día y elegir la hora son dos pasos de la misma edición.
   if (fechaHora) return (
-    <DatePicker
+    <CampoFecha
       autoFocus
       locale="es"
       showTimeSelect
@@ -117,8 +96,6 @@ export default function CeldaEditable({ valor, texto, onGuardar, fecha = false, 
       placeholderText="DD/MM/YYYY HH:mm"
       className="date-picker-input"
       isClearable
-      portalId={FECHA_PORTAL_ID}
-      popperModifiers={FECHA_MIDDLEWARE}
       wrapperClassName="celda-fecha"
       selected={aDateHora(borrador)}
       onChange={(d) => {

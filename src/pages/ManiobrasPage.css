@@ -843,11 +843,6 @@
   cursor: not-allowed;
 }
 
-/* ── DatePicker (clases de la librería: se dejan globales a propósito, el
-      popper se renderiza fuera del contenedor) ──────────────────────────────── */
-.react-datepicker-wrapper { width: 100%; }
-.react-datepicker-popper { z-index: 9999; }
-
 /* ── Animaciones ──────────────────────────────────────────────────────────── */
 @keyframes mp-rise {
   from { opacity: 0; transform: translateY(14px); }

@@ -29,17 +29,13 @@ import { esColorValido, textoSobre } from "../utils/colorFila.mjs";
 import { filtrarBusqueda } from "../utils/buscar.mjs";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import { useAuthContext } from "../context/AuthContext";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { registerLocale } from "react-datepicker";
-import es from "date-fns/locale/es";
+import CampoFecha from "../components/CampoFecha/CampoFecha";
 import FotoModal from "../components/FotoModal/FotoModal";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
 import PinturaCeldas, { usePinturaCeldas } from "../components/PinturaCeldas/PinturaCeldas";
 import { partirDoble, partirTipoFull, leerPar, textoDelPar, conUnidad } from "../utils/dobleValor.mjs";
 import { codigoFolioFull, sinSufijoFull } from "../utils/folioFull.mjs";
 import { apiClient } from "../api/apiClient";
-registerLocale("es", es);
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -388,7 +384,7 @@ function fechaHoraParaMostrar(iso) {
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-// Convierte "HH:mm" (backend) → objeto Date (hoy con esa hora) para el DatePicker
+// Convierte "HH:mm" (backend) → objeto Date (hoy con esa hora) para CampoFecha
 function horaADate(valor) {
   if (!valor) return null;
   const [h, m] = String(valor).split(":");
@@ -414,7 +410,7 @@ function fechaParaBackend(valor) {
   return `${y}-${m}-${d}`;
 }
 
-// Convierte YYYY-MM-DD → objeto Date para el DatePicker
+// Convierte YYYY-MM-DD → objeto Date para CampoFecha
 function fechaADate(valorYYYYMMDD) {
   if (!valorYYYYMMDD) return null;
   const parts = valorYYYYMMDD.split("-");
@@ -481,7 +477,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
           {/* soloLectura: el vacío no existe hasta que se le asigna folio, así
               que en la fila nueva no hay nada que enseñar todavía. */}
           {col.requiereOperador2 && !datos.operador_2 ? null : col.soloLectura ? null : col.esFecha ? (
-            <DatePicker
+            <CampoFecha
               locale="es"
               dateFormat="dd/MM/yyyy"
               selected={fechaADate(datos[col.key])}
@@ -524,7 +520,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               loading={false}
             />
           ) : col.isFechaHora ? (
-            <DatePicker
+            <CampoFecha
               locale="es"
               selected={datos[col.key] ? new Date(datos[col.key]) : null}
               onChange={(date) => onChange(col.key, date ? date.toISOString() : "")}
@@ -537,7 +533,7 @@ function FilaNueva({ datos, onChange, onGuardar, onCancelar, isSubmitting }) {
               isClearable
             />
           ) : col.isHora ? (
-            <DatePicker
+            <CampoFecha
               selected={horaADate(datos[col.key])}
               onChange={(date) => onChange(col.key, dateAHora(date))}
               showTimeSelect
@@ -692,7 +688,7 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
               <div key={col.key} className="modal-campo">
                 <label htmlFor={`edit-${col.key}`}>{col.label}</label>
                 {col.esFecha ? (
-                  <DatePicker
+                  <CampoFecha
                     id={`edit-${col.key}`}
                     locale="es"
                     dateFormat="dd/MM/yyyy"
@@ -738,7 +734,7 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     loading={false}
                   />
                 ) : col.isFechaHora ? (
-                  <DatePicker
+                  <CampoFecha
                     id={`edit-${col.key}`}
                     locale="es"
                     selected={datos[col.key] ? new Date(datos[col.key]) : null}
@@ -752,7 +748,7 @@ function ModalEditar({ datos, onChange, onGuardar, onCerrar, isSubmitting }) {
                     isClearable
                   />
                 ) : col.isHora ? (
-                  <DatePicker
+                  <CampoFecha
                     id={`edit-${col.key}`}
                     selected={horaADate(datos[col.key] ?? "")}
                     onChange={(date) => onChange(col.key, dateAHora(date))}
@@ -1158,7 +1154,7 @@ const FilaManiobra = memo(function FilaManiobra({
       );
     }
 
-    // ── Fechas: bajo demanda. El DatePicker abre su calendario al recibir el foco,
+    // ── Fechas: bajo demanda. CampoFecha abre su calendario al recibir el foco,
     // así que montarlo con autoFocus lo deja abierto con UN clic. Mientras no se
     // edita, la celda enseña texto — que es lo que se lee de un vistazo en una
     // tabla de 30 columnas.
@@ -1177,7 +1173,7 @@ const FilaManiobra = memo(function FilaManiobra({
         onCalendarClose: () => cerrarFecha(col),
       };
       if (col.esFecha) return (
-        <DatePicker
+        <CampoFecha
           {...comunes}
           locale="es"
           dateFormat="dd/MM/yyyy"
@@ -1187,7 +1183,7 @@ const FilaManiobra = memo(function FilaManiobra({
         />
       );
       if (col.isHora) return (
-        <DatePicker
+        <CampoFecha
           {...comunes}
           showTimeSelect
           showTimeSelectOnly
@@ -1201,7 +1197,7 @@ const FilaManiobra = memo(function FilaManiobra({
         />
       );
       return (
-        <DatePicker
+        <CampoFecha
           {...comunes}
           locale="es"
           showTimeSelect

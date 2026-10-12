@@ -1,0 +1,196 @@
+/* ── CampoFecha: la caja ─────────────────────────────────────────────────────
+   El aspecto del INPUT lo sigue poniendo cada página con su className
+   (date-picker-input, cpm-input, ml-input…). Aquí solo el envoltorio y el aspa. */
+.campo-fecha {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+.campo-fecha > input { width: 100%; box-sizing: border-box; }
+
+/* Hueco para el aspa. !important porque las hojas de cada página declaran el
+   padding en shorthand con más especificidad; es la única regla que lo pisa. */
+.campo-fecha--limpiable > input { padding-right: 28px !important; }
+
+.campo-fecha-limpiar {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+}
+.campo-fecha-limpiar:hover { background: #f3f4f6; color: #b91c1c; }
+
+@media (max-width: 720px) {
+  /* 44px de área táctil sin mover el aspa (§2 touch-target-size). */
+  .campo-fecha-limpiar { width: 36px; height: 36px; right: 2px; }
+  .campo-fecha--limpiable > input { padding-right: 38px !important; }
+}
+
+/* ── El desplegable ──────────────────────────────────────────────────────────
+   En portal al <body>: por encima de los overlays de modal (9999 en Vacíos). */
+.campo-fecha-pop {
+  z-index: 10050;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.08);
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #1f2937;
+}
+.campo-fecha-pop--listo { animation: campo-fecha-entra 120ms ease-out; }
+@keyframes campo-fecha-entra {
+  /* `translate` y no `transform`: floating-ui coloca con transform y la
+     animación lo pisaría, pintando el calendario en (0,0) mientras dura. */
+  from { opacity: 0; translate: 0 -4px; }
+  to   { opacity: 1; translate: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .campo-fecha-pop { animation: none; }
+}
+
+.campo-fecha-cuerpo { display: flex; align-items: stretch; }
+
+/* react-day-picker con los colores del sistema (--primary #2563eb). */
+.campo-fecha-pop .rdp-root {
+  --rdp-accent-color: #2563eb;
+  --rdp-accent-background-color: #eaf1ff;
+  --rdp-day-height: 36px;
+  --rdp-day-width: 36px;
+  --rdp-day_button-height: 34px;
+  --rdp-day_button-width: 34px;
+  --rdp-day_button-border-radius: 8px;
+  --rdp-selected-border: 0;
+  --rdp-nav-height: 2.25rem;
+  --rdp-nav_button-height: 2rem;
+  --rdp-nav_button-width: 2rem;
+  --rdp-today-color: #2563eb;
+  padding: 12px 12px 4px;
+  font-size: 0.85rem;
+}
+.campo-fecha-pop .rdp-weekday {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+.campo-fecha-pop .rdp-day_button:hover { background: #f3f4f6; }
+.campo-fecha-pop .rdp-selected .rdp-day_button {
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+}
+.campo-fecha-pop .rdp-today:not(.rdp-selected) .rdp-day_button {
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1.5px #bfd3fb;
+}
+.campo-fecha-pop .rdp-outside { opacity: 0.4; }
+.campo-fecha-pop .rdp-chevron { fill: #374151; }
+.campo-fecha-pop .rdp-button_previous:hover,
+.campo-fecha-pop .rdp-button_next:hover { background: #f3f4f6; border-radius: 8px; }
+/* Desplegables de mes y año: que se vean como botón, no como texto suelto. */
+.campo-fecha-pop .rdp-dropdown_root {
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+.campo-fecha-pop .rdp-dropdown_root:hover { background: #f3f4f6; }
+.campo-fecha-pop .rdp-caption_label { font-weight: 600; text-transform: capitalize; }
+
+/* ── Lista de horas (fecha y hora, y solo hora) ── */
+.campo-fecha-horas {
+  list-style: none;
+  margin: 0;
+  padding: 8px 6px;
+  width: 78px;
+  max-height: 290px;
+  overflow-y: auto;
+  border-left: 1px solid #f0f1f4;
+  scrollbar-width: thin;
+}
+.campo-fecha-pop--hora .campo-fecha-horas { border-left: 0; max-height: 240px; }
+.campo-fecha-horas button {
+  width: 100%;
+  padding: 5px 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: #374151;
+  cursor: pointer;
+}
+.campo-fecha-horas button:hover { background: #f3f4f6; }
+.campo-fecha-horas button.activo { background: #2563eb; color: #fff; font-weight: 600; }
+
+/* ── Meses (filtro por mes) ── */
+.campo-fecha-meses { padding: 12px; width: 232px; }
+.campo-fecha-anio {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.campo-fecha-anio button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #1f2937;
+  cursor: pointer;
+}
+.campo-fecha-anio button:hover { background: #f3f4f6; }
+.campo-fecha-rejilla { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.campo-fecha-rejilla button {
+  padding: 8px 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #1f2937;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.campo-fecha-rejilla button:hover { border-color: #bfd3fb; background: #eaf1ff; }
+.campo-fecha-rejilla button.activo { background: #2563eb; color: #fff; font-weight: 600; }
+
+/* ── Pie: Hoy / Borrar / Listo ── */
+.campo-fecha-pie {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  padding: 8px 12px 10px;
+  border-top: 1px solid #f0f1f4;
+}
+.campo-fecha-pie button {
+  padding: 5px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  color: #374151;
+  cursor: pointer;
+}
+.campo-fecha-pie button:first-child { margin-right: auto; color: #2563eb; border-color: #bfd3fb; }
+.campo-fecha-pie button:hover { background: #f3f4f6; }
+.campo-fecha-pie .campo-fecha-listo { background: #2563eb; border-color: #2563eb; color: #fff; }
+.campo-fecha-pie .campo-fecha-listo:hover { background: #1d4ed8; }
+
+.campo-fecha-pop button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}

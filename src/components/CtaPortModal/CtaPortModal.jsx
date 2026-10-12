@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { overlayMotion, contentMotion } from "../../animations/modalMotion";
-import DatePicker, { registerLocale } from "react-datepicker";
-import es from "date-fns/locale/es";
+import CampoFecha from "../CampoFecha/CampoFecha";
 import { format } from "date-fns";
 import { X, Download, Loader } from "lucide-react";
 import { apiClient } from "../../api/apiClient";
@@ -13,10 +12,7 @@ import FolioSelector from "../FolioSelector/FolioSelector";
 import ClienteSelector from "../ClienteSelector/ClienteSelector";
 import { getTipoServicioLabel, esServicioFull } from "../TipoServicioSelector/TipoServicioSelector";
 import { cargaDeParte, tieneDosContenedores } from "../../utils/dobleValor.mjs";
-import "react-datepicker/dist/react-datepicker.css";
 import "./CtaPortModal.css";
-
-registerLocale("es", es);
 
 const ESTADO_INICIAL = {
   // Remisión
@@ -280,7 +276,7 @@ export default function CtaPortModal({ onCerrar }) {
             </div>
             <div className="cpm-campo" style={{ marginTop: 8 }}>
               <label className="cpm-label">Fecha de expedición</label>
-              <DatePicker
+              <CampoFecha
                 selected={datos.fecha_expedicion}
                 onChange={(date) => setDatos((p) => ({ ...p, fecha_expedicion: date }))}
                 locale="es"
