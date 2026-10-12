@@ -20,7 +20,7 @@ from rest_framework.test import APIClient
 from django.db import connections
 
 from api.models import (ReporteViaje, CargaCombustible, CARGAS_EN_EL_PAPEL,
-                        Maniobra, Gasto, Chofer)
+                        Maniobra, Gasto, Chofer, Tracto)
 from api.models import Vacio
 from api.views import _TEMPLATE_REPORTE
 
@@ -47,10 +47,13 @@ class BaseReporte(TestCase):
             editor.create_model(Vacio)
             # `choferes`: el desplegable de operador solo ofrece los de Fraba.
             editor.create_model(Chofer)
+            # `tractos`: el avance de cada reporte mira el tipo de su unidad.
+            editor.create_model(Tracto)
 
     @classmethod
     def tearDownClass(cls):
         with connections['standard'].schema_editor() as editor:
+            editor.delete_model(Tracto)
             editor.delete_model(Chofer)
             editor.delete_model(Vacio)
             editor.delete_model(Gasto)
@@ -730,3 +733,60 @@ class ManiobraFiltrosTests(BaseReporte):
         r = self.cliente.get('/api/maniobras/opciones/').data
         self.assertEqual(r['operadores'], ['ANA'])
         self.assertEqual(r['rutas'], ['MANZANILLO → LEON', 'MANZANILLO → QRO'])
+
+
+class ReporteViajeAvanceTests(BaseReporte):
+    """El % de cada reporte y los completos de la lista (usuario, 2026-10-12)."""
+
+    T = '2026-10-12T10:00:00Z'
+    LLENO = dict(coordinador='Ali', cliente='X', recoleccion='propio', origen='MANZANILLO',
+                 destino='LEON', operador='ANA', cita=T, salida_puerto=T, inicio_pactado=T,
+                 salida_real=T, unidad='38AV7C', remolque_2='P2', km_inicial='0', km_final='10',
+                 llegada_cliente=T, descarga=T, llegada_manzanillo=T,
+                 cargas=[{'orden': 1, 'litros_diesel': '300'}])
+
+    def setUp(self):
+        super().setUp()
+        Tracto.objects.create(no_eco='1', unidad='KW', anio=2020, placas='38AV7C', tipo='trailer')
+        Tracto.objects.create(no_eco='2', unidad='ISUZU', anio=2020, placas='52BG9A', tipo='Rabón')
+
+    def avance(self, **campos):
+        r = self.crear(**campos)
+        self.assertEqual(r.status_code, 201, r.data)
+        return r.data['avance'], r.data['porcentaje']
+
+    def test_vacio_y_lleno(self):
+        self.assertEqual(self.avance(folio='A-0'), ([0, 0, 0, 0], 0))
+        self.assertEqual(self.avance(folio='A-1', **self.LLENO), ([25, 25, 25, 25], 100))
+
+    def test_identificacion_sin_fecha_folio_ni_servicio(self):
+        self.assertEqual(self.avance(folio='A-1', servicio='full', coordinador='Ali', cliente='X')[0],
+                         [5, 0, 0, 0])
+
+    def test_dos_portas_son_un_campo(self):
+        una = self.avance(folio='A-1', remolque_1='P1')[0][1]
+        dos = self.avance(folio='A-2', remolque_1='P1', remolque_2='P2')[0][1]
+        self.assertEqual(una, 25 / 6)
+        self.assertEqual(una, dos)
+
+    def test_trayecto_solo_diesel_y_regreso_solo_llegada(self):
+        self.assertEqual(self.avance(folio='A-1', cargas=[{'orden': 1, 'litros_urea': '20'}],
+                                     patio_entrega='Norte')[0], [0, 0, 0, 0])
+        self.assertEqual(self.avance(folio='A-2', cargas=[{'orden': 3, 'litros_diesel': '1'}],
+                                     llegada_manzanillo=self.T)[0], [0, 0, 25, 25])
+
+    def test_carga_suelta_sin_trailer_no_lleva_porta(self):
+        sin = {**self.LLENO, 'remolque_2': ''}
+        # Rabón de Fraba (minúsculas en la unidad a propósito): la porta cuenta llena.
+        self.assertEqual(self.avance(folio='A-1', servicio='carga_suelta', **{**sin, 'unidad': '52bg9a'})[1], 100)
+        # Trailer, unidad que no está en el catálogo, u otro servicio: sigue pendiente.
+        for folio, servicio, unidad in (('A-2', 'carga_suelta', '38AV7C'), ('A-3', 'carga_suelta', 'XX'),
+                                        ('A-4', 'sencillo', '52BG9A')):
+            self.assertLess(self.avance(folio=folio, servicio=servicio, **{**sin, 'unidad': unidad})[1], 100)
+
+    def test_completos_cuenta_todos_los_filtrados(self):
+        self.crear(folio='A-1', **self.LLENO)
+        self.crear(folio='A-2', **{**self.LLENO, 'coordinador': 'Rosa'})
+        self.crear(folio='A-3', coordinador='Ali')
+        self.assertEqual((self.cliente.get(URL).data['count'], self.cliente.get(URL).data['completos']), (3, 2))
+        self.assertEqual(self.cliente.get(f'{URL}?coordinador=Ali').data['completos'], 1)

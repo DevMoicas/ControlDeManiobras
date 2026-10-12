@@ -42,6 +42,12 @@ class Tracto(models.Model):
         managed = False  # Esto le dice a Django: "Yo cree la tabla, no la toques"
         db_table = 'tractos'
 
+    @classmethod
+    def tipos(cls):
+        """{PLACAS: tipo en minúsculas}. La unidad de maniobras y reportes son las placas."""
+        return {p.strip().upper(): (t or '').strip().lower()
+                for p, t in cls.objects.values_list('placas', 'tipo')}
+
 class Remolque(models.Model):
     color = models.CharField(max_length=255)
     tipo = models.CharField(max_length=255)
@@ -1588,6 +1594,43 @@ class ReporteViaje(models.Model):
         if self.km_inicial is None or self.km_final is None:
             return None
         return self.km_final - self.km_inicial
+
+    # ── Avance: cuánto del reporte está lleno, en % ─────────────────────────
+    # Cada bloque del papel vale 25 y se reparte entre los campos que cuentan
+    # (usuario, 2026-10-12). Lo que NO cuenta, a propósito:
+    #   · Identificación: "Fecha" (aún sin uso definido), Folio y Servicio
+    #     (llegan solos con el folio).
+    #   · Información del viaje: Km totales (calculado). Las dos portas son UN
+    #     campo: con una basta. En carga suelta con un tracto de Fraba que NO es
+    #     trailer la porta cuenta como llena: esas unidades no llevan porta. Si
+    #     la unidad no está en el catálogo no se sabe su tipo y sigue pendiente.
+    #   · En trayecto: solo el diésel, que es lo que siempre se llena.
+    #   · Regreso: solo la llegada a Manzanillo.
+    # Vive aquí y no en el front: el contador de completos de la lista cuenta
+    # TODOS los reportes filtrados, no la página, y tiene que usar la misma regla.
+    def avance(self, tipos_tracto):
+        """Lo lleno de cada bloque, de 0 a 25, en el orden del papel.
+        `tipos_tracto`: {PLACAS: tipo} del catálogo de tractos."""
+        def lleno(v):
+            return v is not None and v != ''
+
+        tipo = tipos_tracto.get(self.unidad.strip().upper())
+        sin_porta = self.servicio == 'carga_suelta' and tipo is not None and tipo != 'trailer'
+        bloques = [
+            [self.coordinador, self.cliente, self.recoleccion, self.origen, self.destino,
+             self.operador, self.cita, self.salida_puerto, self.inicio_pactado, self.salida_real],
+            [self.unidad, True if sin_porta else (self.remolque_1 or self.remolque_2),
+             self.km_inicial, self.km_final, self.llegada_cliente, self.descarga],
+            [any(lleno(c.litros_diesel) for c in self.cargas.all()) or None],
+            [self.llegada_manzanillo],
+        ]
+        return [25 * sum(map(lleno, campos)) / len(campos) for campos in bloques]
+
+    @staticmethod
+    def porcentaje(avance):
+        # Redondeo a la mitad hacia arriba, como Math.round; round() de Python
+        # redondea al par y 62.5 daría 62.
+        return int(sum(avance) + 0.5)
 
     def calcular_rendimiento(self):
         """Kilómetros por litro de diésel del viaje entero. None si falta algo.

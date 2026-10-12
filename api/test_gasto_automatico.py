@@ -17,7 +17,7 @@ from django.db import connections
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from api.models import Gasto, Maniobra, ReporteViaje, Vacio
+from api.models import Gasto, Maniobra, ReporteViaje, Tracto, Vacio
 
 URL = '/api/maniobras/'
 
@@ -37,10 +37,13 @@ class BaseGastoAutomatico(TestCase):
             # `vacios` tambien: desde la 0061 la maniobra lee de ahi sus fechas y su
             # patio al serializarse, asi que sin esta tabla cualquier lectura revienta.
             editor.create_model(Vacio)
+            # `tractos`: servir un reporte calcula su avance, que mira el tipo de la unidad.
+            editor.create_model(Tracto)
 
     @classmethod
     def tearDownClass(cls):
         with connections['standard'].schema_editor() as editor:
+            editor.delete_model(Tracto)
             editor.delete_model(Vacio)
             editor.delete_model(Gasto)
             editor.delete_model(Maniobra)

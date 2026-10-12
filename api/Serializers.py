@@ -908,6 +908,9 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
     # mensaje sale bajo la clave 'folio', que el frontend no lee. Se deja pasar
     # para que validate() la rechace con un 'detail' legible.
     folio = serializers.CharField(max_length=100, allow_blank=True, validators=[])
+    # Lo lleno de cada bloque y el total (ReporteViaje.avance): la barra de la lista.
+    avance     = serializers.SerializerMethodField()
+    porcentaje = serializers.SerializerMethodField()
 
     class Meta:
         model  = ReporteViaje
@@ -925,6 +928,19 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
         f.name for f in ReporteViaje._meta.get_fields()
         if isinstance(f, (models.CharField, models.TextField))
     )
+
+    def _tipos_tracto(self):
+        # Una consulta por respuesta, no por reporte: con many=True el contexto
+        # es el mismo dict para todas las filas.
+        if 'tipos_tracto' not in self.context:
+            self.context['tipos_tracto'] = Tracto.tipos()
+        return self.context['tipos_tracto']
+
+    def get_avance(self, obj):
+        return obj.avance(self._tipos_tracto())
+
+    def get_porcentaje(self, obj):
+        return ReporteViaje.porcentaje(self.get_avance(obj))
 
     def to_internal_value(self, data):
         """Un null en un campo de texto es vacío, no un error.

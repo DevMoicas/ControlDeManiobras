@@ -3373,6 +3373,18 @@ class ReporteViajeViewSet(viewsets.ModelViewSet):
     # respuesta, y buscar solo en la página cargada lo dejaría mintiendo.
     search_fields          = ['folio', 'cliente', 'coordinador', 'operador', 'origen', 'destino']
 
+    def list(self, request, *args, **kwargs):
+        """Además de la página, `completos`: cuántos de TODOS los filtrados están
+        al 100 % (usuario, 2026-10-12). Junto al `count`, para el contador."""
+        respuesta = super().list(request, *args, **kwargs)
+        if isinstance(respuesta.data, dict):
+            # ponytail: avance de cada reporte en Python (cientos); con miles, guardar el % en columna.
+            tipos = Tracto.tipos()
+            respuesta.data['completos'] = sum(
+                ReporteViaje.porcentaje(r.avance(tipos)) == 100
+                for r in self.filter_queryset(self.get_queryset()))
+        return respuesta
+
     def get_queryset(self):
         """?fecha= ?desde= ?hasta= ?mes= sobre la SALIDA REAL; ?coordinador=
         ?operador= ?ruta= exactos (usuario, 2026-10-12).
