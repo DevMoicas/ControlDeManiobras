@@ -17,6 +17,7 @@ from .Serializers import (CustomTokenObtainPairSerializer, DispositivoConfianzaS
                           NominaEmpleadoSerializer, VacacionDiaSerializer)
 from . import confianza
 from .db_context import get_db_alias
+from .dashboards import choferes_fraba
 from .facturacion import religar_maniobra
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -1256,8 +1257,8 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def opciones(self, request):
         """GET /api/maniobras/opciones/ — los desplegables de filtro."""
-        return Response(_opciones_filtro(Maniobra.objects.all(),
-                                         ['asignacion_operador_status', 'operador_2']))
+        opciones = _opciones_filtro(Maniobra.objects.all(), ['asignacion_operador_status', 'operador_2'])
+        return Response({**opciones, 'operadores': choferes_fraba(opciones['operadores'])})
 
     # ── Gasto automatico ────────────────────────────────────────────────
     # Va aqui y no en el frontend aunque el folio se elija alli: se asigna desde
@@ -3404,8 +3405,10 @@ class ReporteViajeViewSet(viewsets.ModelViewSet):
     def opciones(self, request):
         """GET /api/reportes-viaje/opciones/ — los desplegables de filtro."""
         todos = ReporteViaje.objects.all()
+        opciones = _opciones_filtro(todos, ['operador'])
         return Response({
-            **_opciones_filtro(todos, ['operador']),
+            **opciones,
+            'operadores': choferes_fraba(opciones['operadores']),
             'coordinadores': _opciones_filtro(todos, ['coordinador'])['operadores'],
         })
 

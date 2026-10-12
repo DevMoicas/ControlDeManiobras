@@ -20,7 +20,7 @@ from rest_framework.test import APIClient
 from django.db import connections
 
 from api.models import (ReporteViaje, CargaCombustible, CARGAS_EN_EL_PAPEL,
-                        Maniobra, Gasto)
+                        Maniobra, Gasto, Chofer)
 from api.models import Vacio
 from api.views import _TEMPLATE_REPORTE
 
@@ -45,10 +45,13 @@ class BaseReporte(TestCase):
             # `vacios` tambien: desde la 0061 la maniobra lee de ahi sus fechas y su
             # patio al serializarse, asi que sin esta tabla cualquier lectura revienta.
             editor.create_model(Vacio)
+            # `choferes`: el desplegable de operador solo ofrece los de Fraba.
+            editor.create_model(Chofer)
 
     @classmethod
     def tearDownClass(cls):
         with connections['standard'].schema_editor() as editor:
+            editor.delete_model(Chofer)
             editor.delete_model(Vacio)
             editor.delete_model(Gasto)
             editor.delete_model(Maniobra)
@@ -686,9 +689,10 @@ class ReporteViajeFiltrosTests(BaseReporte):
         self.assertEqual(self.cliente.get(f'{URL}?fecha=12/10/2026').status_code, 400)
 
     def test_opciones(self):
+        Chofer.objects.create(nombre='ana')  # LUIS no está en el catálogo: es tercero
         r = self.cliente.get(f'{URL}opciones/').data
         self.assertEqual(r['coordinadores'], ['Pedro', 'Rosa'])
-        self.assertEqual(r['operadores'], ['ANA', 'LUIS'])
+        self.assertEqual(r['operadores'], ['ANA'])
         self.assertEqual(r['rutas'], ['MANZANILLO → LEON', 'MANZANILLO → QRO'])
 
 
@@ -718,6 +722,8 @@ class ManiobraFiltrosTests(BaseReporte):
         self.assertEqual(self.folios('ruta=MANZANILLO → LEON'), ['M-1'])
 
     def test_opciones(self):
+        Chofer.objects.create(nombre='ANA')
+        Maniobra.objects.create(solicita='X', folio='M-3', operador_2='TERCERO')
         r = self.cliente.get('/api/maniobras/opciones/').data
         self.assertEqual(r['operadores'], ['ANA'])
         self.assertEqual(r['rutas'], ['MANZANILLO → LEON', 'MANZANILLO → QRO'])

@@ -29,8 +29,8 @@ from rest_framework.response import Response
 from .facturacion import (ZONA_OPERACION, _dinero, cobranza_semanal, principal_de,
                           puede_finanzas, tramo, vencimiento)
 from .finanzas import falta_pago
-from .models import (CapturaMensual, CargaCombustible, CuentaPorPagar, Factura, Gasto,
-                     GastoFijo, GastoFijoPago, Maniobra, SueldoHistorial, fecha_de_ingreso)
+from .models import (CapturaMensual, CargaCombustible, Chofer, CuentaPorPagar, Factura, Gasto,
+                     GastoFijo, GastoFijoPago, Maniobra, SueldoHistorial, Tracto, fecha_de_ingreso)
 
 SERVICIOS = ('sencillo', 'full', 'carga_suelta')
 SIN_CLIENTE = 'Sin cliente asignado'   # dirección sin principal (P48)
@@ -163,14 +163,28 @@ def _maniobras_por_entrega(filtros):
             .select_related('cliente_fk__cliente_principal'))
 
 
+def de_fraba(valores, catalogo):
+    """Solo los valores que están en el catálogo propio (Chofer.nombre o
+    Tracto.placas), sin distinguir mayúsculas: fuera terceros y texto libre.
+    Los filtros de operador y unidad son solo de Fraba (usuario, 2026-10-12)."""
+    propios = {(v or '').strip().upper() for v in catalogo}
+    return [v for v in valores if v.upper() in propios]
+
+
+def choferes_fraba(valores):
+    return de_fraba(valores, Chofer.objects.values_list('nombre', flat=True))
+
+
 def _opciones(maniobras):
     """Valores para los desplegables de filtros, de las maniobras del periodo."""
     def unicos(valores):
         return sorted({v.strip() for v in valores if (v or '').strip()})
     return {
-        'unidades': unicos(m.unidad for m in maniobras),
-        'operadores': unicos([m.asignacion_operador_status for m in maniobras]
-                             + [m.operador_2 for m in maniobras]),
+        # Maniobra.unidad son las placas del tracto.
+        'unidades': de_fraba(unicos(m.unidad for m in maniobras),
+                             Tracto.objects.values_list('placas', flat=True)),
+        'operadores': choferes_fraba(unicos([m.asignacion_operador_status for m in maniobras]
+                                            + [m.operador_2 for m in maniobras])),
         'rutas': unicos(ruta_de(m) for m in maniobras),
         'destinos': unicos(m.destino for m in maniobras),
     }

@@ -16,7 +16,7 @@ from django.db import connections
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from api.models import (CapturaMensual, CargaCombustible, Cliente, ClientePrincipal, CuentaPorPagar,
+from api.models import (CapturaMensual, Chofer, Tracto, CargaCombustible, Cliente, ClientePrincipal, CuentaPorPagar,
                         Empleado, Factura, Gasto, GastoFijo, GastoFijoPago, Maniobra, PerfilUsuario, SueldoHistorial,
                         ReporteViaje, Vacio)
 
@@ -35,13 +35,14 @@ class DashboardsTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         with connections['standard'].schema_editor() as editor:
-            for modelo in (Maniobra, Gasto, Vacio, Empleado):
+            # choferes y tractos: los desplegables de operador y unidad salen de ellos.
+            for modelo in (Maniobra, Gasto, Vacio, Empleado, Chofer, Tracto):
                 editor.create_model(modelo)
 
     @classmethod
     def tearDownClass(cls):
         with connections['standard'].schema_editor() as editor:
-            for modelo in (Empleado, Vacio, Gasto, Maniobra):
+            for modelo in (Tracto, Chofer, Empleado, Vacio, Gasto, Maniobra):
                 editor.delete_model(modelo)
         super().tearDownClass()
 
