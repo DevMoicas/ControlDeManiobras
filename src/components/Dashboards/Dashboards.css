@@ -31,6 +31,7 @@
   color: #6b7280;
 }
 .db-filtros input[type="date"],
+.db-filtros input[type="month"],
 .db-filtros select {
   min-width: 130px;
   padding: 6px 8px;
@@ -133,3 +134,14 @@
 .db-selector button.activo { background: #2563eb; border-color: #2563eb; color: #fff; }
 .db-selector button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 .db-titulo-pagina { margin: 8px 0 0; text-align: center; font-family: 'Oswald', sans-serif; font-size: 28px; }
+
+/* "Limpiar filtros" de FiltrosLista (Reportes de Viaje y Maniobras). */
+.db-filtros .db-limpiar {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 13px;
+  cursor: pointer;
+}

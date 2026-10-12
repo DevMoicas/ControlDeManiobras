@@ -1,6 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { apiClient } from "../api/apiClient";
 import { paraGuardar } from "../utils/reporteViaje.mjs";
+import { conValor } from "../components/FiltrosLista/FiltrosLista";
 
 /**
  * useReportesViaje
@@ -11,16 +12,26 @@ import { paraGuardar } from "../utils/reporteViaje.mjs";
  */
 export function useReportesViaje() {
   const [reportes, setReportes] = useState([]);
+  // El contador de la pantalla: `count` del servidor, o sea TODOS los que
+  // cumplen los filtros, no solo la página de 60 que se pinta.
+  const [total, setTotal] = useState(0);
   const [cargando, setCargando] = useState(false);
+  // Al teclear la búsqueda salen varias peticiones: solo vale la última.
+  const ultima = useRef(0);
 
   const normalizar = (data) => (Array.isArray(data) ? data : (data?.results ?? []));
 
-  const cargar = useCallback(async () => {
+  /** `filtros`: {search, fecha, desde, hasta, mes, coordinador, operador, ruta}. */
+  const cargar = useCallback(async (filtros = {}) => {
+    const yo = ++ultima.current;
     setCargando(true);
     try {
-      setReportes(normalizar(await apiClient.get("/reportes-viaje/")));
+      const data = await apiClient.get(`/reportes-viaje/?${new URLSearchParams(conValor(filtros))}`);
+      if (yo !== ultima.current) return;
+      setReportes(normalizar(data));
+      setTotal(data?.count ?? normalizar(data).length);
     } finally {
-      setCargando(false);
+      if (yo === ultima.current) setCargando(false);
     }
   }, []);
 
@@ -30,6 +41,7 @@ export function useReportesViaje() {
     // backend rechaza. paraGuardar() ya deja el cuerpo listo.
     const creado = await apiClient.postAnidado("/reportes-viaje/", paraGuardar(datos));
     setReportes((prev) => [creado, ...prev]);
+    setTotal((t) => t + 1);
     return creado;
   }, []);
 
@@ -42,6 +54,7 @@ export function useReportesViaje() {
   const eliminar = useCallback(async (id) => {
     await apiClient.delete(`/reportes-viaje/${id}/`);
     setReportes((prev) => prev.filter((r) => r.id !== id));
+    setTotal((t) => Math.max(0, t - 1));
   }, []);
 
   /** ¿Ese folio ya tiene reporte? Se pregunta antes de abrir uno nuevo, en vez
@@ -70,5 +83,5 @@ export function useReportesViaje() {
     window.URL.revokeObjectURL(url);
   }, []);
 
-  return { reportes, cargando, cargar, crear, actualizar, eliminar, buscarPorFolio, descargar };
+  return { reportes, total, cargando, cargar, crear, actualizar, eliminar, buscarPorFolio, descargar };
 }

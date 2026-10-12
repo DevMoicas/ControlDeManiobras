@@ -184,29 +184,39 @@ export function paraGuardar(reporte) {
   return salida;
 }
 
-// ── Avance: cuáles de los cuatro bloques del papel tienen algo ───────────────
-// Los nombres van pegados a la regla para que no puedan desordenarse por
-// separado: avance() devuelve un booleano por cada uno, EN ESTE ORDEN.
+// ── Avance: cuánto del reporte está lleno, en % ─────────────────────────────
+// Cada bloque del papel vale 25 y se reparte entre los campos que cuentan
+// (usuario, 2026-10-12). Lo que NO cuenta, a propósito:
+//   · Identificación: "Fecha" (aún sin uso definido), Folio y Servicio (llegan
+//     solos con el folio).
+//   · Información del viaje: Km totales (calculado). Las dos portas son UN
+//     campo: con una basta.
+//   · En trayecto: solo el diésel, que es lo que siempre se llena.
+//   · Regreso: solo la llegada a Manzanillo.
+// Los nombres van pegados a la regla: avance() devuelve un número por bloque,
+// EN ESTE ORDEN.
 export const NOMBRES_BLOQUES = [
   "Identificación", "Información del viaje", "En trayecto", "Regreso",
 ];
 
-const BLOQUES = [
-  ["fecha", "coordinador", "cliente", "recoleccion", "origen", "destino", "operador",
-   "cita", "salida_puerto", "inicio_pactado", "salida_real"],
-  ["unidad", "remolque_1", "remolque_2", "km_inicial", "km_final",
-   "llegada_cliente", "descarga"],
-  ["litros_aceite", "precio_aceite", "reparacion", "reparacion_que", "reparacion_costo",
-   "rescate", "rescate_unidad", "rescate_operador"],
-  ["llegada_manzanillo", "maniobra_vacio", "patio_entrega", "cita_vacio",
-   "unidad_vacio", "operador_vacio", "estadias", "estadias_horas"],
-];
-
 const conValor = (v) => v !== "" && v !== null && v !== undefined;
 
+const BLOQUES = [
+  (r) => ["coordinador", "cliente", "recoleccion", "origen", "destino", "operador",
+          "cita", "salida_puerto", "inicio_pactado", "salida_real"].map((c) => r[c]),
+  (r) => [r.unidad, r.remolque_1 || r.remolque_2, r.km_inicial, r.km_final,
+          r.llegada_cliente, r.descarga],
+  (r) => [(r.cargas || []).find((c) => conValor(c?.litros_diesel))],
+  (r) => [r.llegada_manzanillo],
+];
+
+/** Lo lleno de cada bloque, de 0 a 25. La suma es el % del reporte. */
 export function avance(reporte) {
-  const bloques = BLOQUES.map((campos) => campos.some((c) => conValor(reporte?.[c])));
-  // El combustible cuenta dentro del bloque EN TRAYECTO (el tercero).
-  bloques[2] = bloques[2] || cargasConDatos(reporte?.cargas).length > 0;
-  return bloques;
+  const r = reporte || {};
+  return BLOQUES.map((campos) => {
+    const valores = campos(r);
+    return (25 * valores.filter(conValor).length) / valores.length;
+  });
 }
+
+export const porcentaje = (reporte) => Math.round(avance(reporte).reduce((a, b) => a + b, 0));

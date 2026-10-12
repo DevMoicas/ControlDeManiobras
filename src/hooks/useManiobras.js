@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiClient } from "../api/apiClient";
 import { useAutoRefresco } from "./useAutoRefresco";
+import { conValor } from "../components/FiltrosLista/FiltrosLista";
 
 const PAGE_SIZE = 60;
 
@@ -8,7 +9,10 @@ const PAGE_SIZE = 60;
 // vía ?tercero=1 (ver buildUrl), no por ?status. Solo estos cuatro van como ?status.
 const STATUS_BACKEND = ["activo", "pendiente", "quemada", "cancelado", "por_salir"];
 
-export function useManiobras(filtroStatus = "todos", ordenFecha = "desc") {
+export function useManiobras(filtroStatus = "todos", ordenFecha = "desc", filtros = {}) {
+  // Fecha PIS, rango, mes, operador y ruta (FiltrosLista), resueltos en el
+  // backend. Como texto: un objeto nuevo con lo mismo no relanza la carga.
+  const extra = new URLSearchParams(conValor(filtros)).toString();
   const [maniobras,   setManiobras]   = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -47,9 +51,10 @@ export function useManiobras(filtroStatus = "todos", ordenFecha = "desc") {
     } else if (filtroStatus === "tercero") {
       params.set("tercero", "1");
     }
+    new URLSearchParams(extra).forEach((v, k) => params.set(k, v));
 
     return `/maniobras/?${params.toString()}`;
-  }, [filtroStatus, ordenFecha]);
+  }, [filtroStatus, ordenFecha, extra]);
 
   const fetchPage = useCallback(async (page, isFirstPage = false) => {
     if (fetchingRef.current) return;
@@ -111,9 +116,12 @@ export function useManiobras(filtroStatus = "todos", ordenFecha = "desc") {
   const [recienCambiadas, setRecienCambiadas] = useState([]);
 
   // Lo que filtra la vista, para que el reloj mire exactamente la misma lista.
-  const filtroQuery = STATUS_BACKEND.includes(filtroStatus)
-    ? `status=${filtroStatus}`
-    : filtroStatus === "tercero" ? "tercero=1" : "";
+  const filtroQuery = [
+    STATUS_BACKEND.includes(filtroStatus)
+      ? `status=${filtroStatus}`
+      : filtroStatus === "tercero" ? "tercero=1" : "",
+    extra,
+  ].filter(Boolean).join("&");
 
   const aplicarCambios = useCallback(async ({ desde, hayBorrados }) => {
     // Un borrado no se puede fusionar: la fila que desapareció no viene en
@@ -127,10 +135,9 @@ export function useManiobras(filtroStatus = "todos", ordenFecha = "desc") {
 
     const params = new URLSearchParams({ page_size: PAGE_SIZE, ordering: "-id" });
     if (desde) params.set("modificado_desde", desde);
-    if (filtroQuery) filtroQuery.split("&").forEach((par) => {
-      const [k, v] = par.split("=");
-      params.set(k, v);
-    });
+    // URLSearchParams y no split("="): la ruta viaja codificada ("→", espacios)
+    // y partirla a mano la codificaría dos veces.
+    new URLSearchParams(filtroQuery).forEach((v, k) => params.set(k, v));
 
     try {
       const data      = await apiClient.get(`/maniobras/?${params.toString()}`);

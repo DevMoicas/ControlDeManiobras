@@ -193,18 +193,21 @@
   color: var(--text-muted); font-style: italic;
 }
 
-/* Un punto por bloque del formato. El VACÍO importa tanto como el lleno: es lo
-   que dice cuánto falta. Con el borde en --sheet-edge sobre la hoja crema no se
-   veía, así que va con tinta propia y relleno blanco, que contrasta contra la
-   hoja y contra el hover. */
-.rv-avance { display: inline-flex; gap: 5px; }
-.rv-punto {
-  width: 10px; height: 10px; border-radius: 50%;
-  border: 1.5px solid rgba(74, 58, 34, 0.42);
-  background: #fff;
-  box-sizing: border-box;
+/* % del reporte lleno (25 por bloque, ver avance() en reporteViaje.mjs). El
+   fondo de la barra lleva tinta propia: con --sheet-edge sobre la hoja crema
+   el hueco —lo que falta— no se veía. */
+.rv-avance {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
 }
-.rv-punto--on { background: #2b3e50; border-color: #2b3e50; }
+.rv-avance-barra {
+  width: 64px; height: 8px; border-radius: 4px;
+  background: rgba(74, 58, 34, 0.16); overflow: hidden;
+}
+.rv-avance-barra > span { display: block; height: 100%; background: #2b3e50; }
+
+.rv-contador { margin: 0 0 12px; font-size: 14px; color: #4b5563; }
+.rv-contador strong { color: #1f2937; font-size: 16px; }
 
 /* ── Formulario ───────────────────────────────────────────────────────────── */
 .rv-bloque {

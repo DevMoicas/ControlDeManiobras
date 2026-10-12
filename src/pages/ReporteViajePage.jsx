@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import { ArrowLeft, FileSpreadsheet, FileText, Trash2, Plus, TriangleAlert } from "lucide-react";
 import { useReportesViaje } from "../hooks/useReportesViaje";
@@ -14,10 +14,11 @@ import CatalogoSelector from "../components/CiudadSelector/CiudadSelector";
 import { aDate, aBackend } from "../components/CeldaEditable/fechaCelda.mjs";
 import VacioStatusSelector from "../components/VacioStatusSelector/VacioStatusSelector";
 import SearchBar from "../components/SearchBar/SearchBar";
+import FiltrosLista from "../components/FiltrosLista/FiltrosLista";
 import {
   REPORTE_VACIO, SI_NO_OPCIONES, RECOLECCION_OPCIONES,
   aTriEstado, deTriEstado, desdeFolio,
-  kmTotales, rendimiento, totalCarga, avance, NOMBRES_BLOQUES,
+  kmTotales, rendimiento, totalCarga, avance, porcentaje, NOMBRES_BLOQUES,
   CARGAS_EN_EL_PAPEL, cargaNueva,
 } from "../utils/reporteViaje.mjs";
 import "./ReporteViajePage.css";
@@ -29,7 +30,9 @@ const ENDPOINT_COORDINADORES = "/empleados/?cargo=Coordinador";
 
 const SERVICIOS = { sencillo: "Sencillo", full: "Full", carga_suelta: "Carga suelta" };
 
-const sinAcentos = (s) => (s ?? "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+// ¿Maniobra de vacío? lo decide el servidor con lo que hay en Vacíos
+// (ReporteViaje.completar_regreso): aquí solo se lee.
+const MANIOBRA_VACIO = { si: "Sí", no: "No", no_aplica: "No aplica" };
 
 const fechaCorta = (iso) => {
   if (!iso) return "—";
@@ -103,7 +106,7 @@ function SiNo({ value, onChange }) {
 
 export default function ReporteViajePage() {
   const {
-    reportes, cargando, cargar, crear, actualizar, eliminar, buscarPorFolio, descargar,
+    reportes, total, cargando, cargar, crear, actualizar, eliminar, buscarPorFolio, descargar,
   } = useReportesViaje();
   const alerta = useAlerta();
   const preguntar = useConfirmacion();
@@ -113,20 +116,24 @@ export default function ReporteViajePage() {
   const [guardando, setGuardando] = useState(false);
   const [bajando, setBajando] = useState(null);   // "excel" | "pdf" | null
   const [busqueda, setBusqueda] = useState("");
+  const [buscar, setBuscar] = useState("");   // la búsqueda, 350 ms después
+  const [filtros, setFiltros] = useState({});
 
-  useEffect(() => { cargar().catch(() => alerta({ tipo: "error", msg: "Error al cargar los reportes." })); },
-    [cargar, alerta]);
+  useEffect(() => {
+    const t = setTimeout(() => setBuscar(busqueda.trim()), 350);
+    return () => clearTimeout(t);
+  }, [busqueda]);
 
-  // ponytail: el filtro es sobre lo ya cargado (la primera página de 60). Con
-  // más volumen, mover la búsqueda al servidor con ?search=.
-  const visibles = useMemo(() => {
-    const q = sinAcentos(busqueda).trim();
-    if (!q) return reportes;
-    return reportes.filter((r) =>
-      [r.folio, r.cliente, r.coordinador, r.operador, r.origen, r.destino]
-        .some((c) => sinAcentos(c).includes(q))
-    );
-  }, [reportes, busqueda]);
+  // Búsqueda y filtros van al servidor: el contador es el `count` de TODOS los
+  // que cumplen, no de la página de 60 que se pinta.
+  // ponytail: la búsqueda del servidor distingue acentos (icontains);
+  // unaccent si llega a molestar.
+  useEffect(() => {
+    cargar({ ...filtros, search: buscar })
+      .catch(() => alerta({ tipo: "error", msg: "Error al cargar los reportes." }));
+  }, [cargar, alerta, filtros, buscar]);
+  const visibles = reportes;
+  const filtrando = Boolean(buscar) || Object.values(filtros).some(Boolean);
 
   const cambiar = (campo, valor) => setAbierto((prev) => ({ ...prev, [campo]: valor }));
 
@@ -263,6 +270,15 @@ export default function ReporteViajePage() {
           </button>
         </div>
 
+        <FiltrosLista endpoint="/reportes-viaje/" filtros={filtros} onChange={setFiltros} conCoordinador />
+
+        {/* Siempre visible: sin filtros cuenta todos los servicios. */}
+        <p className="rv-contador" aria-live="polite">
+          <strong>{total}</strong> {total === 1 ? "servicio" : "servicios"}
+          {filtrando ? " con estos filtros" : " en total"}
+          {visibles.length < total && ` · se muestran los ${visibles.length} más recientes`}
+        </p>
+
         <div className="rv-hoja">
          <div className="rv-tabla-scroll tabla-cabecera-fija">
           <table className="rv-tabla">
@@ -276,7 +292,7 @@ export default function ReporteViajePage() {
               {cargando && <tr><td colSpan={8} className="rv-estado">Cargando…</td></tr>}
               {!cargando && visibles.length === 0 && (
                 <tr><td colSpan={8} className="rv-estado">
-                  {busqueda ? "Ningún reporte coincide." : "Todavía no hay reportes."}
+                  {filtrando ? "Ningún reporte coincide." : "Todavía no hay reportes."}
                 </td></tr>
               )}
               {visibles.map((r) => (
@@ -288,14 +304,15 @@ export default function ReporteViajePage() {
                   <td>{r.cliente || "—"}</td>
                   <td>{r.origen || "—"} → {r.destino || "—"}</td>
                   <td>
-                    <span className="rv-avance">
-                      {avance(r).map((hecho, i) => (
-                        <i
-                          key={i}
-                          className={hecho ? "rv-punto rv-punto--on" : "rv-punto"}
-                          title={`${NOMBRES_BLOQUES[i]}: ${hecho ? "capturado" : "sin capturar"}`}
-                        />
-                      ))}
+                    {/* El desglose por bloque, en el tooltip: cada uno vale 25. */}
+                    <span
+                      className="rv-avance"
+                      title={avance(r).map((p, i) => `${NOMBRES_BLOQUES[i]}: ${Math.round(p * 4)} %`).join("\n")}
+                    >
+                      <span className="rv-avance-barra">
+                        <span style={{ width: `${porcentaje(r)}%` }} />
+                      </span>
+                      {porcentaje(r)} %
                     </span>
                   </td>
                   <td onClick={(e) => e.stopPropagation()}>
@@ -606,9 +623,8 @@ export default function ReporteViajePage() {
             <FechaHora value={abierto.llegada_manzanillo}
                        onChange={(v) => cambiar("llegada_manzanillo", v)} />
           </Campo>
-          <Campo label="¿Maniobra de vacío?">
-            <SiNo value={abierto.maniobra_vacio} onChange={(v) => cambiar("maniobra_vacio", v)} />
-          </Campo>
+          <Calculado label="¿Maniobra de vacío? (de Vacíos)"
+                     valor={MANIOBRA_VACIO[abierto.maniobra_vacio] || "—"} />
           <Campo label="Patio de entrega">
             <PatioSelector currentValue={abierto.patio_entrega}
                            onSelect={(v) => cambiar("patio_entrega", v)} />

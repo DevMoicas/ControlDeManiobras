@@ -22,6 +22,7 @@ import TipoServicioSelector, { esServicioFull } from "../components/TipoServicio
 import CostosExtraSelector from "../components/CostosExtraSelector/CostosExtraSelector";
 import "./ManiobrasPage.css";
 import SearchBar from "../components/SearchBar/SearchBar";
+import FiltrosLista from "../components/FiltrosLista/FiltrosLista";
 import { useAlerta } from "../components/Alertas/Alertas";
 import ColorSelector from "../components/ColorSelector/ColorSelector";
 import { esColorValido, textoSobre } from "../utils/colorFila.mjs";
@@ -1343,6 +1344,8 @@ export default function ManiobrasPage() {
     return () => clearTimeout(t);
   }, [busquedaInput]);
   const [ordenFecha, setOrdenFecha] = useState("desc");
+  // Fecha PIS, rango, mes, operador y ruta: en el servidor (FiltrosLista).
+  const [filtros, setFiltros] = useState({});
   const handleOrdenar = useCallback((campo) => {
   setOrdenFecha((prev) => {
     const nuevo = prev === "desc" ? "asc" : "desc";
@@ -1354,7 +1357,7 @@ export default function ManiobrasPage() {
     maniobras, setManiobras,
     loading, loadingMore, hasMore, error,
     loadMore, eliminar, actualizar, agregar, recienCambiadas,
-  } = useManiobras(filtroStatus, ordenFecha);
+  } = useManiobras(filtroStatus, ordenFecha, filtros);
 
   const { updatingId, updateStatus } = useStatusUpdate(setManiobras);
 
@@ -1571,6 +1574,8 @@ export default function ManiobrasPage() {
           placeholder='Buscar…  ("-" excluye. ej: -zuñiga/-"jose zuñiga")'
         />
       </div>
+
+      <FiltrosLista endpoint="/maniobras/" filtros={filtros} onChange={setFiltros} />
 
       <div className="toolbar">
         <div className="filtros-status">
