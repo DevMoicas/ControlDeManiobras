@@ -15,6 +15,12 @@ export function useReportesViaje() {
   // El contador de la pantalla: `count` del servidor, o sea TODOS los que
   // cumplen los filtros, no solo la página de 60 que se pinta.
   const [total, setTotal] = useState(0);
+  // Cuántos de esos `total` están al 100 %: lo cuenta el servidor sobre todos.
+  const [completos, setCompletos] = useState(0);
+  // Para saber, al guardar o borrar, si el reporte ya contaba como completo.
+  const actuales = useRef([]);
+  actuales.current = reportes;
+  const completo = (r) => (r?.porcentaje === 100 ? 1 : 0);
   const [cargando, setCargando] = useState(false);
   // Al teclear la búsqueda salen varias peticiones: solo vale la última.
   const ultima = useRef(0);
@@ -30,6 +36,7 @@ export function useReportesViaje() {
       if (yo !== ultima.current) return;
       setReportes(normalizar(data));
       setTotal(data?.count ?? normalizar(data).length);
+      setCompletos(data?.completos ?? 0);
     } finally {
       if (yo === ultima.current) setCargando(false);
     }
@@ -42,17 +49,22 @@ export function useReportesViaje() {
     const creado = await apiClient.postAnidado("/reportes-viaje/", paraGuardar(datos));
     setReportes((prev) => [creado, ...prev]);
     setTotal((t) => t + 1);
+    setCompletos((c) => c + completo(creado));
     return creado;
   }, []);
 
   const actualizar = useCallback(async (id, datos) => {
     const guardado = await apiClient.patchAnidado(`/reportes-viaje/${id}/`, paraGuardar(datos));
+    const antes = actuales.current.find((r) => r.id === id);
+    setCompletos((c) => c + completo(guardado) - completo(antes));
     setReportes((prev) => prev.map((r) => (r.id === id ? guardado : r)));
     return guardado;
   }, []);
 
   const eliminar = useCallback(async (id) => {
     await apiClient.delete(`/reportes-viaje/${id}/`);
+    const antes = actuales.current.find((r) => r.id === id);
+    setCompletos((c) => Math.max(0, c - completo(antes)));
     setReportes((prev) => prev.filter((r) => r.id !== id));
     setTotal((t) => Math.max(0, t - 1));
   }, []);
@@ -83,5 +95,5 @@ export function useReportesViaje() {
     window.URL.revokeObjectURL(url);
   }, []);
 
-  return { reportes, total, cargando, cargar, crear, actualizar, eliminar, buscarPorFolio, descargar };
+  return { reportes, total, completos, cargando, cargar, crear, actualizar, eliminar, buscarPorFolio, descargar };
 }

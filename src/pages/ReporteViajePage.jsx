@@ -18,7 +18,7 @@ import FiltrosLista from "../components/FiltrosLista/FiltrosLista";
 import {
   REPORTE_VACIO, SI_NO_OPCIONES, RECOLECCION_OPCIONES,
   aTriEstado, deTriEstado, desdeFolio,
-  kmTotales, rendimiento, totalCarga, avance, porcentaje, NOMBRES_BLOQUES,
+  kmTotales, rendimiento, totalCarga, NOMBRES_BLOQUES,
   CARGAS_EN_EL_PAPEL, cargaNueva,
 } from "../utils/reporteViaje.mjs";
 import "./ReporteViajePage.css";
@@ -106,7 +106,7 @@ function SiNo({ value, onChange }) {
 
 export default function ReporteViajePage() {
   const {
-    reportes, total, cargando, cargar, crear, actualizar, eliminar, buscarPorFolio, descargar,
+    reportes, total, completos, cargando, cargar, crear, actualizar, eliminar, buscarPorFolio, descargar,
   } = useReportesViaje();
   const alerta = useAlerta();
   const preguntar = useConfirmacion();
@@ -277,6 +277,7 @@ export default function ReporteViajePage() {
           <strong>{total}</strong> {total === 1 ? "servicio" : "servicios"}
           {filtrando ? " con estos filtros" : " en total"}
           {visibles.length < total && ` · se muestran los ${visibles.length} más recientes`}
+          {total > 0 && <> · <strong>{completos}</strong> completos ({Math.round((100 * completos) / total)} %)</>}
         </p>
 
         <div className="rv-hoja">
@@ -307,12 +308,12 @@ export default function ReporteViajePage() {
                     {/* El desglose por bloque, en el tooltip: cada uno vale 25. */}
                     <span
                       className="rv-avance"
-                      title={avance(r).map((p, i) => `${NOMBRES_BLOQUES[i]}: ${Math.round(p * 4)} %`).join("\n")}
+                      title={(r.avance || []).map((p, i) => `${NOMBRES_BLOQUES[i]}: ${Math.round(p * 4)} %`).join("\n")}
                     >
                       <span className="rv-avance-barra">
-                        <span style={{ width: `${porcentaje(r)}%` }} />
+                        <span style={{ width: `${r.porcentaje ?? 0}%` }} />
                       </span>
-                      {porcentaje(r)} %
+                      {r.porcentaje ?? 0} %
                     </span>
                   </td>
                   <td onClick={(e) => e.stopPropagation()}>
@@ -454,11 +455,15 @@ export default function ReporteViajePage() {
               loading={false}
             />
           </Campo>
+          {/* Del catálogo, como en Maniobras: escritos a mano salían erratas que
+              partían una ruta en varias (usuario, 2026-10-12). */}
           <Campo label="Origen">
-            <input value={abierto.origen} onChange={(e) => cambiar("origen", e.target.value)} />
+            <CatalogoSelector endpoint="/origenes/" placeholder="— Seleccionar origen —"
+              currentValue={abierto.origen} onSelect={(v) => cambiar("origen", v)} />
           </Campo>
           <Campo label="Destino">
-            <input value={abierto.destino} onChange={(e) => cambiar("destino", e.target.value)} />
+            <CatalogoSelector endpoint="/destinos/" placeholder="— Seleccionar destino —"
+              currentValue={abierto.destino} onSelect={(v) => cambiar("destino", v)} />
           </Campo>
           <Campo label="Operador o tercero" ancho="doble">
             <input value={abierto.operador} onChange={(e) => cambiar("operador", e.target.value)} />

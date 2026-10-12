@@ -5,7 +5,7 @@ import {
   CARGAS_EN_EL_PAPEL, REPORTE_VACIO, cargaNueva,
   aTriEstado, deTriEstado, desdeFolio,
   kmTotales, litrosDiesel, rendimiento, totalCarga,
-  cargasConDatos, paraGuardar, avance, porcentaje, NOMBRES_BLOQUES, citaDesdeManiobra,
+  cargasConDatos, paraGuardar, citaDesdeManiobra,
 } from "./reporteViaje.mjs";
 
 // ── El botón de Sí/No conserva tres estados ─────────────────────────────────
@@ -188,56 +188,6 @@ test("un renglón a medias manda null en lo que le falta", () => {
   assert.equal(carga.litros_diesel, "300");
   assert.equal(carga.precio_litro, null);
   assert.equal(carga.total_urea, null);
-});
-
-// ── Avance: % del reporte, 25 por bloque ────────────────────────────────────
-test("hay un nombre por cada bloque del avance", () => {
-  // Si se desordenan, el tooltip diría el bloque equivocado.
-  assert.equal(NOMBRES_BLOQUES.length, avance(REPORTE_VACIO).length);
-});
-
-test("un reporte vacío está al 0 %", () => {
-  assert.deepEqual(avance(REPORTE_VACIO), [0, 0, 0, 0]);
-  assert.equal(porcentaje(REPORTE_VACIO), 0);
-});
-
-test("Identificación se reparte entre sus 10 campos; Fecha, Folio y Servicio no cuentan", () => {
-  const r = { ...REPORTE_VACIO, fecha: "2026-10-12", folio: "A-1", servicio: "full",
-              coordinador: "Ali", cliente: "X" };
-  assert.deepEqual(avance(r), [5, 0, 0, 0]);
-});
-
-test("las dos portas cuentan como un solo campo", () => {
-  const una = avance({ ...REPORTE_VACIO, remolque_1: "P1" })[1];
-  const dos = avance({ ...REPORTE_VACIO, remolque_1: "P1", remolque_2: "P2" })[1];
-  assert.equal(una, 25 / 6);
-  assert.equal(una, dos);
-});
-
-test("En trayecto: una carga de diésel basta; aceite, urea o rescate no", () => {
-  const cargas = [...REPORTE_VACIO.cargas];
-  cargas[2] = { ...cargas[2], litros_diesel: "300" };
-  assert.deepEqual(avance({ ...REPORTE_VACIO, cargas }), [0, 0, 25, 0]);
-  const urea = [...REPORTE_VACIO.cargas];
-  urea[0] = { ...urea[0], litros_urea: "20" };
-  assert.deepEqual(avance({ ...REPORTE_VACIO, cargas: urea, litros_aceite: 4, rescate: false }),
-                   [0, 0, 0, 0]);
-});
-
-test("Regreso: solo la llegada a Manzanillo", () => {
-  assert.deepEqual(avance({ ...REPORTE_VACIO, patio_entrega: "Norte", maniobra_vacio: "si" }),
-                   [0, 0, 0, 0]);
-  assert.deepEqual(avance({ ...REPORTE_VACIO, llegada_manzanillo: "2026-10-12T10:00:00Z" }),
-                   [0, 0, 0, 25]);
-});
-
-test("todo lleno es 100 %", () => {
-  const cargas = [{ orden: 1, litros_diesel: "1" }];
-  const r = { ...REPORTE_VACIO, cargas, llegada_manzanillo: "x",
-    coordinador: 1, cliente: 1, recoleccion: 1, origen: 1, destino: 1, operador: 1,
-    cita: 1, salida_puerto: 1, inicio_pactado: 1, salida_real: 1,
-    unidad: 1, remolque_2: 1, km_inicial: 0, km_final: 1, llegada_cliente: 1, descarga: 1 };
-  assert.equal(porcentaje(r), 100);
 });
 
 // ── cargaNueva: el renglón que añade el botón de EN TRAYECTO ────────────────
