@@ -1074,10 +1074,49 @@ def filtro_status(valor):
     return Q(status__regex=rf"(^|,){re.escape(valor)}(,|$)")
 
 
+def _mes(valor):
+    """'AAAA-MM' → (primer día, primer día del mes siguiente). 400 si no lo es."""
+    try:
+        anio, mes = (int(x) for x in valor.split('-'))
+        inicio = date(anio, mes, 1)
+    except ValueError:
+        raise ValidationError({'detail': 'El mes va como AAAA-MM.'})
+    return inicio, (inicio + timedelta(days=32)).replace(day=1)
+
+
+def _ruta(valor):
+    """'ORIGEN → DESTINO' (como la arma dashboards.ruta_de) → Q sobre las dos."""
+    partes = [p.strip() for p in valor.split('→')]
+    if len(partes) == 2:
+        return Q(origen__iexact=partes[0], destino__iexact=partes[1])
+    return Q(origen__iexact=partes[0]) | Q(destino__iexact=partes[0])
+
+
 class ManiobraFilter(django_filters.FilterSet):
     """Filtros de la lista de maniobras. La regla del status vive en
-    `filtro_status` porque el panel de seguimientos cuenta con la misma."""
-    status = django_filters.CharFilter(method="filter_status")
+    `filtro_status` porque el panel de seguimientos cuenta con la misma.
+
+    Fecha, rango y mes van sobre FECHA PIS; operador y ruta, como en los
+    dashboards (usuario, 2026-10-12)."""
+    fecha = django_filters.DateFilter(field_name='fecha_pis')
+    desde = django_filters.DateFilter(field_name='fecha_pis', lookup_expr='gte')
+    hasta = django_filters.DateFilter(field_name='fecha_pis', lookup_expr='lte')
+    mes = django_filters.CharFilter(method='filter_mes')
+    operador = django_filters.CharFilter(method='filter_operador')
+    ruta = django_filters.CharFilter(method='filter_ruta')
+
+    def filter_mes(self, queryset, name, value):
+        inicio, fin = _mes(value)
+        return queryset.filter(fecha_pis__gte=inicio, fecha_pis__lt=fin)
+
+    def filter_operador(self, queryset, name, value):
+        return queryset.filter(Q(asignacion_operador_status__iexact=value.strip())
+                               | Q(operador_2__iexact=value.strip()))
+
+    def filter_ruta(self, queryset, name, value):
+        return queryset.filter(_ruta(value))
+
+    status =django_filters.CharFilter(method="filter_status")
     # Bandera TERCERO (columna `tercero`): el front solo manda ?tercero=1 cuando
     # quiere ver únicamente los registros marcados, así que la presencia del
     # parámetro basta — devolvemos los que tienen la marca puesta (no NULL / no "").
@@ -1107,6 +1146,19 @@ class ManiobraFilter(django_filters.FilterSet):
             & (Q(asignacion_operador_status__isnull=True)
                | Q(asignacion_operador_status=""))
         )
+
+
+def _opciones_filtro(queryset, campos_operador):
+    """Operadores y rutas para los desplegables de filtro: todo lo que hay, no
+    solo la página cargada. La ruta se arma como dashboards.ruta_de."""
+    def unicos(valores):
+        return sorted({(v or '').strip() for v in valores} - {''})
+    return {
+        'operadores': unicos(v for c in campos_operador
+                             for v in queryset.values_list(c, flat=True).distinct()),
+        'rutas': unicos(' → '.join(p for p in ((o or '').strip(), (d or '').strip()) if p)
+                        for o, d in queryset.values_list('origen', 'destino').distinct()),
+    }
 
 
 def _resolver_cliente(maniobra, clientes_por_nombre):
@@ -1200,6 +1252,12 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
             if not es_valido:
                 return Response({'detail': mensaje}, status=400)
         return super().update(request, *args, **kwargs)
+
+    @action(detail=False, methods=['get'])
+    def opciones(self, request):
+        """GET /api/maniobras/opciones/ — los desplegables de filtro."""
+        return Response(_opciones_filtro(Maniobra.objects.all(),
+                                         ['asignacion_operador_status', 'operador_2']))
 
     # ── Gasto automatico ────────────────────────────────────────────────
     # Va aqui y no en el frontend aunque el folio se elija alli: se asigna desde
@@ -1710,6 +1768,17 @@ class VacioViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
                 return Response({'detail': mensaje}, status=400)
         return super().update(request, *args, **kwargs)
 
+    # El Regreso del reporte de viaje (¿maniobra de vacío?, patio, cita) sale
+    # de aquí: al tocar el vacío se vuelve a guardar el reporte de su viaje, y
+    # ReporteViaje.save() lo recalcula.
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        _refrescar_regreso(serializer.instance.maniobra)
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        _refrescar_regreso(serializer.instance.maniobra)
+
     def destroy(self, request, *args, **kwargs):
         if not request.user.is_staff:
             return Response(
@@ -1717,6 +1786,14 @@ class VacioViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
         return super().destroy(request, *args, **kwargs)
+
+
+def _refrescar_regreso(maniobra):
+    if maniobra is None:
+        return
+    for reporte in ReporteViaje.objects.filter(
+            folio__in=[f.strip() for f in (maniobra.folio, maniobra.folio_2) if (f or '').strip()]):
+        reporte.save()
 
 class EmpleadoViewSet(viewsets.ModelViewSet):
     queryset = Empleado.objects.all().order_by("-id")
@@ -3243,7 +3320,11 @@ def _llenar_reporte_viaje(ws, reporte, datos):
 
     # ── Regreso ──
     escribir('E20', _fecha_hora_doc(reporte.llegada_manzanillo))
-    _marcar_si_no(ws, 'J20', reporte.maniobra_vacio)
+    # Tres respuestas: "N/A" pisa la etiqueta igual que SI / NO.
+    if reporte.maniobra_vacio == 'no_aplica':
+        ws['J20'] = 'N/A'
+    else:
+        _marcar_si_no(ws, 'J20', {'si': True, 'no': False}.get(reporte.maniobra_vacio))
     escribir('C21', reporte.patio_entrega)
     escribir('E21', _fecha_hora_doc(reporte.cita_vacio))
     escribir('H21', reporte.unidad_vacio)
@@ -3275,8 +3356,58 @@ class ReporteViajeViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes     = [IsAuthenticated]
     throttle_classes       = [UserRateThrottle, AnonRateThrottle]
-    filter_backends        = [DjangoFilterBackend]
+    filter_backends        = [DjangoFilterBackend, SearchFilter]
     filterset_fields       = ['folio']
+    # ?search= en el servidor: el contador de la pantalla es el `count` de la
+    # respuesta, y buscar solo en la página cargada lo dejaría mintiendo.
+    search_fields          = ['folio', 'cliente', 'coordinador', 'operador', 'origen', 'destino']
+
+    def get_queryset(self):
+        """?fecha= ?desde= ?hasta= ?mes= sobre la SALIDA REAL; ?coordinador=
+        ?operador= ?ruta= exactos (usuario, 2026-10-12).
+
+        salida_real es un instante y el día se cuenta en la hora de operación:
+        con TIME_ZONE='UTC', un __date partiría en UTC y una salida a las 19:00
+        caería en el día siguiente."""
+        qs, p = super().get_queryset(), self.request.query_params
+        if self.action != 'list':
+            return qs
+
+        def dia(clave):
+            try:
+                return date.fromisoformat(p[clave])
+            except ValueError:
+                raise ValidationError({'detail': f'{clave} va como AAAA-MM-DD.'})
+
+        def instante(d):
+            return datetime.combine(d, datetime.min.time(), tzinfo=_ZONA_OPERACION)
+
+        un_dia = timedelta(days=1)
+        if p.get('fecha'):
+            d = dia('fecha')
+            qs = qs.filter(salida_real__gte=instante(d), salida_real__lt=instante(d + un_dia))
+        if p.get('desde'):
+            qs = qs.filter(salida_real__gte=instante(dia('desde')))
+        if p.get('hasta'):
+            qs = qs.filter(salida_real__lt=instante(dia('hasta') + un_dia))
+        if p.get('mes'):
+            inicio, fin = _mes(p['mes'])
+            qs = qs.filter(salida_real__gte=instante(inicio), salida_real__lt=instante(fin))
+        for campo in ('coordinador', 'operador'):
+            if p.get(campo):
+                qs = qs.filter(**{f'{campo}__iexact': p[campo].strip()})
+        if p.get('ruta'):
+            qs = qs.filter(_ruta(p['ruta']))
+        return qs
+
+    @action(detail=False, methods=['get'])
+    def opciones(self, request):
+        """GET /api/reportes-viaje/opciones/ — los desplegables de filtro."""
+        todos = ReporteViaje.objects.all()
+        return Response({
+            **_opciones_filtro(todos, ['operador']),
+            'coordinadores': _opciones_filtro(todos, ['coordinador'])['operadores'],
+        })
 
     def destroy(self, request, *args, **kwargs):
         if not request.user.is_staff:

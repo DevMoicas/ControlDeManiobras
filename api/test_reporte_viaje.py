@@ -112,7 +112,8 @@ class ReporteViajeTests(BaseReporte):
         Excel para rodearlo a mano. Colapsarlo haría que un reporte a medio
         llenar afirmara "No" en lo que nadie ha contestado."""
         rid = self.crear().data['id']
-        for campo in ('reparacion', 'rescate', 'maniobra_vacio', 'estadias'):
+        # maniobra_vacio ya no es booleano: ver ReporteViajeRegresoTests.
+        for campo in ('reparacion', 'rescate', 'estadias'):
             for valor in (True, False, None):
                 r = self.cliente.patch(f'{URL}{rid}/', {campo: valor}, format='json')
                 self.assertEqual(r.status_code, 200, r.data)
@@ -352,7 +353,7 @@ class ReporteViajeDocumentoTests(BaseReporte):
 
     # ── La regla de los Sí/No ────────────────────────────────────────────
     def test_un_si_no_contestado_pisa_la_etiqueta(self):
-        rid = self.crear(reparacion=True, rescate=False, maniobra_vacio=True).data['id']
+        rid = self.crear(reparacion=True, rescate=False, maniobra_vacio='si').data['id']
         ws = self.hoja(self.descargar(rid))
         self.assertEqual(ws['G17'].value, 'SI')   # ¿REPARACIÓN?
         self.assertEqual(ws['C18'].value, 'NO')   # ¿RESCATE?
@@ -593,3 +594,130 @@ class ReporteViajeRendimientoGuardadoTests(BaseReporte):
             cargas=[{'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80',
                      'litros_urea': '500', 'total_urea': '100'}]).data['id']
         self.assertEqual(ReporteViaje.objects.get(pk=rid).rendimiento, Decimal('2.93'))
+
+
+class ReporteViajeRegresoTests(BaseReporte):
+    """¿Maniobra de vacío?, patio y cita salen de Vacíos (usuario, 2026-10-12)."""
+
+    def viaje(self, folio='F-2279', **maniobra):
+        return Maniobra.objects.create(solicita='PRUEBA', folio=folio, **maniobra)
+
+    def test_carga_suelta_es_no_aplica_y_el_excel_dice_NA(self):
+        rid = self.crear(servicio='carga_suelta').data['id']
+        self.assertEqual(ReporteViaje.objects.get(pk=rid).maniobra_vacio, 'no_aplica')
+        ws = load_workbook(BytesIO(self.cliente.get(f'{URL}{rid}/documento/?formato=excel').content)).worksheets[0]
+        self.assertEqual(ws['J20'].value, 'N/A')
+
+    def test_sin_fecha_maniobra_en_el_vacio_es_no(self):
+        Vacio.objects.create(maniobra=self.viaje(), patio='SSA')
+        r = self.crear()
+        self.assertEqual(r.data['maniobra_vacio'], 'no')
+        self.assertEqual(r.data['patio_entrega'], 'SSA')
+
+    def test_con_fecha_maniobra_es_si_y_se_rellena_la_cita(self):
+        from datetime import date, datetime, timezone
+        cita = datetime(2026, 10, 12, 15, 0, tzinfo=timezone.utc)
+        Vacio.objects.create(maniobra=self.viaje(), fecha_maniobra=date(2026, 10, 12), cita=cita)
+        r = self.crear()
+        self.assertEqual(r.data['maniobra_vacio'], 'si')
+        self.assertEqual(ReporteViaje.objects.get(pk=r.data['id']).cita_vacio, cita)
+
+    def test_lo_escrito_en_el_reporte_manda_sobre_el_patio_del_vacio(self):
+        Vacio.objects.create(maniobra=self.viaje(), patio='SSA')
+        self.assertEqual(self.crear(patio_entrega='CONTECON').data['patio_entrega'], 'CONTECON')
+
+    def test_la_respuesta_se_recalcula_aunque_se_mande_otra(self):
+        Vacio.objects.create(maniobra=self.viaje())
+        self.assertEqual(self.crear(maniobra_vacio='si').data['maniobra_vacio'], 'no')
+
+    def test_full_repartido_cada_reporte_mira_el_vacio_de_su_operador(self):
+        from datetime import date
+        m = self.viaje(folio_2='F-2280')
+        Vacio.objects.create(maniobra=m, operador='ANA', fecha_maniobra=date(2026, 10, 1))
+        Vacio.objects.create(maniobra=m, operador='LUIS')
+        self.assertEqual(self.crear(operador='ana').data['maniobra_vacio'], 'si')
+        self.assertEqual(self.crear(folio='F-2280', operador='LUIS').data['maniobra_vacio'], 'no')
+
+    def test_capturar_la_fecha_maniobra_en_vacios_pone_si_en_el_reporte(self):
+        v = Vacio.objects.create(maniobra=self.viaje())
+        rid = self.crear().data['id']
+        r = self.cliente.patch(f'/api/vacios/{v.id}/', {'fecha_maniobra': '2026-10-12'}, format='json')
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual(ReporteViaje.objects.get(pk=rid).maniobra_vacio, 'si')
+
+
+class ReporteViajeFiltrosTests(BaseReporte):
+    """Contador y filtros de la lista (usuario, 2026-10-12)."""
+
+    def setUp(self):
+        super().setUp()
+        # 01:30 UTC del día 2 = 19:30 del día 1 en Manzanillo/CDMX.
+        self.crear(folio='A-1', salida_real='2026-09-02T01:30:00Z', coordinador='Pedro',
+                   operador='ANA', origen='MANZANILLO', destino='LEON')
+        self.crear(folio='A-2', salida_real='2026-10-05T15:00:00Z', coordinador='Pedro',
+                   operador='LUIS', origen='MANZANILLO', destino='QRO')
+        self.crear(folio='A-3', coordinador='Rosa', operador='ANA')
+
+    def folios(self, query=''):
+        r = self.cliente.get(f'{URL}?{query}')
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual(r.data['count'], len(r.data['results']))
+        return sorted(x['folio'] for x in r.data['results'])
+
+    def test_sin_filtros_cuenta_todos(self):
+        self.assertEqual(self.folios(), ['A-1', 'A-2', 'A-3'])
+
+    def test_la_fecha_es_la_salida_real_en_hora_de_operacion(self):
+        self.assertEqual(self.folios('fecha=2026-09-01'), ['A-1'])
+        self.assertEqual(self.folios('fecha=2026-09-02'), [])
+
+    def test_rango_y_mes(self):
+        self.assertEqual(self.folios('desde=2026-09-01&hasta=2026-10-05'), ['A-1', 'A-2'])
+        self.assertEqual(self.folios('mes=2026-10'), ['A-2'])
+
+    def test_coordinador_operador_ruta_y_busqueda(self):
+        self.assertEqual(self.folios('coordinador=pedro'), ['A-1', 'A-2'])
+        self.assertEqual(self.folios('operador=ANA&coordinador=Pedro'), ['A-1'])
+        self.assertEqual(self.folios('ruta=MANZANILLO → QRO'), ['A-2'])
+        self.assertEqual(self.folios('search=leon'), ['A-1'])
+
+    def test_una_fecha_mal_escrita_es_400(self):
+        self.assertEqual(self.cliente.get(f'{URL}?mes=octubre').status_code, 400)
+        self.assertEqual(self.cliente.get(f'{URL}?fecha=12/10/2026').status_code, 400)
+
+    def test_opciones(self):
+        r = self.cliente.get(f'{URL}opciones/').data
+        self.assertEqual(r['coordinadores'], ['Pedro', 'Rosa'])
+        self.assertEqual(r['operadores'], ['ANA', 'LUIS'])
+        self.assertEqual(r['rutas'], ['MANZANILLO → LEON', 'MANZANILLO → QRO'])
+
+
+class ManiobraFiltrosTests(BaseReporte):
+    """Los filtros de Maniobras: fecha PIS, operador y ruta (usuario, 2026-10-12)."""
+
+    def setUp(self):
+        super().setUp()
+        from datetime import date
+        Maniobra.objects.create(solicita='X', folio='M-1', fecha_pis=date(2026, 9, 30),
+                                asignacion_operador_status='ANA', origen='MANZANILLO', destino='LEON')
+        Maniobra.objects.create(solicita='X', folio='M-2', fecha_pis=date(2026, 10, 1),
+                                operador_2='ANA', origen='MANZANILLO', destino='QRO')
+
+    def folios(self, query):
+        r = self.cliente.get(f'/api/maniobras/?{query}')
+        self.assertEqual(r.status_code, 200, getattr(r, 'data', r))
+        return sorted(x['folio'] for x in r.data['results'])
+
+    def test_fecha_rango_y_mes_sobre_fecha_pis(self):
+        self.assertEqual(self.folios('fecha=2026-10-01'), ['M-2'])
+        self.assertEqual(self.folios('desde=2026-09-01&hasta=2026-09-30'), ['M-1'])
+        self.assertEqual(self.folios('mes=2026-10'), ['M-2'])
+
+    def test_operador_en_cualquiera_de_las_dos_columnas_y_ruta(self):
+        self.assertEqual(self.folios('operador=ana'), ['M-1', 'M-2'])
+        self.assertEqual(self.folios('ruta=MANZANILLO → LEON'), ['M-1'])
+
+    def test_opciones(self):
+        r = self.cliente.get('/api/maniobras/opciones/').data
+        self.assertEqual(r['operadores'], ['ANA'])
+        self.assertEqual(r['rutas'], ['MANZANILLO → LEON', 'MANZANILLO → QRO'])

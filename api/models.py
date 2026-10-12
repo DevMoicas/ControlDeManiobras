@@ -1487,7 +1487,16 @@ class ReporteViaje(models.Model):
 
     # ── Regreso ──
     llegada_manzanillo = models.DateTimeField(null=True, blank=True)  # ← ruta_fin
-    maniobra_vacio     = models.BooleanField(null=True)
+    # Tres respuestas y no un Sí/No: la carga suelta no devuelve contenedor, así
+    # que ahí no es "No", es "No aplica" (usuario, 2026-10-12). Lo pone
+    # completar_regreso() en cada guardado; null = aún sin saber.
+    MANIOBRA_VACIO_CHOICES = [
+        ('si',        'Sí'),
+        ('no',        'No'),
+        ('no_aplica', 'No aplica'),
+    ]
+    maniobra_vacio     = models.CharField(max_length=10, choices=MANIOBRA_VACIO_CHOICES,
+                                          null=True, blank=True)
     # Cita y patio van SEPARADOS aunque en el papel compartan renglón
     # (confirmado con el usuario, 2026-08-24).
     patio_entrega  = models.CharField(max_length=100, blank=True, default='')
@@ -1538,6 +1547,39 @@ class ReporteViaje(models.Model):
 
     def __str__(self):
         return f"Reporte de viaje {self.folio}"
+
+    def save(self, *args, **kwargs):
+        # Solo en el guardado completo: los save(update_fields=...) internos
+        # (rendimiento, huecos del folio) no tocan el Regreso.
+        if kwargs.get('update_fields') is None:
+            self.completar_regreso()
+        super().save(*args, **kwargs)
+
+    def completar_regreso(self):
+        """¿Maniobra de vacío?, patio y cita del Regreso, sacados de Vacíos.
+
+        La respuesta se RECALCULA siempre: es un hecho de Vacíos, no algo que el
+        coordinador decida. SÍ en cuanto el vacío del viaje tiene FECHA MANIOBRA,
+        NO mientras no la tenga, NO APLICA en carga suelta (usuario, 2026-10-12).
+        Patio y cita solo rellenan el hueco, como _completar_reportes_del_folio:
+        lo que se haya escrito en el reporte manda.
+        """
+        if self.servicio == 'carga_suelta':
+            self.maniobra_vacio = 'no_aplica'
+            return
+        maniobra = self.maniobra_del_folio()
+        if maniobra is None:
+            return  # folio sin maniobra: se contesta a mano
+        vacios = list(maniobra.vacios.order_by('id'))
+        # Full repartido: dos folios, un vacío por operador. Cada reporte mira el
+        # suyo. ponytail: casa por nombre; si no casa ninguno, mira todos.
+        mio = (self.operador or '').strip().upper()
+        vacios = [v for v in vacios if (v.operador or '').strip().upper() == mio] or vacios
+        self.maniobra_vacio = 'si' if any(v.fecha_maniobra for v in vacios) else 'no'
+        if not self.patio_entrega:
+            self.patio_entrega = next((v.patio for v in vacios if v.patio), '')[:100]
+        if not self.cita_vacio:
+            self.cita_vacio = next((v.cita for v in vacios if v.cita), None)
 
     # ── Los cálculos viven aquí, no en el serializer ─────────────────────
     # Así el recálculo al guardar y lo que se sirve por la API salen del MISMO
