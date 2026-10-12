@@ -720,6 +720,9 @@ class ManiobraFiltrosTests(BaseReporte):
     def test_operador_en_cualquiera_de_las_dos_columnas_y_ruta(self):
         self.assertEqual(self.folios('operador=ana'), ['M-1', 'M-2'])
         self.assertEqual(self.folios('ruta=MANZANILLO → LEON'), ['M-1'])
+        # Misma ruta escrita distinto: el filtro la trae entera.
+        Maniobra.objects.create(solicita='X', folio='M-4', origen='Manzanillo', destino='león')
+        self.assertEqual(self.folios('ruta=MANZANILLO → LEON'), ['M-1', 'M-4'])
 
     def test_opciones(self):
         Chofer.objects.create(nombre='ANA')

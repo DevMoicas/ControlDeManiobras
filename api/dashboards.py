@@ -15,6 +15,7 @@ Reglas que valen en todos (plan, Fase 6):
 - Servicio: tipo_servicio, con la heurística vieja de respaldo (P1).
 - Local = origen y destino iguales sin acentos ni mayúsculas (P39).
 """
+import re
 import unicodedata
 from collections import defaultdict
 from datetime import date, datetime, timedelta
@@ -65,6 +66,15 @@ def ruta_de(m):
     return ' → '.join(p for p in ((m.origen or '').strip(), (m.destino or '').strip()) if p)
 
 
+def clave_ruta(ruta):
+    """Una ruta por cada forma de escribirla: sin mayúsculas, acentos ni
+    signos, así 'APODACA / NL', 'apodaca/ NL' y 'APODACA NL' son la misma
+    (usuario, 2026-10-12). Las erratas (MONTEREY) no: esas se corrigen en el dato."""
+    partes = (' '.join(re.sub(r'[^A-Z0-9]+', ' ', normalizar(p)).split())
+              for p in str(ruta or '').split('→'))
+    return ' → '.join(p for p in partes if p)
+
+
 def _mes(d):
     return d.strftime('%Y-%m')
 
@@ -98,7 +108,7 @@ class Filtros:
         self.servicio = params.get('servicio') or ''
         self.unidad = normalizar(params.get('unidad'))
         self.operador = normalizar(params.get('operador'))
-        self.ruta = normalizar(params.get('ruta'))
+        self.ruta = clave_ruta(params.get('ruta'))
         self.destino = normalizar(params.get('destino'))
         self.maniobra = params.get('maniobra') or ''
         self.alcance = params.get('alcance') or ''      # local / foraneo
@@ -120,7 +130,7 @@ class Filtros:
         if self.operador and self.operador not in (normalizar(m.asignacion_operador_status),
                                                    normalizar(m.operador_2)):
             return False
-        if self.ruta and normalizar(ruta_de(m)) != self.ruta:
+        if self.ruta and clave_ruta(ruta_de(m)) != self.ruta:
             return False
         if self.destino and normalizar(m.destino) != self.destino:
             return False
@@ -185,7 +195,7 @@ def _opciones(maniobras):
                              Tracto.objects.values_list('placas', flat=True)),
         'operadores': choferes_fraba(unicos([m.asignacion_operador_status for m in maniobras]
                                             + [m.operador_2 for m in maniobras])),
-        'rutas': unicos(ruta_de(m) for m in maniobras),
+        'rutas': unicos(clave_ruta(ruta_de(m)) for m in maniobras),
         'destinos': unicos(m.destino for m in maniobras),
     }
 

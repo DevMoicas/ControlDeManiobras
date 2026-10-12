@@ -17,7 +17,7 @@ from .Serializers import (CustomTokenObtainPairSerializer, DispositivoConfianzaS
                           NominaEmpleadoSerializer, VacacionDiaSerializer)
 from . import confianza
 from .db_context import get_db_alias
-from .dashboards import choferes_fraba
+from .dashboards import choferes_fraba, clave_ruta
 from .facturacion import religar_maniobra
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -1085,12 +1085,22 @@ def _mes(valor):
     return inicio, (inicio + timedelta(days=32)).replace(day=1)
 
 
-def _ruta(valor):
-    """'ORIGEN → DESTINO' (como la arma dashboards.ruta_de) → Q sobre las dos."""
-    partes = [p.strip() for p in valor.split('→')]
-    if len(partes) == 2:
-        return Q(origen__iexact=partes[0], destino__iexact=partes[1])
-    return Q(origen__iexact=partes[0]) | Q(destino__iexact=partes[0])
+def _ruta_texto(origen, destino):
+    """'ORIGEN → DESTINO', como lo arma dashboards.ruta_de."""
+    return ' → '.join(p for p in ((origen or '').strip(), (destino or '').strip()) if p)
+
+
+def _por_ruta(queryset, valor):
+    """Las filas de la ruta elegida en TODAS sus formas de escribirla
+    (dashboards.clave_ruta): se buscan los pares origen/destino que caen en
+    esa clave y se filtra por ellos tal cual están guardados."""
+    # ponytail: recorre los pares distintos (decenas); con miles, guardar la clave en columna.
+    clave = clave_ruta(valor)
+    q = Q(pk__in=[])
+    for o, d in queryset.values_list('origen', 'destino').distinct():
+        if clave_ruta(_ruta_texto(o, d)) == clave:
+            q |= Q(origen=o, destino=d)
+    return queryset.filter(q)
 
 
 class ManiobraFilter(django_filters.FilterSet):
@@ -1115,7 +1125,7 @@ class ManiobraFilter(django_filters.FilterSet):
                                | Q(operador_2__iexact=value.strip()))
 
     def filter_ruta(self, queryset, name, value):
-        return queryset.filter(_ruta(value))
+        return _por_ruta(queryset, value)
 
     status =django_filters.CharFilter(method="filter_status")
     # Bandera TERCERO (columna `tercero`): el front solo manda ?tercero=1 cuando
@@ -1151,13 +1161,13 @@ class ManiobraFilter(django_filters.FilterSet):
 
 def _opciones_filtro(queryset, campos_operador):
     """Operadores y rutas para los desplegables de filtro: todo lo que hay, no
-    solo la página cargada. La ruta se arma como dashboards.ruta_de."""
+    solo la página cargada. La ruta se agrupa con dashboards.clave_ruta."""
     def unicos(valores):
         return sorted({(v or '').strip() for v in valores} - {''})
     return {
         'operadores': unicos(v for c in campos_operador
                              for v in queryset.values_list(c, flat=True).distinct()),
-        'rutas': unicos(' → '.join(p for p in ((o or '').strip(), (d or '').strip()) if p)
+        'rutas': unicos(clave_ruta(_ruta_texto(o, d))
                         for o, d in queryset.values_list('origen', 'destino').distinct()),
     }
 
@@ -3398,7 +3408,7 @@ class ReporteViajeViewSet(viewsets.ModelViewSet):
             if p.get(campo):
                 qs = qs.filter(**{f'{campo}__iexact': p[campo].strip()})
         if p.get('ruta'):
-            qs = qs.filter(_ruta(p['ruta']))
+            qs = _por_ruta(qs, p['ruta'])
         return qs
 
     @action(detail=False, methods=['get'])
