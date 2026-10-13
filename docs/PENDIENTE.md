@@ -1,6 +1,6 @@
 # Pendiente
 
-Anotado el 2026-08-25 y **actualizado el 2026-09-30** al cerrar la sesión.
+Anotado el 2026-08-25 y **actualizado el 2026-10-12** al cerrar la sesión.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
@@ -772,3 +772,48 @@ Decidido por el usuario, y con ello **cerrada la P62**:
   fuera así, quien reciba hoy su primer sueldo saldría con nómina 0 en todos los meses
   anteriores. Está en `NominaViewSet._anotar_sueldo`.
 - Sin GRANT al rol estándar, como la 0067.
+
+---
+
+## 14. Sesión del 2026-10-12 — Reportes de viaje, filtros y selector de fechas. DESPLEGADO
+
+Todo está en producción, con los despliegues en verde. Las migraciones **0077** y **0078**
+están aplicadas en prod.
+
+### Hecho
+
+- **Filtros de lista** (backend `d2e0ab88`, frontend `7541395`): Reportes de viaje y
+  Maniobras filtran por fecha, rango, mes, operador y ruta (y coordinador en reportes) en
+  el servidor. El contador usa el `count` del servidor.
+- **¿Maniobra de vacío?** pasa a `si`/`no`/`no_aplica` (0077). La calcula el backend desde
+  Vacíos en cada guardado y en pantalla es de solo lectura.
+- **Selector de fechas nuevo** (frontend `e7b4d6c`): `CampoFecha` sobre `react-day-picker`
+  9.14.0 sustituye a `react-datepicker` en todo el sistema. Lleva filtro por mes, Hoy/Borrar,
+  lista de horas y escritura a mano. Dos trampas resueltas que conviene recordar:
+  - La regla global `button {color:#fff; padding:12px}` de `App.css` se cuela en cualquier
+    botón sin color propio. Por eso los meses salían en blanco.
+  - Una animación CSS sobre `transform` pisa el `transform` con el que coloca floating-ui,
+    y el calendario aparecía en (0,0). Se anima `translate` y no se pinta hasta
+    `isPositioned`.
+- **Operador y unidad solo de Fraba** (backend `401e2b2e`): los desplegables de filtro
+  ofrecen solo los operadores del catálogo `Chofer` y las unidades cuyas placas están en
+  `Tracto`.
+- **Una ruta por ruta** (backend `6aee9538`): `dashboards.clave_ruta` agrupa lo que solo
+  cambia de formato (mayúsculas, acentos, signos), y la 0078 corrigió en el dato MONTEREY,
+  SAN LUI POTOSI, SILAO, GTO (= SILAO, confirmado) y CUATITLAN IZCALLI. NUEVO LEON es un
+  destino distinto (confirmado).
+- **Origen y destino del catálogo, % de completos y porta automática** (backend `1f346c94`,
+  frontend `6d68178`): ver **ADR-0024**.
+
+### Abierto
+
+- **Catálogo de destinos en producción sin revisar.** El reporte de viaje ya solo deja
+  elegir origen y destino del catálogo. En local al catálogo de destinos le faltaban
+  `LEON`, `APODACA NL` y `SAN LUIS POTOSI`, entre otros. Un reporte que ya tenga uno de
+  esos valores lo sigue mostrando, pero uno nuevo no puede elegirlo hasta darlo de alta en
+  Catálogos. Revisar el de producción.
+- **Sin validación en el backend** de que origen y destino sean del catálogo: solo lo
+  impone el selector. Una petición directa a la API puede guardar cualquier texto.
+- **`completos` se calcula en Python** reporte a reporte. Con miles de reportes, pasar
+  el % a una columna (ADR-0024).
+
