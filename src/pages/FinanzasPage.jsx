@@ -23,24 +23,17 @@ const MODULOS = [
   { to: "/home/finanzas/dashboards", icon: LayoutDashboard, title: "Dashboards", desc: "Ventas, gastos, utilidad, cobranza, pagos, clientes, servicios, costos y rentabilidad." },
 ];
 
-const POR_CARGO = new Set([
-  "/home/finanzas/facturacion",
-  "/home/finanzas/cuentas-por-pagar",
-  "/home/finanzas/gastos-financieros",
-  "/home/finanzas/dashboards",
-]);
-
 export default function FinanzasPage() {
   const navigate = useNavigate();
-  // Estas cuatro se abren por cargo, y eso lo sabe el backend: hasta que responda
-  // no salen, para no enseñar una puerta que da 403.
+  // Todo el módulo es de admin y cargos de Finanzas (usuario, 2026-10-14), y eso
+  // lo sabe el backend: hasta que responda no sale ninguna tarjeta.
   const [verFinanzas, setVerFinanzas] = useState(false);
   useEffect(() => {
     apiClient.get("/facturas/acceso/")
       .then((a) => setVerFinanzas(Boolean(a?.ver)))
       .catch(() => setVerFinanzas(false));
   }, []);
-  const modulos = MODULOS.filter((m) => !POR_CARGO.has(m.to) || verFinanzas);
+  const modulos = verFinanzas ? MODULOS : [];
 
   return (
     <div className="home-page finanzas-page">

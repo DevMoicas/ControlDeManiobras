@@ -57,7 +57,15 @@ function Home() {
       .then((a) => setVerFolios(Boolean(a?.ver)))
       .catch(() => setVerFolios(false));
   }, []);
-  const modulos = HOME_MODULES.filter((m) => m.to !== 'folios' || verFolios);
+  // Finanzas: admin y cargos de Finanzas (comercial y dirección, usuario 2026-10-14).
+  const [verFinanzas, setVerFinanzas] = useState(false);
+  useEffect(() => {
+    apiClient.get('/facturas/acceso/')
+      .then((a) => setVerFinanzas(Boolean(a?.ver)))
+      .catch(() => setVerFinanzas(false));
+  }, []);
+  const modulos = HOME_MODULES.filter((m) =>
+    (m.to !== 'folios' || verFolios) && (m.to !== 'finanzas' || verFinanzas));
 
   return (
     <div className="home-page">
