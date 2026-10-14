@@ -817,3 +817,35 @@ están aplicadas en prod.
 - **`completos` se calcula en Python** reporte a reporte. Con miles de reportes, pasar
   el % a una columna (ADR-0024).
 
+## 15. Sesión del 2026-10-13 — Carga histórica, rendimiento diésel y filtros plegables. DESPLEGADO
+
+Todo está en producción, con los despliegues en verde. La migración **0079** está aplicada en prod.
+
+### Hecho
+
+- **Carga histórica de maniobras** desde `docs/planes/datos_a_cargar.xlsx` con
+  `PRACTICAS/cargar_maniobras_historicas.py` (fuera de los repos), lanzado por
+  `migrar_prod.sh simular-carga|cargar`. Dos lotes: **268** (2025-04 a 2026-07) y **22**
+  faltantes (2026-04 a 2026-08) tras comprobar duplicados contra prod por folio y
+  contenedor/referencia/PIS. Total en `maniobras`: **834**. Todas con
+  `created_by='carga_historica'`. Entran por el ORM, así que **no tienen vacíos, reportes de
+  viaje ni gastos automáticos**, los Full van en el formato viejo de una columna y las notas del
+  Excel quedaron en `status_piso`.
+- **Rendimiento solo para staff y dirección; rendimiento diésel a mano** (backend `edcc0b99`,
+  frontend `a4450b4`, migración 0079). Ver la nota en PLAN_REPORTE_COORDINADORES.md.
+  `GET /reportes-viaje/acceso/` le dice a la pantalla si pintar el calculado.
+- **Filtros plegables** (frontend `a044dfc`, `aeb845a`): `FiltrosLista` (Maniobras y Reportes
+  de viaje) arranca plegada tras un botón con icono de filtro que cuenta los activos, y recuerda
+  si estaba abierta por lista durante la sesión. Maniobras desmonta la lista al recargar y con
+  un `useState` el panel se cerraba a cada elección. El rango Desde/Hasta solo se aplica con
+  **las dos** fechas, en cualquier orden. Borrar una de un rango aplicado lo quita entero.
+
+### Abierto
+
+- **#4439 sin folio en prod.** Según el Excel es **F-2209**. El usuario puede ponérselo en la app.
+- **Una quemada de la carga** (fila 38 del Excel, contenedores TEMU6359246 - TGBU8666426) entró sin
+  peso porque el Excel solo decía `40 HC /`.
+- **¿Imprimir `rendimiento_diesel` en `K9`** del Excel/PDF cuando quien descarga no ve el del
+  sistema? Hoy sale vacía. Preguntado, sin respuesta.
+- **Al cambiar un filtro, Maniobras muestra "Cargando datos…"** en lugar de la tabla. Ofrecido
+  dejar la tabla en pantalla mientras carga, sin respuesta.
