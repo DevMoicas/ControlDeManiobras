@@ -1,6 +1,6 @@
 # Pendiente
 
-Anotado el 2026-08-25 y **actualizado el 2026-10-12** al cerrar la sesión.
+Anotado el 2026-08-25 y **actualizado el 2026-10-14** al cerrar la sesión.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
@@ -849,3 +849,47 @@ Todo está en producción, con los despliegues en verde. La migración **0079** 
   sistema? Hoy sale vacía. Preguntado, sin respuesta.
 - **Al cambiar un filtro, Maniobras muestra "Cargando datos…"** en lugar de la tabla. Ofrecido
   dejar la tabla en pantalla mientras carga, sin respuesta.
+
+## 16. Sesión del 2026-10-14 — Vacaciones compartidas, folios automáticos y candados de Finanzas. DESPLEGADO
+
+Todo está en producción, con los despliegues en verde. La migración **0080** está aplicada en
+prod. Backend `24080a5c` y `82266786`; frontend `d62042a` y `4d350d6`.
+
+Desde hoy **Claude hace los commits y pushes** de los tres repos y **el usuario lanza las
+migraciones de prod** (anotado en `front/CLAUDE.md`).
+
+### Hecho
+
+- **Hovers en negro.** Listas, opciones de desplegables, calendario de fechas, botones
+  secundarios y cerrar de modales pasan a tinta `#23201c` con texto blanco: token
+  `--hover-negro` en `App.css`. Lo seleccionado o activo conserva su azul; los hovers rojos de
+  borrar/quitar y las filas de las tablas no cambian.
+- **Gastos → Unidad de solo lectura.** `GastoSerializer.unidad` sale de las placas de la
+  maniobra (`U1 / U2` en un Full); solo se cambia desde Maniobras. La columna `gastos.unidad`
+  con lo escrito a mano sigue en la base, sin mostrarse.
+- **Vacaciones compartidas y Días Tomados calculado** (0080): ver **ADR-0025**.
+- **Selector de folio en Maniobras:** solo ofrece "Asignar folio", que pone el siguiente libre.
+- **Folios:** `disponibles` genera solo el lote siguiente cuando se acaban, con
+  `select_for_update`. La página, su tarjeta del inicio, `list` y `generar` son solo para
+  **admin con cargo SISTEMAS** (`admin_de_sistemas`, `GET /folios/acceso/`). Se quitó
+  "+ Añadir folios"; queda "+ Lote anterior".
+- **Cuentas por pagar, gastos fijos** (0080, `api_gastofijo.tipo`): al dar de alta se elige
+  Variable o Fijo. Un fijo exige monto de referencia y se marca con una casilla de pagado por
+  mes en lugar de importes.
+- **Facturación con pestañas** "Auditoría" (la tabla de siempre) y "Facturación" (vacía, para
+  la tabla nueva). Auditoría es **solo admin**: listar, cargar Excel, cobrada, cancelar y
+  reactivar dan 403 al resto. Cuentas por cobrar y cobranza semanal siguen con
+  `puede_finanzas` porque alimentan los Dashboards.
+- **Módulo Finanzas solo para admin y `CARGOS_FINANZAS`** (Comercial, Directora Comercial,
+  Director General, Director Operativo): se esconde la tarjeta del inicio y el hub queda vacío
+  para el resto. Alta y edición de Costos extra pasan a exigir `puede_finanzas`; leer el
+  catálogo sigue abierto porque lo usa el selector de Maniobras.
+
+### Abierto
+
+- **Full en "Costo por unidad"**: el dashboard carga todo el costo del viaje a la U1 y la U2 no
+  recibe nada (ya era así). Preguntado si repartir, sin respuesta.
+- **Semana Santa y jornadas electorales** no se excluyen de Días Tomados (ADR-0025).
+- **El tipo Variable/Fijo** de un gasto fijo no se edita después del alta.
+- **Costos extra por URL directa**: quien no es de Finanzas ve el catálogo (solo lectura).
+- **#4439 sin folio en prod** (§15) sigue abierto.

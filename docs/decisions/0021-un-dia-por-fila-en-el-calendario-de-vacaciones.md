@@ -2,7 +2,8 @@
 
 ## Estado
 
-Aceptada
+Aceptada. El candado de un evento por día está **Superseded by**
+[ADR-0025](0025-vacaciones-compartidas-y-dias-tomados-calculados.md) (2026-10-14).
 
 ## Fecha
 
