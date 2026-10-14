@@ -40,15 +40,24 @@ CARGOS_FINANZAS = {'COMERCIAL', 'DIRECTOR GENERAL', 'DIRECTOR OPERATIVO',
 CARGOS_DIRECCION = {'DIRECTOR GENERAL', 'DIRECTOR OPERATIVO', 'DIRECTORA COMERCIAL'}
 
 
-def staff_o_cargo(usuario, cargos):
-    if usuario.is_staff:
-        return True
+def cargo_de(usuario):
+    """El cargo del empleado ligado al usuario, normalizado; '' sin empleado."""
     try:
         empleado = usuario.perfil.empleado
     except (PerfilUsuario.DoesNotExist, Empleado.DoesNotExist):
-        return False
+        return ''
     # strip/upper: empleados.cargo es texto libre editable a mano en pgAdmin.
-    return bool(empleado) and (empleado.cargo or '').strip().upper() in cargos
+    return (empleado.cargo or '').strip().upper() if empleado else ''
+
+
+def staff_o_cargo(usuario, cargos):
+    return usuario.is_staff or cargo_de(usuario) in cargos
+
+
+def admin_de_sistemas(usuario):
+    """Folios: staff Y cargo SISTEMAS, las dos (usuario, 2026-10-14). Al reves
+    que el resto, ser admin no basta."""
+    return usuario.is_staff and cargo_de(usuario) == 'SISTEMAS'
 
 
 def puede_finanzas(usuario):
@@ -410,6 +419,13 @@ class FacturaViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         # la tarjeta. Todo lo demás, solo quien puede.
         if self.action != 'acceso' and not puede_finanzas(request.user):
             raise PermissionDenied('Facturación es solo para dirección, comercial y administradores.')
+        # La tabla de facturas cargadas del Excel es la página AUDITORÍA, solo
+        # para admin (usuario, 2026-10-14). Cuentas por cobrar y cobranza siguen
+        # con Finanzas: alimentan los Dashboards.
+        if self.action in self.AUDITORIA and not request.user.is_staff:
+            raise PermissionDenied('Auditoría es solo para administradores.')
+
+    AUDITORIA = {'list', 'cargar', 'cobrada', 'cancelar', 'reactivar'}
 
     def get_queryset(self):
         qs = Factura.objects.select_related('maniobra__cliente_fk__cliente_principal')
@@ -419,6 +435,7 @@ class FacturaViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     @action(detail=False, methods=['get'])
     def acceso(self, request):
         return Response({'ver': puede_finanzas(request.user),
+                         'auditoria': request.user.is_staff,
                          'cancelar': request.user.is_staff})
 
     @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])

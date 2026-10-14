@@ -30,7 +30,8 @@ from django.test import SimpleTestCase, TestCase
 from rest_framework.test import APIClient
 
 from api.models import (Empleado, NominaEmpleado, SueldoHistorial, VacacionDia,
-                        anios_cumplidos, dias_de_vacaciones, fecha_de_ingreso)
+                        anios_cumplidos, contar_dias_tomados, dias_de_vacaciones,
+                        fecha_de_ingreso, feriados_de_ley, periodo_vacacional)
 
 NOMINA = '/api/nomina/'
 VACACIONES = '/api/vacaciones/'
@@ -304,20 +305,71 @@ class CalculosDeLaFilaTests(BaseNomina):
                          [f.name for f in NominaEmpleado._meta.get_fields()])
 
 
+class FeriadosDeLeyTests(SimpleTestCase):
+
+    def test_los_de_2026(self):
+        self.assertEqual(sorted(feriados_de_ley(2026)), [
+            date(2026, 1, 1), date(2026, 2, 2), date(2026, 3, 16), date(2026, 5, 1),
+            date(2026, 9, 16), date(2026, 11, 16), date(2026, 12, 25)])
+
+    def test_el_1_de_octubre_solo_el_año_del_cambio_de_gobierno(self):
+        self.assertIn(date(2030, 10, 1), feriados_de_ley(2030))
+        self.assertNotIn(date(2026, 10, 1), feriados_de_ley(2026))
+
+    def test_semana_santa_no_es_de_ley(self):
+        self.assertNotIn(date(2026, 4, 2), feriados_de_ley(2026))   # Jueves Santo
+        self.assertNotIn(date(2026, 4, 3), feriados_de_ley(2026))   # Viernes Santo
+
+
+class ContarDiasTomadosTests(SimpleTestCase):
+    """Los dias del calendario dentro del año de aniversario, sin feriados."""
+
+    def test_el_feriado_marcado_no_gasta_vacaciones(self):
+        """El ejemplo del usuario: se marca el periodo entero, el feriado no cuenta."""
+        dias = [date(2026, 11, 13) + timedelta(days=i) for i in range(5)]  # vie a mar
+        self.assertEqual(contar_dias_tomados(dias, date(2020, 1, 10), date(2026, 11, 20)), 4)
+
+    def test_solo_cuenta_el_año_de_aniversario_en_curso(self):
+        dias = [date(2025, 3, 9), date(2025, 3, 10), date(2026, 3, 9)]
+        # Entro el 10 de marzo: el año en curso va del 10/03/2025 al 09/03/2026.
+        self.assertEqual(contar_dias_tomados(dias, date(2020, 3, 10), date(2026, 3, 9)), 2)
+        # Y el dia del aniversario arranca de cero.
+        self.assertEqual(contar_dias_tomados(dias, date(2020, 3, 10), date(2026, 3, 10)), 0)
+
+    def test_sin_fecha_de_ingreso_cuenta_el_año_natural(self):
+        dias = [date(2025, 12, 31), date(2026, 6, 3)]
+        self.assertEqual(contar_dias_tomados(dias, None, date(2026, 7, 1)), 1)
+
+    def test_quien_entro_un_29_de_febrero(self):
+        self.assertEqual(periodo_vacacional(date(2020, 2, 29), date(2026, 3, 1)),
+                         (date(2026, 2, 28), date(2027, 2, 28)))
+
+
 class DiasTomadosTests(BaseNomina):
-    """Se capturan a mano, con la misma suma desglosada que las celdas de Gastos.
-    El calendario va aparte (usuario, 2026-09-03)."""
+    """Salen del calendario (usuario, 2026-10-14). Antes se capturaban a mano."""
 
-    def test_se_guarda_el_total_y_el_desglose_aparte(self):
-        empleado = self.empleado()
+    def test_salen_del_calendario_y_no_se_escriben(self):
+        hoy = date.today()
+        # Aniversario este mes y no después de hoy: los 3 días siguientes caen
+        # dentro del año en curso.
+        empleado = self.empleado(ingreso=date(hoy.year - 3, hoy.month, min(hoy.day, 28)))
+        dias = [hoy + timedelta(days=i) for i in range(1, 4)]
+        for d in dias:
+            VacacionDia.objects.create(fecha=d, empleado=empleado)
+        esperado = sum(1 for d in dias if d not in feriados_de_ley(d.year))
 
-        r = self.guardar(empleado, dias_tomados='8',
-                         formulas={'dias_tomados': '=5+3'})
+        r = self.guardar(empleado, dias_tomados='99')
 
         self.assertEqual(r.status_code, 200, r.data)
-        fila = NominaEmpleado.objects.get()
-        self.assertEqual(fila.dias_tomados, Decimal('8.00'))
-        self.assertEqual(fila.formulas, {'dias_tomados': '=5+3'})
+        self.assertEqual(r.data['dias_tomados'], esperado)
+        self.assertEqual(self.filas()['ANA LOPEZ']['dias_tomados'], esperado)
+        self.assertIsNone(NominaEmpleado.objects.get().dias_tomados)
+
+    def test_la_formula_vieja_no_tumba_el_guardado(self):
+        """La pantalla reenvía `formulas` entero, y las filas viejas la tienen."""
+        empleado = self.empleado()
+        r = self.guardar(empleado, sueldo='1000', formulas={'dias_tomados': '=5+3'})
+        self.assertEqual(r.status_code, 200, r.data)
 
     def test_una_formula_en_un_campo_que_no_la_admite_se_rechaza(self):
         """`formulas` es un jsonb abierto: el front no es una frontera de
@@ -383,37 +435,36 @@ class CalendarioDeVacacionesTests(BaseNomina):
         self.crear(empleado, '2026-09-07')
         self.assertEqual(VacacionDia.objects.count(), 1)
 
-    def test_dos_empleados_no_pueden_salir_el_mismo_dia(self):
-        """Es la razon de ser del calendario."""
+    def test_dos_empleados_pueden_salir_el_mismo_dia(self):
+        """Desde el 2026-10-14: hay temporadas en que salen varios. El aviso lo
+        da la pantalla antes de guardar."""
         ana = self.empleado(nombre='ANA')
         luis = self.empleado(nombre='LUIS')
         self.crear(ana, '2026-09-07')
 
         r = self.crear(luis, '2026-09-07')
+
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(VacacionDia.objects.count(), 2)
+
+    def test_el_mismo_empleado_no_repite_dia_y_se_dice_quien(self):
+        ana = self.empleado(nombre='ANA')
+        self.crear(ana, '2026-09-07')
+
+        r = self.crear(ana, '2026-09-07')
+
+        self.assertEqual(r.status_code, 400, r.data)
+        self.assertIn('ANA', str(r.data))
+
+    def test_un_dia_repetido_a_mitad_del_rango_no_deja_media_semana_puesta(self):
+        """Media alta hecha es peor que ninguna, porque nadie se entera."""
+        ana = self.empleado(nombre='ANA')
+        self.crear(ana, '2026-09-09')
+
+        r = self.crear(ana, '2026-09-07', '2026-09-11')
 
         self.assertEqual(r.status_code, 400, r.data)
         self.assertEqual(VacacionDia.objects.count(), 1)
-
-    def test_el_choque_dice_de_quien_es_el_dia(self):
-        """"Ya esta ocupado" sin decir por quien obliga a ir a buscarlo."""
-        ana = self.empleado(nombre='ANA')
-        luis = self.empleado(nombre='LUIS')
-        self.crear(ana, '2026-09-07')
-
-        r = self.crear(luis, '2026-09-07')
-
-        self.assertIn('ANA', str(r.data))
-
-    def test_un_choque_a_mitad_del_rango_no_deja_media_semana_puesta(self):
-        """Media alta hecha es peor que ninguna, porque nadie se entera."""
-        ana = self.empleado(nombre='ANA')
-        luis = self.empleado(nombre='LUIS')
-        self.crear(ana, '2026-09-09')
-
-        r = self.crear(luis, '2026-09-07', '2026-09-11')
-
-        self.assertEqual(r.status_code, 400, r.data)
-        self.assertEqual(VacacionDia.objects.count(), 1)   # solo el de ANA
 
     def test_el_rango_al_reves_se_rechaza(self):
         empleado = self.empleado()

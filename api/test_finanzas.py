@@ -209,6 +209,16 @@ class GastosFijosTests(Base):
         r = self.com.post(f"{self.URL}{g['id']}/pago/", {'mes': '2026-07', 'monto': ''}, format='json')
         self.assertIsNone(r.data['monto'])               # vaciar = no pagado
 
+    def test_un_fijo_necesita_monto_y_por_defecto_es_variable(self):
+        base = {'empresa': 'fraba', 'concepto': 'Renta'}
+        self.assertEqual(self.com.post(self.URL, {**base, 'tipo': 'fijo'}, format='json').status_code, 400)
+        g = self.com.post(self.URL, {**base, 'tipo': 'fijo', 'monto': '5000'}, format='json').data
+        self.assertEqual(g['tipo'], 'fijo')
+        # Quitarle el monto a un fijo tampoco.
+        self.assertEqual(self.com.patch(f"{self.URL}{g['id']}/", {'monto': None},
+                                        format='json').status_code, 400)
+        self.assertEqual(self.com.post(self.URL, base, format='json').data['tipo'], 'variable')
+
     def test_dia_de_pago_valido_y_borrar_solo_staff(self):
         r = self.com.post(self.URL, {'empresa': 'fraba', 'concepto': 'Renta', 'dia_pago': 40}, format='json')
         self.assertEqual(r.status_code, 400)

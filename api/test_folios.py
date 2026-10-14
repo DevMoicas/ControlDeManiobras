@@ -12,7 +12,7 @@ from django.db import connections
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from api.models import Folio, Maniobra, Vacio
+from api.models import Empleado, Folio, Maniobra, PerfilUsuario, Vacio
 
 LOTE_MZO = ['F-2279', 'R-2280', 'A-2281', 'B-2282', 'A-2283', 'C-2284', 'O-2285',
             'N-2286', 'T-2287', 'A-2288', 'I-2289', 'N-2290', 'E-2291', 'R-2292']
@@ -42,18 +42,32 @@ class BaseFolios(TestCase):
             # `vacios` tambien: desde la 0061 la maniobra lee de ahi sus fechas y su
             # patio al serializarse, asi que sin esta tabla cualquier lectura revienta.
             editor.create_model(Vacio)
+            # `empleados` para el cargo: la pantalla es de admin_de_sistemas.
+            editor.create_model(Empleado)
 
     @classmethod
     def tearDownClass(cls):
         with connections['standard'].schema_editor() as editor:
+            editor.delete_model(Empleado)
             editor.delete_model(Vacio)
             editor.delete_model(Maniobra)
         super().tearDownClass()
 
     def setUp(self):
-        self.usuario = get_user_model().objects.create_user('folios_user', password='x')
+        # Admin de Sistemas: el único que ve la pantalla de Folios.
+        self.usuario = self.cliente_de('folios_user', staff=True, cargo='Sistemas').usuario
         self.cliente = APIClient()
         self.cliente.force_authenticate(user=self.usuario)
+
+    def cliente_de(self, nombre, staff=False, cargo=None):
+        u = get_user_model().objects.create_user(nombre, password='x', is_staff=staff)
+        if cargo is not None:
+            PerfilUsuario.objects.create(
+                usuario=u, empleado=Empleado.objects.create(nombre_trabajador=nombre, cargo=cargo))
+        c = APIClient()
+        c.force_authenticate(user=u)
+        c.usuario = u
+        return c
 
     def generar(self, tabla):
         return self.cliente.post('/api/folios/generar/', {'tabla': tabla}, format='json')
@@ -232,11 +246,41 @@ class FoliosTests(BaseFolios):
     # ── Borrado ──────────────────────────────────────────────────────────
     def test_solo_un_admin_puede_borrar(self):
         folio_id = self.generar('manzanillo').data[0]['id']
-        self.assertEqual(self.cliente.delete(f'/api/folios/{folio_id}/').status_code, 403)
-
-        self.usuario.is_staff = True
-        self.usuario.save()
+        self.assertEqual(self.cliente_de('capt').delete(f'/api/folios/{folio_id}/').status_code, 403)
         self.assertEqual(self.cliente.delete(f'/api/folios/{folio_id}/').status_code, 204)
+
+
+class AccesoFoliosTests(BaseFolios):
+    """La pantalla es de staff con cargo SISTEMAS; lo que usa Maniobras, de todos."""
+
+    def test_admin_sin_cargo_sistemas_no_entra(self):
+        for c in (self.cliente_de('admin', staff=True),
+                  self.cliente_de('admin2', staff=True, cargo='Director General'),
+                  self.cliente_de('sist', cargo='SISTEMAS')):
+            self.assertEqual(c.get('/api/folios/?tabla=manzanillo').status_code, 403)
+            self.assertEqual(c.post('/api/folios/generar/', {'tabla': 'manzanillo'},
+                                    format='json').status_code, 403)
+            self.assertFalse(c.get('/api/folios/acceso/').data['ver'])
+
+    def test_el_cargo_se_compara_sin_mayusculas_ni_espacios(self):
+        c = self.cliente_de('s2', staff=True, cargo=' sistemas ')
+        self.assertEqual(c.get('/api/folios/?tabla=manzanillo').status_code, 200)
+        self.assertTrue(c.get('/api/folios/acceso/').data['ver'])
+
+    def test_un_capturista_no_escribe_la_asignacion(self):
+        lote = self.generar('manzanillo').data
+        r = self.cliente_de('capt').patch(f'/api/folios/{lote[0]["id"]}/',
+                                          {'asignacion': 'x'}, format='json')
+        self.assertEqual(r.status_code, 403)
+
+    def test_maniobras_sigue_pudiendo_lo_suyo(self):
+        """Buscar por código, renombrar (marcar un Full) y pedir el siguiente."""
+        lote = self.generar('manzanillo').data
+        c = self.cliente_de('capt')
+        self.assertEqual(c.get('/api/folios/?codigo=F-2279').status_code, 200)
+        self.assertEqual(c.patch(f'/api/folios/{lote[0]["id"]}/', {'codigo': 'F-2279-2'},
+                                 format='json').status_code, 200)
+        self.assertEqual(c.get('/api/folios/disponibles/?tabla=manzanillo').status_code, 200)
 
 
 class FoliosEnManiobrasTests(BaseFolios):
@@ -251,11 +295,25 @@ class FoliosEnManiobrasTests(BaseFolios):
     def disponibles(self, tabla):
         return self.cliente.get(f'/api/folios/disponibles/?tabla={tabla}')
 
-    # ── Los 5 disponibles ────────────────────────────────────────────────
-    def test_ofrece_los_5_primeros_en_orden(self):
+    # ── El siguiente disponible ──────────────────────────────────────────
+    def test_ofrece_solo_el_siguiente(self):
         self.generar('manzanillo')
         self.assertEqual([f['codigo'] for f in self.disponibles('manzanillo').data],
-                         LOTE_MZO[:5])
+                         LOTE_MZO[:1])
+
+    def test_sin_folios_libres_genera_el_lote_siguiente(self):
+        """Ya no se añaden a mano: al gastarse el último sale el lote siguiente."""
+        self.generar('manzanillo')
+        for codigo in LOTE_MZO:
+            Maniobra.objects.create(solicita='prueba', folio=codigo)
+        self.assertEqual(self.disponibles('manzanillo').data[0]['codigo'], 'F-2293')
+        self.assertEqual(Folio.objects.filter(tabla='manzanillo').count(), 28)
+        # La segunda vez ya hay libres: no se genera otro.
+        self.disponibles('manzanillo')
+        self.assertEqual(Folio.objects.filter(tabla='manzanillo').count(), 28)
+
+    def test_con_la_tabla_vacia_arranca_en_el_primer_numero(self):
+        self.assertEqual(self.disponibles('lazaro').data[0]['codigo'], 'F-LCR-323')
 
     def test_un_folio_usado_por_una_maniobra_desaparece_de_la_lista(self):
         """El corazón de la función: sin columna de estado, "usado" se deriva de
@@ -263,7 +321,7 @@ class FoliosEnManiobrasTests(BaseFolios):
         self.generar('manzanillo')
         Maniobra.objects.create(solicita='prueba', folio='F-2279')
         self.assertEqual([f['codigo'] for f in self.disponibles('manzanillo').data],
-                         LOTE_MZO[1:6])
+                         LOTE_MZO[1:2])
 
     def test_vaciar_el_folio_de_la_maniobra_lo_devuelve_a_la_lista(self):
         """Cambiar de plaza vacía el folio en el frontend; tiene que volver a
@@ -281,7 +339,7 @@ class FoliosEnManiobrasTests(BaseFolios):
         self.cliente.patch(f'/api/folios/{lote[0]["id"]}/',
                            {'asignacion': 'viaje de marzo'}, format='json')
         self.assertEqual([f['codigo'] for f in self.disponibles('manzanillo').data],
-                         LOTE_MZO[1:6])
+                         LOTE_MZO[1:2])
 
     def test_vaciar_la_asignacion_lo_devuelve_a_la_lista(self):
         lote = self.generar('manzanillo').data
@@ -302,7 +360,7 @@ class FoliosEnManiobrasTests(BaseFolios):
         self.generar('manzanillo')
         self.generar('lazaro')
         self.assertEqual([f['codigo'] for f in self.disponibles('lazaro').data],
-                         ['F-LCR-323', 'R-LCR-324', 'A-LCR-325', 'B-LCR-326', 'A-LCR-327'])
+                         ['F-LCR-323'])
 
     def test_disponibles_con_tabla_invalida_es_400(self):
         self.assertEqual(self.disponibles('otra_cosa').status_code, 400)

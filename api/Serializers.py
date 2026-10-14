@@ -544,6 +544,14 @@ class GastoSerializer(serializers.ModelSerializer):
     # El N+1 ya lo cubre el select_related('maniobra') del GastoViewSet.
     operador = serializers.CharField(source='maniobra.asignacion_operador_status', read_only=True)
     destino = serializers.CharField(source='maniobra.destino', read_only=True)
+    # Las placas de la maniobra, igual que operador y destino: solo se cambian en
+    # Maniobras (usuario, 2026-10-14). Tapa a la columna `gastos.unidad`, que era
+    # texto libre y se queda en la base sin leerse. Un Full lleva las dos.
+    unidad = serializers.SerializerMethodField()
+
+    def get_unidad(self, obj):
+        m = obj.maniobra
+        return ' / '.join(u for u in (m.unidad, m.unidad_2) if u) if m else ''
 
     class Meta:
         model = Gasto
@@ -1080,9 +1088,10 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
 
 
 # ── Nómina ───────────────────────────────────────────────────────────────────
-# Solo DÍAS TOMADOS admite fórmula: es la única celda que se captura sumando
-# —tres días en marzo más dos en agosto—. El sueldo y el finiquito son un
-# importe, no un desglose de renglones.
+# Solo DÍAS TOMADOS admitía fórmula. Desde el 2026-10-14 se calcula del
+# calendario y ya no se escribe, pero se sigue aceptando la clave: las filas
+# viejas la guardan y la pantalla reenvía `formulas` entero en cada PATCH, así
+# que quitarla tumbaría con un 400 hasta el guardado de un sueldo.
 CAMPOS_CON_FORMULA_NOMINA = frozenset({'dias_tomados'})
 
 
@@ -1111,6 +1120,10 @@ class NominaEmpleadoSerializer(serializers.ModelSerializer):
     dias_vacaciones  = serializers.SerializerMethodField()
     prima_vacacional = serializers.SerializerMethodField()
     sueldo_diario    = serializers.SerializerMethodField()
+    # Los días del calendario de vacaciones en el año de aniversario, sin los
+    # feriados de ley (usuario, 2026-10-14). Tapa a la columna `dias_tomados`,
+    # que se capturaba a mano y se queda en la base sin leerse.
+    dias_tomados     = serializers.SerializerMethodField()
 
     class Meta:
         model  = NominaEmpleado
@@ -1129,6 +1142,13 @@ class NominaEmpleadoSerializer(serializers.ModelSerializer):
 
     def get_dias_vacaciones(self, obj):
         return obj.dias_vacaciones()
+
+    def get_dias_tomados(self, obj):
+        # La lista pasa {empleado_id: [fechas]} en el contexto: una consulta para
+        # toda la tabla en vez de una por empleado.
+        por_empleado = self.context.get('vacaciones')
+        fechas = None if por_empleado is None else por_empleado.get(obj.empleado_id, [])
+        return obj.dias_tomados_calendario(fechas)
 
     def get_prima_vacacional(self, obj):
         # str() y no un número: DRF serializa los DecimalField como cadena
@@ -1174,6 +1194,9 @@ class VacacionDiaSerializer(serializers.ModelSerializer):
     class Meta:
         model  = VacacionDia
         fields = ('id', 'fecha', 'empleado', 'empleado_nombre', 'nota', 'color')
+        # Sin el UniqueTogetherValidator automático del UniqueConstraint: su
+        # mensaje no dice de quién es el día. Lo hace validate().
+        validators = []
 
     def validate_nota(self, valor):
         return valor or ''
@@ -1184,24 +1207,23 @@ class VacacionDiaSerializer(serializers.ModelSerializer):
         return validar_color_de_fila(valor) or ''
 
     def validate(self, attrs):
-        """Un día ocupado se rechaza diciendo POR QUIÉN.
+        """El mismo empleado no puede tener dos veces el mismo día.
 
-        El UNIQUE de la columna es lo que de verdad impide el solape —y lo que
-        hace que dos peticiones simultáneas no puedan colar dos—, pero saltaría
-        como IntegrityError, o sea un 500 en pantalla. Esto lo convierte en un
-        400 que se puede leer. La regla existe justo para eso: que dos empleados
-        no salgan los mismos días.
+        Que OTRO empleado ya lo tenga se permite desde la 0080: el calendario
+        avisa antes de guardar, y aquí no se vuelve a preguntar. El UNIQUE
+        (fecha, empleado) es lo que de verdad lo impide; esto convierte su
+        IntegrityError (un 500) en un 400 que se puede leer.
         """
-        fecha = attrs.get('fecha')
-        if fecha is None:
+        fecha = attrs.get('fecha', getattr(self.instance, 'fecha', None))
+        empleado = attrs.get('empleado', getattr(self.instance, 'empleado', None))
+        if fecha is None or empleado is None:
             return attrs
-        ocupados = VacacionDia.objects.filter(fecha=fecha)
+        repetidos = VacacionDia.objects.filter(fecha=fecha, empleado=empleado)
         if self.instance is not None:
-            ocupados = ocupados.exclude(pk=self.instance.pk)
-        ocupado = ocupados.select_related('empleado').first()
-        if ocupado is not None:
+            repetidos = repetidos.exclude(pk=self.instance.pk)
+        if repetidos.exists():
             raise serializers.ValidationError({
-                'detail': 'El %s ya lo tiene %s.' % (
-                    fecha.strftime('%d/%m/%Y'), ocupado.empleado.nombre_trabajador),
+                'detail': '%s ya tiene vacaciones el %s.' % (
+                    empleado.nombre_trabajador, fecha.strftime('%d/%m/%Y')),
             })
         return attrs

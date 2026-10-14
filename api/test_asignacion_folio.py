@@ -16,6 +16,8 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from api.models import Chofer, Folio, Gasto, Maniobra, Vacio
+from api.models import START_NUMERO
+from api.views import FolioViewSet
 
 URL = '/api/maniobras/'
 
@@ -51,7 +53,8 @@ class BaseAsignacion(TestCase):
         self.usuario = get_user_model().objects.create_user('capturista', password='x')
         self.cliente = APIClient()
         self.cliente.force_authenticate(user=self.usuario)
-        self.cliente.post('/api/folios/generar/', {'tabla': 'manzanillo'}, format='json')
+        # Directo y no por /generar/, que es solo de admin de Sistemas.
+        FolioViewSet._lote('manzanillo', START_NUMERO['manzanillo'])
 
     def patch(self, maniobra_id, **campos):
         return self.cliente.patch('%s%s/' % (URL, maniobra_id), campos, format='json')
@@ -136,10 +139,9 @@ class SeEscribeTests(BaseAsignacion):
         self.assertEqual(len(self.asignacion()), 40)
 
     def test_el_servicio_pisa_lo_escrito_a_mano(self):
-        lote = self.cliente.get('/api/folios/?tabla=manzanillo').data
-        fid = next(f['id'] for f in lote if f['codigo'] == 'F-2279')
-        self.cliente.patch('/api/folios/%s/' % fid, {'asignacion': 'apunte viejo'},
-                           format='json')
+        # El apunte a mano es cosa de la pantalla de Folios (admin de Sistemas):
+        # se escribe directo.
+        Folio.objects.filter(codigo='F-2279').update(asignacion='apunte viejo')
 
         m = Maniobra.objects.create(solicita='PRUEBA',
                                     asignacion_operador_status='ANTONIO FRANCO')

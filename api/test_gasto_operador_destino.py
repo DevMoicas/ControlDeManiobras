@@ -31,5 +31,13 @@ class GastoOperadorDestinoTests(SimpleTestCase):
         campos = GastoSerializer().fields
         self.assertTrue(campos["operador"].read_only)
         self.assertTrue(campos["destino"].read_only)
-        # `unidad`, en cambio, sí es texto libre del propio gasto.
-        self.assertFalse(campos["unidad"].read_only)
+        # `unidad` también desde el 2026-10-14: son las placas de la maniobra.
+        self.assertTrue(campos["unidad"].read_only)
+
+    def test_la_unidad_son_las_placas_de_la_maniobra(self):
+        sencillo = GastoSerializer(Gasto(maniobra=Maniobra(unidad="ABC123"),
+                                         unidad="texto viejo")).data
+        self.assertEqual(sencillo["unidad"], "ABC123")
+        full = GastoSerializer(Gasto(maniobra=Maniobra(unidad="ABC123", unidad_2="XYZ789"))).data
+        self.assertEqual(full["unidad"], "ABC123 / XYZ789")
+        self.assertEqual(GastoSerializer(Gasto(maniobra=Maniobra())).data["unidad"], "")

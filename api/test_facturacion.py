@@ -90,7 +90,19 @@ class AccesoTests(Base):
             self.usuario(f'c{i}', cargo=cargo) for i, cargo in enumerate(
                 ['Comercial', ' director general ', 'DIRECTOR OPERATIVO', 'Directora Comercial'])]
         for c in clientes:
-            self.assertEqual(c.get(URL).status_code, 200)
+            self.assertEqual(c.get(f'{URL}cuentas-por-cobrar/').status_code, 200)
+            self.assertTrue(c.get(f'{URL}acceso/').data['ver'])
+
+    def test_auditoria_solo_admin(self):
+        """La tabla de facturas (Auditoría) es solo de admin desde el 2026-10-14;
+        los cargos de Finanzas siguen viendo cuentas por cobrar y cobranza."""
+        com = self.usuario('com', cargo='Director General')
+        self.assertEqual(com.get(URL).status_code, 403)
+        self.assertEqual(self.cargar(com, xlsx(fila())).status_code, 403)
+        self.assertFalse(com.get(f'{URL}acceso/').data['auditoria'])
+        admin = self.usuario('admin', staff=True)
+        self.assertEqual(admin.get(URL).status_code, 200)
+        self.assertTrue(admin.get(f'{URL}acceso/').data['auditoria'])
 
     def test_cerrado_por_defecto(self):
         sin_perfil = self.usuario('a')
@@ -102,7 +114,8 @@ class AccesoTests(Base):
         for c in (sin_perfil, otro_cargo, sin_empleado):
             self.assertEqual(c.get(URL).status_code, 403)
             self.assertEqual(self.cargar(c, xlsx(fila())).status_code, 403)
-            self.assertEqual(c.get(f'{URL}acceso/').data, {'ver': False, 'cancelar': False})
+            self.assertEqual(c.get(f'{URL}acceso/').data,
+                             {'ver': False, 'auditoria': False, 'cancelar': False})
 
     def test_el_uuid_no_sale_nunca(self):
         c = self.usuario('admin', staff=True)
@@ -113,7 +126,8 @@ class AccesoTests(Base):
 class CargaTests(Base):
 
     def setUp(self):
-        self.c = self.usuario('com', cargo='COMERCIAL')
+        # Cargar el Excel es de Auditoría: solo admin.
+        self.c = self.usuario('admin', staff=True)
 
     def test_omite_y_explica_lo_que_no_entra(self):
         r = self.cargar(self.c, xlsx(
@@ -268,12 +282,13 @@ class CuentasPorCobrarTests(Base):
 
     def test_marcar_cobrada_con_el_texto_que_manda_el_frontend(self):
         f = self.factura('a', 1)
-        com = self.usuario('com', cargo='COMERCIAL')
+        com = self.usuario('admin', staff=True)   # cobrada es de Auditoría: solo admin
         self.assertEqual(com.post(f'{URL}{f.id}/cobrada/', {'cobrada': 'true'}, format='json').status_code, 200)
         self.assertTrue(Factura.objects.get(pk=f.pk).cobrada)
         self.assertEqual(com.post(f'{URL}{f.id}/cobrada/', {'cobrada': 'quiza'}, format='json').status_code, 400)
-        self.assertEqual(self.usuario('coord', cargo='Coordinador')
-                         .post(f'{URL}{f.id}/cobrada/', {'cobrada': 'false'}, format='json').status_code, 403)
+        for nombre, cargo in (('coord', 'Coordinador'), ('comer', 'COMERCIAL')):
+            self.assertEqual(self.usuario(nombre, cargo=cargo)
+                             .post(f'{URL}{f.id}/cobrada/', {'cobrada': 'false'}, format='json').status_code, 403)
 
     def test_cobranza_por_semana_de_emision(self):
         from datetime import date

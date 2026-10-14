@@ -260,12 +260,20 @@ def falta_pago(periodicidad, meses_pagados, mes):
 class GastoFijoSerializer(serializers.ModelSerializer):
     class Meta:
         model = GastoFijo
-        fields = ['id', 'empresa', 'concepto', 'dia_pago', 'monto', 'periodicidad']
+        fields = ['id', 'empresa', 'concepto', 'dia_pago', 'monto', 'periodicidad', 'tipo']
 
     def validate_dia_pago(self, valor):
         if valor is not None and not 1 <= valor <= 31:
             raise serializers.ValidationError('Del 1 al 31.')
         return valor
+
+    def validate(self, attrs):
+        # Un fijo paga su monto cada mes: sin monto, marcar un mes no guardaria nada.
+        tipo = attrs.get('tipo', getattr(self.instance, 'tipo', 'variable'))
+        monto = attrs['monto'] if 'monto' in attrs else getattr(self.instance, 'monto', None)
+        if tipo == 'fijo' and monto is None:
+            raise serializers.ValidationError({'detail': 'Un gasto fijo necesita su monto.'})
+        return attrs
 
 
 class GastoFijoViewSet(SoloFinanzasMixin, SoloStaffBorraMixin, viewsets.ModelViewSet):

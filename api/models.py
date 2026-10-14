@@ -585,6 +585,62 @@ def anios_cumplidos(ingreso, hoy=None):
     return max(anios, 0)
 
 
+def _lunes(anio, mes, n):
+    """El n-esimo lunes del mes."""
+    primero = date(anio, mes, 1)
+    return primero + timedelta(days=(-primero.weekday()) % 7 + 7 * (n - 1))
+
+
+def feriados_de_ley(anio):
+    """Descanso obligatorio del art. 74 de la LFT (usuario, 2026-10-14).
+
+    Semana Santa NO esta: no es de ley. Tampoco las jornadas electorales
+    (fraccion IX), que no tienen fecha fija: si un dia de esos cae en unas
+    vacaciones, se descuenta.
+    """
+    dias = {
+        date(anio, 1, 1),
+        _lunes(anio, 2, 1),      # Constitucion
+        _lunes(anio, 3, 3),      # Natalicio de Benito Juarez
+        date(anio, 5, 1),
+        date(anio, 9, 16),
+        _lunes(anio, 11, 3),     # Revolucion
+        date(anio, 12, 25),
+    }
+    if (anio - 2024) % 6 == 0:   # transmision del Ejecutivo Federal: 2024, 2030...
+        dias.add(date(anio, 10, 1))
+    return dias
+
+
+def _aniversario(ingreso, anio):
+    try:
+        return ingreso.replace(year=anio)
+    except ValueError:           # entro un 29 de febrero
+        return date(anio, 2, 28)
+
+
+def periodo_vacacional(ingreso, hoy=None):
+    """[inicio, fin) del año de aniversario en curso: es lo que renueva los dias
+    de vacaciones. Sin fecha de ingreso, el año natural."""
+    hoy = hoy or date.today()
+    if ingreso is None:
+        return date(hoy.year, 1, 1), date(hoy.year + 1, 1, 1)
+    inicio = _aniversario(ingreso, hoy.year)
+    if inicio > hoy:
+        inicio = _aniversario(ingreso, hoy.year - 1)
+    return inicio, _aniversario(ingreso, inicio.year + 1)
+
+
+def contar_dias_tomados(fechas, ingreso, hoy=None):
+    """Dias del calendario de vacaciones dentro del año de aniversario, sin los
+    feriados de ley: el feriado se marca en el calendario para que se vea el
+    periodo entero, pero no gasta vacaciones (usuario, 2026-10-14). Cuenta
+    tambien los dias ya programados de ese año que aun no llegan."""
+    inicio, fin = periodo_vacacional(ingreso, hoy)
+    return sum(1 for f in fechas
+               if inicio <= f < fin and f not in feriados_de_ley(f.year))
+
+
 class NominaEmpleado(models.Model):
     """Lo que la nomina CAPTURA de cada empleado. Uno por empleado.
 
@@ -636,6 +692,14 @@ class NominaEmpleado(models.Model):
 
     def dias_vacaciones(self, hoy=None):
         return dias_de_vacaciones(self.anios(hoy))
+
+    def dias_tomados_calendario(self, fechas=None, hoy=None):
+        """`fechas` las pasa la lista ya agrupadas, para no consultar una vez
+        por empleado; sin ellas se leen aqui."""
+        if fechas is None:
+            fechas = VacacionDia.objects.filter(
+                empleado_id=self.empleado_id).values_list('fecha', flat=True)
+        return contar_dias_tomados(fechas, fecha_de_ingreso(self.empleado), hoy)
 
     def sueldo_mensual(self):
         """Semanal × 4 (usuario, 2026-10-06). Es tambien lo que cuesta al mes en
@@ -698,15 +762,17 @@ class SueldoHistorial(models.Model):
 
 
 class VacacionDia(models.Model):
-    """Un dia de vacaciones en el calendario de la nomina.
+    """Un dia de vacaciones de un empleado en el calendario de la nomina.
 
-    UNA fila por DIA, y no un rango con inicio y fin: la regla es que dos
-    empleados no salgan el mismo dia, y con `fecha` unica la impone la BASE. Con
-    rangos habria que buscar solapes a mano en cada escritura, y dos peticiones
-    simultaneas podrian colar dos. El modal captura un rango y crea sus dias de
-    una vez, asi que registrar una semana sigue siendo un solo gesto.
+    UNA fila por DIA y EMPLEADO, y no un rango: asi la base impide que alguien
+    tenga el mismo dia dos veces y contar los dias tomados es contar filas. El
+    modal captura un rango y crea sus dias de una vez.
+
+    Hasta la 0080 `fecha` era unica —dos empleados no podian salir el mismo
+    dia—. Ya no (usuario, 2026-10-14): hay temporadas en que salen varios, y el
+    calendario solo AVISA antes de juntar a dos.
     """
-    fecha = models.DateField(unique=True)
+    fecha = models.DateField()
     # db_constraint=False por lo mismo que NominaEmpleado.empleado.
     empleado = models.ForeignKey(
         'api.Empleado', on_delete=models.CASCADE,
@@ -721,7 +787,9 @@ class VacacionDia(models.Model):
 
     class Meta:
         managed  = True
-        ordering = ['fecha']
+        ordering = ['fecha', 'id']
+        constraints = [models.UniqueConstraint(fields=['fecha', 'empleado'],
+                                               name='vacacion_un_dia_por_empleado')]
 
     def __str__(self):
         return f"{self.fecha} — {self.empleado.nombre_trabajador}"
@@ -1271,6 +1339,10 @@ class GastoFijo(models.Model):
     dia_pago = models.PositiveSmallIntegerField(null=True, blank=True)
     monto = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     periodicidad = models.PositiveSmallIntegerField(choices=PERIODICIDADES, default=1)
+    # Variable: cada mes se captura lo pagado. Fijo: siempre es `monto`, asi que
+    # el mes solo se marca como pagado y se guarda ese monto (usuario, 2026-10-14).
+    TIPOS = [('variable', 'Variable'), ('fijo', 'Fijo')]
+    tipo = models.CharField(max_length=10, choices=TIPOS, default='variable')
 
     created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)

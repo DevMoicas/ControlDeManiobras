@@ -18,7 +18,7 @@ from .Serializers import (CustomTokenObtainPairSerializer, DispositivoConfianzaS
 from . import confianza
 from .db_context import get_db_alias
 from .dashboards import choferes_fraba, clave_ruta
-from .facturacion import religar_maniobra, ve_rendimiento
+from .facturacion import admin_de_sistemas, religar_maniobra, ve_rendimiento
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
@@ -30,6 +30,7 @@ import tempfile
 import logging
 import io
 from datetime import date, datetime, timedelta, timezone as dt_timezone
+from collections import defaultdict
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -2151,6 +2152,29 @@ class FolioViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
 
+    # La pantalla de Folios es solo de admin_de_sistemas (usuario, 2026-10-14):
+    # la tabla entera, los lotes a mano y la ASIGNACIÓN escrita a mano. Lo demás
+    # sigue abierto porque lo usa Maniobras: `?codigo=` y el renombrado del
+    # código al marcar un Full, y `disponibles`.
+    def _solo_sistemas(self, request):
+        if not admin_de_sistemas(request.user):
+            raise PermissionDenied('Folios es solo para administradores de Sistemas.')
+
+    def list(self, request, *args, **kwargs):
+        if not request.query_params.get('codigo'):
+            self._solo_sistemas(request)
+        return super().list(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        # partial_update pasa por aquí también.
+        if 'asignacion' in request.data:
+            self._solo_sistemas(request)
+        return super().update(request, *args, **kwargs)
+
+    @action(detail=False, methods=['get'])
+    def acceso(self, request):
+        return Response({'ver': admin_de_sistemas(request.user)})
+
     def perform_update(self, serializer):
         """Renombrar un folio arrastra a la maniobra que lo tenía asignado.
 
@@ -2206,13 +2230,32 @@ class FolioViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='disponibles')
     def disponibles(self, request):
-        """Los 5 siguientes folios de `tabla` que ninguna maniobra está usando.
+        """El siguiente folio de `tabla` que ninguna maniobra está usando.
 
-        Alimenta el desplegable de la columna FOLIO en Maniobras.
+        Alimenta el "Asignar folio" de la columna FOLIO en Maniobras: solo se
+        ofrece el siguiente (usuario, 2026-10-14). Si ya no queda ninguno libre
+        se genera aquí mismo el lote siguiente, así que hacia adelante los
+        folios ya no se añaden a mano.
         """
         tabla = request.query_params.get('tabla')
         if tabla not in dict(Folio.TABLA_CHOICES):
             return Response({'detail': 'tabla inválida.'}, status=status.HTTP_400_BAD_REQUEST)
+        libre = self._libres(tabla).first()
+        if libre is None:
+            # using=get_db_alias(): ver generar(). El lock sobre la última fila
+            # serializa dos aperturas a la vez; la segunda vuelve a mirar y ya
+            # encuentra el lote que creó la primera.
+            with transaction.atomic(using=get_db_alias()):
+                ultimo = (Folio.objects.select_for_update()
+                          .filter(tabla=tabla).order_by('-numero').first())
+                libre = self._libres(tabla).first()
+                if libre is None:
+                    self._lote(tabla, ultimo.numero + 1 if ultimo else START_NUMERO[tabla])
+                    libre = self._libres(tabla).first()
+        return Response(FolioSerializer([libre] if libre else [], many=True).data)
+
+    @staticmethod
+    def _libres(tabla):
 
         # ponytail: "usado" se deriva de maniobras.folio/folio_2, sin columna de
         # estado — así vaciar o borrar una maniobra libera sus folios sola. Sin
@@ -2232,10 +2275,20 @@ class FolioViewSet(viewsets.ModelViewSet):
         # y marcar los que ya se usaron fuera del sistema, sin columna de estado.
         # `asignacion` es blank/default='' y validate_asignacion normaliza null a
         # '', así que "vacío" siempre es '' y no hace falta mirar NULL.
-        libres = (Folio.objects.filter(tabla=tabla, asignacion='')
-                  .exclude(codigo__in=usados)
-                  .order_by('numero')[:5])
-        return Response(FolioSerializer(libres, many=True).data)
+        return (Folio.objects.filter(tabla=tabla, asignacion='')
+                .exclude(codigo__in=usados)
+                .order_by('numero'))
+
+    @staticmethod
+    def _lote(tabla, desde):
+        """Los 14 folios desde `desde`. Las letras salen de LETRAS_CICLO por
+        índice DENTRO del lote, así que todo lote empieza en F."""
+        formato = FORMATO_CODIGO[tabla]
+        return Folio.objects.bulk_create([
+            Folio(tabla=tabla, numero=desde + i, letra=letra,
+                  codigo=formato.format(letra=letra, numero=desde + i))
+            for i, letra in enumerate(LETRAS_CICLO)
+        ])
 
     @action(detail=False, methods=['post'], url_path='generar')
     def generar(self, request):
@@ -2251,9 +2304,11 @@ class FolioViewSet(viewsets.ModelViewSet):
         Las letras salen de LETRAS_CICLO por índice DENTRO del lote, así que un
         lote hacia atrás también empieza en F.
 
-        Abierto a cualquier usuario autenticado — confirmado con el usuario,
-        igual que el resto de altas/ediciones; solo destroy() se reserva a admin.
+        Solo admin_de_sistemas desde el 2026-10-14: hacia adelante ya se
+        generan solos (ver disponibles), así que a mano queda cargar talonarios
+        viejos.
         """
+        self._solo_sistemas(request)
         tabla = request.data.get('tabla')
         if tabla not in dict(Folio.TABLA_CHOICES):
             return Response({'detail': 'tabla inválida.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -2290,13 +2345,7 @@ class FolioViewSet(viewsets.ModelViewSet):
                 # la tabla desde el admin (y es lo que hace arrancable el test, que
                 # corre con las migraciones de `api` saltadas).
                 siguiente = ultimo.numero + 1 if ultimo else START_NUMERO[tabla]
-            formato = FORMATO_CODIGO[tabla]
-            nuevos = [
-                Folio(tabla=tabla, numero=siguiente + i, letra=letra,
-                      codigo=formato.format(letra=letra, numero=siguiente + i))
-                for i, letra in enumerate(LETRAS_CICLO)
-            ]
-            creados = Folio.objects.bulk_create(nuevos)
+            creados = self._lote(tabla, siguiente)
 
         return Response(FolioSerializer(creados, many=True).data,
                         status=status.HTTP_201_CREATED)
@@ -3542,7 +3591,16 @@ class NominaViewSet(SoloAdminMixin, viewsets.ViewSet):
 
     def list(self, request):
         filas = [self._fila(e) for e in self._empleados()]
-        return Response(NominaEmpleadoSerializer(filas, many=True).data)
+        # Para DÍAS TOMADOS. Un año de aniversario empieza como mucho 366 días
+        # atrás y acaba como mucho 366 adelante.
+        hoy = date.today()
+        vacaciones = defaultdict(list)
+        for empleado_id, fecha in VacacionDia.objects.filter(
+                fecha__gte=hoy - timedelta(days=366),
+                fecha__lt=hoy + timedelta(days=366)).values_list('empleado_id', 'fecha'):
+            vacaciones[empleado_id].append(fecha)
+        return Response(NominaEmpleadoSerializer(
+            filas, many=True, context={'vacaciones': vacaciones}).data)
 
     def partial_update(self, request, pk=None):
         """PATCH /api/nomina/{empleado_id}/ — captura sueldo, días o finiquito.
