@@ -19,8 +19,10 @@ export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinad
   const [opciones, setOpciones] = useState({});
   // Plegados por defecto, se abren con el botón (usuario, 2026-10-13). El
   // número del botón avisa de los que siguen aplicados con el panel cerrado.
-  const [abierto, setAbierto] = useState(false);
+  // Abierto si ya hay filtros: Maniobras desmonta la lista (y esto) mientras
+  // recarga al cambiar un filtro, y sin esto el panel se cerraba a cada elección.
   const activos = Object.values(filtros).filter(Boolean).length;
+  const [abierto, setAbierto] = useState(activos > 0);
   useEffect(() => {
     apiClient.get(`${endpoint}opciones/`).then(setOpciones).catch(() => {});
   }, [endpoint]);
