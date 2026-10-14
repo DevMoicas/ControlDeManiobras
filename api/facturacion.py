@@ -35,7 +35,12 @@ CARGOS_FINANZAS = {'COMERCIAL', 'DIRECTOR GENERAL', 'DIRECTOR OPERATIVO',
                       'DIRECTORA COMERCIAL'}
 
 
-def puede_finanzas(usuario):
+# El rendimiento que calcula el sistema en Reportes de Viaje: staff y dirección,
+# sin Comercial (usuario, 2026-10-13).
+CARGOS_DIRECCION = {'DIRECTOR GENERAL', 'DIRECTOR OPERATIVO', 'DIRECTORA COMERCIAL'}
+
+
+def staff_o_cargo(usuario, cargos):
     if usuario.is_staff:
         return True
     try:
@@ -43,7 +48,15 @@ def puede_finanzas(usuario):
     except (PerfilUsuario.DoesNotExist, Empleado.DoesNotExist):
         return False
     # strip/upper: empleados.cargo es texto libre editable a mano en pgAdmin.
-    return bool(empleado) and (empleado.cargo or '').strip().upper() in CARGOS_FINANZAS
+    return bool(empleado) and (empleado.cargo or '').strip().upper() in cargos
+
+
+def puede_finanzas(usuario):
+    return staff_o_cargo(usuario, CARGOS_FINANZAS)
+
+
+def ve_rendimiento(usuario):
+    return staff_o_cargo(usuario, CARGOS_DIRECCION)
 
 
 # ── Serie + folio ────────────────────────────────────────────────────────────

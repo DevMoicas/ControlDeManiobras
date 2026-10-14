@@ -1528,6 +1528,12 @@ class ReporteViaje(models.Model):
     # max_digits=6: hasta 9999.99 km/lt. Un camión real anda por 2-4.
     rendimiento = models.DecimalField(max_digits=6, decimal_places=2,
                                       null=True, blank=True, editable=False)
+    # El que calcula el coordinador A MANO, sin ver el de arriba (que solo ven
+    # staff y dirección): sirve para comparar su trabajo con el del sistema
+    # (usuario, 2026-10-13). Nunca se recalcula.
+    rendimiento_diesel = models.DecimalField(max_digits=6, decimal_places=2,
+                                             null=True, blank=True,
+                                             validators=[MinValueValidator(0)])
 
     # SIN USO desde el 2026-09-29, cuando el reporte paso a mandar siempre sobre
     # gastos.gasto_diesel (ver volcar_diesel_al_gasto). Era la memoria que

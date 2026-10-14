@@ -181,6 +181,8 @@ class ReporteViajeTests(BaseReporte):
     def test_el_rendimiento_suma_el_diesel_de_todas_las_cargas(self):
         """El rendimiento es del viaje entero, no de una parada: 880 km entre los
         300 + 100 litros de las dos cargas."""
+        self.usuario.is_staff = True  # el rendimiento del sistema solo lo ven staff y dirección
+        self.usuario.save()
         r = self.crear(
             km_inicial=124500, km_final=125380,
             cargas=[{'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80'},
@@ -189,6 +191,8 @@ class ReporteViajeTests(BaseReporte):
         self.assertEqual(r.data['rendimiento'], '2.20')
 
     def test_el_rendimiento_es_none_sin_km_o_sin_litros(self):
+        self.usuario.is_staff = True  # el rendimiento del sistema solo lo ven staff y dirección
+        self.usuario.save()
         r = self.crear(cargas=[{'orden': 1, 'litros_diesel': '300'}])
         self.assertIsNone(r.data['rendimiento'])
 
@@ -338,6 +342,8 @@ class ReporteViajeDocumentoTests(BaseReporte):
 
     def test_los_calculados_van_como_numero_y_no_como_texto(self):
         """Si salieran como cadena, el Excel no los sumaría ni los formatearía."""
+        self.usuario.is_staff = True  # el rendimiento del sistema solo lo ven staff y dirección
+        self.usuario.save()
         rid = self.crear(
             km_inicial=124500, km_final=125380,
             cargas=[{'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80'}],
@@ -790,3 +796,35 @@ class ReporteViajeAvanceTests(BaseReporte):
         self.crear(folio='A-3', coordinador='Ali')
         self.assertEqual((self.cliente.get(URL).data['count'], self.cliente.get(URL).data['completos']), (3, 2))
         self.assertEqual(self.cliente.get(f'{URL}?coordinador=Ali').data['completos'], 1)
+
+
+class RendimientoSoloDireccionTests(BaseReporte):
+    """El rendimiento del sistema solo para staff y dirección; el coordinador
+    captura el suyo en `rendimiento_diesel` sin verlo (usuario, 2026-10-13)."""
+
+    def viaje(self, **extra):
+        return self.crear(km_inicial=124500, km_final=125380, cargas=[
+            {'orden': 1, 'litros_diesel': '300', 'precio_litro': '24.80'}], **extra)
+
+    def test_el_coordinador_no_lo_ve_ni_en_la_respuesta_ni_en_el_documento(self):
+        r = self.viaje(rendimiento_diesel='2.90')
+        self.assertNotIn('rendimiento', r.data)
+        self.assertEqual(r.data['rendimiento_diesel'], '2.90')
+        # Se sigue calculando y guardando, aunque no lo vea.
+        self.assertEqual(ReporteViaje.objects.get().rendimiento, Decimal('2.93'))
+        doc = self.cliente.get(f"{URL}{r.data['id']}/documento/?formato=excel")
+        self.assertIn(load_workbook(BytesIO(doc.content)).worksheets[0]['K9'].value, (None, ''))
+        self.assertFalse(self.cliente.get(f'{URL}acceso/').data['rendimiento'])
+
+    def test_un_director_si_lo_ve(self):
+        from api.models import Empleado, PerfilUsuario
+        with connections['standard'].schema_editor() as editor:
+            editor.create_model(Empleado)
+        try:
+            e = Empleado.objects.create(nombre_trabajador='D', cargo=' director general ')
+            PerfilUsuario.objects.create(usuario=self.usuario, empleado=e)
+            self.assertEqual(self.viaje().data['rendimiento'], '2.93')
+            self.assertTrue(self.cliente.get(f'{URL}acceso/').data['rendimiento'])
+        finally:
+            with connections['standard'].schema_editor() as editor:
+                editor.delete_model(Empleado)

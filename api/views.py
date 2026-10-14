@@ -18,7 +18,7 @@ from .Serializers import (CustomTokenObtainPairSerializer, DispositivoConfianzaS
 from . import confianza
 from .db_context import get_db_alias
 from .dashboards import choferes_fraba, clave_ruta
-from .facturacion import religar_maniobra
+from .facturacion import religar_maniobra, ve_rendimiento
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
@@ -3422,6 +3422,12 @@ class ReporteViajeViewSet(viewsets.ModelViewSet):
         if p.get('ruta'):
             qs = _por_ruta(qs, p['ruta'])
         return qs
+
+    @action(detail=False, methods=['get'])
+    def acceso(self, request):
+        """Si quien pide ve el rendimiento del sistema: la pantalla lo calcula
+        en vivo y necesita saber si pintarlo antes de guardar nada."""
+        return Response({'rendimiento': ve_rendimiento(request.user)})
 
     @action(detail=False, methods=['get'])
     def opciones(self, request):

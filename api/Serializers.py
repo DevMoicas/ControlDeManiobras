@@ -13,7 +13,7 @@ from django.db.models import Q
 from django_otp import devices_for_user, match_token
 from .db_context import get_db_alias
 from . import confianza
-from .facturacion import puede_finanzas
+from .facturacion import puede_finanzas, ve_rendimiento
 
 class TractoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -928,6 +928,18 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
         f.name for f in ReporteViaje._meta.get_fields()
         if isinstance(f, (models.CharField, models.TextField))
     )
+
+    def get_fields(self):
+        """`rendimiento` (el del sistema) solo para staff y dirección: el
+        coordinador captura el suyo en `rendimiento_diesel` sin verlo (usuario,
+        2026-10-13). Se quita aquí y no solo en la pantalla, que no es defensa:
+        la respuesta se lee en la consola. Sin `request` (usos internos) sale.
+        Afecta también al Excel/PDF, que se llena con este serializer."""
+        campos = super().get_fields()
+        peticion = self.context.get('request')
+        if peticion is not None and not ve_rendimiento(peticion.user):
+            campos.pop('rendimiento', None)
+        return campos
 
     def _tipos_tracto(self):
         # Una consulta por respuesta, no por reporte: con many=True el contexto
