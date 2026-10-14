@@ -18,7 +18,7 @@ from .Serializers import (CustomTokenObtainPairSerializer, DispositivoConfianzaS
 from . import confianza
 from .db_context import get_db_alias
 from .dashboards import choferes_fraba, clave_ruta
-from .facturacion import admin_de_sistemas, religar_maniobra, ve_rendimiento
+from .facturacion import admin_de_sistemas, puede_finanzas, religar_maniobra, ve_rendimiento
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
@@ -2122,6 +2122,13 @@ class CostoExtraViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes     = [IsAuthenticated]
     throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        # Dar de alta o editar es de Finanzas (admin y CARGOS_FINANZAS, usuario
+        # 2026-10-14). Leer sigue abierto: el selector de Maniobras lo usa.
+        if self.action in ('create', 'update', 'partial_update') and not puede_finanzas(request.user):
+            raise PermissionDenied('Costos extra es solo para Finanzas.')
 
     def destroy(self, request, *args, **kwargs):
         if not request.user.is_staff:

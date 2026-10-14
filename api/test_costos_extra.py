@@ -69,16 +69,33 @@ class BaseCostosExtra(TestCase):
 
 class CatalogoTests(BaseCostosExtra):
 
+    def setUp(self):
+        super().setUp()
+        # Alta y edición son de Finanzas: admin o CARGOS_FINANZAS.
+        self.finanzas = APIClient()
+        self.finanzas.force_authenticate(
+            user=get_user_model().objects.create_user('costos_fz', password='x', is_staff=True))
+
     def test_alta_y_listado(self):
-        respuesta = self.cliente.post(
+        respuesta = self.finanzas.post(
             '/api/costos-extra/', {'movimiento': 'Maniobra especial', 'costo': '1200.50'},
             format='json',
         )
         self.assertEqual(respuesta.status_code, 201)
         self.assertEqual(Decimal(respuesta.data['costo']), Decimal('1200.50'))
 
+    def test_fuera_de_finanzas_lee_pero_no_escribe(self):
+        """El selector de Maniobras lee el catálogo; dar de alta o editar no."""
+        self.assertEqual(self.cliente.get('/api/costos-extra/').status_code, 200)
+        alta = self.cliente.post('/api/costos-extra/', {'movimiento': 'X', 'costo': '1'}, format='json')
+        self.assertEqual(alta.status_code, 403)
+        edicion = self.cliente.patch(f'/api/costos-extra/{self.grua.id}/', {'costo': '1'}, format='json')
+        self.assertEqual(edicion.status_code, 403)
+        self.grua.refresh_from_db()
+        self.assertEqual(self.grua.costo, Decimal('500.00'))
+
     def test_costo_negativo_rechazado(self):
-        respuesta = self.cliente.post(
+        respuesta = self.finanzas.post(
             '/api/costos-extra/', {'movimiento': 'Descuento', 'costo': '-1'}, format='json',
         )
         self.assertEqual(respuesta.status_code, 400)
