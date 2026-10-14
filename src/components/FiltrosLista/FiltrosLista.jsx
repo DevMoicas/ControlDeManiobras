@@ -15,26 +15,42 @@ import "../Dashboards/Dashboards.css";
 export const conValor = (filtros) => Object.fromEntries(
   Object.entries(filtros).filter(([, v]) => v));
 
+// Si el panel está abierto, por lista. Fuera del componente porque Maniobras lo
+// desmonta mientras recarga al cambiar un filtro: con un useState se cerraba a
+// cada elección. Plegado la primera vez (usuario, 2026-10-13).
+const abiertos = {};
+
 export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinador = false }) {
   const [opciones, setOpciones] = useState({});
   // Plegados por defecto, se abren con el botón (usuario, 2026-10-13). El
   // número del botón avisa de los que siguen aplicados con el panel cerrado.
-  // Abierto si ya hay filtros: Maniobras desmonta la lista (y esto) mientras
-  // recarga al cambiar un filtro, y sin esto el panel se cerraba a cada elección.
   const activos = Object.values(filtros).filter(Boolean).length;
-  const [abierto, setAbierto] = useState(activos > 0);
+  const [abierto, setAbiertoLocal] = useState(abiertos[endpoint] ?? activos > 0);
+  const setAbierto = (a) => setAbiertoLocal((abiertos[endpoint] = a));
+  // Desde/Hasta: el rango se aplica solo con LAS DOS fechas, en cualquier
+  // orden (usuario, 2026-10-13). Mientras falte una vive aquí y no recarga.
+  const [rango, setRango] = useState({ desde: filtros.desde || "", hasta: filtros.hasta || "" });
   useEffect(() => {
     apiClient.get(`${endpoint}opciones/`).then(setOpciones).catch(() => {});
   }, [endpoint]);
 
-  const poner = (campo, valor) => onChange({ ...filtros, [campo]: valor });
+  const poner = (campo, valor) => {
+    if (!(campo in rango)) return onChange({ ...filtros, [campo]: valor });
+    const nuevo = { ...rango, [campo]: valor };
+    setRango(nuevo);
+    if (nuevo.desde && nuevo.hasta) onChange({ ...filtros, ...nuevo });
+    // Se deshizo un rango ya aplicado: se quita entero.
+    else if (filtros.desde || filtros.hasta) onChange({ ...filtros, desde: "", hasta: "" });
+  };
+  const valor = (campo) => (campo in rango ? rango[campo] : filtros[campo]);
+  const limpiar = () => { setRango({ desde: "", hasta: "" }); onChange({}); };
   // CampoFecha y no <input type="date">: el del navegador movía la fecha al
   // cambiar de mes con las flechas, y cada movimiento recargaba la lista.
   const entrada = (campo, etiqueta, modo) => (
     <label>{etiqueta}
       <CampoFecha
         modo={modo}
-        selected={modo === "mes" ? aDate(filtros[campo] && `${filtros[campo]}-01`) : aDate(filtros[campo])}
+        selected={modo === "mes" ? aDate(valor(campo) && `${valor(campo)}-01`) : aDate(valor(campo))}
         onChange={(d) => poner(campo, modo === "mes" ? (aBackend(d) || "").slice(0, 7) : aBackend(d) || "")}
         placeholderText={modo === "mes" ? "MM/AAAA" : "DD/MM/AAAA"}
         isClearable
@@ -53,7 +69,7 @@ export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinad
   const boton = (
     <button type="button" className="db-filtros-boton" aria-expanded={abierto}
             title={abierto ? "Ocultar filtros" : "Mostrar filtros"}
-            onClick={() => setAbierto((a) => !a)}>
+            onClick={() => setAbierto(!abierto)}>
       <Filter size={16} /> Filtros{activos > 0 && <span className="db-filtros-n">{activos}</span>}
     </button>
   );
@@ -70,8 +86,8 @@ export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinad
       {conCoordinador && select("coordinador", "Coordinador", opciones.coordinadores)}
       {select("operador", "Operador", opciones.operadores)}
       {select("ruta", "Ruta", opciones.rutas)}
-      {Object.values(filtros).some(Boolean) && (
-        <button type="button" className="db-limpiar" onClick={() => onChange({})}>
+      {Object.values({ ...filtros, ...rango }).some(Boolean) && (
+        <button type="button" className="db-limpiar" onClick={limpiar}>
           Limpiar filtros
         </button>
       )}
