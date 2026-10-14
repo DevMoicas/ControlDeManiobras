@@ -145,3 +145,28 @@
   font-size: 13px;
   cursor: pointer;
 }
+
+/* Botón que pliega/despliega FiltrosLista. */
+.db-filtros-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 13px;
+  cursor: pointer;
+}
+.db-filtros-boton[aria-expanded="true"] { background: #f3f4f6; }
+.db-filtros-n {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #1f2937;
+  color: #fff;
+  font-size: 11px;
+  text-align: center;
+}

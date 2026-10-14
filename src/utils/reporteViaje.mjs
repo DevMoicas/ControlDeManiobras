@@ -144,7 +144,7 @@ export const REPORTE_VACIO = {
   cita: null, salida_puerto: null, inicio_pactado: null, salida_real: null,
   unidad: "", remolque_1: "", remolque_2: "", km_inicial: "", km_final: "",
   llegada_cliente: null, descarga: null,
-  litros_aceite: "", precio_aceite: "",
+  litros_aceite: "", precio_aceite: "", rendimiento_diesel: "",
   reparacion: null, reparacion_que: "", reparacion_costo: "",
   rescate: null, rescate_unidad: "", rescate_operador: "",
   llegada_manzanillo: null, maniobra_vacio: null,
@@ -168,7 +168,7 @@ export function cargasConDatos(cargas) {
 // mandan como null, que es lo que significa "sin capturar".
 const NUMERICOS = [
   "km_inicial", "km_final", "litros_aceite", "precio_aceite",
-  "reparacion_costo", "estadias_horas",
+  "reparacion_costo", "estadias_horas", "rendimiento_diesel",
 ];
 
 export function paraGuardar(reporte) {

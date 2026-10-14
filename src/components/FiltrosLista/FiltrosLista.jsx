@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Filter } from "lucide-react";
 import { apiClient } from "../../api/apiClient";
 import CampoFecha from "../CampoFecha/CampoFecha";
 import { aDate, aBackend } from "../CeldaEditable/fechaCelda.mjs";
@@ -16,6 +17,10 @@ export const conValor = (filtros) => Object.fromEntries(
 
 export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinador = false }) {
   const [opciones, setOpciones] = useState({});
+  // Plegados por defecto, se abren con el botón (usuario, 2026-10-13). El
+  // número del botón avisa de los que siguen aplicados con el panel cerrado.
+  const [abierto, setAbierto] = useState(false);
+  const activos = Object.values(filtros).filter(Boolean).length;
   useEffect(() => {
     apiClient.get(`${endpoint}opciones/`).then(setOpciones).catch(() => {});
   }, [endpoint]);
@@ -43,7 +48,18 @@ export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinad
     </label>
   );
 
+  const boton = (
+    <button type="button" className="db-filtros-boton" aria-expanded={abierto}
+            title={abierto ? "Ocultar filtros" : "Mostrar filtros"}
+            onClick={() => setAbierto((a) => !a)}>
+      <Filter size={16} /> Filtros{activos > 0 && <span className="db-filtros-n">{activos}</span>}
+    </button>
+  );
+  if (!abierto) return boton;
+
   return (
+    <>
+    {boton}
     <div className="db-filtros">
       {entrada("fecha", "Fecha", "fecha")}
       {entrada("desde", "Desde", "fecha")}
@@ -58,5 +74,6 @@ export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinad
         </button>
       )}
     </div>
+    </>
   );
 }

@@ -5,6 +5,7 @@ import { useReportesViaje } from "../hooks/useReportesViaje";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import { useAuthContext } from "../context/AuthContext";
+import { apiClient } from "../api/apiClient";
 import FolioSelector from "../components/FolioSelector/FolioSelector";
 import PatioSelector from "../components/PatioSelector/PatioSelector";
 import PlacasSelector from "../components/PlacasSelector/PlacasSelector";
@@ -118,6 +119,14 @@ export default function ReporteViajePage() {
   const [busqueda, setBusqueda] = useState("");
   const [buscar, setBuscar] = useState("");   // la búsqueda, 350 ms después
   const [filtros, setFiltros] = useState({});
+  // El rendimiento del sistema solo para staff y dirección (usuario,
+  // 2026-10-13). Ocultarlo aquí es comodidad: quien de verdad lo quita es el
+  // backend (ReporteViajeSerializer.get_fields). Ante la duda, oculto.
+  const [verRendimiento, setVerRendimiento] = useState(false);
+  useEffect(() => {
+    apiClient.get("/reportes-viaje/acceso/")
+      .then((a) => setVerRendimiento(a.rendimiento)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setBuscar(busqueda.trim()), 350);
@@ -583,7 +592,12 @@ export default function ReporteViajePage() {
         </div>
 
         <div className="rv-rejilla">
-          <Calculado label="Rendimiento" valor={mostrarNumero(rend, " km/lt")} />
+          {verRendimiento && <Calculado label="Rendimiento" valor={mostrarNumero(rend, " km/lt")} />}
+          {/* El del coordinador, a mano: se compara con el del sistema. */}
+          <Campo label="Rendimiento diésel (km/lt)">
+            <input type="number" step="0.01" min="0" value={abierto.rendimiento_diesel ?? ""}
+                   onChange={(e) => cambiar("rendimiento_diesel", e.target.value)} />
+          </Campo>
           <Campo label="Lt aceite">
             <input type="number" step="0.01" min="0" value={abierto.litros_aceite ?? ""}
                    onChange={(e) => cambiar("litros_aceite", e.target.value)} />
