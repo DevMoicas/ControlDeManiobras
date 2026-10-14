@@ -62,7 +62,7 @@
   cursor: pointer;
   transition: background-color 120ms ease;
 }
-.cv-cerrar:hover { background: #f1f5f9; }
+.cv-cerrar:hover { background: var(--hover-negro); color: #fff; }
 
 /* ── Navegación de mes ────────────────────────────────────────────────────── */
 
@@ -96,7 +96,7 @@
   cursor: pointer;
   transition: background-color 120ms ease, border-color 120ms ease;
 }
-.cv-flecha:hover:not(:disabled) { border-color: var(--primary); background: #f4f8ff; }
+.cv-flecha:hover:not(:disabled) { border-color: var(--hover-negro); background: var(--hover-negro); color: #fff; }
 /* Enero y diciembre: el calendario es de un año, no de una línea infinita. */
 .cv-flecha:disabled { opacity: 0.35; cursor: default; }
 
@@ -158,8 +158,15 @@
 }
 
 .cv-numero {
+  align-self: flex-start;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
   font-size: 0.8rem;
   color: #8a97ab;
+  cursor: pointer;
 }
 
 /* El rectángulo del evento, bajo el número: el mismo gesto visual que un
@@ -168,6 +175,11 @@
    se volvería ilegible sobre media paleta. */
 .cv-evento {
   display: block;
+  width: 100%;
+  border: 0;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
   padding: 3px 7px;
   border-radius: 7px;
   font-size: 0.74rem;
@@ -302,7 +314,7 @@
   background: #fff;
   color: var(--text);
 }
-.cv-btn-cancelar:hover:not(:disabled) { background: #f1f5f9; }
+.cv-btn-cancelar:hover:not(:disabled) { background: var(--hover-negro); color: #fff; }
 
 .cv-btn-borrar {
   display: inline-flex;

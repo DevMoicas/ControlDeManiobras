@@ -7,6 +7,7 @@ import { useInactivityTimer } from './hooks/useInactivityTimer';
 import InactivityModal from './components/InactivityModal/InactivityModal';
 import logoFraba from './pages/Logo Fraba.png';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
+import { apiClient } from './api/apiClient';
 import CatalogosPage from './pages/CatalogosPage';
 import DocumentosViajePage from './pages/DocumentosViajePage';
 import ManiobrasPage from './pages/ManiobrasPage';
@@ -48,6 +49,15 @@ const HOME_MODULES = [
 function Home() {
   const navigate = useNavigate();
   const { alertas, error: errorAlertas } = useAlertasVencimiento();
+  // Folios solo para admin con cargo Sistemas (usuario, 2026-10-14). Lo decide
+  // el backend; hasta que conteste la tarjeta no sale, como en Finanzas.
+  const [verFolios, setVerFolios] = useState(false);
+  useEffect(() => {
+    apiClient.get('/folios/acceso/')
+      .then((a) => setVerFolios(Boolean(a?.ver)))
+      .catch(() => setVerFolios(false));
+  }, []);
+  const modulos = HOME_MODULES.filter((m) => m.to !== 'folios' || verFolios);
 
   return (
     <div className="home-page">
@@ -99,7 +109,7 @@ function Home() {
         </div>
 
         <div className="grid">
-          {HOME_MODULES.map(({ to, icon: Icon, title, desc }, i) => (
+          {modulos.map(({ to, icon: Icon, title, desc }, i) => (
             <button
               key={to}
               className="card"

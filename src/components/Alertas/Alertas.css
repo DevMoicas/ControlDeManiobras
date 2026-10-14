@@ -108,7 +108,7 @@
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
 }
-.al-cerrar:hover { background: #f1f5f9; color: var(--al-tinta); }
+.al-cerrar:hover { background: var(--hover-negro); color: #fff; }
 .al-cerrar:focus-visible {
   outline: 2px solid var(--al-acento);
   outline-offset: 1px;

@@ -71,7 +71,9 @@ const COLUMNAS = [
   // GastoSerializer). No se editan aquí: se cambian en Maniobras.
   { key: "operador", label: "Operador", readOnly: true },
   { key: "destino", label: "Destino", readOnly: true },
-  { key: "unidad", label: "Unidad", max: 100 },
+  // Las placas de la maniobra (U1 / U2 en un Full), igual que operador y
+  // destino: se llenan al crear el gasto y solo se cambian en Maniobras.
+  { key: "unidad", label: "Unidad", readOnly: true },
 ];
 
 // Columnas DecimalField: se muestran como moneda y, al vaciarlas, viajan como

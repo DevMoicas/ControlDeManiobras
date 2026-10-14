@@ -51,7 +51,7 @@
   font-weight: 500;
   transition: background 0.1s;
 }
-.pps-item:hover         { background: #f7f9fc; }
+.pps-item:hover         { background: var(--hover-negro); color: #fff; }
 .pps-item--selected     { font-weight: 700; }
 .pps-item--pendiente    { color: #b45309; }
 .pps-item--pagado       { color: #15803d; }

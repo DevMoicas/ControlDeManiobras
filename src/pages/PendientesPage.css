@@ -145,8 +145,14 @@
 }
 
 .pd-item:hover {
-  background: #f8fafc;
+  background: var(--hover-negro);
+  color: #fff;
 }
+/* Sobre el negro: texto en blanco y la papelera en un rojo claro que se lea.
+   Los ya hechos conservan su verde (.pd-item--hecho). */
+.pd-item:not(.pd-item--hecho):hover .pd-texto { color: inherit; }
+.pd-item:not(.pd-item--hecho):hover .pd-borrar { color: #fca5a5; }
+.pd-item:not(.pd-item--hecho):hover .pd-borrar:hover { color: #b42318; }
 
 /* Verde pastel solo al marcar; sin marcar no se pinta. */
 .pd-item--hecho,
@@ -278,7 +284,8 @@
 }
 
 .pd-agregar:hover {
-  background: var(--primary-light);
+  background: var(--hover-negro);
+  color: #fff;
 }
 
 .pd-agregar:focus-visible {

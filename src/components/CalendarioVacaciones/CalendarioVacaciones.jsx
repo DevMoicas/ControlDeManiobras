@@ -14,11 +14,10 @@ import "./CalendarioVacaciones.css";
 /**
  * El calendario de vacaciones de la nómina.
  *
- * UN evento por día y no más: es la regla que pidió el usuario para que dos
- * empleados no salgan a la vez, y la impone la BASE (`fecha` es unique). Aquí no
- * se comprueba nada por adelantado a propósito — dos pestañas abiertas la
- * burlarían — sino que se enseña el 400 del servidor, que además dice de quién
- * es el día.
+ * Varios empleados pueden compartir día desde el 2026-10-14 (antes la base lo
+ * impedía): hay temporadas en que salen varios. Antes de juntar a dos se AVISA,
+ * con lo que ya está cargado; no se bloquea. Lo único que la base sigue
+ * impidiendo es que el mismo empleado tenga dos veces el mismo día.
  *
  * El año entero se pide UNA vez y se navega en memoria: son 365 filas como
  * mucho, y una petición por mes haría parpadear la rejilla en cada flecha.
@@ -75,12 +74,13 @@ export default function CalendarioVacaciones({ onCerrar }) {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  // Índice fecha → evento. Se recalcula solo cuando cambian los días, no en
-  // cada repintado de la rejilla.
-  const porFecha = useMemo(
-    () => Object.fromEntries(dias.map((d) => [d.fecha, d])),
-    [dias],
-  );
+  // Índice fecha → eventos de ese día. Se recalcula solo cuando cambian los
+  // días, no en cada repintado de la rejilla.
+  const porFecha = useMemo(() => {
+    const indice = {};
+    for (const d of dias) (indice[d.fecha] ??= []).push(d);
+    return indice;
+  }, [dias]);
 
   const celdas = useMemo(() => celdasDelMes(mes), [mes]);
 
@@ -92,11 +92,20 @@ export default function CalendarioVacaciones({ onCerrar }) {
     setMes(`${anio}-${String(siguiente).padStart(2, "0")}`);
   };
 
-  const abrirDia = (fecha) => {
-    const existente = porFecha[fecha];
-    setBorrador(existente
-      ? { ...existente, desde: existente.fecha, hasta: existente.fecha }
-      : { desde: fecha, hasta: fecha, empleado: null, empleado_nombre: "", nota: "", color: "" });
+  const nuevoEn = (fecha) =>
+    setBorrador({ desde: fecha, hasta: fecha, empleado: null, empleado_nombre: "", nota: "", color: "" });
+  const editar = (evento) =>
+    setBorrador({ ...evento, desde: evento.fecha, hasta: evento.fecha });
+
+  // ¿Otro empleado ya tiene algún día del rango? Se mira en lo cargado, que es
+  // el año entero: es un aviso, no una regla, así que no hace falta el servidor.
+  const otrosEnElRango = () => {
+    const nombres = new Set();
+    for (const [fecha, eventos] of Object.entries(porFecha)) {
+      if (fecha < borrador.desde || fecha > borrador.hasta) continue;
+      for (const e of eventos) if (e.empleado !== borrador.empleado) nombres.add(e.empleado_nombre);
+    }
+    return [...nombres];
   };
 
   const guardar = async () => {
@@ -104,6 +113,13 @@ export default function CalendarioVacaciones({ onCerrar }) {
       alerta({ tipo: "error", msg: "Elige de quién son las vacaciones." });
       return;
     }
+    const otros = otrosEnElRango();
+    if (otros.length && !await preguntar({
+      titulo: "Vacaciones en las mismas fechas",
+      mensaje: "Ya existen vacaciones asignadas para otro empleado en estas fechas, ¿Seguro que quieres continuar?",
+      dato: otros.join(", "),
+      accion: "Sí",
+    })) return;
     setGuardando(true);
     try {
       if (borrador.id) {
@@ -125,7 +141,7 @@ export default function CalendarioVacaciones({ onCerrar }) {
       await cargar();
       setBorrador(null);
     } catch (error) {
-      // El backend responde con `detail` diciendo qué día choca y de quién es.
+      // El backend responde con `detail` si el empleado ya tenía ese día.
       alerta({ tipo: "error", msg: error.message || "No se pudo guardar." });
     } finally {
       setGuardando(false);
@@ -194,28 +210,41 @@ export default function CalendarioVacaciones({ onCerrar }) {
 
             {celdas.map((fecha, i) => {
               if (!fecha) return <div key={`hueco-${i}`} className="cv-celda cv-celda-hueca" />;
-              const evento = porFecha[fecha];
-              const fondo = evento ? (evento.color || COLOR_POR_DEFECTO) : null;
+              // La celda es un div y no un botón porque lleva dentro un botón
+              // por empleado (editar) y uno para dar de alta: un botón dentro de
+              // otro no es HTML válido. El clic en el hueco libre también da de
+              // alta, por comodidad; el teclado va por el número.
               return (
-                <button
+                <div
                   key={fecha}
-                  type="button"
                   className={`cv-celda ${fecha === hoy ? "cv-celda-hoy" : ""}`}
-                  onClick={() => abrirDia(fecha)}
-                  title={evento
-                    ? `${evento.empleado_nombre}${evento.nota ? ` — ${evento.nota}` : ""}`
-                    : "Registrar vacaciones"}
+                  onClick={() => nuevoEn(fecha)}
                 >
-                  <span className="cv-numero">{Number(fecha.slice(8))}</span>
-                  {evento && (
-                    <span
-                      className="cv-evento"
-                      style={{ background: fondo, color: textoSobre(fondo) }}
-                    >
-                      {evento.empleado_nombre}
-                    </span>
-                  )}
-                </button>
+                  <button
+                    type="button"
+                    className="cv-numero"
+                    onClick={(e) => { e.stopPropagation(); nuevoEn(fecha); }}
+                    aria-label={`Registrar vacaciones el ${fecha.split("-").reverse().join("/")}`}
+                    title="Registrar vacaciones"
+                  >
+                    {Number(fecha.slice(8))}
+                  </button>
+                  {(porFecha[fecha] ?? []).map((evento) => {
+                    const fondo = evento.color || COLOR_POR_DEFECTO;
+                    return (
+                      <button
+                        key={evento.id}
+                        type="button"
+                        className="cv-evento"
+                        style={{ background: fondo, color: textoSobre(fondo) }}
+                        onClick={(e) => { e.stopPropagation(); editar(evento); }}
+                        title={`${evento.empleado_nombre}${evento.nota ? ` — ${evento.nota}` : ""}`}
+                      >
+                        {evento.empleado_nombre}
+                      </button>
+                    );
+                  })}
+                </div>
               );
             })}
           </div>
@@ -223,7 +252,7 @@ export default function CalendarioVacaciones({ onCerrar }) {
         </div>
 
         <p className="cv-nota">
-          Un solo empleado por día: es lo que evita que dos salgan de vacaciones a la vez.
+          Los feriados de ley se pueden marcar, pero no se descuentan de los días tomados.
         </p>
 
         {/* ── Alta y edición de un día ───────────────────────────────── */}

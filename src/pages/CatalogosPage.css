@@ -111,9 +111,9 @@
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .noeco-container .noeco-admin-btn:hover {
-  background: #f7f9fc;
-  border-color: #c7d9f7;
-  color: var(--primary-blue);
+  background: var(--hover-negro);
+  border-color: var(--hover-negro);
+  color: #fff;
   transform: none; /* anula el scale(1.05) del button global de App.css */
 }
 .noeco-container .noeco-admin-btn:focus-visible {
@@ -167,8 +167,8 @@
   transition: background 0.15s, color 0.15s;
 }
 .noeco-container .tab-button:hover {
-  background: var(--primary-soft);
-  color: var(--primary-blue);
+  background: var(--hover-negro);
+  color: #fff;
   transform: none;
 }
 .noeco-container .tab-button.active,
@@ -324,9 +324,9 @@
 }
 .noeco-container .btn-edit { color: var(--primary-blue); }
 .noeco-container .btn-edit:hover {
-  background: var(--primary-soft);
-  border-color: #bfdbfe;
-  color: var(--primary-blue);
+  background: var(--hover-negro);
+  border-color: var(--hover-negro);
+  color: #fff;
   transform: none;
 }
 /* Eliminar conserva el rojo en hover: el button:hover global de App.css lo

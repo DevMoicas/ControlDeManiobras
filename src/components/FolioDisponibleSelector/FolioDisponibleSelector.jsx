@@ -6,9 +6,10 @@ import "./FolioDisponibleSelector.css";
 
 /**
  * FolioDisponibleSelector
- * Los 5 siguientes folios LIBRES de la tabla que toca (Manzanillo o Lázaro).
- * "Libre" = ningún registro de maniobras lo tiene asignado; lo decide el backend
- * en GET /folios/disponibles/.
+ * "Asignar folio" pone el siguiente folio LIBRE de la tabla que toca (Manzanillo
+ * o Lázaro); ya no se elige de una lista (usuario, 2026-10-14). "Libre" = ningún
+ * registro de maniobras lo tiene asignado; lo decide el backend en
+ * GET /folios/disponibles/, que además genera el lote siguiente si se acabaron.
  *
  * No confundir con FolioSelector (components/FolioSelector), que lista maniobras
  * recientes para autollenar documentos: eso es otra cosa.
@@ -22,7 +23,6 @@ import "./FolioDisponibleSelector.css";
 export default function FolioDisponibleSelector({ tabla, currentValue, onSelect, disabled }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState(null);
-  const [folios, setFolios] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
   const containerRef = useRef(null);
@@ -41,17 +41,25 @@ export default function FolioDisponibleSelector({ tabla, currentValue, onSelect,
     if (open) actualizarCoords();
   }, [open]);
 
-  // apiClient.get, NO getCatalogo: el caché de 45s serviría folios que otro
-  // usuario ya tomó. Aquí "libre" tiene que significar libre AHORA.
-  useEffect(() => {
-    if (!open || !tabla) return;
+  // Se pide al pulsar y no al abrir: "libre" tiene que significar libre AHORA.
+  // apiClient.get, NO getCatalogo: el caché de 45s serviría uno que otro
+  // usuario ya tomó. Si dos lo toman a la vez, el serializer de la maniobra
+  // rechaza el segundo con un mensaje, como antes.
+  const asignar = async () => {
     setCargando(true);
     setError(null);
-    apiClient.get(`/folios/disponibles/?tabla=${tabla}`)
-      .then((res) => setFolios(Array.isArray(res) ? res : (res?.results ?? [])))
-      .catch(() => setError("Error al cargar folios"))
-      .finally(() => setCargando(false));
-  }, [open, tabla]);
+    try {
+      const res = await apiClient.get(`/folios/disponibles/?tabla=${tabla}`);
+      const siguiente = (Array.isArray(res) ? res : (res?.results ?? []))[0];
+      if (!siguiente) throw new Error();
+      setOpen(false);
+      onSelect(siguiente.codigo);
+    } catch {
+      setError("No se pudo asignar el folio");
+    } finally {
+      setCargando(false);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -86,7 +94,7 @@ export default function FolioDisponibleSelector({ tabla, currentValue, onSelect,
     onSelect(codigo === currentValue ? "" : codigo);   // reelegir = liberar el folio
   };
 
-  const etiqueta = currentValue || (tabla ? "— Elegir folio —" : "Elige origen o destino");
+  const etiqueta = currentValue || (tabla ? "— Asignar folio —" : "Elige origen o destino");
 
   return (
     <div className="fds-container" ref={containerRef}>
@@ -131,23 +139,20 @@ export default function FolioDisponibleSelector({ tabla, currentValue, onSelect,
             </>
           )}
 
-          {cargando && <li className="fds-state">Cargando…</li>}
-          {error && <li className="fds-state fds-state--error">{error}</li>}
-          {!cargando && !error && folios.length === 0 && (
-            <li className="fds-state">No quedan folios libres. Ve a Folios para añadir.</li>
-          )}
-          {!cargando && !error && folios.map((f) => (
+          {/* Con folio ya puesto no se ofrece otro: primero se quita. Así un
+              clic de más no gasta un folio. */}
+          {!currentValue && (
             <li
-              key={f.id}
               role="option"
-              aria-selected={f.codigo === currentValue}
-              className={`fds-option ${f.codigo === currentValue ? "fds-option--selected" : ""}`}
-              onClick={(e) => { e.stopPropagation(); handleSelect(f.codigo); }}
+              aria-selected={false}
+              aria-disabled={cargando}
+              className="fds-option"
+              onClick={(e) => { e.stopPropagation(); if (!cargando) asignar(); }}
             >
-              <span className="fds-codigo">{f.codigo}</span>
-              {f.asignacion && <span className="fds-asignacion">{f.asignacion}</span>}
+              <span>{cargando ? "Asignando…" : "Asignar folio"}</span>
             </li>
-          ))}
+          )}
+          {error && <li className="fds-state fds-state--error">{error}</li>}
         </ul>,
         document.body
       )}

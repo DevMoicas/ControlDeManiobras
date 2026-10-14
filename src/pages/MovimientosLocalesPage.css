@@ -120,7 +120,7 @@
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
-.ml-filtro-btn:hover { background: var(--paper-deep); color: var(--primary, #2563eb); }
+.ml-filtro-btn:hover { background: var(--hover-negro); color: #fff; }
 .ml-filtro-btn--activo {
   background: var(--primary, #2563eb);
   color: #fff;
@@ -300,7 +300,7 @@
   transition: background 0.15s, color 0.15s;
 }
 .ml-btn-editar    { color: var(--primary, #2563eb); }
-.ml-btn-editar:hover { background: var(--primary-light, #eaf1ff); }
+.ml-btn-editar:hover { background: var(--hover-negro); color: #fff; }
 .ml-btn-eliminar  { color: #dc2626; }
 .ml-btn-eliminar:hover { background: #fef2f2; }
 
@@ -409,7 +409,7 @@
   padding: 4px 8px;
   border-radius: 8px;
 }
-.ml-modal-cerrar:hover { background: #f7f9fc; }
+.ml-modal-cerrar:hover { background: var(--hover-negro); color: #fff; }
 
 .ml-modal-body {
   padding: 18px 22px;

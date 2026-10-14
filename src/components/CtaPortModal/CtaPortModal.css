@@ -74,8 +74,8 @@
   transition: background 0.15s, color 0.15s;
 }
 .cpm-cerrar:hover {
-  background: #f7f9fc;
-  color: var(--text, #1f2937);
+  background: var(--hover-negro);
+  color: #fff;
   transform: none; /* anula el scale(1.05) del button global de App.css */
 }
 .cpm-cerrar:focus-visible {

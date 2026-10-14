@@ -23,7 +23,9 @@ const COLUMNAS = [
   { key: "sueldo_diario",    label: "Sueldo Diario",      moneda: true },
   { key: "prima_vacacional", label: "Prima Vacacional",   moneda: true },
   { key: "dias_vacaciones",  label: "Días de Vacaciones" },
-  { key: "dias_tomados",     label: "Días Tomados",       editable: true },
+  // Sale del calendario de vacaciones: los días del año de aniversario sin los
+  // feriados de ley (lo cuenta el backend). Ya no se captura a mano.
+  { key: "dias_tomados",     label: "Días Tomados" },
   { key: "finiquito",        label: "Finiquito",          editable: true, moneda: true },
 ];
 
@@ -164,7 +166,7 @@ export default function NominaPage() {
                         </span>
                       ) : !col.editable ? (
                         <span className="np-calculado">
-                          {col.moneda ? formatMoneda(fila[col.key]) : (fila[col.key] || "")}
+                          {col.moneda ? formatMoneda(fila[col.key]) : (fila[col.key] ?? "")}
                         </span>
                       ) : (
                         <CeldaEditable

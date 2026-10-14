@@ -97,8 +97,10 @@
 }
 
 .fds-option:hover {
-  background: #eff6ff;
+  background: var(--hover-negro);
+  color: #fff;
 }
+.fds-option:hover * { color: inherit; }
 
 .fds-option--selected {
   background: #dbeafe;
@@ -110,7 +112,7 @@
   color: #dc2626;
   font-weight: 600;
 }
-.fds-option--quitar:hover { background: #fef2f2; }
+.fds-option--quitar:hover { background: #fef2f2; color: #dc2626; }
 .fds-option--quitar .fds-codigo { color: #dc2626; }
 
 .fds-separador {

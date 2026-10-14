@@ -9,6 +9,7 @@ import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import "./NominaPage.css";
 import "./FacturacionPage.css";
+import "./FinanzasCaptura.css";
 
 // Facturación (Fase 1 de PLAN_MODULO_FINANZAS.md). Las facturas se CARGAN del
 // Excel; nadie las escribe a mano. Quién entra lo decide el backend: esta
@@ -47,6 +48,10 @@ export default function FacturacionPage() {
   const preguntar = useConfirmacion();
   const [acceso, setAcceso] = useState(null);
   const [estado, setEstado] = useState("activa");
+  // Dos páginas (usuario, 2026-10-14): Auditoría es la tabla de facturas cargadas
+  // del Excel que había hasta ahora, solo para admin; Facturación es una tabla
+  // nueva por hacer.
+  const [pagina, setPagina] = useState("auditoria");
   const [filas, setFilas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -74,7 +79,10 @@ export default function FacturacionPage() {
     }
   }, [estado]);
 
-  useEffect(() => { if (acceso?.ver) cargar(); }, [acceso, cargar]);
+  // La tabla de facturas es Auditoría, solo para admin: los demás no la piden
+  // (el backend les daría 403) y abren directo en Facturación.
+  useEffect(() => { if (acceso?.auditoria) cargar(); }, [acceso, cargar]);
+  useEffect(() => { if (acceso && !acceso.auditoria) setPagina("facturacion"); }, [acceso]);
 
   const visibles = useMemo(() => filtrarBusqueda(filas, busqueda), [filas, busqueda]);
 
@@ -153,6 +161,22 @@ export default function FacturacionPage() {
 
   return (
     <div className="nomina-container">
+
+      <div className="fz-pestanas" role="tablist" aria-label="Facturación">
+        {[["auditoria", "Auditoría"], ["facturacion", "Facturación"]]
+          .filter(([clave]) => clave !== "auditoria" || acceso?.auditoria)
+          .map(([clave, texto]) => (
+          <button key={clave} role="tab" aria-selected={pagina === clave}
+            className={pagina === clave ? "activo" : ""} onClick={() => setPagina(clave)}>
+            {texto}
+          </button>
+        ))}
+      </div>
+
+      {pagina === "facturacion" ? (
+        // ponytail: hueco para la tabla nueva, que se define después.
+        <p className="np-vacio">Aquí irá la nueva tabla de facturación.</p>
+      ) : (<>
 
       <div className="np-search">
         <SearchBar value={busqueda} onChange={setBusqueda}
@@ -272,6 +296,8 @@ export default function FacturacionPage() {
           </table>
         </div>
       </div>
+
+      </>)}
 
       <BotonArriba />
     </div>

@@ -98,8 +98,10 @@
 }
 
 .cxs-option:hover {
-  background: #fffbeb;
+  background: var(--hover-negro);
+  color: #fff;
 }
+.cxs-option:hover * { color: inherit; }
 
 .cxs-option--selected {
   background: #fef3c7;

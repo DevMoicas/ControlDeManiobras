@@ -82,8 +82,10 @@
   transition: background 0.1s;
 }
 .fsl-item:hover {
-  background: var(--primary-light, #eaf1ff);
+  background: var(--hover-negro);
+  color: #fff;
 }
+.fsl-item:hover * { color: inherit; }
 .fsl-item--selected {
   background: #dbeafe;
   font-weight: 600;

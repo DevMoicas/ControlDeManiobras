@@ -58,8 +58,10 @@
   transition: background 0.1s;
 }
 .csl-item:hover {
-  background: var(--primary-light, #eaf1ff);
+  background: var(--hover-negro);
+  color: #fff;
 }
+.csl-item:hover * { color: inherit; }
 .csl-item--selected {
   background: #dbeafe;
   font-weight: 600;

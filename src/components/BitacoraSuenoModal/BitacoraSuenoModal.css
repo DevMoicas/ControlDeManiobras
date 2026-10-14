@@ -70,8 +70,8 @@
   transition: background 0.15s, color 0.15s;
 }
 .bsm-cerrar:hover {
-  background: #f7f9fc;
-  color: var(--text, #1f2937);
+  background: var(--hover-negro);
+  color: #fff;
   transform: none; /* anula el scale(1.05) del button global de App.css */
 }
 .bsm-cerrar:focus-visible {
@@ -188,7 +188,8 @@
   transition: background 0.15s, color 0.15s, border-style 0.15s;
 }
 .bsm-btn-empate:hover {
-  background: #eff6ff;
+  background: var(--hover-negro);
+  color: #fff;
 }
 .bsm-btn-empate--activo {
   border-style: solid;
@@ -394,7 +395,8 @@
   transition: background 0.15s;
 }
 .bsm-btn-anadir:hover {
-  background: #eff6ff;
+  background: var(--hover-negro);
+  color: #fff;
 }
 .bsm-btn-anadir:focus-visible {
   outline: 2px solid var(--primary, #2563eb);

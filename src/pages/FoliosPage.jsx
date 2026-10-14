@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, Fragment } from "react";
 import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import { useFolios } from "../hooks/useFolios";
+import { apiClient } from "../api/apiClient";
 import "./FoliosPage.css";
 
 const BATCH_SIZE = 14;
@@ -21,7 +22,7 @@ const chunk = (arr, size) => {
 
 // Sub-componente local (no en src/components/): las dos tablas son idénticas
 // salvo título/datos/callbacks y no se reusa fuera de esta página.
-function FolioTabla({ titulo, anadiendo, folios, onAnadir, onAnadirAnterior, onGuardar }) {
+function FolioTabla({ titulo, anadiendo, folios, onAnadirAnterior, onGuardar }) {
   // Una barra por tabla: cada plaza tiene su propio scroll horizontal.
   const scrollRef = useRef(null);
   const lotes = chunk(folios, BATCH_SIZE);
@@ -46,8 +47,8 @@ function FolioTabla({ titulo, anadiendo, folios, onAnadir, onAnadirAnterior, onG
     <section className="fp-panel">
       <div className="fp-panel-head">
         <h2 className="fp-panel-titulo">{titulo}</h2>
-        {/* Un solo flag de "en vuelo" para los dos botones: nunca hay que pulsar
-            los dos a la vez y evita duplicar estado. */}
+        {/* Hacia adelante los lotes salen solos al gastarse el último folio
+            (GET /folios/disponibles/). A mano queda cargar talonarios viejos. */}
         <div className="fp-btn-acciones">
           <button
             type="button"
@@ -57,9 +58,6 @@ function FolioTabla({ titulo, anadiendo, folios, onAnadir, onAnadirAnterior, onG
             title="Carga los 14 folios anteriores al más bajo de esta tabla"
           >
             {anadiendo ? "..." : "+ Lote anterior"}
-          </button>
-          <button type="button" className="fp-btn-anadir" onClick={onAnadir} disabled={anadiendo}>
-            {anadiendo ? "..." : "+ Añadir folios"}
           </button>
         </div>
       </div>
@@ -135,14 +133,25 @@ export default function FoliosPage() {
     actualizarCampo,
   } = useFolios();
   const [anadiendo, setAnadiendo] = useState({ manzanillo: false, lazaro: false });
+  // Solo admin con cargo Sistemas (lo decide el backend, que además responde 403
+  // a la lista): hasta que conteste no se pinta nada.
+  const [acceso, setAcceso] = useState(null);
 
-  useEffect(() => { cargarFolios(); }, [cargarFolios]);
+  useEffect(() => {
+    apiClient.get("/folios/acceso/")
+      .then((a) => setAcceso(Boolean(a?.ver)))
+      .catch(() => setAcceso(false));
+  }, []);
+
+  useEffect(() => { if (acceso) cargarFolios(); }, [acceso, cargarFolios]);
 
   const handleAnadir = async (tabla, direccion) => {
     setAnadiendo((p) => ({ ...p, [tabla]: true }));
     await anadirFolios(tabla, direccion);
     setAnadiendo((p) => ({ ...p, [tabla]: false }));
   };
+
+  if (acceso === null) return <div className="fp-page" />;
 
   return (
     <div className="fp-page">
@@ -151,7 +160,9 @@ export default function FoliosPage() {
           <h1 className="fp-title">Folios</h1>
         </header>
 
-        {cargando ? (
+        {!acceso ? (
+          <p className="fp-cargando">Folios es solo para administradores de Sistemas.</p>
+        ) : cargando ? (
           <p className="fp-cargando">Cargando folios…</p>
         ) : (
           <>
@@ -159,7 +170,6 @@ export default function FoliosPage() {
               titulo="FOLIOS MANZANILLO"
               anadiendo={anadiendo.manzanillo}
               folios={foliosManzanillo}
-              onAnadir={() => handleAnadir("manzanillo")}
               onAnadirAnterior={() => handleAnadir("manzanillo", "anterior")}
               onGuardar={(id, campo, v) => actualizarCampo("manzanillo", id, campo, v)}
             />
@@ -167,7 +177,6 @@ export default function FoliosPage() {
               titulo="FOLIOS LÁZARO C"
               anadiendo={anadiendo.lazaro}
               folios={foliosLazaro}
-              onAnadir={() => handleAnadir("lazaro")}
               onAnadirAnterior={() => handleAnadir("lazaro", "anterior")}
               onGuardar={(id, campo, v) => actualizarCampo("lazaro", id, campo, v)}
             />

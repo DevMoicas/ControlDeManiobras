@@ -49,7 +49,7 @@
   cursor: pointer;
 }
 
-.doc-cerrar:hover { background: #f3f4f6; }
+.doc-cerrar:hover { background: var(--hover-negro); color: #fff; }
 
 .doc-fila {
   display: flex;
@@ -124,13 +124,13 @@
   cursor: pointer;
 }
 
-.doc-btn:hover { background: var(--primary-light, #eaf1ff); }
+.doc-btn:hover { background: var(--hover-negro); color: #fff; }
 
 .doc-btn:disabled { opacity: 0.5; cursor: default; }
 
 .doc-btn--rojo { color: #b42318; }
 
-.doc-btn--rojo:hover { background: #fee4e2; }
+.doc-btn--rojo:hover { background: #fee4e2; color: #b42318; }
 
 /* ── El visor ─────────────────────────────────────────────────────────────── */
 /* La caja crece solo cuando hay algo que ver: para elegir archivo con 420px

@@ -52,7 +52,7 @@
   color: var(--text-muted);
   cursor: pointer;
 }
-.nomina-container .fc-cerrar:hover { background: var(--paper-deep); }
+.nomina-container .fc-cerrar:hover { background: var(--hover-negro); color: #fff; }
 
 .nomina-container .fc-total { font-variant-numeric: tabular-nums; text-align: right; }
 

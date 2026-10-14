@@ -92,8 +92,10 @@
 }
 
 .ps-option:hover {
-  background: #f0f9ff;
+  background: var(--hover-negro);
+  color: #fff;
 }
+.ps-option:hover * { color: inherit; }
 
 .ps-option--selected {
   background: #e0f2fe;

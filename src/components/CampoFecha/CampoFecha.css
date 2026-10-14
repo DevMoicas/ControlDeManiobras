@@ -83,7 +83,7 @@
   text-transform: uppercase;
   color: #6b7280;
 }
-.campo-fecha-pop .rdp-day_button:hover { background: #f3f4f6; }
+.campo-fecha-pop .rdp-day_button:hover { background: var(--hover-negro); color: #fff; }
 .campo-fecha-pop .rdp-selected .rdp-day_button {
   background: #2563eb;
   color: #fff;
@@ -96,13 +96,16 @@
 .campo-fecha-pop .rdp-outside { opacity: 0.4; }
 .campo-fecha-pop .rdp-chevron { fill: #374151; }
 .campo-fecha-pop .rdp-button_previous:hover,
-.campo-fecha-pop .rdp-button_next:hover { background: #f3f4f6; border-radius: 8px; }
+.campo-fecha-pop .rdp-button_next:hover { background: var(--hover-negro); color: #fff; border-radius: 8px; }
 /* Desplegables de mes y año: que se vean como botón, no como texto suelto. */
 .campo-fecha-pop .rdp-dropdown_root {
   border-radius: 6px;
   padding: 2px 4px;
 }
-.campo-fecha-pop .rdp-dropdown_root:hover { background: #f3f4f6; }
+.campo-fecha-pop .rdp-dropdown_root:hover { background: var(--hover-negro); color: #fff; }
+.campo-fecha-pop .rdp-button_previous:hover .rdp-chevron,
+.campo-fecha-pop .rdp-button_next:hover .rdp-chevron,
+.campo-fecha-pop .rdp-dropdown_root:hover .rdp-chevron { fill: #fff; }
 .campo-fecha-pop .rdp-caption_label { font-weight: 600; text-transform: capitalize; }
 
 /* ── Lista de horas (fecha y hora, y solo hora) ── */
@@ -129,7 +132,7 @@
   color: #374151;
   cursor: pointer;
 }
-.campo-fecha-horas button:hover { background: #f3f4f6; }
+.campo-fecha-horas button:hover { background: var(--hover-negro); color: #fff; }
 .campo-fecha-horas button.activo { background: #2563eb; color: #fff; font-weight: 600; }
 
 /* ── Meses (filtro por mes) ── */
@@ -152,7 +155,7 @@
   color: #1f2937;
   cursor: pointer;
 }
-.campo-fecha-anio button:hover { background: #f3f4f6; }
+.campo-fecha-anio button:hover { background: var(--hover-negro); color: #fff; }
 .campo-fecha-rejilla { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .campo-fecha-rejilla button {
   padding: 8px 0;
@@ -164,7 +167,7 @@
   font-size: 0.82rem;
   cursor: pointer;
 }
-.campo-fecha-rejilla button:hover { border-color: #bfd3fb; background: #eaf1ff; }
+.campo-fecha-rejilla button:hover { border-color: var(--hover-negro); background: var(--hover-negro); color: #fff; }
 .campo-fecha-rejilla button.activo { background: #2563eb; color: #fff; font-weight: 600; }
 
 /* ── Pie: Hoy / Borrar / Listo ── */
@@ -186,7 +189,8 @@
   cursor: pointer;
 }
 .campo-fecha-pie button:first-child { margin-right: auto; color: #2563eb; border-color: #bfd3fb; }
-.campo-fecha-pie button:hover { background: #f3f4f6; }
+.campo-fecha-pie button:hover { background: var(--hover-negro); color: #fff; }
+.campo-fecha-pie button:first-child:hover { color: #fff; border-color: var(--hover-negro); }
 .campo-fecha-pie .campo-fecha-listo { background: #2563eb; border-color: #2563eb; color: #fff; }
 .campo-fecha-pie .campo-fecha-listo:hover { background: #1d4ed8; }
 

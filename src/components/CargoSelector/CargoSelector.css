@@ -61,7 +61,8 @@
   color: var(--text, #1f2937);
 }
 .cgs-item:hover {
-  background: var(--primary-light, #eaf1ff);
+  background: var(--hover-negro);
+  color: #fff;
 }
 .cgs-item--selected {
   background: #dbeafe;

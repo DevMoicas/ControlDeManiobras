@@ -64,7 +64,7 @@
    habitual, y dos botones idénticos se pulsan por error. */
 .fp-btn-acciones { display: flex; align-items: center; gap: 8px; }
 .fp-btn-anadir--sec { background: var(--card-bg); color: var(--primary, #2563eb); border: 1px solid var(--paper-line); }
-.fp-btn-anadir--sec:hover:not(:disabled) { background: var(--paper-deep); }
+.fp-btn-anadir--sec:hover:not(:disabled) { background: var(--hover-negro); color: #fff; }
 
 /* overflow-x SIEMPRE activo (patrón de CatalogosPage/VaciosPage, no el
    @media-only de MovimientosLocalesPage): la tabla crece hacia la derecha

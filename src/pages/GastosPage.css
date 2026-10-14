@@ -364,8 +364,8 @@
 }
 .gastos-container .btn-editar { color: var(--primary-blue); }
 .gastos-container .btn-editar:hover {
-  background: var(--primary-soft);
-  color: var(--primary-blue);
+  background: var(--hover-negro);
+  color: #fff;
   transform: none;
 }
 /* Eliminar conserva el rojo en hover: el button:hover global de App.css lo
@@ -523,8 +523,8 @@
   transition: background 0.15s, color 0.15s;
 }
 .gastos-container .modal-cerrar:hover {
-  background: #f7f9fc;
-  color: var(--text-main);
+  background: var(--hover-negro);
+  color: #fff;
   transform: none; /* anula el scale(1.05) del button global de App.css */
 }
 .gastos-container .modal-cerrar:focus-visible {

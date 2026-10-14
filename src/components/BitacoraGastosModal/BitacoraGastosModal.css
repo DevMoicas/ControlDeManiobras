@@ -70,8 +70,8 @@
   transition: background 0.15s, color 0.15s;
 }
 .bgm-cerrar:hover {
-  background: #f7f9fc;
-  color: var(--text, #1f2937);
+  background: var(--hover-negro);
+  color: #fff;
   transform: none; /* anula el scale(1.05) del button global de App.css */
 }
 .bgm-cerrar:focus-visible {
@@ -180,8 +180,8 @@
   transition: background 0.15s, color 0.15s, border-style 0.15s;
 }
 .bgm-btn-empate:hover {
-  background: #eff6ff;
-  color: var(--primary, #2563eb);
+  background: var(--hover-negro);
+  color: #fff;
   transform: none;
 }
 /* Activo: pasa a sólido y relleno — el estado se lee de un vistazo, no solo por
@@ -440,7 +440,8 @@
   transition: background 0.15s;
 }
 .bgm-btn-anadir:hover {
-  background: #eff6ff;
+  background: var(--hover-negro);
+  color: #fff;
 }
 .bgm-btn-anadir:focus-visible {
   outline: 2px solid var(--primary, #2563eb);

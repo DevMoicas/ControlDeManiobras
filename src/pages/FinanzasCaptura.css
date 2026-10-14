@@ -51,7 +51,7 @@
   color: #111827;
   cursor: pointer;
 }
-.nomina-container .fz-periodo button:hover { background: #f3f4f6; }
+.nomina-container .fz-periodo button:hover { background: var(--hover-negro); color: #fff; }
 
 .nomina-container .fz-rejilla .fz-mes { text-transform: capitalize; }
 /* Toca pagar y está vacío (P54): se ve sin tener que leer cada celda. */
@@ -91,6 +91,9 @@
   font-weight: 400;
 }
 .fz-dialogo-acciones { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+.fz-campo-tipo { display: grid; gap: 4px; justify-items: start; font-size: 13px; font-weight: 600; color: #374151; }
+/* Gasto fijo de tipo "fijo": su mes es una casilla de pagado. */
+.fz-pagado { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary-blue, #2563eb); }
 .fz-dialogo-acciones button {
   padding: 8px 16px;
   border: 1px solid #d1d5db;

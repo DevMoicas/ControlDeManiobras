@@ -95,8 +95,10 @@
 }
 
 .cds-option:hover {
-  background: #eff6ff;
+  background: var(--hover-negro);
+  color: #fff;
 }
+.cds-option:hover * { color: inherit; }
 
 .cds-option--selected {
   background: #dbeafe;

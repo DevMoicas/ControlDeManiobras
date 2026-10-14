@@ -418,14 +418,14 @@
 }
 .vacios-container .btn-editar { color: var(--primary-blue); }
 .vacios-container .btn-editar:hover {
-  background: var(--primary-soft);
-  color: var(--primary-blue);
+  background: var(--hover-negro);
+  color: #fff;
   transform: none;
 }
 .vacios-container .btn-foto { color: #7c3aed; }
 .vacios-container .btn-foto:hover {
-  background: #f3e8ff;
-  color: #7c3aed;
+  background: var(--hover-negro);
+  color: #fff;
   transform: none;
 }
 /* Eliminar conserva el rojo en hover: el button:hover global de App.css lo
@@ -585,8 +585,8 @@
   transition: background 0.15s, color 0.15s;
 }
 .vacios-container .modal-cerrar:hover {
-  background: #f7f9fc;
-  color: var(--text-main);
+  background: var(--hover-negro);
+  color: #fff;
   transform: none; /* anula el scale(1.05) del button global de App.css */
 }
 .vacios-container .modal-cerrar:focus-visible {

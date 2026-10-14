@@ -4,6 +4,8 @@
   --text: #1f2937;
   --text-light: #6b7280;
   --bg: #f4f7fb;
+  /* Fondo de hover de opciones, botones secundarios y de cerrar: negro tinta, texto en blanco. */
+  --hover-negro: #23201c;
 }
 
 /* ===== HOME / PANEL DE CONTROL ===== */
@@ -61,8 +63,8 @@
   transition: color 0.18s ease, background 0.18s ease;
 }
 .home-profile:hover {
-  color: var(--primary);
-  background: var(--primary-light);
+  color: #fff;
+  background: var(--hover-negro);
   transform: none;
 }
 .home-profile:focus-visible {

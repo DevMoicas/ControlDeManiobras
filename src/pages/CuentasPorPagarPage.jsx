@@ -83,6 +83,9 @@ function GastosFijos({ esStaff }) {
   const [datos, setDatos] = useState({ meses: [], gastos: [] });
   const [cargando, setCargando] = useState(true);
   const dialogo = useRef(null);
+  // Tipo del gasto que se da de alta. Fijo: siempre paga su monto, así que sus
+  // meses son una casilla de "pagado" en vez de un importe (usuario, 2026-10-14).
+  const [tipoNuevo, setTipoNuevo] = useState("variable");
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -142,6 +145,7 @@ function GastosFijos({ esStaff }) {
     try {
       await apiClient.post("/gastos-fijos/", f);
       e.target.reset();
+      setTipoNuevo("variable");
       dialogo.current?.close();
       cargar();
     } catch (err) {
@@ -159,7 +163,7 @@ function GastosFijos({ esStaff }) {
           <button onClick={() => moverMitad(1)} aria-label="Seis meses después"><ChevronRight size={18} /></button>
         </div>
         <div className="toolbar-acciones">
-          <button className="np-btn-calendario" onClick={() => dialogo.current?.showModal()}>
+          <button className="np-btn-calendario" onClick={() => { setTipoNuevo("variable"); dialogo.current?.showModal(); }}>
             <Plus size={18} /> Nuevo gasto fijo
           </button>
         </div>
@@ -198,9 +202,18 @@ function GastosFijos({ esStaff }) {
                 {datos.meses.map((m) => (
                   <td key={m} className={g.faltan.includes(m) ? "fz-falta" : undefined}
                     title={g.faltan.includes(m) ? "Toca pagar este mes y no está capturado" : undefined}>
-                    <CeldaEditable valor={g.pagos[m] ?? ""} texto={moneda(g.pagos[m])}
-                      etiqueta={`${g.concepto}, ${etiquetaMes(m)}`}
-                      onGuardar={(v) => guardarPago(g, m, v)} />
+                    {g.tipo === "fijo" ? (
+                      // Marcar guarda el monto de referencia como pago del mes,
+                      // así sigue contando en la utilidad; desmarcar lo vacía.
+                      <input type="checkbox" className="fz-pagado"
+                        checked={g.pagos[m] != null}
+                        aria-label={`${g.concepto}, ${etiquetaMes(m)} pagado`}
+                        onChange={(e) => guardarPago(g, m, e.target.checked ? g.monto : "")} />
+                    ) : (
+                      <CeldaEditable valor={g.pagos[m] ?? ""} texto={moneda(g.pagos[m])}
+                        etiqueta={`${g.concepto}, ${etiquetaMes(m)}`}
+                        onGuardar={(v) => guardarPago(g, m, v)} />
+                    )}
                   </td>
                 ))}
                 {esStaff && (
@@ -221,9 +234,21 @@ function GastosFijos({ esStaff }) {
               {EMPRESAS.map(([v, t]) => <option key={v} value={v}>{t}</option>)}
             </select>
           </label>
+          <div className="fz-campo-tipo">
+            <span>Tipo</span>
+            <div className="fc-filtro" role="group" aria-label="Tipo de gasto">
+              {[["variable", "Variable"], ["fijo", "Fijo"]].map(([v, t]) => (
+                <button key={v} type="button" aria-pressed={tipoNuevo === v}
+                  className={tipoNuevo === v ? "activo" : ""} onClick={() => setTipoNuevo(v)}>{t}</button>
+              ))}
+            </div>
+            <input type="hidden" name="tipo" value={tipoNuevo} />
+          </div>
           <label>Concepto<input name="concepto" required maxLength={255} /></label>
           <label>Día de pago<input name="dia_pago" type="number" min={1} max={31} /></label>
-          <label>Monto de referencia<input name="monto" type="number" min={0} step="0.01" /></label>
+          {/* Un fijo paga siempre esto: sin monto no habría qué marcar. */}
+          <label>{tipoNuevo === "fijo" ? "Monto" : "Monto de referencia"}
+            <input name="monto" type="number" min={0} step="0.01" required={tipoNuevo === "fijo"} /></label>
           <label>Periodicidad
             <select name="periodicidad" defaultValue={1}>
               {PERIODICIDADES.map(([v, t]) => <option key={v} value={v}>{t}</option>)}

@@ -105,7 +105,7 @@
   border-color: var(--cf-borde);
   color: var(--cf-tinta);
 }
-.cf-btn--cancelar:hover { background: #f1f5f9; }
+.cf-btn--cancelar:hover { background: var(--hover-negro); color: #fff; }
 
 .cf-btn--confirmar {
   background: var(--cf-acento);
