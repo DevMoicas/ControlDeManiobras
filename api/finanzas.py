@@ -97,7 +97,7 @@ def maniobras_de_terceros(origen):
 
 def empresa_de_maniobra(maniobra_id):
     """La empresa de la factura de VENTA ligada (P61); None si no tiene."""
-    return (Factura.objects.filter(maniobra_id=maniobra_id, estado='activa')
+    return (Factura.objects.filter(maniobra_id=maniobra_id, estado='activa').exclude(empresa='')
             .values_list('empresa', flat=True).first())
 
 
@@ -194,7 +194,7 @@ class CuentaPorPagarViewSet(SoloFinanzasMixin, mixins.ListModelMixin, mixins.Cre
         ids = [m.pk for m in maniobras]
         cuentas = {c.maniobra_id: c for c in CuentaPorPagar.objects.filter(
             origen=origen, estado='activa', maniobra_id__in=ids)}
-        empresas = dict(Factura.objects.filter(maniobra_id__in=ids, estado='activa')
+        empresas = dict(Factura.objects.filter(maniobra_id__in=ids, estado='activa').exclude(empresa='')
                         .order_by('-id').values_list('maniobra_id', 'empresa'))
         # Quién hizo el PIS: el dueño de las placas en el catálogo de terceros,
         # no `transportista`, que es el del viaje. Varios dueños → todos.

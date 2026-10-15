@@ -370,7 +370,7 @@ def cuentas_por_cobrar(f):
     hoy = datetime.now(ZONA_OPERACION).date()
     antiguedad = defaultdict(Decimal)
     fuera = defaultdict(Decimal)
-    for fac in _facturas(f).filter(cobrada=False):
+    for fac in _facturas(f).filter(fecha_cobro__isnull=True):
         p = principal_de(fac)
         nombre = p.nombre if p else (SIN_CLIENTE if fac.maniobra_id else SIN_LIGAR)
         if f.cliente and nombre != f.cliente:

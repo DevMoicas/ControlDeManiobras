@@ -18,7 +18,7 @@ from .Serializers import (CustomTokenObtainPairSerializer, DispositivoConfianzaS
 from . import confianza
 from .db_context import get_db_alias
 from .dashboards import choferes_fraba, clave_ruta
-from .facturacion import admin_de_sistemas, puede_finanzas, religar_maniobra, ve_rendimiento
+from .facturacion import admin_de_sistemas, puede_finanzas, sincronizar_facturas, ve_rendimiento
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
@@ -1294,8 +1294,9 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
             if (maniobra.folio or '').strip() or (maniobra.folio_2 or '').strip():
                 _crear_reportes_del_folio(maniobra)
             _sincronizar_asignacion_folios(maniobra, {})
-            if (maniobra.no_factura or '').strip():
-                religar_maniobra(maniobra, self._usuario())
+            # La fila de Facturación nace con el folio, como el reporte; la
+            # función decide sola si toca (sin folio no hay nada que facturar).
+            sincronizar_facturas(maniobra, self._usuario())
 
     def perform_update(self, serializer):
         # Los folios de ANTES: hasta el save(), serializer.instance trae la fila
@@ -1350,10 +1351,13 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
             # La asignacion, en cambio, se recalcula siempre: el folio suele
             # ponerse antes de saber quien lo llevara.
             _sincronizar_asignacion_folios(maniobra, antes)
-            # La liga con Facturación: solo si cambió el No. Factura, para no
-            # tocar facturas ni Gastos en cada edición de otra celda.
-            if maniobra.no_factura != no_factura_antes:
-                religar_maniobra(maniobra, self._usuario())
+            # Facturación: al poner el folio (nace la fila) o al cambiar el No.
+            # Factura (serie y folio de cada fila). No en cada edición de otra
+            # celda, para no tocar facturas ni Gastos de más.
+            if (maniobra.no_factura != no_factura_antes
+                    or (not folio_antes and (maniobra.folio or '').strip())
+                    or (not folio_2_antes and (maniobra.folio_2 or '').strip())):
+                sincronizar_facturas(maniobra, self._usuario())
 
     def _usuario(self):
         return getattr(self.request.user, 'username', '') or ''

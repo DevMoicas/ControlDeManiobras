@@ -1234,39 +1234,87 @@ class PerfilUsuario(models.Model):
 
 
 class Factura(models.Model):
-    """Una factura emitida, leída del Excel de facturación (Fase 1 de
-    PLAN_MODULO_FINANZAS.md). La crea la carga del Excel; nadie la captura a mano.
+    """Una factura emitida: la página FACTURACIÓN (usuario, 2026-10-15). Es la
+    que manda: Cuentas por cobrar, Dashboards e Ingresos de Gastos salen de aquí.
 
-    Sin borrado (P65): se CANCELA, y una cancelada no suma en ningún sitio. Así
-    los meses ya revisados no se mueven.
+    Nace VACÍA al asignar el folio a la maniobra (como el reporte de viaje), la
+    serie y el folio los pone el No. Factura de Control de viajes, y el resto lo
+    rellena el XML del CFDI. Por eso casi todo admite vacío: una fila sin XML es
+    una factura por emitir y no suma en ningún sitio.
+
+    Sin borrado (P65): se CANCELA. La excepción es la fila vacía que sobra al
+    quitar una factura del No. Factura (ver sincronizar_facturas).
     """
     EMPRESAS = [('fraba', 'Fraba'), ('soluciones', 'Soluciones')]
     ESTADOS  = [('activa', 'Activa'), ('cancelada', 'Cancelada')]
 
-    empresa = models.CharField(max_length=20, choices=EMPRESAS)
-    serie   = models.CharField(max_length=20)
-    folio   = models.CharField(max_length=40)
-    # El UUID fiscal es la clave de duplicados (P3, D3). Se guarda y NO se
-    # muestra nunca (P16): el serializer no lo expone.
-    uuid    = models.CharField(max_length=36, unique=True)
+    empresa = models.CharField(max_length=20, choices=EMPRESAS, blank=True, default='')
+    serie   = models.CharField(max_length=20, blank=True, default='')
+    folio   = models.CharField(max_length=40, blank=True, default='')
+    # El UUID fiscal es la clave de duplicados (P3, D3) y la marca de "ya tiene
+    # XML". Se guarda y NO se muestra nunca (P16): el serializer no lo expone.
+    uuid    = models.CharField(max_length=36, unique=True, null=True, blank=True)
     nombre  = models.CharField(max_length=255, blank=True, default='')
     rfc     = models.CharField(max_length=20, blank=True, default='')
     # Solo la fecha: el mes de la venta y la semana de cobranza salen de aquí
     # (P9, P70), y guardar la hora obligaría a decidir la zona horaria.
+    fecha_emision = models.DateField(null=True, blank=True)
+    subtotal = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    iva      = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    # El Total del CFDI: con IVA y ya restada la retención (usuario, 2026-10-15).
+    total    = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    moneda   = models.CharField(max_length=5, default='MXN')
+    # De los Conceptos del XML; varios conceptos se unen con " / ".
+    no_identificacion = models.TextField(blank=True, default='')
+    descripcion       = models.TextField(blank=True, default='')
+    estado   = models.CharField(max_length=10, choices=ESTADOS, default='activa')
+    # ponytail: `cobrada` ya no se lee; la sustituyó fecha_cobro (0081). Sigue
+    # en la base para que el backend viejo funcione entre el migrate y el
+    # despliegue. Borrarla en la siguiente migración de Finanzas.
+    cobrada  = models.BooleanField(default=False)
+    fecha_cobro   = models.DateField(null=True, blank=True)
+    # Uso por definir (usuario, 2026-10-15): de momento texto alfanumérico.
+    clave_rastreo = models.CharField(max_length=50, blank=True, default='')
+    # La liga la decide `maniobras.no_factura` (D1). db_constraint=False:
+    # `maniobras` es managed=False y no existe en la base de test (mismo motivo
+    # que Vacio.maniobra).
+    maniobra = models.ForeignKey(
+        'api.Maniobra', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='facturas', db_constraint=False,
+    )
+
+    created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = True
+        ordering = ['-fecha_emision', '-id']
+        indexes = [models.Index(fields=['serie', 'folio'])]
+
+    def __str__(self):
+        return f"{self.serie} {self.folio}"
+
+
+class FacturaExcel(models.Model):
+    """Una factura del Excel de facturación: la página AUDITORÍA. No alimenta
+    nada; existe para compararla 1-1 con Facturación y ver si quien captura lo
+    hace bien. La liga con la maniobra y el vencimiento los toma de su pareja en
+    Facturación (misma serie y folio).
+    """
+    empresa = models.CharField(max_length=20, choices=Factura.EMPRESAS)
+    serie   = models.CharField(max_length=20)
+    folio   = models.CharField(max_length=40)
+    uuid    = models.CharField(max_length=36, unique=True)
+    nombre  = models.CharField(max_length=255, blank=True, default='')
+    rfc     = models.CharField(max_length=20, blank=True, default='')
     fecha_emision = models.DateField()
     subtotal = models.DecimalField(max_digits=14, decimal_places=2)
     iva      = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     total    = models.DecimalField(max_digits=14, decimal_places=2)
     moneda   = models.CharField(max_length=5, default='MXN')
-    estado   = models.CharField(max_length=10, choices=ESTADOS, default='activa')
-    cobrada  = models.BooleanField(default=False)
-    # La liga la decide `maniobras.no_factura` (D1) y se recalcula al cargar y
-    # al guardar esa celda. db_constraint=False: `maniobras` es managed=False y
-    # no existe en la base de test (mismo motivo que Vacio.maniobra).
-    maniobra = models.ForeignKey(
-        'api.Maniobra', null=True, blank=True, on_delete=models.SET_NULL,
-        related_name='facturas', db_constraint=False,
-    )
+    estado   = models.CharField(max_length=10, choices=Factura.ESTADOS, default='activa')
 
     created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
