@@ -85,3 +85,22 @@
   accent-color: var(--primary-blue);
   cursor: pointer;
 }
+
+/* Auditoría: el resumen de lo que no coincide con Facturación, y la fila. */
+.nomina-container .fc-discrepancias { border-color: #f59e0b; background: #fffbeb; padding-right: 18px; }
+.nomina-container .fc-discrepancias ul { max-height: 220px; overflow-y: auto; }
+.nomina-container tr.fc-distinta td { background: #fffbeb; }
+
+/* Facturación: la descripción del XML puede ser larga. */
+.nomina-container .fc-descripcion { min-width: 260px; white-space: normal; }
+.nomina-container .fc-fecha { min-width: 150px; }
+.nomina-container .fc-clave {
+  width: 150px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+.nomina-container .fc-clave:focus-visible { outline: 2px solid var(--primary-blue); outline-offset: 1px; }
