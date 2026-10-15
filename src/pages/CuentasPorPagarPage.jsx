@@ -280,7 +280,9 @@ function FiltroEmpresa({ valor, onCambio }) {
 const COLUMNAS_MANIOBRA = {
   flete: [["folio", "Folio"], ["fecha_pis", "Fecha PIS", fechaLegible], ["transportista", "Transportista"],
           ["ruta", "Ruta"], ["contenedor", "Contenedor"]],
-  local: [["terminal", "Terminal"], ["fecha_pis", "Fecha PIS", fechaLegible], ["placas_pis", "Placas PIS"],
+  // Las entregas de vacío de terceros van aquí también (Servicio = Vacío): el
+  // backend pone el patio en Terminal, la entrega en Fecha y Entregó en Transportista.
+  local: [["terminal", "Terminal / Patio"], ["fecha_pis", "Fecha PIS / Entrega", fechaLegible], ["placas_pis", "Placas PIS"],
           ["transportista_pis", "Transportista"], // el del PIS, no el del viaje
           ["tipo_servicio", "Servicio"], ["tipo", "Tipo de carga"], ["peso", "Peso"],
           ["contenedor", "Contenedor"], ["referencia", "Referencia"]],
@@ -324,7 +326,7 @@ function Cuentas({ origen, esStaff }) {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.target));
     try {
-      await apiClient.post("/cuentas-por-pagar/", { ...f, origen, maniobra: nueva?.maniobra });
+      await apiClient.post("/cuentas-por-pagar/", { ...f, origen, maniobra: nueva?.maniobra, vacio: nueva?.vacio });
       e.target.reset();
       dialogo.current?.close();
       cargar();
@@ -405,7 +407,7 @@ function Cuentas({ origen, esStaff }) {
             ) : filas.map((f, i) => {
               const c = f.cuenta;
               return (
-                <tr key={f.maniobra ?? c?.id ?? i}>
+                <tr key={f.vacio ? `v${f.vacio}` : f.maniobra ?? c?.id ?? i}>
                   {columnas.map(([k, , formato]) => <td key={k}>{formato ? formato(f[k]) : f[k]}</td>)}
                   {!c ? (
                     <td colSpan={manuales.length + (esStaff ? 1 : 0)}>
@@ -450,7 +452,7 @@ function Cuentas({ origen, esStaff }) {
       <dialog ref={dialogo} className="fz-dialogo">
         {/* key: al cambiar de fila el formulario se monta de nuevo y toma la
             empresa sugerida de ESA maniobra como valor inicial. */}
-        <form key={nueva?.maniobra ?? "nueva"} onSubmit={crear}>
+        <form key={nueva?.vacio ? `v${nueva.vacio}` : nueva?.maniobra ?? "nueva"} onSubmit={crear}>
           <h2>{conManiobra ? `Factura del proveedor${nueva?.folio ? ` · ${nueva.folio}` : ""}` : "Nueva factura de mantenimiento"}</h2>
           <label>Empresa
             {/* Sin factura de venta ligada no hay de dónde sacarla: se elige (P61). */}
