@@ -77,6 +77,9 @@ def ve_rendimiento(usuario):
 
 # ── Serie + folio ────────────────────────────────────────────────────────────
 EMPRESA_DE_SERIE = {'SEF': 'soluciones', 'S': 'fraba'}  # P29, P61
+# Facturación empieza con las maniobras de julio de 2026 (usuario, 2026-10-15):
+# las anteriores no entran, para no tener que subir el XML de cada factura vieja.
+INICIO_FACTURACION = date(2026, 7, 1)
 
 _PIEZA = re.compile(r'^([A-Z]*)(\d+)$')
 
@@ -154,6 +157,8 @@ def sincronizar_facturas(maniobra, usuario):
     Lo que sobra: la fila con XML o con cobro se suelta y queda pendiente de
     ligar; la vacía se borra, salvo que sea la única que le queda.
     """
+    if not maniobra.fecha_pis or maniobra.fecha_pis < INICIO_FACTURACION:
+        return  # anterior a Facturación, o sin fecha para saberlo: no se toca
     propias = list(Factura.objects.filter(maniobra=maniobra).order_by('id'))
     tiene_folio = (maniobra.folio or '').strip() or (maniobra.folio_2 or '').strip()
     if not propias and not tiene_folio:

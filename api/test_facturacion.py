@@ -7,6 +7,7 @@ Ingresos de Gastos y qué marca la Auditoría como distinto.
 Solo corre con:  Manage.py test api --settings=config.settings_test
 """
 import io
+from datetime import date
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -201,13 +202,16 @@ class CargaExcelTests(Base):
         self.assertEqual(Gasto.objects.get(maniobra=m).facturado, '7')
 
 
+JULIO = date(2026, 7, 1)  # INICIO_FACTURACION
+
+
 class FilasDeLaManiobraTests(Base):
     """Las filas de Facturación nacen al asignar el folio y las ordena el
     No. Factura (usuario, 2026-10-15)."""
 
     def setUp(self):
         self.c = self.usuario('cap')   # cualquiera que capture Control de viajes
-        self.m = Maniobra.objects.create(solicita='X')
+        self.m = Maniobra.objects.create(solicita='X', fecha_pis=JULIO)
 
     def guardar(self, **campos):
         return self.c.patch(f'/api/maniobras/{self.m.id}/', campos, format='json')
@@ -247,6 +251,16 @@ class FilasDeLaManiobraTests(Base):
         self.assertEqual(self.filas(), [('', '')])
         self.assertIsNone(Gasto.objects.get(maniobra=self.m).facturado)
 
+    def test_solo_desde_julio_2026(self):
+        self.m.fecha_pis = date(2026, 6, 30)
+        self.m.save()
+        self.guardar(folio='F-1', no_factura='S 1')
+        self.assertEqual(Factura.objects.count(), 0)
+        self.guardar(fecha_pis=None)                   # sin fecha tampoco
+        self.assertEqual(Factura.objects.count(), 0)
+        self.guardar(fecha_pis='2026-07-01')           # al entrar en julio nace
+        self.assertEqual(self.filas(), [('S', '1')])
+
     def test_terceros_tambien(self):
         self.guardar(folio='F-1', transportista='OTRO', no_factura='S 1')
         self.assertEqual(self.filas(), [('S', '1')])
@@ -269,7 +283,7 @@ class CargaXmlTests(Base):
 
     def setUp(self):
         self.c = self.usuario('com', cargo='COMERCIAL')   # el que captura
-        self.m = Maniobra.objects.create(folio='F-1', no_factura='S 1713')
+        self.m = Maniobra.objects.create(folio='F-1', no_factura='S 1713', fecha_pis=JULIO)
         Gasto.objects.create(maniobra=self.m)
         Factura.objects.create(maniobra=self.m, serie='S', folio='1713', empresa='fraba')
 

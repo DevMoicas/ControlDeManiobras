@@ -1317,6 +1317,7 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
         # gasto cuando cambia de verdad.
         fecha_entrega_antes = serializer.instance.fecha_entrega_mercancia
         no_factura_antes = serializer.instance.no_factura
+        fecha_pis_antes = serializer.instance.fecha_pis
         with transaction.atomic(using=get_db_alias()):
             super().perform_update(serializer)
             maniobra = serializer.instance
@@ -1352,9 +1353,11 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
             # ponerse antes de saber quien lo llevara.
             _sincronizar_asignacion_folios(maniobra, antes)
             # Facturación: al poner el folio (nace la fila) o al cambiar el No.
-            # Factura (serie y folio de cada fila). No en cada edición de otra
+            # Factura (serie y folio de cada fila), o al cambiar la fecha PIS, que
+            # decide si entra (INICIO_FACTURACION). No en cada edición de otra
             # celda, para no tocar facturas ni Gastos de más.
             if (maniobra.no_factura != no_factura_antes
+                    or maniobra.fecha_pis != fecha_pis_antes  # puede entrar en Facturación
                     or (not folio_antes and (maniobra.folio or '').strip())
                     or (not folio_2_antes and (maniobra.folio_2 or '').strip())):
                 sincronizar_facturas(maniobra, self._usuario())
