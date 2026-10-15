@@ -893,3 +893,32 @@ migraciones de prod** (anotado en `front/CLAUDE.md`).
 - **El tipo Variable/Fijo** de un gasto fijo no se edita después del alta.
 - **Costos extra por URL directa**: quien no es de Finanzas ve el catálogo (solo lectura).
 - **#4439 sin folio en prod** (§15) sigue abierto.
+
+---
+
+## 17. Sesión del 2026-10-15 — Facturación por XML y Auditoría comparada. SIN DESPLEGAR
+
+Backend `ccad92e9` (migración **0081**) · Frontend `e909857`. Orden de siempre:
+migrar prod con `migrar_prod.sh`, backend en verde, luego frontend.
+
+Decidido con el usuario:
+
+- `api_factura` es ahora **Facturación** y es la que manda (Cobrar, Dashboards,
+  Ingresos). Nace al asignar el folio a **cualquier** maniobra (también terceros),
+  **una fila por factura** del No. Factura, y la rellena el XML.
+- "Total con IVA" = el `Total` del CFDI (ya restada la retención).
+- Un XML sin fila crea una **sin maniobra** que se liga al capturar ese No. Factura.
+- El Excel va a `api_facturaexcel` (**Auditoría**, solo admin). Se compara solo lo
+  común: cliente, RFC, fecha, total, UUID y estado. Sin NoIdentificacion/Descripción.
+- Lo existente se **copió**: Auditoría = copia de lo cargado; cobrada = sí →
+  `fecha_cobro` = día de la migración (no había fecha real).
+
+Queda abierto:
+
+- **Borrar la columna `api_factura.cobrada`.** Ya no se lee; se quedó para que el
+  backend viejo funcionara entre el migrate y el despliegue. Va en la siguiente
+  migración de Finanzas (`ponytail:` en `models.py`).
+- **Uso de la clave de rastreo:** por definir (usuario). Hoy solo letras y
+  números, hasta 50.
+- Varios conceptos en un CFDI se unen con " / " en NoIdentificacion y Descripción.
+- Las filas creadas por la migración llevan `created_by = 'migracion_0081'`.
