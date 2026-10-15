@@ -1347,6 +1347,13 @@ class CuentaPorPagar(models.Model):
         'api.Maniobra', null=True, blank=True, on_delete=models.SET_NULL,
         related_name='cuentas_por_pagar', db_constraint=False,
     )
+    # La entrega de un vacío que hizo un tercero también es un local (usuario,
+    # 2026-10-15): cuelga del vacío y no de su maniobra, que puede tener ya la
+    # cuenta de su PIS. db_constraint=False: `vacios` es managed=False.
+    vacio = models.ForeignKey(
+        'api.Vacio', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='cuentas_por_pagar', db_constraint=False,
+    )
     empresa = models.CharField(max_length=20, choices=Factura.EMPRESAS)
     no_factura = models.CharField(max_length=100, blank=True, default='')
     total = models.DecimalField(max_digits=14, decimal_places=2)
@@ -1372,6 +1379,10 @@ class CuentaPorPagar(models.Model):
             fields=['maniobra', 'origen'],
             condition=models.Q(maniobra__isnull=False, estado='activa'),
             name='cxp_una_activa_por_maniobra_y_origen',
+        ), models.UniqueConstraint(
+            fields=['vacio'],
+            condition=models.Q(vacio__isnull=False, estado='activa'),
+            name='cxp_una_activa_por_vacio',
         )]
 
 

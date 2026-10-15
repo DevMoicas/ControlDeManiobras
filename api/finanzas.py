@@ -6,6 +6,8 @@ paréntesis, p. ej. (P34), remite a PREGUNTAS_MODULO_FINANZAS.md.
 Quién entra: el mismo grupo que Facturación (P45, P56): staff o los cuatro
 cargos. Cancelar y borrar, solo staff.
 """
+import re
+import unicodedata
 from datetime import date, datetime, timedelta
 
 from django.db.models import Exists, OuterRef, Q, Value
@@ -17,7 +19,7 @@ from rest_framework.response import Response
 
 from .facturacion import ZONA_OPERACION, _dinero, puede_finanzas
 from .models import (CapturaMensual, CuentaPorPagar, Factura, GastoFijo, GastoFijoPago,
-                     Maniobra, UnidadTercero)
+                     Maniobra, Transportista, UnidadTercero, Vacio)
 
 # Fletes y locales aparecen desde aquí (decidido con el usuario el 2026-09-30,
 # igual que Facturación, P4): el histórico viejo no se llena de filas vacías.
@@ -95,6 +97,31 @@ def maniobras_de_terceros(origen):
             .exclude(Exists(del_mismo_transportista)))
 
 
+def _normal(texto):
+    """Mayúsculas, sin acentos y con un solo espacio: textos escritos a mano."""
+    sin_acentos = unicodedata.normalize('NFKD', texto or '').encode('ascii', 'ignore').decode()
+    return ' '.join(sin_acentos.upper().split())
+
+
+def vacios_de_terceros():
+    """Los vacíos que entregó un tercero: van a Locales (usuario, 2026-10-15).
+
+    Cuenta si "Entregó" (operador_entrega, texto libre) incluye, como palabra
+    completa, el nombre de un transportista del catálogo que no sea FRABA
+    CONTAINER: "Pepe / Juan" es de PEPE, "JULIAN" no es de LIAN. Desde la fecha
+    de entrega del arranque de Cuentas por pagar; sin fecha de entrega no entra.
+    """
+    nombres = {_normal(n) for n in Transportista.objects.values_list('nombre', flat=True)}
+    nombres -= {'', TRANSPORTISTA_PROPIO}
+    if not nombres:
+        return []
+    patron = re.compile(r'(?<!\w)(?:%s)(?!\w)' % '|'.join(map(re.escape, nombres)))
+    # ponytail: filtra en Python; son decenas al mes desde el arranque.
+    return [v for v in (Vacio.objects.filter(fecha_entrega__gte=INICIO_CUENTAS_POR_PAGAR)
+                        .exclude(operador_entrega__isnull=True).exclude(operador_entrega=''))
+            if patron.search(_normal(v.operador_entrega))]
+
+
 def empresa_de_maniobra(maniobra_id):
     """La empresa de la factura de VENTA ligada (P61); None si no tiene."""
     return (Factura.objects.filter(maniobra_id=maniobra_id, estado='activa').exclude(empresa='')
@@ -108,7 +135,7 @@ class CuentaPorPagarSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CuentaPorPagar
-        fields = ['id', 'origen', 'maniobra', 'empresa', 'no_factura', 'total', 'concepto',
+        fields = ['id', 'origen', 'maniobra', 'vacio', 'empresa', 'no_factura', 'total', 'concepto',
                   'fecha', 'dias_credito', 'vencimiento', 'estado', 'pagada']
         # estado y pagada tienen su acción: cancelar es solo staff (P55, P56).
         read_only_fields = ['estado', 'pagada']
@@ -123,14 +150,22 @@ class CuentaPorPagarSerializer(serializers.ModelSerializer):
         if self.instance:
             # La maniobra y el origen se fijan al crear: moverlos convertiría la
             # cuenta de un viaje en la de otro sin dejar rastro.
-            for campo in ('origen', 'maniobra'):
+            for campo in ('origen', 'maniobra', 'vacio'):
                 if campo in datos and datos[campo] != getattr(self.instance, campo):
                     raise serializers.ValidationError({campo: 'No se puede cambiar.'})
             return datos
-        origen, maniobra = datos.get('origen'), datos.get('maniobra')
+        origen, maniobra, vacio = datos.get('origen'), datos.get('maniobra'), datos.get('vacio')
         if origen == 'mantenimiento' and maniobra:
             raise serializers.ValidationError({'maniobra': 'Mantenimiento no va ligado a una maniobra (P35).'})
-        if origen in ('flete', 'local'):
+        if vacio:
+            if origen != 'local' or maniobra:
+                raise serializers.ValidationError({'vacio': 'Un vacío solo va a Locales, sin maniobra.'})
+            if vacio not in vacios_de_terceros():
+                raise serializers.ValidationError({'vacio': 'Ese vacío no lo entregó un tercero.'})
+            if CuentaPorPagar.objects.filter(vacio=vacio, estado='activa').exists():
+                raise serializers.ValidationError(
+                    {'vacio': 'Ese vacío ya tiene su cuenta. Edítala, o cancélala para capturar otra.'})
+        elif origen in ('flete', 'local'):
             if not maniobra:
                 raise serializers.ValidationError({'maniobra': 'Falta la maniobra.'})
             if not maniobras_de_terceros(origen).filter(pk=maniobra.pk).exists():
@@ -140,7 +175,8 @@ class CuentaPorPagarSerializer(serializers.ModelSerializer):
                     {'maniobra': 'Esa maniobra ya tiene su cuenta. Edítala, o cancélala para capturar otra.'})
         if not datos.get('empresa'):
             # Sin empresa elegida: la de la factura de venta ligada (P61).
-            datos['empresa'] = empresa_de_maniobra(maniobra.pk) if maniobra else None
+            ligada = maniobra.pk if maniobra else (vacio.maniobra_id if vacio else None)
+            datos['empresa'] = empresa_de_maniobra(ligada) if ligada else None
             if not datos['empresa']:
                 raise serializers.ValidationError({'empresa': 'Elige Fraba o Soluciones.'})
         return datos
@@ -149,7 +185,7 @@ class CuentaPorPagarSerializer(serializers.ModelSerializer):
         # Solo las columnas tocadas: el rol estándar tiene UPDATE por columna y
         # un save() completo intentaría escribir también `estado`.
         # origen y maniobra llegan iguales o ya los rechazó validate().
-        datos = {k: v for k, v in datos.items() if k not in ('origen', 'maniobra')}
+        datos = {k: v for k, v in datos.items() if k not in ('origen', 'maniobra', 'vacio')}
         for campo, valor in datos.items():
             setattr(instancia, campo, valor)
         instancia.save(update_fields=[*datos, 'updated_by', 'updated_at'])
@@ -202,8 +238,8 @@ class CuentaPorPagarViewSet(SoloFinanzasMixin, mixins.ListModelMixin, mixins.Cre
         for placas, dueno in UnidadTercero.objects.values_list('placas', 'transportista'):
             if placas and dueno and dueno.strip():
                 duenos_pis.setdefault(placas.strip().upper(), set()).add(dueno.strip())
-        return Response([{
-            'maniobra': m.pk, 'folio': m.folio, 'transportista': m.transportista,
+        filas = [{
+            'maniobra': m.pk, 'vacio': None, 'folio': m.folio, 'transportista': m.transportista,
             'transportista_pis': ', '.join(sorted(duenos_pis.get((m.placas_pis or '').strip().upper(), ()))),
             'terminal': m.terminal, 'fecha_pis': m.fecha_pis, 'placas_pis': m.placas_pis,
             'tipo_servicio': m.tipo_servicio, 'tipo': m.tipo, 'peso': m.peso,
@@ -211,7 +247,32 @@ class CuentaPorPagarViewSet(SoloFinanzasMixin, mixins.ListModelMixin, mixins.Cre
             'origen_ruta': m.origen, 'destino': m.destino,
             'empresa_sugerida': empresas.get(m.pk),
             'cuenta': self.get_serializer(cuentas[m.pk]).data if m.pk in cuentas else None,
-        } for m in maniobras])
+        } for m in maniobras]
+        if origen == 'local':
+            filas = sorted(filas + self._filas_de_vacios(), reverse=True,
+                           key=lambda f: f['fecha_pis'] or date.min)
+        return Response(filas)
+
+    def _filas_de_vacios(self):
+        """Las entregas de vacío de terceros, con las claves de las columnas de
+        Locales: patio en Terminal, fecha de entrega en Fecha PIS y Entregó en
+        Transportista."""
+        cuentas = {c.vacio_id: c for c in CuentaPorPagar.objects.filter(
+            origen='local', estado='activa', vacio__isnull=False)}
+        vacios = {v.pk: v for v in vacios_de_terceros()}
+        vacios.update((v.pk, v) for v in Vacio.objects.filter(pk__in=cuentas))
+        empresas = dict(Factura.objects.filter(
+            maniobra_id__in={v.maniobra_id for v in vacios.values()}, estado='activa')
+            .exclude(empresa='').order_by('-id').values_list('maniobra_id', 'empresa'))
+        return [{
+            'maniobra': None, 'vacio': v.pk, 'folio': None, 'transportista': None,
+            'transportista_pis': v.operador_entrega, 'terminal': v.patio,
+            'fecha_pis': v.fecha_entrega, 'placas_pis': None, 'tipo_servicio': 'Vacío',
+            'tipo': v.tipo_contenedor, 'peso': None, 'contenedor': v.contenedor,
+            'referencia': None, 'origen_ruta': None, 'destino': None,
+            'empresa_sugerida': empresas.get(v.maniobra_id),
+            'cuenta': self.get_serializer(cuentas[v.pk]).data if v.pk in cuentas else None,
+        } for v in vacios.values()]
 
     @action(detail=True, methods=['post'])
     def pagada(self, request, pk=None):

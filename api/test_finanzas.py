@@ -14,9 +14,9 @@ from django.db import connections
 from django.test import SimpleTestCase, TestCase
 from rest_framework.test import APIClient
 
-from api.finanzas import falta_pago, maniobras_de_terceros
+from api.finanzas import falta_pago, maniobras_de_terceros, vacios_de_terceros
 from api.models import (CuentaPorPagar, Empleado, Factura, GastoFijo, Maniobra, PerfilUsuario,
-                        UnidadTercero, Vacio)
+                        Transportista, UnidadTercero, Vacio)
 
 AGO = date(2026, 8, 10)
 
@@ -122,6 +122,40 @@ class ManiobrasDeTercerosTests(Base):
         Maniobra.objects.create(placas_pis=' doble ', transportista='FRABA CONTAINER', fecha_pis=AGO)
         r = self.com.get('/api/cuentas-por-pagar/maniobras/?origen=local')
         self.assertEqual([f['transportista_pis'] for f in r.data], ['Garcia, Perez'])
+
+
+class VaciosDeTercerosTests(Base):
+    """La entrega de vacío de un tercero va a Locales (usuario, 2026-10-15)."""
+
+    def test_entrego_incluye_un_transportista_tercero_como_palabra(self):
+        for nombre in ('PEPE', 'LIAN', 'RICARDO LÁZARO', 'FRABA CONTAINER'):
+            Transportista.objects.create(nombre=nombre)
+        casos = {'pepe / Juan': True, ' ricardo  lazaro ': True, 'JULIAN': False,
+                 'Fraba Container': False, '': False, None: False}
+        ids = {e: Vacio.objects.create(operador_entrega=e, fecha_entrega=AGO).id for e in casos}
+        Vacio.objects.create(operador_entrega='PEPE', fecha_entrega=date(2026, 7, 31))
+        Vacio.objects.create(operador_entrega='PEPE')  # sin fecha de entrega
+        self.assertEqual({v.id for v in vacios_de_terceros()},
+                         {ids[e] for e, si in casos.items() if si})
+
+    def test_fila_propia_en_locales_con_su_cuenta(self):
+        Transportista.objects.create(nombre='PEPE')
+        m = Maniobra.objects.create(transportista='FRABA CONTAINER', fecha_pis=AGO)
+        Factura.objects.create(empresa='soluciones', serie='SEF', folio='1', maniobra=m)
+        v = Vacio.objects.create(operador_entrega='Pepe', fecha_entrega=AGO, patio='P1',
+                                 contenedor='MSCU1', maniobra=m)
+        datos = {'origen': 'local', 'vacio': v.id, 'total': '800', 'fecha': '2026-08-20'}
+        r = self.com.post('/api/cuentas-por-pagar/', datos, format='json')
+        self.assertEqual((r.status_code, r.data['empresa']), (201, 'soluciones'), r.data)
+        self.assertEqual(self.com.post('/api/cuentas-por-pagar/', datos, format='json').status_code, 400)
+        r = self.com.post('/api/cuentas-por-pagar/', {**datos, 'origen': 'flete'}, format='json')
+        self.assertEqual(r.status_code, 400)
+
+        v.operador_entrega = 'FRABA'  # cambia la regla: con cuenta sigue saliendo
+        v.save()
+        filas = self.com.get('/api/cuentas-por-pagar/maniobras/?origen=local').data
+        self.assertEqual([(f['vacio'], f['terminal'], f['cuenta']['total']) for f in filas],
+                         [(v.id, 'P1', '800.00')])
 
 
 class CuentaPorPagarTests(Base):
