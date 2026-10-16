@@ -1,0 +1,302 @@
+/* Panel SEGUIMIENTOS — resumen corto arriba a la derecha del inicio, a la altura
+   del logo.
+
+   La posición NO se decide aquí: el panel es el primer elemento de la columna
+   .home-lateral (App.css), que es la que se ancla al borde de la ventana y queda
+   fuera del flujo. Así el margen derecho se toca en un solo sitio y las alertas
+   de vencimiento, que van justo debajo, lo comparten sin repetir el cálculo. */
+.seg-panel {
+  width: 320px;
+  border: 1px solid #e6ecf5;
+  border-radius: 10px;
+  overflow: hidden;              /* recorta la cabecera al radio del borde */
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Mismo azul que el thead de las tablas (ManiobrasPage.css: .maniobras-table th) */
+.seg-header {
+  margin: 0;
+  padding: 8px 12px;
+  background: #2b3e50;
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+}
+
+.seg-cuerpo {
+  padding: 8px 12px 10px;
+}
+
+.seg-fila {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 0;
+  font-size: 0.82rem;
+}
+
+/* El color lo pone el componente desde STATUS_MAP. El borde tenue es porque los
+   dos colores de status son claros y sobre blanco se desdibujan. */
+.seg-bolita {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(16, 24, 40, 0.18);
+}
+
+.seg-etiqueta {
+  color: #344054;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+/* tabular-nums: los números no bailan de ancho al pasar de 9 a 10. */
+.seg-numero {
+  margin-left: auto;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #101828;
+}
+
+.seg-fallo {
+  margin: 0;
+  padding: 2px 0;
+  font-size: 0.78rem;
+  color: #b42318;
+}
+
+/* Por debajo de 1200px la columna vuelve al flujo (ver .home-lateral en App.css)
+   y el panel ocupa todo el ancho disponible. El corte TIENE que ser el mismo que
+   allí: con 320px fijos, un panel ya en flujo se quedaría corto y descolgado. */
+/* Las dos filas son botones: abren su desglose. Se resetea la apariencia de
+   <button> para que sigan viéndose exactamente igual que antes. */
+.seg-fila--boton {
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 10px 6px;
+  margin: 0 -6px;                /* compensa el padding: la fila no se desplaza */
+  transition: background 0.12s ease;
+}
+
+.seg-fila--boton:hover,
+.seg-fila--boton:focus-visible {
+  background: #f2f6fc;
+}
+
+/* ── Desglose (modal) ─────────────────────────────────────────────────────── */
+
+/* Mismo overlay que el resto de modales de la app (ver BitacoraGastosModal.css). */
+.seg-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.seg-modal {
+  display: flex;
+  flex-direction: column;
+  /* El ancho lo pone la TABLA, no un número fijo. PENDIENTES son once columnas
+     más la casilla, y con el 1680px de antes las últimas se salían: había que
+     scrollar de lado para leer la fecha de entrega, que es justo la que se mira.
+     `fit-content` pide lo que ocupa el contenido y ni un píxel más, así que con
+     pocas columnas el modal encoge en vez de dejar hueco vacío.
+
+     El tope es el hueco que deja el overlay (100% = ventana menos sus 16px de
+     padding a cada lado). El mínimo evita que el modal se encoja al ancho del
+     mensaje cuando la lista está vacía. */
+  width: fit-content;
+  min-width: min(420px, 100%);
+  max-width: 100%;
+  max-height: 85vh;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.24);
+  font-family: 'Inter', sans-serif;
+}
+
+.seg-modal-header {
+  /* El botón de cerrar sale del flujo (abajo) para que el título quede centrado
+     respecto al MODAL y no respecto al hueco que deja ese botón: con el título
+     en flex y la X ocupando sitio, el centro se corría ~15px a la izquierda. */
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #2b3e50;
+  color: #fff;
+}
+
+.seg-modal-titulo {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.seg-modal-cerrar {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  border: 0;
+  background: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.seg-modal-cerrar:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.seg-modal-body {
+  padding: 12px 14px 14px;
+  overflow: auto;
+}
+
+.seg-modal-estado {
+  margin: 0;
+  padding: 18px 4px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: #667085;
+}
+
+.seg-modal-estado--error {
+  color: #b42318;
+}
+
+/* La tabla es más ancha que el modal en pantallas estrechas: scrolla ella, no
+   la página (misma regla que las tablas de las pantallas grandes). */
+.seg-modal-scroll {
+  overflow-x: auto;
+}
+
+/* Aquí el tope no lo pone la ventana sino el propio modal, que ya es una
+   columna flex con su max-height: la lista se queda con el hueco que sobre bajo
+   la cabecera del modal. De ahí que se anule el max-height de
+   .tabla-cabecera-fija en vez de darle otro número. min-height: 0 porque un
+   elemento flex no encoge por debajo de su contenido sin él, y sin encoger no
+   scrollea. El selector lleva el padre para ganar la especificidad sin depender
+   del orden en que el bundle junte las hojas. */
+.seg-modal .seg-modal-scroll {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+
+.seg-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  /* SIN `white-space: nowrap`: con el modal en fit-content, el navegador mide
+     primero la tabla sin partir nada, así que mientras quepa en la ventana se ve
+     exactamente igual que antes, en una línea por celda. Cuando NO cabe —una
+     pantalla estrecha— las celdas parten y la tabla se enseña entera un poco más
+     alta, en vez de cortarse y obligar a scrollar de lado. */
+}
+
+.seg-th {
+  padding: 7px 10px;
+  background: #f2f6fc;
+  color: #344054;
+  text-align: left;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid #e6ecf5;
+}
+
+.seg-td {
+  padding: 7px 10px;
+  color: #101828;
+  border-bottom: 1px solid #f0f3f8;
+}
+
+/* La fecha de entrega, destacada entre once columnas de texto plano. */
+.seg-td--fuerte {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  /* La única celda que NO puede partirse: una fecha rota en dos líneas
+     ("27/08/" y "2026") se lee mal justo en la columna que más se mira. */
+  white-space: nowrap;
+}
+
+/* ── PENDIENTE DE PROGRAMAR ───────────────────────────────────────────────── */
+/* Marcada: la fila se pinta de verde y NADA MÁS. A diferencia de la página de
+   Pendientes, el texto no se tacha (decisión del usuario, 2026-08-26): allí un
+   pendiente hecho ya no interesa, aquí el servicio sigue en piso y hay que poder
+   leerlo igual de bien después de marcarlo. */
+/* :not(--fuerte) deja la FECHA DE ENTREGA sin teñir: sobre la fila verde queda
+   en su fondo normal y en negrita, que es como el usuario la quiere destacada
+   (2026-08-26). Teñirla la igualaba al resto justo en la fila ya revisada. */
+.seg-fila--marcada .seg-td:not(.seg-td--fuerte) {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.seg-th--check,
+.seg-td--check {
+  width: 34px;
+  padding-left: 10px;
+  padding-right: 0;
+}
+
+.seg-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.seg-check:hover:not(:disabled) {
+  border-color: #16a34a;
+}
+
+.seg-check:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.seg-check:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.seg-fila--marcada .seg-check {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+@media (max-width: 1200px) {
+  .seg-panel {
+    width: 100%;
+  }
+}
