@@ -367,23 +367,23 @@ class ReporteViajeDocumentoTests(BaseReporte):
     def test_un_si_no_contestado_pisa_la_etiqueta(self):
         rid = self.crear(reparacion=True, rescate=False, maniobra_vacio='si').data['id']
         ws = self.hoja(self.descargar(rid))
-        self.assertEqual(ws['G17'].value, 'SI')   # ¿REPARACIÓN?
-        self.assertEqual(ws['C18'].value, 'NO')   # ¿RESCATE?
-        self.assertEqual(ws['J20'].value, 'SI')   # MANIOBRA DE VACÍO
+        self.assertEqual(ws['G18'].value, 'SI')   # ¿REPARACIÓN?
+        self.assertEqual(ws['C19'].value, 'NO')   # ¿RESCATE?
+        self.assertEqual(ws['J21'].value, 'SI')   # MANIOBRA DE VACÍO
 
     def test_un_si_no_sin_contestar_deja_la_etiqueta_para_rodearla_a_mano(self):
         rid = self.crear().data['id']
         ws = self.hoja(self.descargar(rid))
         original = self.plantilla()
-        for celda in ('G17', 'C18', 'J20'):
+        for celda in ('G18', 'C19', 'J21'):
             self.assertEqual(ws[celda].value, original[celda].value, celda)
 
     def test_las_estadias_borran_la_palabra_que_no_aplica(self):
         """Aquí el SI y el NO son dos celdas distintas, no una etiqueta."""
         rid = self.crear(estadias=True).data['id']
         ws = self.hoja(self.descargar(rid))
-        self.assertEqual(ws['E22'].value, 'SI')
-        self.assertIn(ws['F22'].value, (None, ''))
+        self.assertEqual(ws['E23'].value, 'SI')
+        self.assertIn(ws['F23'].value, (None, ''))
 
     def test_la_recoleccion_se_marca_con_una_X_en_su_casilla(self):
         """Las dos palabras se quedan impresas, como en el papel: lo que cambia
@@ -405,7 +405,7 @@ class ReporteViajeDocumentoTests(BaseReporte):
         rid = self.crear().data['id']
         ws = self.hoja(self.descargar(rid))
         original = self.plantilla()
-        for celda in ('I3', 'K3', 'E22', 'F22'):
+        for celda in ('I3', 'K3', 'E23', 'F23'):
             self.assertEqual(ws[celda].value, original[celda].value, celda)
         for casilla in ('J3', 'L3'):
             self.assertIn(ws[casilla].value, (None, ''), casilla)
@@ -454,15 +454,15 @@ class ReporteViajeDocumentoTests(BaseReporte):
         # en el archivo se pierde en cuanto alguien lo reedita o lo reemplaza.
         self.assertEqual(ws.row_dimensions[4].height, 33.0)
         # openpyxl lo normaliza a referencia absoluta con el nombre de la hoja.
-        self.assertIn('$A$1:$L$25', str(ws.print_area))
+        self.assertIn('$A$1:$L$26', str(ws.print_area))
 
     # ── El espacio de la firma no se toca ────────────────────────────────
     def test_el_espacio_de_la_firma_se_queda_vacio(self):
         """La FIRMA DEL COORDINADOR va en papel."""
         rid = self.crear(comentarios='sin novedad').data['id']
         ws = self.hoja(self.descargar(rid))
-        self.assertEqual(ws['A24'].value, 'SIN NOVEDAD')
-        self.assertIsNone(ws['F25'].value)
+        self.assertEqual(ws['A25'].value, 'SIN NOVEDAD')
+        self.assertIsNone(ws['F26'].value)
 
     def test_el_documento_exige_autenticacion(self):
         rid = self.crear().data['id']
@@ -618,7 +618,7 @@ class ReporteViajeRegresoTests(BaseReporte):
         rid = self.crear(servicio='carga_suelta').data['id']
         self.assertEqual(ReporteViaje.objects.get(pk=rid).maniobra_vacio, 'no_aplica')
         ws = load_workbook(BytesIO(self.cliente.get(f'{URL}{rid}/documento/?formato=excel').content)).worksheets[0]
-        self.assertEqual(ws['J20'].value, 'N/A')
+        self.assertEqual(ws['J21'].value, 'N/A')
 
     def test_sin_fecha_maniobra_en_el_vacio_es_no(self):
         Vacio.objects.create(maniobra=self.viaje(), patio='SSA')
@@ -837,3 +837,16 @@ class DieselLlegadaTests(BaseReporte):
         texto = 'medio tanque, aprox 120 lt; ' * 50 + 'fin'
         self.assertEqual(self.crear(diesel_llegada=texto).data['diesel_llegada'], texto)
         self.assertEqual(self.crear(folio='F-2', diesel_llegada=None).data['diesel_llegada'], '')
+
+    def hoja(self, **campos):
+        rid = self.crear(**campos).data['id']
+        doc = ReporteViajeDocumentoTests.descargar(self, rid)
+        return ReporteViajeDocumentoTests.hoja(doc)
+
+    def test_sale_en_su_renglon_del_documento_y_lo_largo_se_encoge(self):
+        ws = self.hoja(diesel_llegada='medio tanque')
+        self.assertEqual(ws['A17'].value, '¿CON CUÁNTO DIÉSEL LLEGÓ?')
+        self.assertEqual(ws['D17'].value, 'MEDIO TANQUE')
+        self.assertFalse(ws['D17'].alignment.shrinkToFit)
+        ws = self.hoja(folio='F-2', diesel_llegada='x' * 141)
+        self.assertTrue(ws['D17'].alignment.shrinkToFit)

@@ -3265,6 +3265,9 @@ _MAX_OPERADOR_EN_DOS_LINEAS = 53
 # El doble del alto normal de la plantilla (16.5), o sea dos renglones.
 _ALTO_FILA_OPERADOR = 33.0
 
+# "¿CON CUÁNTO DIÉSEL LLEGÓ?" (D17:L17, ~140 caracteres de ancho, una línea).
+_MAX_DIESEL_LLEGADA_EN_UNA_LINEA = 140
+
 
 def _encoger_para_caber(ws, celda):
     """Último recurso: encoge la letra hasta que el texto quepa.
@@ -3301,7 +3304,7 @@ def _ajustar_a_una_hoja(ws):
     ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
     # Sin área de impresión, cualquier celda con formato fuera del formato
     # arrastraría una página en blanco detrás.
-    ws.print_area = 'A1:L25'
+    ws.print_area = 'A1:L26'
     ws.page_margins = PageMargins(left=0.25, right=0.25, top=0.25, bottom=0.25,
                                   header=0, footer=0)
     # Doble alto en la fila de OPERADOR O TERCERO: la casilla I4:J4 mide unos
@@ -3365,7 +3368,7 @@ def _llenar_reporte_viaje(ws, reporte, datos):
     escribir('I10', _fecha_hora_doc(reporte.descarga))
 
     # ── En trayecto: los cinco renglones del papel, fila 12 = orden 1 ──
-    # De la sexta carga en adelante NO se imprime: la fila 17 ya es el aceite y
+    # De la sexta carga en adelante NO se imprime: la fila 17 ya es el diésel de llegada y
     # escribir ahí lo pisaria. Se capturan y cuentan para el total del diesel y
     # el rendimiento, que es para lo que se pidieron (usuario, 2026-08-25).
     por_orden = {c['orden']: c for c in datos.get('cargas', [])}
@@ -3383,32 +3386,38 @@ def _llenar_reporte_viaje(ws, reporte, datos):
         escribir(f'I{fila}', _numero_doc(carga.get('litros_urea')))
         escribir(f'K{fila}', _numero_doc(carga.get('total_urea')))
 
-    escribir('C17', reporte.litros_aceite if reporte.litros_aceite is not None else '')
-    escribir('E17', reporte.precio_aceite if reporte.precio_aceite is not None else '')
-    _marcar_si_no(ws, 'G17', reporte.reparacion)
-    escribir('I17', reporte.reparacion_que)
-    escribir('K17', reporte.reparacion_costo if reporte.reparacion_costo is not None else '')
-    _marcar_si_no(ws, 'C18', reporte.rescate)
-    escribir('G18', reporte.rescate_unidad)
-    escribir('J18', reporte.rescate_operador)
+    # Texto libre y sin límite: si no cabe en la línea, se encoge.
+    # ponytail: umbral fijo, ~140 caracteres miden D:L en la plantilla.
+    escribir('D17', reporte.diesel_llegada)
+    if len(reporte.diesel_llegada or '') > _MAX_DIESEL_LLEGADA_EN_UNA_LINEA:
+        _encoger_para_caber(ws, 'D17')
+
+    escribir('C18', reporte.litros_aceite if reporte.litros_aceite is not None else '')
+    escribir('E18', reporte.precio_aceite if reporte.precio_aceite is not None else '')
+    _marcar_si_no(ws, 'G18', reporte.reparacion)
+    escribir('I18', reporte.reparacion_que)
+    escribir('K18', reporte.reparacion_costo if reporte.reparacion_costo is not None else '')
+    _marcar_si_no(ws, 'C19', reporte.rescate)
+    escribir('G19', reporte.rescate_unidad)
+    escribir('J19', reporte.rescate_operador)
 
     # ── Regreso ──
-    escribir('E20', _fecha_hora_doc(reporte.llegada_manzanillo))
+    escribir('E21', _fecha_hora_doc(reporte.llegada_manzanillo))
     # Tres respuestas: "N/A" pisa la etiqueta igual que SI / NO.
     if reporte.maniobra_vacio == 'no_aplica':
-        ws['J20'] = 'N/A'
+        ws['J21'] = 'N/A'
     else:
-        _marcar_si_no(ws, 'J20', {'si': True, 'no': False}.get(reporte.maniobra_vacio))
-    escribir('C21', reporte.patio_entrega)
-    escribir('E21', _fecha_hora_doc(reporte.cita_vacio))
-    escribir('H21', reporte.unidad_vacio)
-    escribir('J21', reporte.operador_vacio)
-    _dejar_solo_la_elegida(ws, 'E22', 'F22', reporte.estadias)
-    escribir('I22', reporte.estadias_horas if reporte.estadias_horas is not None else '')
+        _marcar_si_no(ws, 'J21', {'si': True, 'no': False}.get(reporte.maniobra_vacio))
+    escribir('C22', reporte.patio_entrega)
+    escribir('E22', _fecha_hora_doc(reporte.cita_vacio))
+    escribir('H22', reporte.unidad_vacio)
+    escribir('J22', reporte.operador_vacio)
+    _dejar_solo_la_elegida(ws, 'E23', 'F23', reporte.estadias)
+    escribir('I23', reporte.estadias_horas if reporte.estadias_horas is not None else '')
 
-    # ── Pie. F25:L25 (el espacio de la firma) se deja vacío a propósito: se
+    # ── Pie. F26:L26 (el espacio de la firma) se deja vacío a propósito: se
     # firma en papel. ──
-    escribir('A24', reporte.comentarios)
+    escribir('A25', reporte.comentarios)
 
 
 class ReporteViajeViewSet(viewsets.ModelViewSet):
