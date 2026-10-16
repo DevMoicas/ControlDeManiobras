@@ -20,7 +20,10 @@ export const conValor = (filtros) => Object.fromEntries(
 // cada elección. Plegado la primera vez (usuario, 2026-10-13).
 const abiertos = {};
 
-export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinador = false }) {
+// `soloFechas`: solo fecha, rango y mes, sin pedir opciones al servidor. Lo usan
+// Facturación y Cuentas por pagar, que filtran en pantalla (utils/filtroFechas);
+// ahí `endpoint` es solo la clave para recordar si el panel está abierto.
+export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinador = false, soloFechas = false }) {
   const [opciones, setOpciones] = useState({});
   // Plegados por defecto, se abren con el botón (usuario, 2026-10-13). El
   // número del botón avisa de los que siguen aplicados con el panel cerrado.
@@ -31,8 +34,8 @@ export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinad
   // orden (usuario, 2026-10-13). Mientras falte una vive aquí y no recarga.
   const [rango, setRango] = useState({ desde: filtros.desde || "", hasta: filtros.hasta || "" });
   useEffect(() => {
-    apiClient.get(`${endpoint}opciones/`).then(setOpciones).catch(() => {});
-  }, [endpoint]);
+    if (!soloFechas) apiClient.get(`${endpoint}opciones/`).then(setOpciones).catch(() => {});
+  }, [endpoint, soloFechas]);
 
   const poner = (campo, valor) => {
     if (!(campo in rango)) return onChange({ ...filtros, [campo]: valor });
@@ -84,8 +87,8 @@ export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinad
       {entrada("hasta", "Hasta", "fecha")}
       {entrada("mes", "Mes", "mes")}
       {conCoordinador && select("coordinador", "Coordinador", opciones.coordinadores)}
-      {select("operador", "Operador", opciones.operadores)}
-      {select("ruta", "Ruta", opciones.rutas)}
+      {!soloFechas && select("operador", "Operador", opciones.operadores)}
+      {!soloFechas && select("ruta", "Ruta", opciones.rutas)}
       {Object.values({ ...filtros, ...rango }).some(Boolean) && (
         <button type="button" className="db-limpiar" onClick={limpiar}>
           Limpiar filtros

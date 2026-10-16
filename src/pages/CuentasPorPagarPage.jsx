@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { apiClient } from "../api/apiClient";
+import { enFechas } from "../utils/filtroFechas.mjs";
+import FiltrosLista from "../components/FiltrosLista/FiltrosLista";
 import CeldaEditable from "../components/CeldaEditable/CeldaEditable";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
@@ -295,6 +297,9 @@ function Cuentas({ origen, esStaff }) {
   const [filas, setFilas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [nueva, setNueva] = useState(null); // la fila para la que se captura
+  // En pantalla: Fecha PIS / Entrega en Fletes y Locales (también las filas sin
+  // factura), la de la factura en Mantenimiento (usuario, 2026-10-16).
+  const [fechas, setFechas] = useState({});
   const dialogo = useRef(null);
   const conManiobra = origen !== "mantenimiento";
 
@@ -370,14 +375,16 @@ function Cuentas({ origen, esStaff }) {
 
   const columnas = COLUMNAS_MANIOBRA[origen];
   const manuales = ["Empresa", "N° Factura", "Total", "Concepto", "Fecha", "Días de crédito", "Vence", "Pagada"];
-  const total = filas.reduce((s, f) => s + (f.cuenta && !f.cuenta.pagada ? Number(f.cuenta.total) : 0), 0);
+  const visibles = filas.filter((f) => enFechas(conManiobra ? f.fecha_pis : f.cuenta?.fecha, fechas));
+  const total = visibles.reduce((s, f) => s + (f.cuenta && !f.cuenta.pagada ? Number(f.cuenta.total) : 0), 0);
 
   return (
     <>
+      <FiltrosLista endpoint={`cxp-${origen}`} soloFechas filtros={fechas} onChange={setFechas} />
       <div className="toolbar">
         <div className="np-resumen">
           Por pagar: <strong>{moneda(total)}</strong>
-          {conManiobra && ` · ${filas.filter((f) => !f.cuenta).length} sin factura capturada`}
+          {conManiobra && ` · ${visibles.filter((f) => !f.cuenta).length} sin factura capturada`}
         </div>
         {!conManiobra && (
           <div className="toolbar-acciones">
@@ -400,11 +407,13 @@ function Cuentas({ origen, esStaff }) {
           <tbody>
             {cargando && filas.length === 0 ? (
               <tr><td colSpan={20} className="np-vacio">Cargando…</td></tr>
+            ) : visibles.length === 0 && filas.length > 0 ? (
+              <tr><td colSpan={20} className="np-vacio">Nada en esas fechas.</td></tr>
             ) : filas.length === 0 ? (
               <tr><td colSpan={20} className="np-vacio">
                 {conManiobra ? "No hay maniobras de terceros desde agosto de 2026." : "No hay facturas de mantenimiento."}
               </td></tr>
-            ) : filas.map((f, i) => {
+            ) : visibles.map((f, i) => {
               const c = f.cuenta;
               return (
                 <tr key={f.vacio ? `v${f.vacio}` : f.maniobra ?? c?.id ?? i}>

@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Upload, X } from "lucide-react";
 import { apiClient } from "../api/apiClient";
 import { filtrarBusqueda } from "../utils/buscar.mjs";
+import { enFechas } from "../utils/filtroFechas.mjs";
+import FiltrosLista from "../components/FiltrosLista/FiltrosLista";
 import SearchBar from "../components/SearchBar/SearchBar";
 import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
@@ -122,6 +124,8 @@ export default function FacturacionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busqueda, setBusqueda] = useState("");
+  // Por fecha de emisión, en pantalla: las dos tablas llegan enteras (usuario, 2026-10-16).
+  const [fechas, setFechas] = useState({});
   const [subiendo, setSubiendo] = useState(false);
   const [resumen, setResumen] = useState(null);
   const tablaRef = useRef(null);
@@ -152,8 +156,9 @@ export default function FacturacionPage() {
   const enAuditoria = pagina === "auditoria";
   // La comparación llega entera: el filtro de estado de Auditoría es local.
   const visibles = useMemo(() => filtrarBusqueda(
-    enAuditoria ? auditoria.facturas.filter((f) => f.estado === estado) : filas, busqueda,
-  ), [enAuditoria, auditoria, filas, estado, busqueda]);
+    (enAuditoria ? auditoria.facturas.filter((f) => f.estado === estado) : filas)
+      .filter((f) => enFechas(f.fecha_emision, fechas)), busqueda,
+  ), [enAuditoria, auditoria, filas, estado, busqueda, fechas]);
   const distintas = auditoria.facturas.filter((f) => f.diferencias.length);
 
   const subir = async (e) => {
@@ -251,6 +256,8 @@ export default function FacturacionPage() {
         <SearchBar value={busqueda} onChange={setBusqueda}
           placeholder="Buscar por cliente, RFC, serie o folio…" />
       </div>
+
+      <FiltrosLista endpoint="facturacion" soloFechas filtros={fechas} onChange={setFechas} />
 
       <div className="toolbar">
         <div className="fc-filtro" role="group" aria-label="Estado de la factura">
