@@ -89,7 +89,8 @@
 /* Auditoría: el resumen de lo que no coincide con Facturación, y la fila. */
 .nomina-container .fc-discrepancias { border-color: #f59e0b; background: #fffbeb; padding-right: 18px; }
 .nomina-container .fc-discrepancias ul { max-height: 220px; overflow-y: auto; }
-.nomina-container tr.fc-distinta td { background: #fffbeb; }
+/* Rojo pastel: que la fila que no coincide se vea sin leer la alerta (cliente, 2026-10-16). */
+.nomina-container tr.fc-distinta td { background: #fee2e2; }
 
 /* Facturación: la descripción del XML puede ser larga. */
 .nomina-container .fc-descripcion { min-width: 260px; white-space: normal; }

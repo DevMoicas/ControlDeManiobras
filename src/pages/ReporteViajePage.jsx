@@ -598,6 +598,11 @@ export default function ReporteViajePage() {
             <input type="number" step="0.01" min="0" value={abierto.rendimiento_diesel ?? ""}
                    onChange={(e) => cambiar("rendimiento_diesel", e.target.value)} />
           </Campo>
+          {/* Texto libre a petición del cliente (2026-10-16): "medio tanque", "120 lt"… */}
+          <Campo label="¿Con cuánto diésel llegó?">
+            <input value={abierto.diesel_llegada ?? ""}
+                   onChange={(e) => cambiar("diesel_llegada", e.target.value)} />
+          </Campo>
           <Campo label="Lt aceite">
             <input type="number" step="0.01" min="0" value={abierto.litros_aceite ?? ""}
                    onChange={(e) => cambiar("litros_aceite", e.target.value)} />

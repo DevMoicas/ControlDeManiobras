@@ -144,7 +144,7 @@ export const REPORTE_VACIO = {
   cita: null, salida_puerto: null, inicio_pactado: null, salida_real: null,
   unidad: "", remolque_1: "", remolque_2: "", km_inicial: "", km_final: "",
   llegada_cliente: null, descarga: null,
-  litros_aceite: "", precio_aceite: "", rendimiento_diesel: "",
+  litros_aceite: "", precio_aceite: "", rendimiento_diesel: "", diesel_llegada: "",
   reparacion: null, reparacion_que: "", reparacion_costo: "",
   rescate: null, rescate_unidad: "", rescate_operador: "",
   llegada_manzanillo: null, maniobra_vacio: null,
