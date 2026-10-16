@@ -579,7 +579,7 @@ export default function ReporteViajePage() {
           <button type="button" className="rv-btn rv-btn--mini" onClick={anadirCarga}>
             + Añadir carga de diésel
           </button>
-          {/* El Excel/PDF tiene cinco renglones fijos (fila 12 a 16; la 17 ya es
+          {/* El Excel/PDF tiene cinco renglones fijos (fila 12 a 16; la 17 ya es el diésel de llegada y la 18
               el aceite). Lo que se capture de más cuenta para el total y el
               rendimiento, pero no sale impreso — mejor decirlo que descubrirlo
               al abrir el documento. */}
