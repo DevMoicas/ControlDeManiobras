@@ -77,9 +77,10 @@ def ve_rendimiento(usuario):
 
 # ── Serie + folio ────────────────────────────────────────────────────────────
 EMPRESA_DE_SERIE = {'SEF': 'soluciones', 'S': 'fraba'}  # P29, P61
-# Facturación empieza con las maniobras de julio de 2026 (usuario, 2026-10-15):
-# las anteriores no entran, para no tener que subir el XML de cada factura vieja.
-INICIO_FACTURACION = date(2026, 7, 1)
+# Facturación empieza con las maniobras de 2026 (usuario, 2026-10-16; del
+# 2026-10-15 al 16 fue julio): las anteriores no entran, para no tener que subir
+# el XML de cada factura vieja.
+INICIO_FACTURACION = date(2026, 1, 1)
 
 _PIEZA = re.compile(r'^([A-Z]*)(\d+)$')
 

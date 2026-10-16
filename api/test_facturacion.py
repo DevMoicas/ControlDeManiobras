@@ -202,7 +202,7 @@ class CargaExcelTests(Base):
         self.assertEqual(Gasto.objects.get(maniobra=m).facturado, '7')
 
 
-JULIO = date(2026, 7, 1)  # INICIO_FACTURACION
+JULIO = date(2026, 7, 1)  # una fecha cualquiera dentro de Facturación
 
 
 class FilasDeLaManiobraTests(Base):
@@ -251,13 +251,20 @@ class FilasDeLaManiobraTests(Base):
         self.assertEqual(self.filas(), [('', '')])
         self.assertIsNone(Gasto.objects.get(maniobra=self.m).facturado)
 
-    def test_solo_desde_julio_2026(self):
-        self.m.fecha_pis = date(2026, 6, 30)
+    def test_solo_desde_2026(self):
+        self.m.fecha_pis = date(2025, 12, 31)
         self.m.save()
         self.guardar(folio='F-1', no_factura='S 1')
         self.assertEqual(Factura.objects.count(), 0)
         self.guardar(fecha_pis=None)                   # sin fecha tampoco
         self.assertEqual(Factura.objects.count(), 0)
+
+    def test_enero_2026_ya_entra(self):
+        # Desde el 2026-10-16; antes empezaba en julio.
+        self.m.fecha_pis = date(2026, 1, 1)
+        self.m.save()
+        self.guardar(folio='F-1', no_factura='S 1')
+        self.assertEqual(self.filas(), [('S', '1')])
         self.guardar(fecha_pis='2026-07-01')           # al entrar en julio nace
         self.assertEqual(self.filas(), [('S', '1')])
 
@@ -468,3 +475,4 @@ class CuentasPorCobrarTests(Base):
         d = self.usuario('admin', staff=True).get(f'{URL}cobranza-semanal/').data
         self.assertEqual([(str(s['semana'])[:10], s['total']) for s in d],
                          [('2026-09-07', '200.00'), ('2026-09-14', '100.00')])
+
