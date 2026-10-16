@@ -34,7 +34,7 @@ servidor local que recorre crear → duplicado rechazado → PATCH parcial → f
 
 Formato en papel que llenan los coordinadores por cada viaje. Hoy vive fuera del sistema:
 `docs/planes/REPORTE COORDINADORES.md` (exportación degradada) y la plantilla real en
-`api/documentos/templates/REPORTE COORDINADORES.xlsx`, 12 columnas × 25 filas.
+`api/documentos/templates/REPORTE COORDINADORES.xlsx`, 12 columnas × 26 filas (25 hasta el 2026-10-16).
 
 El objetivo es capturarlo en el sistema, guardarlo en base de datos y poder descargarlo
 en Excel o PDF para firmarlo.
@@ -179,7 +179,7 @@ esas cifras.
 
 ## Mapa de celdas de la plantilla
 
-`REPORTE COORDINADORES.xlsx`, hoja `Table 1`, rango `A1:L25`, 68 combinaciones.
+`REPORTE COORDINADORES.xlsx`, hoja `Table 1`, rango `A1:L26`, 70 combinaciones.
 La etiqueta va en una celda y el valor en la siguiente:
 
 | Fila | Etiqueta → celda de valor |
@@ -193,18 +193,19 @@ La etiqueta va en una celda y el valor en la siguiente:
 | 9 | OPERADOR `A9:C9` → **`D9`** · KM FINAL `G9` → **`H9`** · RENDIMIENTO `I9:J9` → **`K9`** |
 | 10 | LLEGADA CON CLIENTE `A10:C10` → **`D10`** · HR DE DESCARGA `G10:H10` → **`I10`** |
 | 12–16 | LT DIESEL `A:B` → **`C`** · PRECIO X LITRO `D` → **`E`** · TOTAL `F` → **`G`** · LT UREA `H` → **`I`** · TOTAL `J` → **`K`** |
-| 17 | LT ACEITE `A17:B17` → **`C17`** · PRECIO `D17` → **`E17`** · REPARACIÓN? `F17` → `G17` · ¿QUÉ? `H17` → **`I17`** · COSTO `J17` → **`K17`** |
-| 18 | RESCATE `A18:B18` → `C18:D18` · UNIDAD RESCATE `E18:F18` → **`G18`** · OPERADOR `I18` → **`J18`** |
-| 20 | LLEGADA A MANZANILLO `A20:D20` → **`E20`** · MANIOBRA DE VACÍO `H20:I20` → `J20:L20` |
-| 21 | PATIO DE ENTREGA `A21:B21` → **`C21`** · CITA `D21` → **`E21`** · UNIDAD `G21` → **`H21`** · OPERADOR `I21` → **`J21`** |
-| 22 | ESTADÍAS `D22` → `E22` SI / `F22` NO · ¿Cuántas? `G22:H22` → **`I22`** |
-| 24 | COMENTARIOS (`A23:L23` es el encabezado) → **`A24`** |
-| 25 | FIRMA DEL COORDINADOR `A25:E25`, espacio de firma `F25:L25` — se deja **vacío**, se firma en papel |
+| 17 | ¿CON CUÁNTO DIÉSEL LLEGÓ? `A17:C17` → **`D17:L17`** (texto libre; > 140 caracteres se encoge). Renglón añadido el 2026-10-16 (0084): todo lo de abajo bajó uno |
+| 18 | LT ACEITE `A18:B18` → **`C18`** · PRECIO `D18` → **`E18`** · REPARACIÓN? `F18` → `G18` · ¿QUÉ? `H18` → **`I18`** · COSTO `J18` → **`K18`** |
+| 19 | RESCATE `A19:B19` → `C19:D19` · UNIDAD RESCATE `E19:F19` → **`G19`** · OPERADOR `I19` → **`J19`** |
+| 21 | LLEGADA A MANZANILLO `A21:D21` → **`E21`** · MANIOBRA DE VACÍO `H21:I21` → `J21:L21` |
+| 22 | PATIO DE ENTREGA `A22:B22` → **`C22`** · CITA `D22` → **`E22`** · UNIDAD `G22` → **`H22`** · OPERADOR `I22` → **`J22`** |
+| 23 | ESTADÍAS `D23` → `E23` SI / `F23` NO · ¿Cuántas? `G23:H23` → **`I23`** |
+| 25 | COMENTARIOS (`A24:L24` es el encabezado) → **`A25`** |
+| 26 | FIRMA DEL COORDINADOR `A26:E26`, espacio de firma `F26:L26` — se deja **vacío**, se firma en papel |
 
 ### Los Sí/No no tienen celda de respuesta
 
-La plantilla imprime `SI / NO` como etiqueta para rodear a mano (reparación `G17`, rescate
-`C18:D18`, maniobra de vacío `J20:L20`, estadías en `E22`/`F22`). Regla al generar el documento:
+La plantilla imprime `SI / NO` como etiqueta para rodear a mano (reparación `G18`, rescate
+`C19:D19`, maniobra de vacío `J21:L21`, estadías en `E23`/`F23`). Regla al generar el documento:
 **si el campo tiene respuesta, se sobrescribe la etiqueta con `SI` o `NO`; si está sin contestar, se
 deja el `SI / NO` intacto** para que se rodee a mano. Una sola regla, sin celdas nuevas ni tocar el
 diseño del formato.
