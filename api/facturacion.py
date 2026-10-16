@@ -28,6 +28,7 @@ from openpyxl import load_workbook
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
@@ -682,10 +683,66 @@ class CancelableMixin:
         return self._cambiar_estado(request, 'activa')
 
 
+# ── Las dos tablas de la pantalla, de 100 en 100 (usuario, 2026-10-16) ──────
+# La búsqueda y las fechas se aplican AQUÍ y sobre todas las filas: con la
+# página de 100 en el navegador, filtrar allí solo vería lo ya cargado. Es la
+# misma regla que utils/buscar.mjs y utils/filtroFechas.mjs del frontend (sin
+# acentos ni mayúsculas, -palabra excluye, "frase" exacta; fecha, rango en
+# cualquier orden y mes), sobre los valores de la fila tal como salen en el JSON.
+# ponytail: filtra en Python sobre la lista entera (cientos o pocos miles de
+# facturas); si crece mucho más, pasarlo a SQL (unaccent) y paginar el queryset.
+class PaginaDeCien(PageNumberPagination):
+    page_size = 100
+
+
+_TERMINO = re.compile(r'-?"[^"]*"|\S+')
+
+
+def _texto_buscable(valor):
+    if isinstance(valor, (list, tuple)):
+        valor = ' '.join(str(v) for v in valor)
+    return _cabecera('' if valor is None else valor)
+
+
+def buscar(filas, consulta):
+    incluir, excluir = [], []
+    for bruto in _TERMINO.findall(consulta or ''):
+        negado = bruto.startswith('-')
+        termino = _cabecera((bruto[1:] if negado else bruto).replace('"', ''))
+        if termino:  # un '-' suelto o unas comillas vacías no filtran
+            (excluir if negado else incluir).append(termino)
+    if not incluir and not excluir:
+        return filas
+
+    def casa(fila):
+        valores = [_texto_buscable(v) for v in fila.values()]
+        hay = lambda t: any(t in v for v in valores)
+        return all(map(hay, incluir)) and not any(map(hay, excluir))
+    return [f for f in filas if casa(f)]
+
+
+def en_fechas(valor, p):
+    """?fecha= ?desde=&hasta= (las dos, en cualquier orden) ?mes=AAAA-MM."""
+    fecha, desde, hasta, mes = (p.get(k) for k in ('fecha', 'desde', 'hasta', 'mes'))
+    if not fecha and not (desde and hasta) and not mes:
+        return True
+    dia = str(valor)[:10] if valor else ''
+    if not dia or (fecha and dia != fecha):
+        return False
+    if desde and hasta and not (min(desde, hasta) <= dia <= max(desde, hasta)):
+        return False
+    return not mes or dia.startswith(mes)
+
+
+def filtrar_tabla(filas, p):
+    return [f for f in buscar(filas, p.get('search')) if en_fechas(f.get('fecha_emision'), p)]
+
+
 class FacturaViewSet(CancelableMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
     """FACTURACIÓN. Solo lectura salvo el XML y el cobro: las filas las crea la
     maniobra y las rellena el XML; nadie teclea importes (P14, P65)."""
     serializer_class = FacturaSerializer
+    pagination_class = PaginaDeCien
 
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
@@ -698,6 +755,11 @@ class FacturaViewSet(CancelableMixin, mixins.ListModelMixin, viewsets.GenericVie
         qs = Factura.objects.select_related('maniobra__cliente_fk__cliente_principal')
         estado = self.request.query_params.get('estado')
         return qs.filter(estado=estado) if estado in ('activa', 'cancelada') else qs
+
+    def list(self, request, *args, **kwargs):
+        filas = self.get_serializer(self.get_queryset(), many=True).data
+        pagina = self.paginate_queryset(filtrar_tabla(filas, request.query_params))
+        return self.get_paginated_response(pagina)
 
     @action(detail=False, methods=['get'])
     def acceso(self, request):
@@ -754,6 +816,7 @@ class FacturaExcelViewSet(CancelableMixin, viewsets.GenericViewSet):
     (usuario, 2026-10-14)."""
     serializer_class = FacturaExcelSerializer
     queryset = FacturaExcel.objects.all()
+    pagination_class = PaginaDeCien
 
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
@@ -762,7 +825,15 @@ class FacturaExcelViewSet(CancelableMixin, viewsets.GenericViewSet):
 
     @action(detail=False, methods=['get'])
     def comparacion(self, request):
-        return Response(comparar())
+        """La página de 100 de la comparación, con ?estado= y los mismos
+        filtros que Facturación. La alerta va aparte y entera: cuenta TODAS las
+        que no cuadran, no solo las de la página."""
+        datos, p = comparar(), request.query_params
+        filas = [f for f in datos['facturas'] if p.get('estado') in (None, '', f['estado'])]
+        respuesta = self.get_paginated_response(self.paginate_queryset(filtrar_tabla(filas, p)))
+        respuesta.data['distintas'] = [f for f in datos['facturas'] if f['diferencias']]
+        respuesta.data['solo_en_facturacion'] = datos['solo_en_facturacion']
+        return respuesta
 
     @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])
     def cargar(self, request):

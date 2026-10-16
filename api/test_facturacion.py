@@ -151,7 +151,7 @@ class AccesoTests(Base):
         self.xml(c, cfdi())
         self.cargar(c, xlsx(fila()))
         self.assertNotIn('uuid', c.get(URL).data['results'][0])
-        self.assertNotIn('uuid', c.get(f'{EXCEL}comparacion/').data['facturas'][0])
+        self.assertNotIn('uuid', c.get(f'{EXCEL}comparacion/').data['results'][0])
 
 
 class CargaExcelTests(Base):
@@ -408,7 +408,7 @@ class ComparacionTests(Base):
                  for f, u in (('1713', 'u-1'), ('2', 'u-2'), ('3', 'u-3'), ('5', 'u-5'))]
         self.cargar(admin, xlsx(*excel))
         d = admin.get(f'{EXCEL}comparacion/').data
-        por_folio = {f['folio']: f['diferencias'] for f in d['facturas']}
+        por_folio = {f['folio']: f['diferencias'] for f in d['results']}
         self.assertEqual(por_folio, {'1713': [], '2': ['Falta el XML en Facturación'],
                                      '3': ['Total'], '5': ['Falta en Facturación']})
         self.assertEqual([f['folio'] for f in d['solo_en_facturacion']], ['4'])
@@ -476,3 +476,41 @@ class CuentasPorCobrarTests(Base):
         self.assertEqual([(str(s['semana'])[:10], s['total']) for s in d],
                          [('2026-09-07', '200.00'), ('2026-09-14', '100.00')])
 
+
+class PaginaDeCienTests(Base):
+    """Las dos tablas de 100 en 100, con la búsqueda y las fechas aplicadas en
+    el servidor sobre TODAS las filas (usuario, 2026-10-16)."""
+
+    def setUp(self):
+        self.c = self.usuario('admin', staff=True)
+
+    def folios(self, url, **p):
+        return [f['folio'] for f in self.c.get(url, p).data['results']]
+
+    def test_facturacion_de_100_en_100(self):
+        Factura.objects.bulk_create(Factura(serie='S', folio=str(i)) for i in range(150))
+        d = self.c.get(URL).data
+        self.assertEqual((d['count'], len(d['results'])), (150, 100))
+        self.assertEqual(len(self.c.get(URL, {'page': 2}).data['results']), 50)
+
+    def test_busqueda_sin_acentos_con_exclusion_y_fechas(self):
+        Factura.objects.create(serie='S', folio='1', nombre='Logística Peña',
+                               fecha_emision=date(2026, 7, 9))
+        Factura.objects.create(serie='S', folio='2', nombre='Logistica Norte',
+                               fecha_emision=date(2026, 8, 1))
+        Factura.objects.create(serie='S', folio='3', nombre='Otra')     # sin XML ni fecha
+        self.assertEqual(self.folios(URL, search='LOGISTICA pena'), ['1'])
+        self.assertEqual(sorted(self.folios(URL, search='logistica -"norte"')), ['1'])
+        self.assertEqual(self.folios(URL, mes='2026-07'), ['1'])
+        self.assertEqual(self.folios(URL, desde='2026-08-31', hasta='2026-07-10'), ['2'])
+        self.assertEqual(len(self.folios(URL, desde='2026-07-10')), 3)  # una sola punta no filtra
+
+    def test_auditoria_pagina_pero_la_alerta_cuenta_todas(self):
+        excel = [['A', 'RFC', 'I', 'S', str(i), f'u-{i}', '2026-02-16', 1, 0, 1, 'MXN']
+                 for i in range(120)]
+        self.cargar(self.c, xlsx(*excel))
+        d = self.c.get(f'{EXCEL}comparacion/', {'estado': 'activa'}).data
+        self.assertEqual((d['count'], len(d['results'])), (120, 100))
+        self.assertEqual(len(d['distintas']), 120)   # ninguna está en Facturación
+        self.assertEqual(self.folios(f'{EXCEL}comparacion/', search='"falta en facturacion" -s'), [])
+        self.assertEqual(self.c.get(f'{EXCEL}comparacion/', {'estado': 'cancelada'}).data['count'], 0)
