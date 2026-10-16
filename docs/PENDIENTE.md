@@ -896,10 +896,13 @@ migraciones de prod** (anotado en `front/CLAUDE.md`).
 
 ---
 
-## 17. Sesión del 2026-10-15 — Facturación por XML y Auditoría comparada. SIN DESPLEGAR
+## 17. Sesión del 2026-10-15 — Facturación por XML, Auditoría comparada y vacíos en Locales. DESPLEGADO
 
-Backend `ccad92e9` (migración **0081**) · Frontend `e909857`. Orden de siempre:
-migrar prod con `migrar_prod.sh`, backend en verde, luego frontend.
+Todo en producción el 2026-10-15 (migrar → backend en verde → frontend):
+
+- Backend `ccad92e9` (**0081**) · Frontend `e909857`: Facturación por XML y Auditoría.
+- Backend `bae49a10` (**0082**): Facturación solo desde julio de 2026.
+- Backend `444a68b5` (**0083**) · Frontend `7abbfdf`: vacíos de terceros en Locales.
 
 Decidido con el usuario:
 
@@ -912,6 +915,18 @@ Decidido con el usuario:
   común: cliente, RFC, fecha, total, UUID y estado. Sin NoIdentificacion/Descripción.
 - Lo existente se **copió**: Auditoría = copia de lo cargado; cobrada = sí →
   `fecha_cobro` = día de la migración (no había fecha real).
+- **Corte de Facturación (0082):** solo maniobras con `fecha_pis` ≥ 2026-07-01
+  (`INICIO_FACTURACION`); las anteriores o sin fecha PIS no reciben filas nunca.
+  La 0082 borró las filas **vacías** antiguas que había creado la 0081; las que
+  tenían datos se conservaron. Cambiar la fecha PIS re-sincroniza la maniobra.
+- **Vacíos en Locales (0083):** un vacío entra en Cuentas por pagar → Locales si
+  "Entregó" (`operador_entrega`) incluye, como **palabra completa** (sin
+  mayúsculas/acentos/espacios de más), un transportista del catálogo que no sea
+  FRABA CONTAINER, y su `fecha_entrega` ≥ 2026-08-01. **Solo transportistas**, no
+  operadores de terceros. Fila propia por vacío con su cuenta
+  (`CuentaPorPagar.vacio`, una activa por vacío), aparte de la del PIS de su
+  maniobra. Reusa las columnas de Locales: patio en Terminal, entrega en Fecha,
+  Entregó en Transportista, Servicio = "Vacío".
 
 Queda abierto:
 
@@ -922,3 +937,7 @@ Queda abierto:
   números, hasta 50.
 - Varios conceptos en un CFDI se unen con " / " en NoIdentificacion y Descripción.
 - Las filas creadas por la migración llevan `created_by = 'migracion_0081'`.
+- **Vacíos en Locales sin probar con datos reales:** en local ningún vacío tiene
+  Entregó; el usuario lo revisa en prod.
+- Borrar con el rol estándar un vacío que ya tiene cuenta falla (no tiene UPDATE
+  de `vacio_id` para el SET_NULL). Igual que con las maniobras; protege la cuenta.
