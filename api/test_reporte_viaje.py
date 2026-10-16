@@ -828,3 +828,12 @@ class RendimientoSoloDireccionTests(BaseReporte):
         finally:
             with connections['standard'].schema_editor() as editor:
                 editor.delete_model(Empleado)
+
+
+class DieselLlegadaTests(BaseReporte):
+    """"¿Con cuánto diésel llegó?": texto libre, sin límite (cliente, 2026-10-16)."""
+
+    def test_guarda_texto_libre_y_null_es_vacio(self):
+        texto = 'medio tanque, aprox 120 lt; ' * 50 + 'fin'
+        self.assertEqual(self.crear(diesel_llegada=texto).data['diesel_llegada'], texto)
+        self.assertEqual(self.crear(folio='F-2', diesel_llegada=None).data['diesel_llegada'], '')

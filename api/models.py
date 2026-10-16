@@ -1665,6 +1665,9 @@ class ReporteViaje(models.Model):
     rendimiento_diesel = models.DecimalField(max_digits=6, decimal_places=2,
                                              null=True, blank=True,
                                              validators=[MinValueValidator(0)])
+    # "¿Con cuánto diésel llegó?": texto libre y sin límite por ahora
+    # (cliente, 2026-10-16).
+    diesel_llegada = models.TextField(blank=True, default='')
 
     # SIN USO desde el 2026-09-29, cuando el reporte paso a mandar siempre sobre
     # gastos.gasto_diesel (ver volcar_diesel_al_gasto). Era la memoria que
