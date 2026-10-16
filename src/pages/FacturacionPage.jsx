@@ -1,9 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Upload, X } from "lucide-react";
 import { apiClient } from "../api/apiClient";
-import { filtrarBusqueda } from "../utils/buscar.mjs";
-import { enFechas } from "../utils/filtroFechas.mjs";
-import FiltrosLista from "../components/FiltrosLista/FiltrosLista";
+import FiltrosLista, { conValor } from "../components/FiltrosLista/FiltrosLista";
 import SearchBar from "../components/SearchBar/SearchBar";
 import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
@@ -57,16 +55,11 @@ const moneda = (v) =>
 const fechaLegible = (iso) => (iso ? iso.split("-").reverse().join("/") : "");
 const factura = (f) => (f.serie ? `${f.serie} ${f.folio}` : "Sin No. Factura");
 
-// ponytail: trae todas las páginas de una vez. Son decenas de facturas al mes;
-// si algún día la lista pesa, paginar en la tabla como Gastos (loadMore).
-async function traerTodas(estado) {
-  const filas = [];
-  for (let pagina = 1; ; pagina++) {
-    const data = await apiClient.get(`/facturas/?estado=${estado}&page=${pagina}`);
-    filas.push(...(data?.results ?? []));
-    if (!data?.next) return filas;
-  }
-}
+// De 100 en 100 (usuario, 2026-10-16): la siguiente página llega al bajar por
+// la tabla. La búsqueda y las fechas las aplica el SERVIDOR sobre todas las
+// facturas; aquí solo verían las ya cargadas.
+const traerPagina = (enAuditoria, filtros, page) => apiClient.get(
+  `${enAuditoria ? "/facturas-excel/comparacion/" : "/facturas/"}?${new URLSearchParams(conValor({ ...filtros, page }))}`);
 
 function Maniobra({ f }) {
   return f.maniobra ? (f.maniobra_folio || `Maniobra ${f.maniobra}`) : (
@@ -120,12 +113,19 @@ export default function FacturacionPage() {
   const [estado, setEstado] = useState("activa");
   const [pagina, setPagina] = useState("facturacion");
   const [filas, setFilas] = useState([]);
-  const [auditoria, setAuditoria] = useState({ facturas: [], solo_en_facturacion: [] });
+  const [total, setTotal] = useState(0);          // `count` del servidor: todas las que cumplen
+  const [siguiente, setSiguiente] = useState(null); // nº de la próxima página, o null
+  const [cargandoMas, setCargandoMas] = useState(false);
+  // La alerta de Auditoría: TODAS las que no cuadran, no solo la página.
+  const [auditoria, setAuditoria] = useState({ distintas: [], solo_en_facturacion: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busqueda, setBusqueda] = useState("");
-  // Por fecha de emisión, en pantalla: las dos tablas llegan enteras (usuario, 2026-10-16).
+  const [buscar, setBuscar] = useState("");   // la búsqueda, 350 ms después
+  // Por fecha de emisión (usuario, 2026-10-16).
   const [fechas, setFechas] = useState({});
+  // Al teclear salen varias peticiones: solo vale la última.
+  const ultima = useRef(0);
   const [subiendo, setSubiendo] = useState(false);
   const [resumen, setResumen] = useState(null);
   const tablaRef = useRef(null);
@@ -137,29 +137,59 @@ export default function FacturacionPage() {
       .catch((err) => { setError(err.message); setLoading(false); });
   }, []);
 
+  useEffect(() => {
+    const t = setTimeout(() => setBuscar(busqueda.trim()), 350);
+    return () => clearTimeout(t);
+  }, [busqueda]);
+
+  const enAuditoria = pagina === "auditoria";
+  const filtros = useMemo(() => ({ estado, search: buscar, ...fechas }), [estado, buscar, fechas]);
+
+  // Página 1 de nuevo: al entrar, al cambiar un filtro y tras cada escritura.
   const cargar = useCallback(async () => {
+    const yo = ++ultima.current;
     setLoading(true);
     setError(null);
     try {
-      if (pagina === "auditoria") setAuditoria(await apiClient.get("/facturas-excel/comparacion/"));
-      else setFilas(await traerTodas(estado));
+      const data = await traerPagina(enAuditoria, filtros, 1);
+      if (yo !== ultima.current) return;
+      setFilas(data.results);
+      setTotal(data.count);
+      setSiguiente(data.next ? 2 : null);
+      if (enAuditoria) setAuditoria(data);
     } catch (err) {
-      setError(err.message);
+      if (yo === ultima.current) setError(err.message);
     } finally {
-      setLoading(false);
+      if (yo === ultima.current) setLoading(false);
     }
-  }, [estado, pagina]);
+  }, [enAuditoria, filtros]);
+
+  const cargarMas = async () => {
+    if (!siguiente || cargandoMas || loading) return;
+    const yo = ultima.current;
+    setCargandoMas(true);
+    try {
+      const data = await traerPagina(enAuditoria, filtros, siguiente);
+      if (yo !== ultima.current) return; // cambió un filtro mientras tanto
+      setFilas((prev) => [...prev, ...data.results]);
+      setSiguiente(data.next ? siguiente + 1 : null);
+    } catch (err) {
+      alerta({ tipo: "error", msg: err.message || "No se pudieron cargar más facturas." });
+    } finally {
+      setCargandoMas(false);
+    }
+  };
+  // La tabla tiene su propio scroll (tabla-cabecera-fija): a 300 px del final.
+  const alBajar = (e) => {
+    const t = e.currentTarget;
+    if (t.scrollTop + t.clientHeight >= t.scrollHeight - 300) cargarMas();
+  };
 
   useEffect(() => { if (acceso?.ver) cargar(); }, [acceso, cargar]);
   useEffect(() => setResumen(null), [pagina]);
 
-  const enAuditoria = pagina === "auditoria";
-  // La comparación llega entera: el filtro de estado de Auditoría es local.
-  const visibles = useMemo(() => filtrarBusqueda(
-    (enAuditoria ? auditoria.facturas.filter((f) => f.estado === estado) : filas)
-      .filter((f) => enFechas(f.fecha_emision, fechas)), busqueda,
-  ), [enAuditoria, auditoria, filas, estado, busqueda, fechas]);
-  const distintas = auditoria.facturas.filter((f) => f.diferencias.length);
+  const visibles = filas;
+  const distintas = auditoria.distintas;
 
   const subir = async (e) => {
     const archivos = [...(e.target.files ?? [])];
@@ -270,7 +300,7 @@ export default function FacturacionPage() {
           ))}
         </div>
         <div className="np-resumen">
-          {visibles.length} {visibles.length === 1 ? "factura" : "facturas"}
+          {total} {total === 1 ? "factura" : "facturas"}
         </div>
         <div className="toolbar-acciones">
           <input ref={archivoRef} type="file" hidden onChange={subir}
@@ -325,7 +355,7 @@ export default function FacturacionPage() {
 
       <div className="bst-zona">
         <BarraScrollTabla contenedorRef={tablaRef} />
-        <div className="table-responsive tabla-cabecera-fija" ref={tablaRef}>
+        <div className="table-responsive tabla-cabecera-fija" ref={tablaRef} onScroll={alBajar}>
           <table className="nomina-table">
             <thead>
               <tr>{columnas.map((c) => <th key={c.key}>{c.label}</th>)}</tr>
@@ -371,6 +401,9 @@ export default function FacturacionPage() {
                   )}
                 </tr>
               ))}
+              {cargandoMas && (
+                <tr><td colSpan={columnas.length} className="np-vacio">Cargando más…</td></tr>
+              )}
             </tbody>
           </table>
         </div>
