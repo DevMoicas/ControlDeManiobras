@@ -550,7 +550,7 @@ export default function GastosPage() {
                                         col.style)}
                     >
                       {col.key === "maniobra"
-                        ? (gasto.folio || gasto.maniobra) /* folio del servicio; fallback al id para registros viejos */
+                        ? (gasto.folio || "") /* sin folio (p. ej. se borró) sale vacío, no el id de la maniobra (usuario, 2026-10-16) */
                         : col.readOnly
                         ? (COLUMNAS_MONEDA.includes(col.key)
                             ? formatMoneda(gasto[col.key]) /* diesel: lo escribe el reporte de viaje */
