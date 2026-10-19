@@ -1114,6 +1114,7 @@ class ManiobraFilter(django_filters.FilterSet):
     desde = django_filters.DateFilter(field_name='fecha_pis', lookup_expr='gte')
     hasta = django_filters.DateFilter(field_name='fecha_pis', lookup_expr='lte')
     mes = django_filters.CharFilter(method='filter_mes')
+    anio = django_filters.NumberFilter(field_name='fecha_pis', lookup_expr='year')
     operador = django_filters.CharFilter(method='filter_operador')
     ruta = django_filters.CharFilter(method='filter_ruta')
 
@@ -1269,7 +1270,9 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
     def opciones(self, request):
         """GET /api/maniobras/opciones/ — los desplegables de filtro."""
         opciones = _opciones_filtro(Maniobra.objects.all(), ['asignacion_operador_status', 'operador_2'])
-        return Response({**opciones, 'operadores': choferes_fraba(opciones['operadores'])})
+        anios = [d.year for d in Maniobra.objects.dates('fecha_pis', 'year', order='DESC')]
+        return Response({**opciones, 'operadores': choferes_fraba(opciones['operadores']),
+                         'anios': anios})
 
     # ── Gasto automatico ────────────────────────────────────────────────
     # Va aqui y no en el frontend aunque el folio se elija alli: se asigna desde

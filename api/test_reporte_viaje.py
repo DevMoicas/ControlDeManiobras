@@ -725,6 +725,8 @@ class ManiobraFiltrosTests(BaseReporte):
         self.assertEqual(self.folios('fecha=2026-10-01'), ['M-2'])
         self.assertEqual(self.folios('desde=2026-09-01&hasta=2026-09-30'), ['M-1'])
         self.assertEqual(self.folios('mes=2026-10'), ['M-2'])
+        self.assertEqual(self.folios('anio=2026'), ['M-1', 'M-2'])
+        self.assertEqual(self.folios('anio=2025'), [])
 
     def test_operador_en_cualquiera_de_las_dos_columnas_y_ruta(self):
         self.assertEqual(self.folios('operador=ana'), ['M-1', 'M-2'])
@@ -739,6 +741,7 @@ class ManiobraFiltrosTests(BaseReporte):
         r = self.cliente.get('/api/maniobras/opciones/').data
         self.assertEqual(r['operadores'], ['ANA'])
         self.assertEqual(r['rutas'], ['MANZANILLO → LEON', 'MANZANILLO → QRO'])
+        self.assertEqual(r['anios'], [2026])  # M-3 sin fecha PIS no aporta año
 
 
 class ReporteViajeAvanceTests(BaseReporte):
