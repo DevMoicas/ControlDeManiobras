@@ -1403,6 +1403,21 @@ export default function ManiobrasPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [hasMore, loadingMore, loadMore]);
 
+  // La tabla tiene su propio scroll (tabla-cabecera-fija): sin esto solo
+  // cargaba más al hacer scroll fuera de ella. Igual que en Facturación.
+  const alBajarTabla = (e) => {
+    const t = e.currentTarget;
+    if (t.scrollTop + t.clientHeight >= t.scrollHeight - 300 && hasMore && !loadingMore) loadMore();
+  };
+
+  // Con un filtro de fecha (día, rango, mes o año) se traen TODAS las páginas:
+  // un año o un rango se quieren completos, no los primeros 60 (usuario, 2026-10-19).
+  // ponytail: página a página de 60; si un año pesa demasiado, un page_size mayor en el backend.
+  const conFechas = ["fecha", "desde", "mes", "anio"].some((k) => filtros[k]);
+  useEffect(() => {
+    if (conFechas && hasMore && !loading && !loadingMore) loadMore();
+  }, [conFechas, hasMore, loading, loadingMore, loadMore]);
+
   // ── Handlers CRUD ─────────────────────────────────────────────────────────
 
   const handleEliminar = useCallback(async (id) => {
@@ -1571,7 +1586,7 @@ export default function ManiobrasPage() {
         />
       </div>
 
-      <FiltrosLista endpoint="/maniobras/" filtros={filtros} onChange={setFiltros} />
+      <FiltrosLista endpoint="/maniobras/" filtros={filtros} onChange={setFiltros} conAnio />
 
       <div className="toolbar">
         <div className="filtros-status">
@@ -1621,7 +1636,7 @@ export default function ManiobrasPage() {
         {/* ── BODY — scroll horizontal + vertical ── */}
         <div className="bst-zona">
         <BarraScrollTabla contenedorRef={scrollRef} />
-        <div className="table-scroll-wrapper tabla-cabecera-fija" ref={scrollRef}>
+        <div className="table-scroll-wrapper tabla-cabecera-fija" ref={scrollRef} onScroll={alBajarTabla}>
           <table className="maniobras-table">
             {/* thead fantasma para sincronizar anchos de columna */}
             <thead className="thead-ghost">

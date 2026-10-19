@@ -103,6 +103,9 @@
   padding: 2px 4px;
 }
 .campo-fecha-pop .rdp-dropdown_root:hover { background: var(--hover-negro); color: #fff; }
+/* La lista abierta del <select> nativo heredaba ese blanco del hover y sus
+   opciones desaparecían sobre el fondo blanco: su color, fijo. */
+.campo-fecha-pop .rdp-dropdown option { color: #111827; background: #fff; }
 .campo-fecha-pop .rdp-button_previous:hover .rdp-chevron,
 .campo-fecha-pop .rdp-button_next:hover .rdp-chevron,
 .campo-fecha-pop .rdp-dropdown_root:hover .rdp-chevron { fill: #fff; }

@@ -23,7 +23,7 @@ const abiertos = {};
 // `soloFechas`: solo fecha, rango y mes, sin pedir opciones al servidor. Lo usan
 // Facturación y Cuentas por pagar, que filtran en pantalla (utils/filtroFechas);
 // ahí `endpoint` es solo la clave para recordar si el panel está abierto.
-export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinador = false, soloFechas = false }) {
+export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinador = false, conAnio = false, soloFechas = false }) {
   const [opciones, setOpciones] = useState({});
   // Plegados por defecto, se abren con el botón (usuario, 2026-10-13). El
   // número del botón avisa de los que siguen aplicados con el panel cerrado.
@@ -86,6 +86,7 @@ export default function FiltrosLista({ endpoint, filtros, onChange, conCoordinad
       {entrada("desde", "Desde", "fecha")}
       {entrada("hasta", "Hasta", "fecha")}
       {entrada("mes", "Mes", "mes")}
+      {conAnio && select("anio", "Año", opciones.anios)}
       {conCoordinador && select("coordinador", "Coordinador", opciones.coordinadores)}
       {!soloFechas && select("operador", "Operador", opciones.operadores)}
       {!soloFechas && select("ruta", "Ruta", opciones.rutas)}
