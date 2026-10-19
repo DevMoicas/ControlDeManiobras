@@ -444,7 +444,14 @@ def cargar_xml(archivos, usuario):
                 omitir('Sin UUID: no está timbrado', d)
                 continue
             if d['uuid'] in vistos:
-                omitir('Ese XML ya estaba cargado', d)
+                # Las cargadas con el Excel antes de la 0081 tienen UUID pero no
+                # estos dos campos, que solo trae el XML: se completan y nada más.
+                if Factura.objects.filter(uuid=d['uuid'], no_identificacion='', descripcion='').update(
+                        no_identificacion=d['no_identificacion'], descripcion=d['descripcion'],
+                        updated_by=usuario, updated_at=timezone.now()):
+                    completadas += 1
+                else:
+                    omitir('Ese XML ya estaba cargado', d)
                 continue
             if not d['folio'] or not d['fecha'] or d['subtotal'] is None or d['total'] is None:
                 omitir('Folio, fecha o importes ilegibles', d)

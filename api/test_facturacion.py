@@ -325,6 +325,15 @@ class CargaXmlTests(Base):
         self.assertIn('Ese XML ya estaba cargado', motivos)
         self.assertIn('No es un CFDI válido', motivos)
 
+    def test_la_del_excel_ya_cargada_completa_identificacion_y_descripcion(self):
+        Factura.objects.filter(serie='S', folio='1713').update(uuid='u-1', total=Decimal('1'))
+        r = self.xml(self.c, cfdi(conceptos=(('CAJA 1', 'FLETE'),)))
+        self.assertEqual((r.data['completadas'], r.data['omitidas']), (1, []))
+        f = Factura.objects.get()
+        self.assertEqual((f.no_identificacion, f.descripcion, f.total), ('CAJA 1', 'FLETE', Decimal('1')))
+        r = self.xml(self.c, cfdi(conceptos=(('CAJA 1', 'FLETE'),)))   # la segunda vez, sí omitida
+        self.assertEqual(r.data['omitidas'][0]['motivo'], 'Ese XML ya estaba cargado')
+
     def test_dos_filas_esperan_la_misma_factura(self):
         otra = Maniobra.objects.create(folio='F-2')
         Factura.objects.create(maniobra=otra, serie='S', folio='1713')
