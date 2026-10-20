@@ -949,7 +949,7 @@ Todo en producción el 2026-10-19 (migrar → backend en verde → frontend):
 - **0086** aplicada en prod con `migrar_prod.sh`: ligó 5 facturas, ninguna nombrada
   por dos maniobras.
 - Backend `7a4bfa11`: XML de facturas del Excel + migración 0086.
-- Backend `8b5e597b` · Frontend (`feature/inicio-botones`, mismo día): Maniobras.
+- Backend `8b5e597b` · Frontend `ca4e69f`: Maniobras.
 
 (El corte de Facturación ya no es julio: la **0085**, del 2026-10-16, lo bajó al
 2026-01-01. La sección 17 quedó con la regla vieja.)
