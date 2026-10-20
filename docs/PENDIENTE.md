@@ -941,3 +941,56 @@ Queda abierto:
   Entregó; el usuario lo revisa en prod.
 - Borrar con el rol estándar un vacío que ya tiene cuenta falla (no tiene UPDATE
   de `vacio_id` para el SET_NULL). Igual que con las maniobras; protege la cuenta.
+
+## 18. Sesión del 2026-10-19 — Bugs de Facturación y filtros de Maniobras. DESPLEGADO
+
+Todo en producción el 2026-10-19 (migrar → backend en verde → frontend):
+
+- **0086** aplicada en prod con `migrar_prod.sh`: ligó 5 facturas, ninguna nombrada
+  por dos maniobras.
+- Backend `7a4bfa11`: XML de facturas del Excel + migración 0086.
+- Backend `8b5e597b` · Frontend (`feature/inicio-botones`, mismo día): Maniobras.
+
+(El corte de Facturación ya no es julio: la **0085**, del 2026-10-16, lo bajó al
+2026-01-01. La sección 17 quedó con la regla vieja.)
+
+Arreglado:
+
+- **NoIdentificacion y Descripción vacías.** Las facturas cargadas con el Excel
+  antes de la 0081 ya tenían UUID, y su XML se omitía con "Ese XML ya estaba
+  cargado" sin copiar esos dos campos. Ahora `cargar_xml` los rellena si están
+  vacíos (solo esos dos) y cuenta la fila como completada. **El usuario tiene que
+  volver a subir esos XML.**
+- **Facturas "pendiente de ligar" aunque el No. Factura las nombraba** (A-2255,
+  `S 1894 // S 1906 // S 1931`). No era la doble diagonal: `facturas_de_no_factura`
+  ya separa `/`, `//` y `///`. La 0081 dio por "tomadas" las facturas del Excel y
+  no las ligó; solo se ligaban al volver a guardar la maniobra. La **0086** liga
+  todas las sueltas que nombra una maniobra con fecha PIS ≥ 2026 y borra la fila
+  vacía que sobra; las nombradas por dos maniobras se quedan sueltas (P3).
+- **Maniobras cargaba más solo con el scroll de fuera de la tabla.** Ahora también
+  con el de dentro (`onScroll`), como Facturación.
+- **Filtro por año** en Maniobras (`?anio=`, sobre fecha PIS; los años salen de
+  `opciones/`). Solo en Maniobras.
+- **Con un filtro de fecha (día, rango, mes o año) Maniobras trae todas las
+  páginas**, no las primeras 60. `ponytail:` página a página de 60; si un año pesa
+  demasiado, subir el page_size en el backend.
+- **Meses y años del calendario en blanco con el ratón encima**: el `color: #fff`
+  del hover lo heredaba la lista del `<select>` nativo. Color fijo en las opciones.
+
+Lección (también en memoria): en un `RunPython`, `apps.get_model('api','Gasto')`
+**no tiene `maniobra`**. La 0086 falló así en el primer intento (se deshizo sola);
+se usa el modelo vivo con `.using(alias)`. La 0085 tiene el mismo código pero
+nunca llegó a ejecutarlo. Probar los RunPython con el estado histórico
+(`MigrationLoader(...).project_state(...)`), no con `django.apps.apps`.
+
+Queda abierto:
+
+- **Orden de Facturación**: hoy `-fecha_emision, -id`, con las filas sin XML
+  arriba (NULLs primero en Postgres). El usuario lo dejó pendiente.
+- **Rango invertido en Maniobras**: un "Desde" posterior al "Hasta" sale vacío
+  (el backend hace `gte`/`lte` tal cual). Reportes de viaje sí lo acepta en
+  cualquier orden. Sin decidir.
+- **Año en las otras listas** (Reportes de viaje, Facturación, Cuentas por pagar):
+  no pedido.
+- El grafo de graphify no se actualizó: el `--update` se negó a encoger el grafo
+  (-31 nodos tras deduplicar). Hace falta un rebuild completo.
