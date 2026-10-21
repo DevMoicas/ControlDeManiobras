@@ -992,5 +992,3 @@ Queda abierto:
   cualquier orden. Sin decidir.
 - **Año en las otras listas** (Reportes de viaje, Facturación, Cuentas por pagar):
   no pedido.
-- El grafo de graphify no se actualizó: el `--update` se negó a encoger el grafo
-  (-31 nodos tras deduplicar). Hace falta un rebuild completo.
