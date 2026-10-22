@@ -686,7 +686,7 @@ Además, `PyJWT` sube a **2.15.0** (CVE-2026-101918 en la 2.14.0) y entra **`xlr
 2. **Revisar en el navegador** las pantallas nuevas: se compilaron y se probaron por HTTP,
    pero **las gráficas de los dashboards no se han mirado en pantalla**.
 3. ~~Pregunta 62~~ — cerrada el 2026-10-06 (§13).
-4. **Estados de cuenta** sigue siendo una tarjeta vacía en Finanzas (bancos, fuera del plan).
+4. ~~**Estados de cuenta**~~ — hecha en local el 2026-10-21, sin desplegar (§19).
 5. **Regla `autoMode` en `front/.claude/settings.local.json`** para que Claude pueda empujar:
    quedó escrita pero sin validar; el usuario decide si la deja o la quita. Sin ella, el
    push lo lanza el usuario con `!`.
@@ -992,3 +992,74 @@ Queda abierto:
   cualquier orden. Sin decidir.
 - **Año en las otras listas** (Reportes de viaje, Facturación, Cuentas por pagar):
   no pedido.
+
+## 19. Sesión del 2026-10-21 — Estados de cuenta. SIN DESPLEGAR (salvo dos commits)
+
+### Desplegado
+
+- **Facturación: columna de descripción más ancha** (`min-width` 260 → 420px) para que
+  en pantallas pequeñas (Mac) no se vea apretada; la tabla se desplaza en horizontal.
+  Front `0ddcde9`.
+- **Dependencias del front** (`fc422fb`): vite 6.4.5 y follow-redirects 1.16.1. El
+  primer despliegue falló en el gate de `npm audit` por GHSA-587h-7wmj-h5pm,
+  GHSA-8r9p-f939-6h3c y GHSA-q3jh-wrc6-jgq8, sin relación con el cambio. Arreglo con
+  `npm audit fix` (solo versiones de parche). CI en verde.
+
+### Hecho y probado en local, SIN DESPLEGAR
+
+Ni commit ni push: el usuario lo dejó pendiente. No necesita migración.
+
+- **Página Estados de cuenta** (`/home/finanzas/estados-cuenta`, antes BlankPage).
+  Front: `src/pages/EstadosCuentaPage.jsx` (nuevo), `src/App.jsx` (ruta; se quita
+  `BlankPage`), `src/pages/FinanzasCaptura.css` (estilos `ec-*`). Formato sacado de
+  `docs/planes/codigo_estados_de_cuenta.html`: solo **Resumen de cartera** y
+  **Clientes y saldos**. "Gestionar facturas" no, ya está en Facturación.
+  - Filtro de empresa Todas/Fraba/Soluciones (serie `S` = Fraba, `SEF` = Soluciones).
+  - KPIs: total de cartera, total vencido al día, promedio de días de crédito y
+    facturas por vencer. Desglose por empresa cuando está en Todas.
+  - Tabla de clientes con un renglón por cliente principal **y** empresa. Muestra
+    cartera, vencido, próximo vencimiento y el estatus del peor caso. Tiene buscador
+    y filtro de estatus.
+  - Aviso cuando hay facturas sin cliente principal: cuentan en la cartera pero no
+    salen en ningún estado de cuenta.
+- **El botón genera directamente el PDF.** Backend: `POST /documentos/estado-cuenta/`
+  (`DocumentoEstadoCuentaView` en `api/views.py`) con `{cliente, empresa, formato}`.
+  - Construye un openpyxl y lo convierte con LibreOffice, como el reporte de vacíos.
+  - Da 403 sin acceso a Finanzas y 400 si la empresa o el cliente no valen, o si el
+    cliente no tiene facturas pendientes.
+  - **El logo de Fraba (`api/documentos/logo_fraba.png`) solo sale en los de Fraba**;
+    los de Soluciones van sin logo.
+- **Solo cuentan las facturas sin pagar.** Pagada = cobrada en Facturación, con fecha
+  de cobro. El usuario avisó que esto probablemente cambie. Sale de
+  `cuentas_por_cobrar()`.
+- **Estatus** (`estatus()` en `api/facturacion.py`, vencimiento = emisión + días de
+  crédito del cliente principal):
+  - **vencida** desde el mismo día que vence, como en su Excel;
+  - **por vencer** la semana anterior;
+  - **en tiempo** antes de eso.
+- Prueba: `test_estado_de_cuenta_solo_lo_sin_cobrar_del_cliente_y_la_empresa`
+  (`api/test_facturacion.py`). `test_facturacion` pasa entero (39) y `npm run build`
+  compila.
+
+### Para desplegarlo
+
+Orden: backend en verde → frontend. Es mucho sin subir: `git status` en los dos repos.
+
+- **Backend**: `api/facturacion.py`, `api/views.py`, `api/urls.py`,
+  `api/test_facturacion.py` y `api/documentos/logo_fraba.png`.
+- **Frontend**: `src/App.jsx`, `src/pages/EstadosCuentaPage.jsx` y
+  `src/pages/FinanzasCaptura.css`. No subir `graphify-out/`.
+- **Comprobar que la imagen del backend trae LibreOffice** con soporte de imágenes:
+  en local el PDF sale con logo, en prod no se ha probado.
+
+### Queda abierto
+
+- **"Total de cartera"**: el usuario pidió que sea la suma de todas las facturas sin
+  cobrar. En la BD local, con "Todas", ya lo es: $15,043,858.40. Hay 240 sin cobrar
+  en total; 5 sin XML ni total no suman. Se le preguntó si quiere que ignore el
+  filtro de empresa o si ve otra cifra. **Sin respuesta.**
+- **Cabecera del PDF**: faltan razón social, RFC, dirección y contacto de cada
+  empresa, y saber si Soluciones lleva su propio logo.
+- **Material de referencia sin commitear en `docs/planes/`**:
+  `codigo_estados_de_cuenta.html` y el Excel de Logistics Plus. **No se suben a
+  propósito**: el Excel trae datos reales de facturas de un cliente.
