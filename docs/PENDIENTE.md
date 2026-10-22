@@ -1,6 +1,6 @@
 # Pendiente
 
-Anotado el 2026-08-25 y **actualizado el 2026-10-14** al cerrar la sesión.
+Anotado el 2026-08-25 y **actualizado el 2026-10-22** al cerrar la sesión.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
@@ -1043,7 +1043,7 @@ Ni commit ni push: el usuario lo dejó pendiente. No necesita migración.
 
 ### Para desplegarlo
 
-Orden: backend en verde → frontend. Es mucho sin subir: `git status` en los dos repos.
+**Se despliega junto con la §20** (migración 0087): ver allí el orden y los archivos.
 
 - **Backend**: `api/facturacion.py`, `api/views.py`, `api/urls.py`,
   `api/test_facturacion.py` y `api/documentos/logo_fraba.png`.
@@ -1063,3 +1063,88 @@ Orden: backend en verde → frontend. Es mucho sin subir: `git status` en los do
 - **Material de referencia sin commitear en `docs/planes/`**:
   `codigo_estados_de_cuenta.html` y el Excel de Logistics Plus. **No se suben a
   propósito**: el Excel trae datos reales de facturas de un cliente.
+
+---
+
+## 20. Sesión del 2026-10-22 — Cuentas por cobrar y Compensación. SIN DESPLEGAR
+
+Ni commit ni push en ningún repo, junto con lo de la §19. Lleva la **migración 0087**,
+aplicada solo en local.
+
+### Hecho y probado en local
+
+- **Submenú "Cuentas por cobrar"** dentro de Finanzas
+  (`/home/finanzas/cuentas-por-cobrar`). Agrupa Facturación, Estados de cuenta,
+  Compensación e Historial de pagos. En el hub de Finanzas, las tarjetas de Facturación
+  y Estados de cuenta se cambian por una sola. Las rutas viejas se quitan.
+- **Migración 0087** (`0087_compensacion.py`):
+  - Tablas `Banco` (51 bancos mexicanos, solo para la captura manual), `Pago`, `Abono`
+    y la columna `Factura.abonado`.
+  - GRANT y RLS para el rol `standard`.
+  - Las facturas que ya estaban cobradas quedan con `abonado = total`, saldo 0.
+  - `Pago.clave_rastreo` es única entre los pagos activos con clave.
+- **Modelo:**
+  - Un **Pago** es lo que llegó al banco. Su monto es la **Cobranza semanal** del
+    dashboard; con filtro de cliente, la cobranza suma los abonos.
+  - El pago se reparte a mano en **Abonos**, uno por factura; un pago puede abonar
+    varias. Todo en MXN.
+- **Compensación** (`CompensacionPage.jsx`):
+  - **Pagos recibidos.** Entran del CSV de movimientos del banco
+    (`docs/planes/20261022_MovimientosCheque.csv`) o se capturan a mano (banco de la
+    lista, con buscador). Van a una lista "Por guardar" y no se guarda nada hasta
+    pulsar **Guardar pagos**.
+  - **Lectura del CSV.** Solo las filas `ABONO TRANSFERENCIA SPEI`. La fecha viene
+    `'ddmmaaaa'` con apóstrofo. Banco = Banco Participante, en texto. Cada fila se
+    marca como repetida (por clave de rastreo), como cliente principal parecido
+    (comparación aproximada al 0.9) y según si su RFC tiene facturas. Las marcadas
+    se guardan igual.
+  - **Pagos por aplicar.** Pagos con saldo, del más viejo al más nuevo, numerados.
+  - **Abonar a factura.** Se elige el pago y se busca la factura
+    (`Folio / emisión / RFC / cliente / saldo`). Al elegir una factura se preselecciona
+    el pago más viejo de su RFC. La cantidad es manual y la parcialidad se sugiere
+    editable.
+  - **Pasarse.** Abonar más del saldo de la factura o del restante del pago pide
+    confirmación y luego se guarda.
+- **El cobro ya no es manual.** La factura queda cobrada cuando sus abonos cubren el
+  total, con la fecha y la clave del pago (`mover_abonado`). Se quitó
+  `/facturas/{id}/cobro/`, y en Facturación Cobrada y Clave son solo lectura.
+- **Saldo pendiente** (`total − abonado`):
+  - columna nueva en Facturación entre Maniobra y Cobrada;
+  - Estados de cuenta (página y PDF, columna "Saldo") y la antigüedad del dashboard
+    usan el saldo.
+  - Esto cambia la regla de la §19: antes solo contaba lo no cobrado, por el total.
+- **Historial de pagos** (`HistorialPagosPage.jsx`, `GET /pagos/`):
+  - Todos los pagos guardados, con filtro Activos/Cancelados/Todos, buscador, aplicado,
+    por aplicar y los abonos desplegables.
+  - Botón Cancelar solo para admin. Es el único sitio donde se puede cancelar un pago
+    ya aplicado entero.
+- **Cancelar** pagos y abonos es solo staff (P65) y nunca borra nada. Cancelar un pago
+  cancela sus abonos y deshace los cobros.
+- Pruebas: `test_facturacion` pasa entero (49) y `npm run build` compila. Además se
+  probó contra el Postgres local con el CSV real.
+
+### Para desplegarlo (incluye la §19)
+
+1. El usuario migra prod con `migrar_prod.sh`: abrir → ver (solo falta la 0087) →
+   migrar → cerrar. La comprobación de `migrar` verifica los 51 bancos, que no haya
+   cobradas con `abonado ≠ total` y que `standard` lea las tablas nuevas.
+2. **Backend** en verde:
+   - `api/models.py`, `api/facturacion.py`, `api/views.py`, `api/urls.py` y
+     `api/dashboards.py`;
+   - `api/test_facturacion.py`, `api/migrations/0087_compensacion.py` y
+     `api/documentos/logo_fraba.png`.
+3. **Frontend**:
+   - `src/App.jsx`, `src/pages/FinanzasPage.jsx`, `src/pages/FacturacionPage.jsx`,
+     `src/pages/FacturacionPage.css` y `src/pages/FinanzasCaptura.css`;
+   - `src/pages/EstadosCuentaPage.jsx`, `src/pages/CompensacionPage.jsx` y
+     `src/pages/HistorialPagosPage.jsx`.
+   - No subir `graphify-out/`.
+
+### Queda abierto
+
+- **Formatos PDF y Excel del banco**: solo se lee el CSV. Faltan ejemplos del usuario.
+- **Datos de prueba en la BD local**: 4 pagos cancelados de mis pruebas y los 4 activos
+  del usuario cargados del CSV. En prod no existen.
+- **No subir `docs/planes/20261022_MovimientosCheque.csv`**: trae movimientos bancarios
+  reales.
+- Sigue abierto todo lo de la §19 (total de cartera, cabecera del PDF).
