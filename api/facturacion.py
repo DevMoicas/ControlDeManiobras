@@ -35,7 +35,8 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from .db_context import get_db_alias
-from .models import Abono, Banco, ClientePrincipal, Empleado, Factura, FacturaExcel, Gasto, Pago, PerfilUsuario
+from .models import (Abono, Banco, ClientePrincipal, Empleado, Factura, FacturaExcel, Gasto, Maniobra, Pago,
+                     PerfilUsuario)
 
 # ── Quién entra ──────────────────────────────────────────────────────────────
 # Cerrado por defecto (P45, P64): staff o uno de estos cargos EXACTOS. Sin
@@ -160,6 +161,9 @@ def sincronizar_facturas(maniobra, usuario):
     silencioso, P3); si no, se reaprovecha una fila vacía o se crea.
     Lo que sobra: la fila con XML o con cobro se suelta y queda pendiente de
     ligar; la vacía se borra, salvo que sea la única que le queda.
+    Si todas las que nombra son de otra maniobra (una factura que cobró dos
+    servicios, usuario 2026-10-23), no le queda ninguna: una vacía saldría en
+    blanco para siempre, porque su XML ya rellenó la de la otra.
     """
     if not maniobra.fecha_pis or maniobra.fecha_pis < INICIO_FACTURACION:
         return  # anterior a Facturación, o sin fecha para saberlo: no se toca
@@ -201,14 +205,14 @@ def sincronizar_facturas(maniobra, usuario):
             f.maniobra, f.updated_by = None, usuario
             f.save(update_fields=['maniobra', 'updated_by', 'updated_at'])
             dinero |= f.total is not None
-        elif Factura.objects.filter(maniobra=maniobra).exclude(pk=f.pk).exists():
+        elif nombradas or Factura.objects.filter(maniobra=maniobra).exclude(pk=f.pk).exists():
             f.delete()
         elif f.serie or f.folio:
             f.serie = f.folio = f.empresa = ''
             f.updated_by = usuario
             f.save(update_fields=['serie', 'folio', 'empresa', 'updated_by', 'updated_at'])
 
-    if tiene_folio and not Factura.objects.filter(maniobra=maniobra).exists():
+    if tiene_folio and not nombradas and not Factura.objects.filter(maniobra=maniobra).exists():
         # Con folio y sin factura nombrada (recién puesto, o se soltaron todas):
         # la fila por emitir.
         Factura.objects.create(maniobra=maniobra, created_by=usuario, updated_by=usuario)
@@ -777,6 +781,17 @@ class FacturaViewSet(CancelableMixin, mixins.ListModelMixin, viewsets.GenericVie
 
     def list(self, request, *args, **kwargs):
         filas = self.get_serializer(self.get_queryset(), many=True).data
+        # Una factura que cobró dos servicios se liga a uno; los demás que la
+        # nombran salen al lado para que no parezca que no se facturaron.
+        nombran = {}
+        for m_id, folio, no_factura in (Maniobra.objects.filter(fecha_pis__gte=INICIO_FACTURACION)
+                                        .exclude(no_factura__isnull=True).exclude(no_factura='')
+                                        .values_list('id', 'folio', 'no_factura')):
+            for clave in dict.fromkeys(facturas_de_no_factura(no_factura)):
+                nombran.setdefault(clave, []).append((m_id, folio or f'Maniobra {m_id}'))
+        for f in filas:
+            f['comparte_con'] = [folio for m_id, folio in nombran.get((f['serie'], f['folio']), [])
+                                 if m_id != f['maniobra']]
         pagina = self.paginate_queryset(filtrar_tabla(filas, request.query_params))
         return self.get_paginated_response(pagina)
 

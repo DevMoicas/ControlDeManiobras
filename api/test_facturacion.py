@@ -278,13 +278,39 @@ class FilasDeLaManiobraTests(Base):
         Factura.objects.create(maniobra=duena, serie='S', folio='1')
         self.guardar(folio='F-1', no_factura='S 1')
         self.assertEqual(Factura.objects.filter(serie='S', folio='1').count(), 1)
-        self.assertEqual(self.filas(), [('', '')])
+        # Una factura que cobró dos servicios: sin fila en blanco (2026-10-23).
+        self.assertEqual(self.filas(), [])
+        self.guardar(solicita='Y')                     # al volver a guardar no reaparece
+        self.assertEqual(self.filas(), [])
+        fila = self.usuario('admin', staff=True).get('/api/facturas/').data['results'][0]
+        self.assertEqual((fila['maniobra'], fila['comparte_con']), (duena.id, ['F-1']))
 
     def test_un_ingreso_a_mano_no_se_toca_si_no_cambia_dinero(self):
         Gasto.objects.create(maniobra=self.m, facturado='50000')
         self.guardar(folio='F-1', no_factura='S 1')
         self.guardar(no_factura='S 2')
         self.assertEqual(Gasto.objects.get(maniobra=self.m).facturado, '50000')
+
+
+class ServiciosViejosTests(Base):
+    """La 0088 sobre lo que ya había (usuario, 2026-10-23)."""
+
+    def test_quita_la_fila_en_blanco_y_crea_las_de_las_sin_folio(self):
+        from importlib import import_module
+        from types import SimpleNamespace
+        from django.apps import apps
+        duena = Maniobra.objects.create(folio='A-1', no_factura='S 9', fecha_pis=JULIO)
+        Factura.objects.create(maniobra=duena, serie='S', folio='9')
+        segunda = Maniobra.objects.create(folio='A-1-2', no_factura='S 9', fecha_pis=JULIO)
+        Factura.objects.create(maniobra=segunda)                      # la fila en blanco
+        sin_folio = Maniobra.objects.create(no_factura='S 8 / S 7', fecha_pis=JULIO)
+        Factura.objects.create(serie='S', folio='7')                  # su XML llegó suelto
+        import_module('api.migrations.0088_facturas_de_servicios_viejos').arreglar(
+            apps, SimpleNamespace(connection=connections['standard']))
+        self.assertFalse(Factura.objects.filter(maniobra=segunda).exists())
+        self.assertEqual(sorted(Factura.objects.filter(maniobra=sin_folio).values_list('serie', 'folio')),
+                         [('S', '7'), ('S', '8')])
+        self.assertEqual(Factura.objects.filter(maniobra=duena).count(), 1)
 
 
 class CargaXmlTests(Base):
