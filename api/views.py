@@ -4,7 +4,7 @@ from decimal import Decimal
 from zoneinfo import ZoneInfo
 import django_filters
 from rest_framework import viewsets, mixins
-from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, ClientePrincipal, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_EN_EL_PAPEL, NominaEmpleado, SueldoHistorial, VacacionDia
+from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, ClientePrincipal, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_EN_EL_PAPEL, NominaEmpleado, SueldoHistorial, VacacionDia, Factura
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
@@ -18,7 +18,8 @@ from .Serializers import (CustomTokenObtainPairSerializer, DispositivoConfianzaS
 from . import confianza
 from .db_context import get_db_alias
 from .dashboards import choferes_fraba, clave_ruta
-from .facturacion import admin_de_sistemas, puede_finanzas, sincronizar_facturas, ve_rendimiento
+from .facturacion import (admin_de_sistemas, cuentas_por_cobrar, puede_finanzas,
+                          sincronizar_facturas, ve_rendimiento)
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
@@ -42,6 +43,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.page import PageMargins
 from openpyxl.worksheet.properties import PageSetupProperties
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.drawing.image import Image as XLImage
 from PIL import Image
 from rest_framework.views import APIView
 
@@ -3085,6 +3087,191 @@ class DocumentoReporteVaciosView(APIView):
             )
         except Exception:
             logger.exception("Error inesperado al generar el Reporte de Vacíos")
+            return Response(
+                {'detail': 'No se pudo generar el documento. Contacte al administrador.'},
+                status=500,
+            )
+
+
+# ── Estado de cuenta (usuario, 2026-10-21) ──────────────────────────────────
+# El formato es el de docs/planes/codigo_estados_de_cuenta.html (rama main):
+# cabecera, cliente, resumen, tabla de facturas y totales. Colores de ese diseño.
+_VERDE_EDC, _TINTA_EDC, _GRIS_EDC = '12685B', '17332F', '526A60'
+_FONDO_EDC, _LINEA_EDC = 'EDF2ED', 'DCE4DC'
+_ESTATUS_EDC = {  # etiqueta, fondo, letra (los "badge" del diseño)
+    'vencida':    ('Vencida', 'FAE7E1', '8A2C18'),
+    'por_vencer': ('Por vencer', 'FFF0CA', '765008'),
+    'en_tiempo':  ('En tiempo', 'E1F2EB', '146049'),
+}
+_COLUMNAS_EDC = [('Número de factura', 13), ('Concepto', 16), ('Descripción', 44),
+                 ('Saldo', 15), ('Fecha de emisión', 12), ('Fecha de vencimiento', 12),
+                 ('Estatus de la factura', 13)]
+_DINERO_EDC = '"$"#,##0.00'
+_LOGO_EDC = settings.BASE_DIR / 'api' / 'documentos' / 'logo_fraba.png'
+
+
+def _fecha_larga(d):
+    return f'{d.day} de {_MESES_ES[d.month].lower()} de {d.year}'
+
+
+def _workbook_estado_cuenta(cliente, empresa, filas, corte):
+    """El estado de cuenta, ya montado. `filas` son las de cuentas_por_cobrar()
+    de ese cliente y esa empresa: solo facturas activas SIN fecha de cobro."""
+    linea = Side(style='thin', color=_LINEA_EDC)
+    recuadro = Border(left=linea, right=linea, top=linea, bottom=linea)
+    raya = Side(style='medium', color=_VERDE_EDC)
+    ultima = len(_COLUMNAS_EDC)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'ESTADO DE CUENTA'
+    # Vertical, a un folio de ancho; a lo alto, las hojas que hagan falta.
+    ws.page_setup.orientation = 'portrait'
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+    ws.page_margins = PageMargins(left=0.4, right=0.4, top=0.5, bottom=0.5)
+    ws.sheet_view.showGridLines = False
+    for i, (_, ancho) in enumerate(_COLUMNAS_EDC, start=1):
+        ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = ancho
+
+    def poner(fila, col, valor, hasta=None, **estilo):
+        if hasta:
+            ws.merge_cells(start_row=fila, start_column=col, end_row=fila, end_column=hasta)
+        celda = ws.cell(row=fila, column=col, value=valor)
+        for clave, v in estilo.items():
+            setattr(celda, clave, v)
+        return celda
+
+    # Cabecera: logo y, debajo, la empresa que factura a la izquierda; título y
+    # fecha de corte a la derecha. El logo de Fraba, solo en los de Fraba
+    # (usuario, 2026-10-21).
+    derecha = Alignment(horizontal='right', vertical='center')
+    if empresa == 'fraba':
+        logo = XLImage(_LOGO_EDC)
+        logo.width, logo.height = 103, 60   # 226x132 a escala
+        ws.add_image(logo, 'A1')
+        ws.row_dimensions[1].height = 48    # puntos: los 60 px del logo y un margen
+    poner(1, 5, 'Estado de cuenta', hasta=ultima, alignment=Alignment(horizontal='right', vertical='bottom'),
+          font=Font(size=20, bold=True, color=_TINTA_EDC))
+    poner(2, 1, dict(Factura.EMPRESAS)[empresa].upper(), hasta=3,
+          font=Font(size=13, bold=True, color=_VERDE_EDC))
+    poner(2, 5, f'Fecha de corte: {_fecha_larga(corte)}', hasta=ultima, alignment=derecha,
+          font=Font(size=10, color=_GRIS_EDC))
+    for col in range(1, ultima + 1):
+        ws.cell(row=2, column=col).border = Border(bottom=raya)
+
+    poner(4, 1, 'CLIENTE', font=Font(size=9, bold=True, color=_VERDE_EDC))
+    poner(5, 1, _sin_formula(cliente.nombre), hasta=ultima,
+          font=Font(size=15, bold=True, color=_TINTA_EDC))
+    poner(6, 1, dict(Factura.EMPRESAS)[empresa], font=Font(size=10, color=_GRIS_EDC))
+
+    # Resumen. Sin "Saldo anterior" ni "Pagos o abonos" del diseño: aquí solo
+    # entran facturas sin cobrar, así que los dos serían siempre $0.
+    total = sum(Decimal(f['saldo']) for f in filas)
+    vencido = sum(Decimal(f['saldo']) for f in filas if f['estatus'] == 'vencida')
+    for (col, hasta), (rotulo, valor, formato) in zip(
+            ((1, 2), (3, 3), (4, ultima)),
+            (('Facturas pendientes', len(filas), '0'),
+             ('Saldo vencido', vencido, _DINERO_EDC),
+             ('Saldo total', total, _DINERO_EDC))):
+        caja = PatternFill('solid', fgColor=_FONDO_EDC)
+        poner(8, col, rotulo, hasta=hasta if hasta > col else None, fill=caja,
+              font=Font(size=9, color=_GRIS_EDC))
+        poner(9, col, valor, hasta=hasta if hasta > col else None, fill=caja,
+              number_format=formato, alignment=Alignment(horizontal='left'),
+              font=Font(size=13, bold=True, color=_TINTA_EDC))
+
+    # Tabla de facturas.
+    titulos = 11
+    for col, (rotulo, _) in enumerate(_COLUMNAS_EDC, start=1):
+        poner(titulos, col, rotulo.upper(), border=recuadro,
+              fill=PatternFill('solid', fgColor=_FONDO_EDC),
+              font=Font(size=8, bold=True, color=_GRIS_EDC),
+              alignment=Alignment(vertical='center', wrap_text=True))
+    ws.row_dimensions[titulos].height = 28
+    ws.print_title_rows = f'{titulos}:{titulos}'  # se repite en cada hoja
+
+    texto = Alignment(vertical='top', wrap_text=True)
+    for i, f in enumerate(filas, start=titulos + 1):
+        etiqueta, fondo, letra = _ESTATUS_EDC[f['estatus']]
+        valores = (f"{f['serie']} {f['folio']}", _sin_formula(f['no_identificacion']),
+                   _sin_formula(f['descripcion']), Decimal(f['saldo']),
+                   f['fecha_emision'], f['vencimiento'], etiqueta)
+        for col, valor in enumerate(valores, start=1):
+            celda = poner(i, col, valor, border=recuadro, alignment=texto,
+                          font=Font(size=9, color=_TINTA_EDC))
+            if col == 4:
+                celda.number_format = _DINERO_EDC
+            elif col in (5, 6):
+                celda.number_format = 'dd/mm/yyyy'
+            elif col == 7:
+                celda.fill = PatternFill('solid', fgColor=fondo)
+                celda.font = Font(size=9, bold=True, color=letra)
+
+    # Totales, abajo a la derecha.
+    fila = titulos + len(filas) + 2
+    for rotulo, valor, negrita in (('Total vencido', vencido, False),
+                                   ('Saldo total pendiente', total, True)):
+        poner(fila, 5, rotulo, hasta=6, font=Font(size=10, bold=negrita, color=_TINTA_EDC))
+        poner(fila, ultima, valor, number_format=_DINERO_EDC, alignment=derecha,
+              font=Font(size=10, bold=True, color=_TINTA_EDC))
+        fila += 1
+    for col in range(5, ultima + 1):
+        ws.cell(row=fila - 2, column=col).border = Border(top=raya)
+
+    poner(fila + 2, 1, f'Documento generado con fecha de corte {_fecha_larga(corte)}.',
+          hasta=ultima, font=Font(size=8, color=_GRIS_EDC))
+    return wb
+
+
+class DocumentoEstadoCuentaView(APIView):
+    """
+    POST /api/documentos/estado-cuenta/
+    Body: {"cliente": <id de ClientePrincipal>, "empresa": "fraba"|"soluciones",
+           "formato": "pdf"|"excel"}
+
+    Las facturas SIN COBRAR (activa y sin fecha de cobro) de ese cliente y esa
+    empresa, vencidas o no. Pagada = con fecha de cobro en Facturación (usuario,
+    2026-10-21; puede cambiar). Solo Finanzas.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+
+    def post(self, request):
+        if not puede_finanzas(request.user):
+            raise PermissionDenied('Finanzas es solo para dirección, comercial y administradores.')
+        empresa = request.data.get('empresa')
+        if empresa not in dict(Factura.EMPRESAS):
+            return Response({'detail': 'Empresa no válida.'}, status=400)
+        try:
+            cliente = ClientePrincipal.objects.get(pk=int(request.data.get('cliente')))
+        except (TypeError, ValueError, ClientePrincipal.DoesNotExist):
+            return Response({'detail': 'Cliente no válido.'}, status=400)
+
+        corte = datetime.now(_ZONA_OPERACION).date()
+        filas = [f for f in cuentas_por_cobrar(corte)['facturas']
+                 if f['cliente_principal_id'] == cliente.id and f['empresa'] == empresa]
+        if not filas:
+            return Response({'detail': f'{cliente.nombre} no tiene facturas pendientes '
+                                       f'de {dict(Factura.EMPRESAS)[empresa]}.'}, status=400)
+        try:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                return _responder_documento(
+                    _workbook_estado_cuenta(cliente, empresa, filas, corte), tmp_dir,
+                    f'ESTADO DE CUENTA {_nombre_ascii(cliente.nombre)} '
+                    f'{empresa.upper()} {corte:%d-%m-%Y}',
+                    request.data.get('formato', 'pdf'),
+                )
+        except subprocess.TimeoutExpired:
+            return Response(
+                {'detail': 'La conversión a PDF tardó demasiado. Intente de nuevo.'},
+                status=500,
+            )
+        except Exception:
+            logger.exception("Error inesperado al generar el Estado de cuenta")
             return Response(
                 {'detail': 'No se pudo generar el documento. Contacte al administrador.'},
                 status=500,

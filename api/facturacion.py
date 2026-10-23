@@ -15,13 +15,15 @@ import io
 import re
 import unicodedata
 import xml.etree.ElementTree as ET
+from difflib import SequenceMatcher
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import F, Max, Q, Sum
+from django.db.models.functions import Coalesce
 from django.db.models.functions import TruncWeek
 from django.utils import timezone
 from openpyxl import load_workbook
@@ -33,7 +35,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from .db_context import get_db_alias
-from .models import Empleado, Factura, FacturaExcel, Gasto, PerfilUsuario
+from .models import Abono, Banco, ClientePrincipal, Empleado, Factura, FacturaExcel, Gasto, Pago, PerfilUsuario
 
 # ── Quién entra ──────────────────────────────────────────────────────────────
 # Cerrado por defecto (P45, P64): staff o uno de estos cargos EXACTOS. Sin
@@ -588,6 +590,15 @@ def tramo(dias_vencida):
     return 'mas_90'
 
 
+def estatus(dias_vencida):
+    """El de Estados de cuenta (usuario, 2026-10-21). Vencida desde el MISMO día
+    que vence, como en su Excel; por vencer, la semana anterior. None sin
+    vencimiento (sin cliente principal)."""
+    if dias_vencida is None:
+        return None
+    return 'vencida' if dias_vencida >= 0 else 'por_vencer' if dias_vencida >= -7 else 'en_tiempo'
+
+
 def cuentas_por_cobrar(hoy):
     """Facturas activas sin cobrar, con su antigüedad.
 
@@ -603,21 +614,25 @@ def cuentas_por_cobrar(hoy):
           .order_by('fecha_emision', 'id'))
     for f in qs:
         principal, venc = principal_de(f), vencimiento(f)
+        # Lo que falta por cobrar, no el total (usuario, 2026-10-22).
+        saldo = f.total - f.abonado
         if venc is None:
             situacion = 'pendiente_de_ligar' if not f.maniobra_id else 'sin_cliente_principal'
-            fuera[situacion] += f.total
+            fuera[situacion] += saldo
             dias, clave = None, None
         else:
             situacion = 'con_credito'
             dias = (hoy - venc).days
             clave = tramo(dias)
-            antiguedad[clave] += f.total
+            antiguedad[clave] += saldo
         filas.append({
             'id': f.id, 'empresa': f.empresa, 'serie': f.serie, 'folio': f.folio,
-            'nombre': f.nombre, 'fecha_emision': f.fecha_emision, 'total': _dinero(f.total),
+            'nombre': f.nombre, 'fecha_emision': f.fecha_emision, 'saldo': _dinero(saldo),
             'cliente_principal': principal.nombre if principal else None,
+            'cliente_principal_id': principal.id if principal else None,
+            'no_identificacion': f.no_identificacion, 'descripcion': f.descripcion,
             'vencimiento': venc, 'dias_vencida': dias, 'tramo': clave,
-            'situacion': situacion,
+            'estatus': estatus(dias), 'situacion': situacion,
         })
     return {'facturas': filas,
             'antiguedad': {k: _dinero(v) for k, v in antiguedad.items()},
@@ -626,16 +641,17 @@ def cuentas_por_cobrar(hoy):
 
 
 def cobranza_semanal(desde=None, hasta=None):
-    """Total de las facturas activas por semana (lunes) de su EMISIÓN (P67,
-    P70). No depende de si están cobradas. Sin XML no hay emisión: no cuenta."""
-    qs = Factura.objects.filter(estado='activa', fecha_emision__isnull=False)
+    """Lo COBRADO por semana (lunes) de la fecha del pago: el monto de los
+    pagos activos de Compensación (usuario, 2026-10-22). Antes era lo
+    facturado por semana de emisión (P67, P70)."""
+    qs = Pago.objects.filter(estado='activa')
     if desde:
-        qs = qs.filter(fecha_emision__gte=desde)
+        qs = qs.filter(fecha__gte=desde)
     if hasta:
-        qs = qs.filter(fecha_emision__lte=hasta)
+        qs = qs.filter(fecha__lte=hasta)
     return [{'semana': fila['semana'], 'total': _dinero(fila['total'])}
-            for fila in (qs.annotate(semana=TruncWeek('fecha_emision'))
-                         .values('semana').annotate(total=Sum('total')).order_by('semana'))]
+            for fila in (qs.annotate(semana=TruncWeek('fecha'))
+                         .values('semana').annotate(total=Sum('monto')).order_by('semana'))]
 
 
 # ── API ──────────────────────────────────────────────────────────────────────
@@ -644,25 +660,21 @@ class FacturaSerializer(serializers.ModelSerializer):
     maniobra_folio = serializers.CharField(source='maniobra.folio', default=None,
                                            read_only=True)
     vencimiento = serializers.SerializerMethodField()
+    saldo_pendiente = serializers.SerializerMethodField()
 
     def get_vencimiento(self, factura):
         return vencimiento(factura)
+
+    def get_saldo_pendiente(self, factura):
+        return None if factura.total is None else _dinero(factura.total - factura.abonado)
 
     class Meta:
         model = Factura
         fields = ['id', 'empresa', 'serie', 'folio', 'nombre', 'rfc',
                   'fecha_emision', 'subtotal', 'iva', 'total', 'estado',
                   'no_identificacion', 'descripcion', 'fecha_cobro', 'clave_rastreo',
-                  'maniobra', 'maniobra_folio', 'vencimiento']
+                  'maniobra', 'maniobra_folio', 'vencimiento', 'saldo_pendiente']
         read_only_fields = fields
-
-
-class CobroSerializer(serializers.Serializer):
-    """Lo único que se escribe a mano en Facturación (usuario, 2026-10-15)."""
-    fecha_cobro = serializers.DateField(required=False, allow_null=True)
-    clave_rastreo = serializers.RegexField(
-        r'^[A-Za-z0-9]*$', max_length=50, required=False, allow_null=True, allow_blank=True,
-        error_messages={'invalid': 'La clave de rastreo solo admite letras y números.'})
 
 
 class CancelableMixin:
@@ -791,23 +803,364 @@ class FacturaViewSet(CancelableMixin, mixins.ListModelMixin, viewsets.GenericVie
         hasta = _fecha(request.query_params.get('hasta')) if request.query_params.get('hasta') else None
         return Response(cobranza_semanal(desde, hasta))
 
-    @action(detail=True, methods=['post'])
-    def cobro(self, request, pk=None):
-        """Fecha de cobro y clave de rastreo, a mano (P27). Solo los campos que
-        vengan; null o vacío los limpia."""
-        datos = CobroSerializer(data=request.data, partial=True)
+    @action(detail=False, methods=['get'])
+    def clientes(self, request):
+        """Los clientes de Compensación: los RFC de las facturas, con su nombre."""
+        nombres = {}
+        for f in Factura.objects.exclude(rfc='').order_by('-fecha_emision').values('rfc', 'nombre'):
+            nombres.setdefault(f['rfc'], f['nombre'])  # el nombre más reciente
+        return Response(sorted(({'rfc': r, 'nombre': n} for r, n in nombres.items()),
+                               key=lambda c: c['nombre']))
+
+    @action(detail=False, methods=['get'], url_path='buscar-compensacion')
+    def buscar_compensacion(self, request):
+        """El buscador de Compensación: TODAS las facturas (también canceladas y
+        sin XML, que salen pero no se abonan), del cliente elegido si lo hay."""
+        # ponytail: filtra en Python como la tabla de arriba; a SQL si crece.
+        qs = Factura.objects.exclude(folio='').annotate(
+            ultima=Max('abonos__parcialidad', filter=Q(abonos__estado='activa')))
+        rfc = request.query_params.get('rfc')
+        if rfc:
+            qs = qs.filter(rfc=rfc)
+        filas = [fila_compensacion(f, f.ultima) for f in qs]
+        return Response(buscar(filas, request.query_params.get('search'))[:50])
+
+
+def fila_compensacion(f, ultima=None):
+    """Una factura tal como la usa Compensación. `ultima`: su última
+    parcialidad activa, para sugerir la siguiente."""
+    return {
+        'id': f.id, 'serie': f.serie, 'folio': f.folio, 'fecha_emision': f.fecha_emision,
+        'rfc': f.rfc, 'nombre': f.nombre, 'estado': f.estado,
+        'total': None if f.total is None else _dinero(f.total),
+        'abonado': _dinero(f.abonado),
+        'saldo_pendiente': None if f.total is None else _dinero(f.total - f.abonado),
+        'fecha_cobro': f.fecha_cobro,
+        'abonable': f.estado == 'activa' and f.total is not None,
+        'siguiente_parcialidad': (ultima or 0) + 1,
+    }
+
+
+def _fila_al_dia(factura):
+    ultima = factura.abonos.filter(estado='activa').aggregate(m=Max('parcialidad'))['m']
+    return fila_compensacion(factura, ultima)
+
+
+# ── El CSV de movimientos del banco (usuario, 2026-10-22) ─────────────────────
+# Formato de docs/planes/20261022_MovimientosCheque.csv (rama main). Cada celda
+# de texto viene entre ' (marca de Excel; a veces solo delante) y rellena de
+# espacios; la fecha es ddmmaaaa ('02102026' = 2 de octubre de 2026). Solo es pago lo que dice ABONO TRANSFERENCIA SPEI: el resto
+# (intereses, cargos) se omite.
+COLUMNAS_CSV = {'descripcion': 'descripcion', 'fecha': 'fecha', 'monto': 'importe',
+                'clave_rastreo': 'clave de rastreo', 'banco': 'banco participante',
+                'nombre': 'nombre ordenante', 'rfc': 'rfc ordenante'}
+ES_PAGO = 'abono transferencia spei'
+
+
+def _celda(valor):
+    return (valor or '').strip().strip("'").strip()
+
+
+def leer_movimientos(contenido):
+    """Los pagos del CSV, sin guardar nada. Devuelve (pagos, omitidos, errores)."""
+    try:
+        texto = contenido.decode('utf-8-sig')
+    except UnicodeDecodeError:
+        texto = contenido.decode('latin-1')
+    lector = csv.reader(io.StringIO(texto))
+    cabecera = {_cabecera(c): i for i, c in enumerate(next(lector, []))}
+    faltan = [c for c in COLUMNAS_CSV.values() if c not in cabecera]
+    if faltan:
+        raise ValueError(f"Al CSV le faltan columnas: {', '.join(faltan)}.")
+    pagos, omitidos, errores = [], 0, []
+    for n, fila in enumerate(lector, start=2):
+        if not any(c.strip() for c in fila):
+            continue
+        v = {k: _celda(fila[cabecera[c]]) if cabecera[c] < len(fila) else ''
+             for k, c in COLUMNAS_CSV.items()}
+        if _cabecera(v.pop('descripcion')) != ES_PAGO:
+            omitidos += 1
+            continue
+        try:
+            v['fecha'] = datetime.strptime(v['fecha'], '%d%m%Y').date()
+            v['monto'] = Decimal(v['monto'].replace(',', ''))
+        except (ValueError, InvalidOperation):
+            errores.append(f'Fila {n}: la fecha o el importe no se entienden.')
+            continue
+        if v['monto'] <= 0 or not re.fullmatch(r'[A-Za-z0-9]{1,50}', v['clave_rastreo']):
+            errores.append(f'Fila {n}: sin importe o sin clave de rastreo válida.')
+            continue
+        v['clave_rastreo'] = v['clave_rastreo'].upper()
+        v['rfc'] = v['rfc'].upper()[:20]
+        v['banco'] = v['banco'][:80]
+        pagos.append(v)
+    return pagos, omitidos, errores
+
+
+# El nombre del ordenante se compara de forma APROXIMADA con los clientes
+# principales (usuario, 2026-10-22: "LOGISTICS PLUS" vs "LOGISTIC PLUS"). Sin el
+# tipo de sociedad: "S DE RL DE CV" haría parecidas a dos empresas distintas.
+_SOCIEDAD = re.compile(r'\b(S ?A ?P ?I|S ?A ?B|S ?DE ?R ?L|S ?EN ?C|S ?A|S ?C|A ?C|DE ?C ?V|DE)\b')
+PARECIDO = 0.9
+
+
+def _razon_social(nombre):
+    limpio = re.sub(r'[^A-Z0-9 ]', ' ', _cabecera(nombre).upper())
+    return ' '.join(_SOCIEDAD.sub(' ', limpio).split())
+
+
+def cliente_parecido(nombre, principales):
+    """El cliente principal cuyo nombre se parece al del ordenante, o None.
+    ponytail: difflib sobre la lista entera; basta para decenas de clientes."""
+    buscado = _razon_social(nombre)
+    if not buscado:
+        return None
+    mejor = max(principales, default=None,
+                key=lambda p: SequenceMatcher(None, buscado, _razon_social(p)).ratio())
+    if mejor and SequenceMatcher(None, buscado, _razon_social(mejor)).ratio() >= PARECIDO:
+        return mejor
+    return None
+
+
+def revisar_pagos(pagos):
+    """Marca cada pago: repetido (su clave ya está en un pago activo o sale dos
+    veces), cliente principal parecido y si su RFC tiene facturas."""
+    claves = [p['clave_rastreo'] for p in pagos if p['clave_rastreo']]
+    guardadas = set(Pago.objects.filter(estado='activa', clave_rastreo__in=claves)
+                    .values_list('clave_rastreo', flat=True))
+    con_facturas = set(Factura.objects.filter(rfc__in={p['rfc'] for p in pagos if p['rfc']})
+                       .values_list('rfc', flat=True))
+    principales = list(ClientePrincipal.objects.values_list('nombre', flat=True))
+    vistas = set()
+    for p in pagos:
+        clave = p['clave_rastreo']
+        p['repetido'] = bool(clave) and (clave in guardadas or clave in vistas)
+        vistas.add(clave)
+        p['cliente_principal'] = cliente_parecido(p['nombre'], principales)
+        p['rfc_con_facturas'] = p['rfc'] in con_facturas
+    return pagos
+
+
+# ── Compensación (usuario, 2026-10-22) ───────────────────────────────────────
+# Un PAGO es lo que llegó al banco (su monto es la cobranza); se reparte a mano
+# en ABONOS, uno por factura. Abonar o pagar de más se acepta: la pantalla pide
+# confirmación antes.
+def mover_abonado(factura, delta, pago, usuario):
+    """Suma (o resta, al cancelar) al abonado. Cubrir el total marca la factura
+    cobrada con la fecha y la clave del pago que lo cubre; bajar de él la
+    desmarca. Es la ÚNICA vía al cobro: ya no se captura a mano."""
+    factura.abonado += delta
+    if factura.abonado < factura.total:
+        factura.fecha_cobro, factura.clave_rastreo = None, ''
+    elif factura.fecha_cobro is None:
+        factura.fecha_cobro, factura.clave_rastreo = pago.fecha, pago.clave_rastreo
+    factura.updated_by = usuario
+    factura.save(update_fields=['abonado', 'fecha_cobro', 'clave_rastreo',
+                                'updated_by', 'updated_at'])
+
+
+class PagoSerializer(serializers.ModelSerializer):
+    clave_rastreo = serializers.RegexField(
+        r'^[A-Za-z0-9]*$', max_length=50, required=False, allow_blank=True,
+        error_messages={'invalid': 'La clave de rastreo solo admite letras y números.'})
+    monto = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=Decimal('0.01'))
+    aplicado = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Pago
+        fields = ['id', 'fecha', 'monto', 'clave_rastreo', 'banco', 'rfc', 'nombre',
+                  'estado', 'aplicado', 'created_by', 'created_at']
+        read_only_fields = ['estado', 'created_by', 'created_at']
+
+    def get_aplicado(self, pago):
+        aplicado = getattr(pago, 'aplicado', None)
+        if aplicado is None:
+            aplicado = pago.abonos.filter(estado='activa').aggregate(t=Sum('monto'))['t']
+        return _dinero(aplicado)
+
+    def validate_clave_rastreo(self, clave):
+        return (clave or '').upper()
+
+
+class HistorialPagoSerializer(PagoSerializer):
+    """HISTORIAL DE PAGOS: el pago con las facturas a las que se abonó."""
+    abonos = serializers.SerializerMethodField()
+
+    class Meta(PagoSerializer.Meta):
+        fields = PagoSerializer.Meta.fields + ['abonos']
+
+    def get_abonos(self, pago):
+        return [{'id': a.id, 'factura': f'{a.factura.serie} {a.factura.folio}'.strip(),
+                 'nombre': a.factura.nombre, 'monto': _dinero(a.monto),
+                 'parcialidad': a.parcialidad, 'estado': a.estado}
+                for a in pago.abonos.all()]
+
+
+class _SoloFinanzas:
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if not puede_finanzas(request.user):
+            raise PermissionDenied('Compensación es solo para dirección, comercial y administradores.')
+
+
+class PagoViewSet(_SoloFinanzas, mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                  viewsets.GenericViewSet):
+    """COMPENSACIÓN, los pagos. Se leen del CSV o se capturan a mano en una
+    lista y se guardan juntos; cancelar es solo staff (P65) y cancela también
+    sus abonos. Sin borrado."""
+    serializer_class = PagoSerializer
+    queryset = Pago.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        """El HISTORIAL: todos los pagos guardados, también los cancelados, del
+        más reciente al más viejo. Lo aplicado se calcula al pedirlo.
+        ponytail: sin paginar; cientos de pagos al año. Paginar si crece."""
+        qs = (Pago.objects.annotate(aplicado=Coalesce(
+                  Sum('abonos__monto', filter=Q(abonos__estado='activa')), Decimal('0')))
+              .prefetch_related('abonos__factura').order_by('-fecha', '-id'))
+        return Response(HistorialPagoSerializer(qs, many=True).data)
+
+    @action(detail=False, methods=['post'], url_path='leer-csv',
+            parser_classes=[MultiPartParser, FormParser])
+    def leer_csv(self, request):
+        """Solo LEE: lo que entraría, marcado. Nada se guarda aquí."""
+        archivo = request.FILES.get('archivo')
+        if not archivo:
+            return Response({'detail': 'Falta el CSV.'}, status=status.HTTP_400_BAD_REQUEST)
+        if archivo.size > 2 * 1024 * 1024:
+            return Response({'detail': 'El CSV pasa de 2 MB.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            pagos, omitidos, errores = leer_movimientos(archivo.read())
+        except ValueError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'pagos': revisar_pagos(pagos), 'omitidos': omitidos, 'errores': errores})
+
+    @action(detail=False, methods=['post'])
+    def guardar(self, request):
+        """Guarda la lista de una vez. Los repetidos (misma clave que un pago
+        activo o que otro de la lista) no entran y se devuelven aparte."""
+        lista = request.data.get('pagos')
+        if not isinstance(lista, list) or not lista:
+            # Vacía es un fallo del cliente, no "0 guardados": que se vea.
+            return Response({'detail': 'No llegó ningún pago que guardar.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        datos = PagoSerializer(data=lista, many=True)
         datos.is_valid(raise_exception=True)
-        factura = self.get_object()
-        campos = []
-        if 'fecha_cobro' in datos.validated_data:
-            factura.fecha_cobro = datos.validated_data['fecha_cobro']
-            campos.append('fecha_cobro')
-        if 'clave_rastreo' in datos.validated_data:
-            factura.clave_rastreo = (datos.validated_data['clave_rastreo'] or '').upper()
-            campos.append('clave_rastreo')
-        factura.updated_by = request.user.username
-        factura.save(update_fields=campos + ['updated_by', 'updated_at'])
-        return Response(self.get_serializer(factura).data)
+        usuario = request.user.username
+        guardados, repetidos = [], []
+        with transaction.atomic(using=get_db_alias()):
+            vistas = set(Pago.objects.filter(estado='activa').exclude(clave_rastreo='')
+                         .values_list('clave_rastreo', flat=True))
+            for v in datos.validated_data:
+                if v.get('clave_rastreo') and v['clave_rastreo'] in vistas:
+                    repetidos.append(v['clave_rastreo'])
+                    continue
+                vistas.add(v.get('clave_rastreo'))
+                guardados.append(Pago.objects.create(**v, created_by=usuario, updated_by=usuario))
+        return Response({'guardados': len(guardados), 'repetidos': repetidos},
+                        status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path='por-aplicar')
+    def por_aplicar(self, request):
+        """Los pagos activos con algo por aplicar, del más viejo al más
+        reciente: la lista numerada de la que se elige el pago de cada abono."""
+        qs = (Pago.objects.filter(estado='activa')
+              .annotate(aplicado=Coalesce(Sum('abonos__monto', filter=Q(abonos__estado='activa')),
+                                          Decimal('0')))
+              .filter(aplicado__lt=F('monto')).order_by('fecha', 'id'))
+        return Response(PagoSerializer(qs, many=True).data)
+
+    @action(detail=True, methods=['post'])
+    def cancelar(self, request, pk=None):
+        if not request.user.is_staff:
+            raise PermissionDenied('Solo un administrador puede cancelar pagos.')
+        usuario = request.user.username
+        with transaction.atomic(using=get_db_alias()):
+            pago = Pago.objects.select_for_update().get(pk=pk)
+            if pago.estado == 'cancelada':
+                return Response({'detail': 'El pago ya está cancelado.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            for abono in pago.abonos.select_for_update().filter(estado='activa'):
+                factura = Factura.objects.select_for_update().get(pk=abono.factura_id)
+                abono.estado, abono.updated_by = 'cancelada', usuario
+                abono.save(update_fields=['estado', 'updated_by', 'updated_at'])
+                mover_abonado(factura, -abono.monto, pago, usuario)
+            pago.estado, pago.updated_by = 'cancelada', usuario
+            pago.save(update_fields=['estado', 'updated_by', 'updated_at'])
+        return Response(self.get_serializer(pago).data)
+
+    @action(detail=False, methods=['get'])
+    def bancos(self, request):
+        return Response(list(Banco.objects.values_list('nombre', flat=True)))
+
+
+class AbonoSerializer(serializers.ModelSerializer):
+    monto = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=Decimal('0.01'))
+    parcialidad = serializers.IntegerField(min_value=1, max_value=999)
+    fecha = serializers.DateField(source='pago.fecha', read_only=True)
+    clave_rastreo = serializers.CharField(source='pago.clave_rastreo', read_only=True)
+    banco_nombre = serializers.CharField(source='pago.banco', read_only=True)
+
+    class Meta:
+        model = Abono
+        fields = ['id', 'pago', 'factura', 'monto', 'parcialidad', 'estado', 'fecha',
+                  'clave_rastreo', 'banco_nombre', 'created_by', 'created_at']
+        read_only_fields = ['estado', 'created_by', 'created_at']
+
+    def validate_pago(self, pago):
+        if pago.estado != 'activa':
+            raise serializers.ValidationError('El pago está cancelado.')
+        return pago
+
+    def validate_factura(self, factura):
+        # Salen en el buscador pero no se abonan (usuario, 2026-10-22).
+        if factura.estado != 'activa':
+            raise serializers.ValidationError('La factura está cancelada.')
+        if factura.total is None:
+            raise serializers.ValidationError('La factura aún no tiene XML: no hay total.')
+        return factura
+
+
+class AbonoViewSet(_SoloFinanzas, mixins.ListModelMixin, mixins.CreateModelMixin,
+                   viewsets.GenericViewSet):
+    """COMPENSACIÓN, lo que un pago abona a una factura. Cancelar, solo staff."""
+    serializer_class = AbonoSerializer
+
+    def get_queryset(self):
+        qs = Abono.objects.select_related('pago')
+        if self.action == 'list':
+            # Siempre los de UNA factura: no hay pantalla con todos.
+            qs = qs.filter(factura_id=self.request.query_params.get('factura') or 0)
+        return qs
+
+    def _respuesta(self, abono, factura, pago, **kw):
+        return Response({'abono': self.get_serializer(abono).data,
+                         'factura': _fila_al_dia(factura),
+                         'pago': PagoSerializer(pago).data}, **kw)
+
+    def create(self, request, *args, **kwargs):
+        datos = self.get_serializer(data=request.data)
+        datos.is_valid(raise_exception=True)
+        with transaction.atomic(using=get_db_alias()):
+            factura = Factura.objects.select_for_update().get(pk=datos.validated_data['factura'].pk)
+            abono = datos.save(created_by=request.user.username, updated_by=request.user.username)
+            mover_abonado(factura, abono.monto, abono.pago, request.user.username)
+        return self._respuesta(abono, factura, abono.pago, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def cancelar(self, request, pk=None):
+        if not request.user.is_staff:
+            raise PermissionDenied('Solo un administrador puede cancelar abonos.')
+        with transaction.atomic(using=get_db_alias()):
+            abono = Abono.objects.select_for_update().select_related('pago').get(pk=pk)
+            if abono.estado == 'cancelada':
+                return Response({'detail': 'El abono ya está cancelado.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            factura = Factura.objects.select_for_update().get(pk=abono.factura_id)
+            abono.estado, abono.updated_by = 'cancelada', request.user.username
+            abono.save(update_fields=['estado', 'updated_by', 'updated_at'])
+            mover_abonado(factura, -abono.monto, abono.pago, request.user.username)
+        return self._respuesta(abono, factura, abono.pago)
 
 
 class FacturaExcelSerializer(serializers.ModelSerializer):

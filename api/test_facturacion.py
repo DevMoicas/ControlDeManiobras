@@ -17,8 +17,9 @@ from django.test import SimpleTestCase, TestCase
 from openpyxl import Workbook
 from rest_framework.test import APIClient
 
-from api.facturacion import facturas_de_no_factura
-from api.models import Empleado, Factura, FacturaExcel, Gasto, Maniobra, PerfilUsuario, Vacio
+from api.facturacion import cliente_parecido, facturas_de_no_factura, leer_movimientos
+from api.models import (Abono, ClientePrincipal, Empleado, Factura, FacturaExcel, Gasto, Maniobra,
+                        Pago, PerfilUsuario, Vacio)
 
 URL = '/api/facturas/'
 EXCEL = '/api/facturas-excel/'
@@ -360,27 +361,197 @@ class CargaXmlTests(Base):
         self.assertTrue(d['descripcion'].startswith('FLETE DE MANZANILLO'))
 
 
-class CobroTests(Base):
+# Tres filas reales de docs/planes/20261022_MovimientosCheque.csv (rama main):
+# intereses (no es pago) y dos SPEI, una con la clave sin el ' de Excel.
+CSV_BANCO = (
+    "Cuenta,Fecha,Hora,Sucursal,Descripcion,Cargo/Abono,Importe,Saldo,Referencia,Concepto,"
+    "Banco Participante,Clabe Beneficiario,Nombre Beneficiario,Cta Ordenante,Nombre Ordenante,"
+    "Codigo Devolucion,Causa Devolucion,RFC Beneficiario,RFC Ordenante,Clave de Rastreo,Descripcion Larga\n"
+    "'65507098980,'01102026',00:44,'0560',ABO POR INTERESES DEL PERIODO           ,+,0.02,3888571.05,"
+    "0000000        ,'01-09-2026 AL 30-09-2026,                                        ,'                    ',"
+    "                                        ,'                    ',                                        ,  ,"
+    "                              ,               ,               ,                              ,ABO POR INTERESES\n"
+    "'65507098980,'02102026',16:44,'7465',ABONO TRANSFERENCIA SPEI                ,+,1048460.00,4937031.05,"
+    "003891078      ,Pago de 13 facturas LP                   002580055874724755                               ,"
+    "BANAMEX                                 ,'014090655070989803  ',FRABA CONTAINER S DE RL DE CV           ,"
+    "'002580055874724755  ',LOGISTICS PLUS S DE RL DE CV            ,  ,                              ,"
+    "FCO180912E15   ,LPL0607245C2   ,'085907818484327567,ABONO TRANSFERENCIA SPEI\n"
+    "'65507098980,'06102026',20:30,'7465',ABONO TRANSFERENCIA SPEI                ,+,49280.00,4986311.05,"
+    "000338908      ,Fact S2013                               012456001218146135                               ,"
+    "BBVA MEXICO                             ,'014090655070989803  ',FRABA CONTAINER S DE RL DE CV           ,"
+    "'012456001218146135  ',TRADENAO SA DE CV                       ,  ,                              ,"
+    "FCO180912E15   ,TRA2207296K1   ,BNET01002610070049908658      ,ABONO TRANSFERENCIA SPEI\n"
+)
+
+
+class CsvBancoTests(SimpleTestCase):
+
+    def test_solo_los_spei_con_la_fecha_ddmmaaaa_y_sin_las_comillas_de_excel(self):
+        pagos, omitidos, errores = leer_movimientos(CSV_BANCO.encode('latin-1'))
+        self.assertEqual((omitidos, errores), (1, []))
+        self.assertEqual([(str(p['fecha']), p['monto'], p['clave_rastreo'], p['banco'], p['rfc'], p['nombre'])
+                          for p in pagos],
+                         [('2026-10-02', Decimal('1048460.00'), '085907818484327567', 'BANAMEX',
+                           'LPL0607245C2', 'LOGISTICS PLUS S DE RL DE CV'),
+                          ('2026-10-06', Decimal('49280.00'), 'BNET01002610070049908658', 'BBVA MEXICO',
+                           'TRA2207296K1', 'TRADENAO SA DE CV')])
+
+    def test_falta_una_columna(self):
+        with self.assertRaises(ValueError):
+            leer_movimientos(b'Fecha,Importe\n01102026,5\n')
+
+    def test_nombre_parecido_sin_el_tipo_de_sociedad(self):
+        principales = ['LOGISTIC PLUS S DE RL DE CV', 'REAL SHIPPING AND TRADE SA DE CV']
+        self.assertEqual(cliente_parecido('LOGISTICS PLUS S DE RL DE CV', principales),
+                         'LOGISTIC PLUS S DE RL DE CV')
+        # Solo comparten "S DE RL DE CV": no se parecen.
+        self.assertIsNone(cliente_parecido('LOGOS PLATA S DE RL DE CV', principales))
+
+
+class CompensacionTests(Base):
+    """Pagos del banco (CSV o a mano) repartidos en abonos a varias facturas
+    (usuario, 2026-10-22). Es la única vía al cobro."""
 
     def setUp(self):
-        self.f = Factura.objects.create(serie='S', folio='1')
+        self.f = Factura.objects.create(serie='S', folio='1', rfc='RFC1', nombre='CLIENTE',
+                                        subtotal=100, total=100)
 
-    def cobro(self, cliente, **datos):
-        return cliente.post(f'{URL}{self.f.id}/cobro/', datos, format='json')
+    def pagar(self, cliente, monto='500', **extra):
+        """Guarda un pago y devuelve su id."""
+        datos = {'fecha': '2026-10-21', 'monto': monto, 'banco': 'BANAMEX',
+                 'clave_rastreo': f'abc{Pago.objects.count()}', **extra}
+        r = cliente.post('/api/pagos/guardar/', {'pagos': [datos]}, format='json')
+        self.assertEqual(r.status_code, 201, r.data)
+        return Pago.objects.latest('id').id
 
-    def test_fecha_y_clave(self):
+    def abonar(self, cliente, pago, monto, factura=None, parcialidad=1):
+        return cliente.post('/api/abonos/', {'pago': pago, 'factura': (factura or self.f).id,
+                                             'monto': monto, 'parcialidad': parcialidad}, format='json')
+
+    def test_leer_csv_no_guarda_y_marca_repetidos_cliente_y_rfc(self):
         com = self.usuario('com', cargo='COMERCIAL')
-        self.assertEqual(self.cobro(com, fecha_cobro='2026-10-01', clave_rastreo='abc123').status_code, 200)
+        ClientePrincipal.objects.create(nombre='LOGISTIC PLUS S DE RL DE CV')
+        Factura.objects.create(serie='S', folio='9', rfc='LPL0607245C2', total=10)
+        self.pagar(com, clave_rastreo='BNET01002610070049908658')
+        archivo = SimpleUploadedFile('mov.csv', CSV_BANCO.encode('latin-1'))
+        r = com.post('/api/pagos/leer-csv/', {'archivo': archivo}, format='multipart')
+        self.assertEqual(r.status_code, 200)
+        lp, tradenao = r.data['pagos']
+        self.assertEqual((lp['repetido'], lp['cliente_principal'], lp['rfc_con_facturas']),
+                         (False, 'LOGISTIC PLUS S DE RL DE CV', True))
+        self.assertEqual((tradenao['repetido'], tradenao['cliente_principal'], tradenao['rfc_con_facturas']),
+                         (True, None, False))
+        self.assertEqual(Pago.objects.count(), 1)
+
+    def test_guardar_salta_las_claves_repetidas(self):
+        com = self.usuario('com', cargo='COMERCIAL')
+        self.pagar(com, clave_rastreo='CLAVE1')
+        base = {'fecha': '2026-10-21', 'monto': '5', 'banco': 'BANAMEX'}
+        r = com.post('/api/pagos/guardar/', {'pagos': [
+            {**base, 'clave_rastreo': 'clave1'}, {**base, 'clave_rastreo': 'CLAVE2'},
+            {**base, 'clave_rastreo': 'CLAVE2'}, {**base, 'clave_rastreo': ''}]}, format='json')
+        self.assertEqual((r.data['guardados'], r.data['repetidos']), (2, ['CLAVE1', 'CLAVE2']))
+        # Una lista vacía (o aplanada por el cliente) no es "0 guardados".
+        self.assertEqual(com.post('/api/pagos/guardar/', {'pagos': []}, format='json').status_code, 400)
+
+    def test_un_pago_varias_facturas_cobra_al_cubrir_y_cancelar_lo_deshace(self):
+        com = self.usuario('com', cargo='COMERCIAL')
+        otra = Factura.objects.create(serie='S', folio='2', rfc='RFC1', subtotal=300, total=300)
+        pago = self.pagar(com, clave_rastreo='abc9')
+        r = self.abonar(com, pago, '40')
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual((r.data['factura']['abonado'], r.data['factura']['saldo_pendiente'],
+                          r.data['factura']['siguiente_parcialidad']), ('40.00', '60.00', 2))
         self.f.refresh_from_db()
-        self.assertEqual((str(self.f.fecha_cobro), self.f.clave_rastreo), ('2026-10-01', 'ABC123'))
-        self.cobro(com, fecha_cobro=None)          # limpiar la fecha no toca la clave
+        self.assertIsNone(self.f.fecha_cobro)
+        # El que pasa del saldo se acepta y cobra la factura con la fecha y clave del pago.
+        self.abonar(com, pago, '70', parcialidad=2)
+        r = self.abonar(com, pago, '300', otra)
+        self.assertEqual(r.data['pago']['aplicado'], '410.00')
         self.f.refresh_from_db()
-        self.assertEqual((self.f.fecha_cobro, self.f.clave_rastreo), (None, 'ABC123'))
-        self.assertEqual(self.cobro(com, clave_rastreo='AB-12').status_code, 400)
+        self.assertEqual((self.f.abonado, str(self.f.fecha_cobro), self.f.clave_rastreo),
+                         (Decimal('110'), '2026-10-21', 'ABC9'))
+        segundo = Abono.objects.get(factura=self.f, parcialidad=2).id
+        self.assertEqual(com.post(f'/api/abonos/{segundo}/cancelar/').status_code, 403)
+        admin = self.usuario('admin', staff=True)
+        self.assertEqual(admin.post(f'/api/abonos/{segundo}/cancelar/').status_code, 200)
+        self.f.refresh_from_db()
+        self.assertEqual((self.f.abonado, self.f.fecha_cobro, self.f.clave_rastreo),
+                         (Decimal('40'), None, ''))
+        self.assertEqual(admin.post(f'/api/abonos/{segundo}/cancelar/').status_code, 400)
+        # Cancelar el pago cancela lo que queda de él y descobra la otra factura.
+        self.assertEqual(com.post(f'/api/pagos/{pago}/cancelar/').status_code, 403)
+        self.assertEqual(admin.post(f'/api/pagos/{pago}/cancelar/').status_code, 200)
+        self.f.refresh_from_db()
+        otra.refresh_from_db()
+        self.assertEqual((self.f.abonado, otra.abonado, otra.fecha_cobro), (0, 0, None))
+        self.assertEqual(self.abonar(com, pago, '10').status_code, 400)
+
+    def test_por_aplicar_del_mas_viejo_y_sin_los_ya_aplicados(self):
+        com = self.usuario('com', cargo='COMERCIAL')
+        nuevo = self.pagar(com, '50', fecha='2026-10-20')
+        viejo = self.pagar(com, '50', fecha='2026-10-01')
+        aplicado = self.pagar(com, '100', fecha='2026-09-01')
+        self.abonar(com, aplicado, '100')
+        self.abonar(com, nuevo, '20')
+        d = com.get('/api/pagos/por-aplicar/').data
+        self.assertEqual([(p['id'], p['aplicado']) for p in d], [(viejo, '0.00'), (nuevo, '20.00')])
+
+    def test_historial_todos_los_pagos_con_sus_abonos(self):
+        com = self.usuario('com', cargo='COMERCIAL')
+        viejo = self.pagar(com, '50', fecha='2026-10-01')
+        nuevo = self.pagar(com, '80', fecha='2026-10-20')
+        self.abonar(com, viejo, '30')
+        self.usuario('admin', staff=True).post(f'/api/pagos/{nuevo}/cancelar/')
+        d = com.get('/api/pagos/').data
+        self.assertEqual([(p['id'], p['estado'], p['aplicado']) for p in d],
+                         [(nuevo, 'cancelada', '0.00'), (viejo, 'activa', '30.00')])
+        self.assertEqual([(a['factura'], a['monto']) for a in d[1]['abonos']], [('S 1', '30.00')])
+
+    def test_cancelada_y_sin_xml_salen_pero_no_se_abonan(self):
+        com = self.usuario('com', cargo='COMERCIAL')
+        pago = self.pagar(com)
+        cancelada = Factura.objects.create(serie='S', folio='2', rfc='RFC1', total=50,
+                                           estado='cancelada')
+        sin_xml = Factura.objects.create(serie='S', folio='3', rfc='RFC1')
+        self.assertEqual(self.abonar(com, pago, '10', cancelada).status_code, 400)
+        self.assertEqual(self.abonar(com, pago, '10', sin_xml).status_code, 400)
+        self.assertEqual(self.abonar(com, pago, '0').status_code, 400)
+        r = com.post('/api/pagos/guardar/', {'pagos': [
+            {'fecha': '2026-10-21', 'monto': '0', 'banco': 'X'}]}, format='json')
+        self.assertEqual(r.status_code, 400)
+        r = com.get(f'{URL}buscar-compensacion/', {'rfc': 'RFC1'})
+        self.assertEqual(sorted((x['folio'], x['abonable']) for x in r.data),
+                         [('1', True), ('2', False), ('3', False)])
+
+    def test_estados_de_cuenta_y_facturacion_ven_el_saldo(self):
+        com = self.usuario('com', cargo='COMERCIAL')
+        self.abonar(com, self.pagar(com), '30')
+        fila = com.get(f'{URL}cuentas-por-cobrar/').data['facturas'][0]
+        self.assertEqual(fila['saldo'], '70.00')
+        self.assertEqual(com.get(URL).data['results'][0]['saldo_pendiente'], '70.00')
+
+    def test_cobranza_es_lo_recibido_por_semana_del_pago(self):
+        com = self.usuario('com', cargo='COMERCIAL')
+        self.pagar(com, '500', fecha='2026-09-07')
+        self.pagar(com, '200', fecha='2026-09-13')
+        self.pagar(com, '50', fecha='2026-09-14')
+        cancelado = self.pagar(com, '999', fecha='2026-09-08')
+        self.usuario('admin', staff=True).post(f'/api/pagos/{cancelado}/cancelar/')
+        d = com.get(f'{URL}cobranza-semanal/').data
+        self.assertEqual([(str(s['semana'])[:10], s['total']) for s in d],
+                         [('2026-09-07', '700.00'), ('2026-09-14', '50.00')])
+
+    def test_el_cobro_ya_no_se_captura_a_mano(self):
+        com = self.usuario('com', cargo='COMERCIAL')
+        r = com.post(f'{URL}{self.f.id}/cobro/', {'fecha_cobro': '2026-10-01'}, format='json')
+        self.assertEqual(r.status_code, 404)
 
     def test_solo_finanzas(self):
         coord = self.usuario('coord', cargo='Coordinador')
-        self.assertEqual(self.cobro(coord, fecha_cobro='2026-10-01').status_code, 403)
+        self.assertEqual(coord.post('/api/pagos/guardar/', {'pagos': []}, format='json').status_code, 403)
+        self.assertEqual(coord.get('/api/pagos/bancos/').status_code, 403)
+        self.assertEqual(coord.post('/api/abonos/', {}, format='json').status_code, 403)
 
 
 class CancelarTests(Base):
@@ -471,19 +642,42 @@ class CuentasPorCobrarTests(Base):
         self.assertEqual(d['fuera_de_antiguedad'],
                          {'pendiente_de_ligar': '100.00', 'sin_cliente_principal': '100.00'})
 
-    def test_cobranza_por_semana_de_emision(self):
-        from datetime import date
-        for uuid, dia, estado, cobrada in (('lun', date(2026, 9, 7), 'activa', False),
-                                          ('dom', date(2026, 9, 13), 'activa', True),
-                                          ('sig', date(2026, 9, 14), 'activa', False),
-                                          ('can', date(2026, 9, 8), 'cancelada', False)):
-            Factura.objects.create(empresa='fraba', serie='S', folio=uuid, uuid=uuid, fecha_emision=dia,
-                                   subtotal=100, total=100, estado=estado,
-                                   fecha_cobro=dia if cobrada else None)
-        Factura.objects.create(serie='S', folio='sin-xml')   # sin emisión: no cuenta
-        d = self.usuario('admin', staff=True).get(f'{URL}cobranza-semanal/').data
-        self.assertEqual([(str(s['semana'])[:10], s['total']) for s in d],
-                         [('2026-09-07', '200.00'), ('2026-09-14', '100.00')])
+    def test_estado_de_cuenta_solo_lo_sin_cobrar_del_cliente_y_la_empresa(self):
+        from openpyxl import load_workbook
+        from api.models import Cliente, ClientePrincipal
+        p = ClientePrincipal.objects.create(nombre='REAL', dias_credito=30)
+        otro = ClientePrincipal.objects.create(nombre='OTRO', dias_credito=30)
+        m = Maniobra.objects.create(
+            cliente_fk=Cliente.objects.create(nombre_cliente='REAL MZO', cliente_principal=p))
+        m_otro = Maniobra.objects.create(
+            cliente_fk=Cliente.objects.create(nombre_cliente='OTRO MZO', cliente_principal=otro))
+        self.factura('vencida', 45, m)       # vence hace 15 días
+        self.factura('hoy', 30, m)           # vence HOY: ya cuenta como vencida
+        self.factura('al-dia', 10, m)        # vence en 20 días
+        self.factura('cobrada', 45, m, fecha_cobro='2026-10-01')
+        self.factura('cancelada', 45, m, estado='cancelada')
+        self.factura('de-otro', 45, m_otro)
+        hoy = Factura.objects.get(folio='vencida').fecha_emision
+        Factura.objects.create(empresa='fraba', serie='S', folio='fraba', uuid='fraba',
+                               fecha_emision=hoy, subtotal=100, total=100, maniobra=m)
+
+        c = self.usuario('com', cargo='COMERCIAL')
+        r = c.post('/api/documentos/estado-cuenta/',
+                   {'cliente': p.id, 'empresa': 'soluciones', 'formato': 'excel'}, format='json')
+        self.assertEqual(r.status_code, 200)
+        ws = load_workbook(io.BytesIO(r.content)).active
+        filas = {ws.cell(row=f, column=1).value: ws.cell(row=f, column=7).value
+                 for f in range(12, ws.max_row + 1) if str(ws.cell(row=f, column=1).value).startswith('SEF')}
+        self.assertEqual(filas, {'SEF vencida': 'Vencida', 'SEF hoy': 'Vencida', 'SEF al-dia': 'En tiempo'})
+        self.assertEqual(ws['D9'].value, 300)   # saldo total
+        self.assertEqual(ws['C9'].value, 200)   # saldo vencido
+        self.assertEqual(ws._images, [])        # el logo de Fraba, solo en los de Fraba
+
+        sin = c.post('/api/documentos/estado-cuenta/', {'cliente': otro.id, 'empresa': 'fraba'}, format='json')
+        self.assertEqual(sin.status_code, 400)
+        fuera = self.usuario('nadie').post('/api/documentos/estado-cuenta/',
+                                           {'cliente': p.id, 'empresa': 'soluciones'}, format='json')
+        self.assertEqual(fuera.status_code, 403)
 
 
 class PaginaDeCienTests(Base):

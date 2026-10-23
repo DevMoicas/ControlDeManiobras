@@ -1275,6 +1275,10 @@ class Factura(models.Model):
     fecha_cobro   = models.DateField(null=True, blank=True)
     # Uso por definir (usuario, 2026-10-15): de momento texto alfanumérico.
     clave_rastreo = models.CharField(max_length=50, blank=True, default='')
+    # Suma de los abonos activos de Compensación (usuario, 2026-10-22). Al
+    # cubrir el total pone fecha_cobro y clave_rastreo (ver registrar_abono).
+    # Las cobradas a mano antes de Compensación nacen con abonado = total (0087).
+    abonado = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     # La liga la decide `maniobras.no_factura` (D1). db_constraint=False:
     # `maniobras` es managed=False y no existe en la base de test (mismo motivo
     # que Vacio.maniobra).
@@ -1295,6 +1299,80 @@ class Factura(models.Model):
 
     def __str__(self):
         return f"{self.serie} {self.folio}"
+
+
+class Banco(models.Model):
+    """Bancos de México: la lista del pago MANUAL de Compensación (usuario,
+    2026-10-22). El del CSV llega como texto y no se compara con esta lista."""
+    nombre = models.CharField(max_length=80, unique=True)
+
+    class Meta:
+        managed = True
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
+
+class Pago(models.Model):
+    """Un pago recibido en el banco: la mitad de arriba de COMPENSACIÓN
+    (usuario, 2026-10-22). Su monto es lo que dice el comprobante y es lo que
+    suma la Cobranza semanal; se reparte a mano en abonos a varias facturas.
+    Llega del CSV del banco o a mano. La clave de rastreo es única por
+    movimiento: no puede haber dos pagos activos con la misma.
+    Sin borrado: se cancela, y con él sus abonos."""
+    ESTADOS = Factura.ESTADOS
+
+    fecha   = models.DateField()
+    monto   = models.DecimalField(max_digits=14, decimal_places=2)
+    clave_rastreo = models.CharField(max_length=50, blank=True, default='')
+    # Texto: el "Banco Participante" del CSV tal cual, o el nombre elegido de
+    # la lista de bancos en el pago manual.
+    banco   = models.CharField(max_length=80)
+    # El ordenante: RFC (el que casa con las facturas) y nombre (del CSV, o el
+    # de las facturas en el pago manual). Vacío = sin cliente.
+    rfc     = models.CharField(max_length=20, blank=True, default='')
+    nombre  = models.CharField(max_length=255, blank=True, default='')
+    estado  = models.CharField(max_length=10, choices=ESTADOS, default='activa')
+
+    created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = True
+        ordering = ['-fecha', '-id']
+        constraints = [models.UniqueConstraint(
+            fields=['clave_rastreo'], name='pago_clave_rastreo_unica',
+            condition=models.Q(estado='activa') & ~models.Q(clave_rastreo=''))]
+
+    def __str__(self):
+        return f"{self.fecha} {self.monto}"
+
+
+class Abono(models.Model):
+    """Lo que un pago abona a UNA factura (usuario, 2026-10-22). La fecha y la
+    clave de rastreo son las del pago. Sin borrado: se cancela."""
+    ESTADOS = Factura.ESTADOS
+
+    pago    = models.ForeignKey(Pago, on_delete=models.PROTECT, related_name='abonos')
+    factura = models.ForeignKey(Factura, on_delete=models.PROTECT, related_name='abonos')
+    monto   = models.DecimalField(max_digits=14, decimal_places=2)
+    parcialidad = models.PositiveSmallIntegerField(default=1)
+    estado  = models.CharField(max_length=10, choices=ESTADOS, default='activa')
+
+    created_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_by = models.CharField(max_length=150, null=True, blank=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = True
+        ordering = ['factura', 'parcialidad', 'id']
+
+    def __str__(self):
+        return f"{self.factura} #{self.parcialidad}"
 
 
 class FacturaExcel(models.Model):

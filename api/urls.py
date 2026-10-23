@@ -4,7 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView, TokenBlacklistView
 
 
 from .dashboards import DashboardViewSet
-from .facturacion import FacturaExcelViewSet, FacturaViewSet
+from .facturacion import AbonoViewSet, FacturaExcelViewSet, FacturaViewSet, PagoViewSet
 from .finanzas import CapturaMensualViewSet, CuentaPorPagarViewSet, GastoFijoViewSet
 from .views import (
     TractoViewSet,
@@ -27,6 +27,7 @@ from .views import (
     DocumentoCtaPortTercerosView,
     DocumentoBitacoraGastosView,
     DocumentoReporteVaciosView,
+    DocumentoEstadoCuentaView,
     CustomTokenObtainPairView,   # ← nueva, del mismo Views.py
     MovimientoLocalViewSet,
     AlertasVencimientoView,
@@ -73,6 +74,8 @@ router.register(r'torre-control', TorreControlViewSet, basename='torre-control')
 router.register(r'torre-folios', TorreFolioViewSet, basename='torre-folios')
 router.register(r'facturas', FacturaViewSet, basename='facturas')
 router.register(r'facturas-excel', FacturaExcelViewSet, basename='facturas-excel')
+router.register(r'pagos', PagoViewSet, basename='pagos')
+router.register(r'abonos', AbonoViewSet, basename='abonos')
 router.register(r'cuentas-por-pagar', CuentaPorPagarViewSet, basename='cuentas-por-pagar')
 router.register(r'gastos-fijos', GastoFijoViewSet, basename='gastos-fijos')
 router.register(r'capturas-mensuales', CapturaMensualViewSet, basename='capturas-mensuales')
@@ -90,6 +93,7 @@ urlpatterns = [
     # sin template: la hoja se arma en la vista porque la lista no tiene un
     # numero fijo de filas.
     path('documentos/reporte-vacios/', DocumentoReporteVaciosView.as_view(), name='reporte-vacios'),
+    path('documentos/estado-cuenta/', DocumentoEstadoCuentaView.as_view(), name='estado-cuenta'),
 
     # Alertas de vencimiento (licencias / pólizas) para el Home
     path('alertas-vencimiento/', AlertasVencimientoView.as_view(), name='alertas-vencimiento'),

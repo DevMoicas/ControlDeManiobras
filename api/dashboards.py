@@ -30,7 +30,7 @@ from rest_framework.response import Response
 from .facturacion import (ZONA_OPERACION, _dinero, cobranza_semanal, principal_de,
                           puede_finanzas, tramo, vencimiento)
 from .finanzas import falta_pago
-from .models import (CapturaMensual, CargaCombustible, Chofer, CuentaPorPagar, Factura, Gasto,
+from .models import (Abono, CapturaMensual, CargaCombustible, Chofer, CuentaPorPagar, Factura, Gasto,
                      GastoFijo, GastoFijoPago, Maniobra, SueldoHistorial, Tracto, fecha_de_ingreso)
 
 SERVICIOS = ('sencillo', 'full', 'carga_suelta')
@@ -377,18 +377,23 @@ def cuentas_por_cobrar(f):
             continue
         venc = vencimiento(fac)
         if venc is None:
-            fuera[nombre] += fac.total
+            fuera[nombre] += fac.total - fac.abonado  # lo pendiente (2026-10-22)
         else:
-            antiguedad[tramo((hoy - venc).days)] += fac.total
+            antiguedad[tramo((hoy - venc).days)] += fac.total - fac.abonado
     semanas = cobranza_semanal(f.desde, f.hasta)
     if f.cliente:
-        # cobranza_semanal no filtra por cliente: se rehace aquí con el filtro.
+        # cobranza_semanal no filtra por cliente: un pago no tiene cliente
+        # principal, así que aquí se suma lo ABONADO a las facturas del cliente,
+        # por semana de la fecha del pago.
         por_semana = defaultdict(Decimal)
-        for fac in _facturas(f):
-            p = principal_de(fac)
+        abonos = (Abono.objects.filter(estado='activa', pago__estado='activa',
+                                       pago__fecha__range=(f.desde, f.hasta))
+                  .select_related('pago', 'factura__maniobra__cliente_fk__cliente_principal'))
+        for a in abonos:
+            p = principal_de(a.factura)
             if (p.nombre if p else SIN_CLIENTE) == f.cliente:
-                lunes = fac.fecha_emision - timedelta(days=fac.fecha_emision.weekday())
-                por_semana[lunes] += fac.total
+                lunes = a.pago.fecha - timedelta(days=a.pago.fecha.weekday())
+                por_semana[lunes] += a.monto
         semanas = [{'semana': k, 'total': _dinero(v)} for k, v in sorted(por_semana.items())]
     return {
         'antiguedad': {k: _dinero(antiguedad[k]) for k in ('por_vencer', '0_30', '31_60', '61_90', 'mas_90')},
