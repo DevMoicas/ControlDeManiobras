@@ -62,7 +62,13 @@ const traerPagina = (enAuditoria, filtros, page) => apiClient.get(
   `${enAuditoria ? "/facturas-excel/comparacion/" : "/facturas/"}?${new URLSearchParams(conValor({ ...filtros, page }))}`);
 
 function Maniobra({ f }) {
-  return f.maniobra ? (f.maniobra_folio || `Maniobra ${f.maniobra}`) : (
+  // Una factura que cobró varios servicios: se liga a uno y los demás van al lado.
+  const otras = f.comparte_con?.length ? (
+    <span className="fc-pendiente" title="Esta factura cobra también estos servicios">
+      {" + "}{f.comparte_con.join(", ")}
+    </span>
+  ) : null;
+  return f.maniobra ? <>{f.maniobra_folio || `Maniobra ${f.maniobra}`}{otras}</> : (
     <span className="fc-pendiente" title="Ninguna maniobra tiene este número en su No. Factura">
       Pendiente de ligar
     </span>
