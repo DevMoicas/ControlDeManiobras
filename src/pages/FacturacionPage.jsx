@@ -5,8 +5,6 @@ import FiltrosLista, { conValor } from "../components/FiltrosLista/FiltrosLista"
 import SearchBar from "../components/SearchBar/SearchBar";
 import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
-import CampoFecha from "../components/CampoFecha/CampoFecha";
-import { aDate, aBackend } from "../components/CeldaEditable/fechaCelda.mjs";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import "./NominaPage.css";
@@ -17,8 +15,9 @@ import "./FinanzasCaptura.css";
 // 2026-10-15 (usuario):
 // - FACTURACIÓN: una fila por factura de cada viaje. Nace al asignar el folio,
 //   la serie y el folio salen del No. Factura de Control de viajes y el resto
-//   del XML. Es la que manda en Cobrar, Dashboards e Ingresos. A mano solo se
-//   capturan la fecha de cobro y la clave de rastreo.
+//   del XML. Es la que manda en Cobrar, Dashboards e Ingresos. La fecha de
+//   cobro y la clave de rastreo ya no se capturan: las pone Compensación al
+//   cubrir el total (usuario, 2026-10-22).
 // - AUDITORÍA (solo admin): el Excel de siempre, comparado 1-1 con Facturación.
 // Quién entra lo decide el backend: esta pantalla solo pregunta a
 // /facturas/acceso/ para no pintar lo que daría 403. Reutiliza la hoja de
@@ -35,6 +34,7 @@ const COLUMNAS_FACTURACION = [
   { key: "no_identificacion", label: "No. Identificación" },
   { key: "descripcion",       label: "Descripción" },
   { key: "maniobra",          label: "Maniobra" },
+  { key: "saldo_pendiente",   label: "Saldo pendiente" },
   { key: "fecha_cobro",       label: "Cobrada" },
   { key: "clave_rastreo",     label: "Clave de rastreo" },
 ];
@@ -91,18 +91,6 @@ function Omitidas({ lista, nombre }) {
         ))}
       </ul>
     </>
-  );
-}
-
-// La clave se guarda al salir de la caja, no en cada tecla.
-function ClaveRastreo({ f, guardar }) {
-  const [texto, setTexto] = useState(f.clave_rastreo);
-  useEffect(() => setTexto(f.clave_rastreo), [f.clave_rastreo]);
-  return (
-    <input className="fc-clave" value={texto} maxLength={50}
-      aria-label={`Clave de rastreo de ${factura(f)}`}
-      onChange={(e) => setTexto(e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase())}
-      onBlur={() => texto !== f.clave_rastreo && guardar(f, { clave_rastreo: texto })} />
   );
 }
 
@@ -206,19 +194,6 @@ export default function FacturacionPage() {
       alerta({ tipo: "error", msg: err.message || "No se pudo cargar el archivo." });
     } finally {
       setSubiendo(false);
-    }
-  };
-
-  // Fecha de cobro y clave, a mano (P27). Optimista: si el servidor dice que
-  // no, vuelve a lo que había.
-  const guardarCobro = async (f, cambio) => {
-    const poner = (datos) => setFilas((prev) => prev.map((x) => (x.id === f.id ? { ...x, ...datos } : x)));
-    poner(cambio);
-    try {
-      poner(await apiClient.post(`/facturas/${f.id}/cobro/`, cambio));
-    } catch (err) {
-      poner({ fecha_cobro: f.fecha_cobro, clave_rastreo: f.clave_rastreo });
-      alerta({ tipo: "error", msg: err.message || "No se pudo guardar el cobro." });
     }
   };
 
@@ -384,13 +359,9 @@ export default function FacturacionPage() {
                   {!enAuditoria && <td>{f.no_identificacion}</td>}
                   {!enAuditoria && <td className="fc-descripcion">{f.descripcion}</td>}
                   <td><Maniobra f={f} /></td>
-                  {!enAuditoria && (
-                    <td className="fc-fecha">
-                      <CampoFecha selected={aDate(f.fecha_cobro)} isClearable placeholderText="Sin cobrar"
-                        onChange={(d) => guardarCobro(f, { fecha_cobro: aBackend(d) || null })} />
-                    </td>
-                  )}
-                  {!enAuditoria && <td><ClaveRastreo f={f} guardar={guardarCobro} /></td>}
+                  {!enAuditoria && <td className="fc-total">{moneda(f.saldo_pendiente)}</td>}
+                  {!enAuditoria && <td>{f.fecha_cobro ? fechaLegible(f.fecha_cobro) : "Sin cobrar"}</td>}
+                  {!enAuditoria && <td>{f.clave_rastreo}</td>}
                   {acceso?.cancelar && (
                     <td>
                       <button className={f.estado === "activa" ? "fc-accion btn-cancelar-app" : "fc-accion"}

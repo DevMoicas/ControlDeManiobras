@@ -94,14 +94,3 @@
 
 /* Facturación: la descripción del XML puede ser larga. */
 .nomina-container .fc-descripcion { min-width: 420px; white-space: normal; }
-.nomina-container .fc-fecha { min-width: 150px; }
-.nomina-container .fc-clave {
-  width: 150px;
-  padding: 6px 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font: inherit;
-  font-size: 13px;
-  text-transform: uppercase;
-}
-.nomina-container .fc-clave:focus-visible { outline: 2px solid var(--primary-blue); outline-offset: 1px; }

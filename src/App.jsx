@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, Hash, Bitcoin, ListChecks, TowerControl, ClipboardList, ChevronRight } from 'lucide-react';
+import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, Hash, Bitcoin, HandCoins, ListChecks, TowerControl, ClipboardList, ChevronRight } from 'lucide-react';
 import './App.css';
 import { useAuthContext } from './context/AuthContext';
 import { useInactivityTimer } from './hooks/useInactivityTimer';
@@ -19,11 +19,14 @@ import AdminVaciosPage from './pages/AdminVaciosPage';
 import PerfilPage from './pages/PerfilPage';
 import MovimientosLocalesPage from './pages/MovimientosLocalesPage';
 import FoliosPage from './pages/FoliosPage';
-import FinanzasPage from './pages/FinanzasPage';
+import FinanzasPage, { CuentasPorCobrarPage } from './pages/FinanzasPage';
 import FacturacionPage from './pages/FacturacionPage';
 import CuentasPorPagarPage from './pages/CuentasPorPagarPage';
 import GastosFinancierosPage from './pages/GastosFinancierosPage';
 import TableroFinanzasPage from './pages/TableroFinanzasPage';
+import EstadosCuentaPage from './pages/EstadosCuentaPage';
+import CompensacionPage from './pages/CompensacionPage';
+import HistorialPagosPage from './pages/HistorialPagosPage';
 import CostosExtraPage from './pages/CostosExtraPage';
 import NominaPage from './pages/NominaPage';
 import PendientesPage from './pages/PendientesPage';
@@ -136,14 +139,6 @@ function Home() {
   );
 }
 
-function BlankPage({ title }) {
-  return (
-    <div className="blank-page">
-      <h1 style={{ color: 'white', textAlign: 'center' }}>{title}</h1>
-    </div>
-  );
-}
-
 function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -156,7 +151,10 @@ function AppRoutes() {
   // El hub de Finanzas es la única página con barra superior propia
   // (.home-topbar), y el botón flotante le caería justo encima. Ahí baja por
   // debajo de la barra; en el resto se queda donde ha estado siempre.
-  const enHubFinanzas = /^\/home\/finanzas\/?$/.test(location.pathname);
+  // Lo mismo con el submenú de Cuentas por cobrar, que es otro hub.
+  const enHubFinanzas = /^\/home\/finanzas(\/cuentas-por-cobrar)?\/?$/.test(location.pathname);
+  // Tercer nivel: dentro de una de sus páginas se puede volver al submenú.
+  const enCuentasPorCobrar = location.pathname.startsWith('/home/finanzas/cuentas-por-cobrar/');
 
   // Al cambiar de página, volver arriba. React Router NO reposiciona el scroll:
   // se conserva el de la página anterior, así que entrar a una página desde una
@@ -229,6 +227,17 @@ function AppRoutes() {
                 <span className="home-back-label">Finanzas</span>
               </button>
             )}
+
+            {enCuentasPorCobrar && (
+              <button
+                onClick={() => navigate('/home/finanzas/cuentas-por-cobrar')}
+                className="home-back"
+                title="Regresar a Cuentas por cobrar"
+              >
+                <span className="home-back-icon"><HandCoins size={24} /></span>
+                <span className="home-back-label">Cuentas por cobrar</span>
+              </button>
+            )}
           </div>
         )}
 
@@ -260,11 +269,14 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
-          <Route path="finanzas/facturacion" element={<FacturacionPage />} />
+          <Route path="finanzas/cuentas-por-cobrar" element={<CuentasPorCobrarPage />} />
+          <Route path="finanzas/cuentas-por-cobrar/facturacion" element={<FacturacionPage />} />
+          <Route path="finanzas/cuentas-por-cobrar/estados-cuenta" element={<EstadosCuentaPage />} />
+          <Route path="finanzas/cuentas-por-cobrar/compensacion" element={<CompensacionPage />} />
+          <Route path="finanzas/cuentas-por-cobrar/historial-pagos" element={<HistorialPagosPage />} />
           <Route path="finanzas/cuentas-por-pagar" element={<CuentasPorPagarPage />} />
           <Route path="finanzas/gastos-financieros" element={<GastosFinancierosPage />} />
           <Route path="finanzas/dashboards" element={<TableroFinanzasPage />} />
-          <Route path="finanzas/estados-cuenta" element={<BlankPage title="ESTADOS DE CUENTA" />} />
           <Route path="perfil" element={<PerfilPage />} />
 
 
