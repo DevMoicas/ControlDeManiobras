@@ -668,6 +668,19 @@ class CuentasPorCobrarTests(Base):
         self.assertEqual(d['fuera_de_antiguedad'],
                          {'pendiente_de_ligar': '100.00', 'sin_cliente_principal': '100.00'})
 
+    def test_sin_eslabon_toma_el_principal_del_mismo_nombre_sin_sociedad(self):
+        from api.models import ClientePrincipal
+        p = ClientePrincipal.objects.create(nombre='LOGISTICS PLUS S DE RL DE CV', dias_credito=30)
+        ClientePrincipal.objects.create(nombre='LOGISTIC PLUS SA DE CV')  # parecido, no igual
+        self.factura('cfdi4', 45, nombre='LOGISTICS PLUS')
+        self.factura('otra', 45, nombre='LOGISTICS PLUSS')
+
+        d = self.usuario('com', cargo='COMERCIAL').get(f'{URL}cuentas-por-cobrar/').data
+        por_uuid = {f['folio']: f for f in d['facturas']}
+        self.assertEqual((por_uuid['cfdi4']['cliente_principal_id'], por_uuid['cfdi4']['tramo']),
+                         (p.id, '0_30'))
+        self.assertIsNone(por_uuid['otra']['cliente_principal_id'])
+
     def test_estado_de_cuenta_solo_lo_sin_cobrar_del_cliente_y_la_empresa(self):
         from openpyxl import load_workbook
         from api.models import Cliente, ClientePrincipal

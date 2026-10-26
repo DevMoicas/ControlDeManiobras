@@ -567,14 +567,29 @@ def _dinero(valor):
 
 
 def principal_de(factura):
-    """El cliente principal de la factura, vía maniobra → dirección. None si
-    falta cualquier eslabón."""
+    """El cliente principal de la factura, vía maniobra → dirección. Si falta
+    algún eslabón, el principal con el mismo nombre que el receptor del XML."""
     try:
         direccion = factura.maniobra.cliente_fk if factura.maniobra_id else None
-        return direccion.cliente_principal if direccion else None
+        principal = direccion.cliente_principal if direccion else None
     except (AttributeError, ObjectDoesNotExist):
         # Maniobra o dirección borradas a mano (sin FK en la base): sin cliente.
+        principal = None
+    return principal or principal_por_nombre(factura.nombre)
+
+
+def principal_por_nombre(nombre):
+    """El principal cuyo nombre, sin tipo de sociedad, es IGUAL al del receptor
+    (usuario, 2026-10-26): el CFDI 4.0 trae "LOGISTICS PLUS" y el catálogo
+    "LOGISTICS PLUS S DE RL DE CV". Igual y no parecido: dos empresas de nombre
+    casi idéntico no se mezclan. None si no hay uno solo.
+    ponytail: una consulta por factura sin eslabón; basta para decenas de
+    clientes, pasar el índice por parámetro si los dashboards se vuelven lentos."""
+    buscado = _razon_social(nombre)
+    if not buscado:
         return None
+    iguales = [p for p in ClientePrincipal.objects.all() if _razon_social(p.nombre) == buscado]
+    return iguales[0] if len(iguales) == 1 else None
 
 
 def vencimiento(factura):
