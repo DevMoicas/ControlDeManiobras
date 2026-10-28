@@ -19,12 +19,28 @@ import "./FolioDisponibleSelector.css";
  *   currentValue  string   — folio ya asignado (se muestra aunque no esté en la lista)
  *   onSelect      function — recibe el código elegido
  *   disabled      boolean
+ *
+ * Sistemas ve además TODOS los libres, para ponerle un folio viejo a una
+ * maniobra que se captura tarde (usuario, 2026-10-28).
  */
+
+// ponytail: una consulta de acceso por carga de página, no por celda. Si se
+// cambia de usuario sin recargar se queda la del anterior; el backend sigue
+// mandando (403), así que lo peor es una lista que no carga.
+let accesoFolios = null;
+const esSistemas = () => {
+  accesoFolios ??= apiClient.get("/folios/acceso/")
+    .then((a) => Boolean(a?.ver))
+    .catch(() => { accesoFolios = null; return false; });
+  return accesoFolios;
+};
+
 export default function FolioDisponibleSelector({ tabla, currentValue, onSelect, disabled }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
+  const [todos, setTodos] = useState([]);
   const containerRef = useRef(null);
   const dropRef = useRef(null);
   useDropdownNav({ abierto: open, setAbierto: setOpen, wrapperRef: containerRef, dropdownRef: dropRef });
@@ -60,6 +76,16 @@ export default function FolioDisponibleSelector({ tabla, currentValue, onSelect,
       setCargando(false);
     }
   };
+
+  // Al abrir, como asignar(): libre tiene que ser libre AHORA.
+  useEffect(() => {
+    if (!open || currentValue || !tabla) return;
+    let vivo = true;
+    esSistemas().then((si) => si && apiClient.get(`/folios/disponibles/?tabla=${tabla}&todos=1`))
+      .then((lista) => vivo && setTodos(Array.isArray(lista) ? lista : []))
+      .catch(() => vivo && setTodos([]));
+    return () => { vivo = false; };
+  }, [open, currentValue, tabla]);
 
   useEffect(() => {
     if (!open) return;
@@ -151,6 +177,17 @@ export default function FolioDisponibleSelector({ tabla, currentValue, onSelect,
             >
               <span>{cargando ? "Asignando…" : "Asignar folio"}</span>
             </li>
+          )}
+          {!currentValue && todos.length > 0 && (
+            <>
+              <li role="presentation" className="fds-separador" />
+              {todos.map((f) => (
+                <li key={f.id} role="option" aria-selected={false} className="fds-option"
+                  onClick={(e) => { e.stopPropagation(); handleSelect(f.codigo); }}>
+                  <span className="fds-codigo">{f.codigo}</span>
+                </li>
+              ))}
+            </>
           )}
           {error && <li className="fds-state fds-state--error">{error}</li>}
         </ul>,
