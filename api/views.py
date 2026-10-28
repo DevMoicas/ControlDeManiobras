@@ -2259,6 +2259,12 @@ class FolioViewSet(viewsets.ModelViewSet):
         tabla = request.query_params.get('tabla')
         if tabla not in dict(Folio.TABLA_CHOICES):
             return Response({'detail': 'tabla inválida.'}, status=status.HTTP_400_BAD_REQUEST)
+        # ?todos=1: TODOS los libres, para ponerle un folio viejo a una maniobra
+        # que se captura tarde (usuario, 2026-10-28). Solo Sistemas; no genera
+        # lote: el siguiente sale arriba con "Asignar folio".
+        if request.query_params.get('todos'):
+            self._solo_sistemas(request)
+            return Response(FolioSerializer(self._libres(tabla), many=True).data)
         libre = self._libres(tabla).first()
         if libre is None:
             # using=get_db_alias(): ver generar(). El lock sobre la última fila

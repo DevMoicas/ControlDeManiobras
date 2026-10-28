@@ -301,6 +301,15 @@ class FoliosEnManiobrasTests(BaseFolios):
         self.assertEqual([f['codigo'] for f in self.disponibles('manzanillo').data],
                          LOTE_MZO[:1])
 
+    def test_sistemas_pide_todos_los_libres_y_nadie_mas(self):
+        """Para ponerle un folio viejo a una maniobra capturada tarde (2026-10-28)."""
+        self.generar('manzanillo')
+        Maniobra.objects.create(solicita='prueba', folio=LOTE_MZO[1])
+        todos = self.cliente.get('/api/folios/disponibles/?tabla=manzanillo&todos=1').data
+        self.assertEqual([f['codigo'] for f in todos], [LOTE_MZO[0]] + LOTE_MZO[2:])
+        r = self.cliente_de('capt').get('/api/folios/disponibles/?tabla=manzanillo&todos=1')
+        self.assertEqual(r.status_code, 403)
+
     def test_sin_folios_libres_genera_el_lote_siguiente(self):
         """Ya no se añaden a mano: al gastarse el último sale el lote siguiente."""
         self.generar('manzanillo')
