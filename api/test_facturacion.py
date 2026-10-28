@@ -756,3 +756,24 @@ class PaginaDeCienTests(Base):
         self.assertEqual(len(d['distintas']), 120)   # ninguna está en Facturación
         self.assertEqual(self.folios(f'{EXCEL}comparacion/', search='"falta en facturacion" -s'), [])
         self.assertEqual(self.c.get(f'{EXCEL}comparacion/', {'estado': 'cancelada'}).data['count'], 0)
+
+    def test_orden_por_fecha_o_por_factura_y_empresa(self):
+        """Usuario, 2026-10-28: sin XML arriba por fecha PIS; por factura, el
+        número dentro de una empresa y en Todas la fecha con el folio de desempate."""
+        vieja = Maniobra.objects.create(folio='M-1', fecha_pis=date(2026, 3, 1))
+        nueva = Maniobra.objects.create(folio='M-2', fecha_pis=date(2026, 9, 1))
+        F = lambda serie, folio, emision=None, m=None: Factura.objects.create(
+            serie=serie, folio=folio, empresa={'S': 'fraba', 'SEF': 'soluciones'}[serie],
+            fecha_emision=emision, maniobra=m)
+        F('S', '1999', date(2026, 8, 1))
+        F('S', '2000', date(2026, 8, 1))
+        F('SEF', '10', date(2026, 8, 5))
+        F('S', '1500', date(2026, 2, 1))
+        F('S', '2002', m=vieja)          # sin XML
+        F('SEF', '11', m=nueva)          # sin XML
+        self.assertEqual(self.folios(URL), ['11', '2002', '10', '2000', '1999', '1500'])
+        self.assertEqual(self.folios(URL, orden='factura', empresa='fraba'),
+                         ['2002', '2000', '1999', '1500'])
+        self.assertEqual(self.folios(URL, orden='factura', empresa='soluciones'), ['11', '10'])
+        self.assertEqual(self.folios(URL, orden='factura'),
+                         ['11', '10', '2000', '1999', '2002', '1500'])

@@ -678,6 +678,8 @@ class FacturaSerializer(serializers.ModelSerializer):
     # El folio de la maniobra ligada (P15). El UUID no sale nunca (P16).
     maniobra_folio = serializers.CharField(source='maniobra.folio', default=None,
                                            read_only=True)
+    # La fecha de la factura sin XML, para el orden (usuario, 2026-10-28).
+    fecha_pis = serializers.DateField(source='maniobra.fecha_pis', default=None, read_only=True)
     vencimiento = serializers.SerializerMethodField()
     saldo_pendiente = serializers.SerializerMethodField()
 
@@ -692,7 +694,7 @@ class FacturaSerializer(serializers.ModelSerializer):
         fields = ['id', 'empresa', 'serie', 'folio', 'nombre', 'rfc',
                   'fecha_emision', 'subtotal', 'iva', 'total', 'estado',
                   'no_identificacion', 'descripcion', 'fecha_cobro', 'clave_rastreo',
-                  'maniobra', 'maniobra_folio', 'vencimiento', 'saldo_pendiente']
+                  'maniobra', 'maniobra_folio', 'fecha_pis', 'vencimiento', 'saldo_pendiente']
         read_only_fields = fields
 
 
@@ -776,6 +778,23 @@ def filtrar_tabla(filas, p):
     return [f for f in buscar(filas, p.get('search')) if en_fechas(f.get('fecha_emision'), p)]
 
 
+def ordenar_facturas(filas, orden, una_empresa):
+    """De la más nueva a la más vieja (usuario, 2026-10-28).
+    - ?orden=fecha (por defecto): las que aún no tienen XML arriba, por la fecha
+      PIS de su maniobra; debajo las cargadas, por fecha de emisión.
+    - ?orden=factura con una empresa: por número de folio (S 2000, S 1999…).
+      En Todas, S y SEF no comparten numeración: se intercalan por fecha
+      (emisión, o PIS sin XML) y el folio desempata dentro del mismo día.
+    """
+    fecha = lambda f: str(f['fecha_emision'] or f['fecha_pis'] or '')[:10]
+    folio = lambda f: int(f['folio']) if f['folio'].isdigit() else -1
+    if orden == 'factura':
+        clave = folio if una_empresa else (lambda f: (fecha(f), folio(f)))
+    else:
+        clave = lambda f: (f['fecha_emision'] is None, fecha(f))
+    return sorted(filas, key=clave, reverse=True)
+
+
 class FacturaViewSet(CancelableMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
     """FACTURACIÓN. Solo lectura salvo el XML y el cobro: las filas las crea la
     maniobra y las rellena el XML; nadie teclea importes (P14, P65)."""
@@ -807,7 +826,12 @@ class FacturaViewSet(CancelableMixin, mixins.ListModelMixin, viewsets.GenericVie
         for f in filas:
             f['comparte_con'] = [folio for m_id, folio in nombran.get((f['serie'], f['folio']), [])
                                  if m_id != f['maniobra']]
-        pagina = self.paginate_queryset(filtrar_tabla(filas, request.query_params))
+        p = request.query_params
+        filas = filtrar_tabla(filas, p)
+        empresa = p.get('empresa') if p.get('empresa') in ('fraba', 'soluciones') else None
+        if empresa:
+            filas = [f for f in filas if f['empresa'] == empresa]
+        pagina = self.paginate_queryset(ordenar_facturas(filas, p.get('orden'), empresa))
         return self.get_paginated_response(pagina)
 
     @action(detail=False, methods=['get'])
