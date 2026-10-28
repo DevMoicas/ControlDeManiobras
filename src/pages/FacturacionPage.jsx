@@ -86,6 +86,19 @@ function Vence({ f }) {
   );
 }
 
+function Botonera({ etiqueta, opciones, valor, onChange }) {
+  return (
+    <div className="fc-filtro" role="group" aria-label={etiqueta}>
+      {opciones.map(([v, texto]) => (
+        <button key={v} aria-pressed={valor === v}
+          className={valor === v ? "activo" : ""} onClick={() => onChange(v)}>
+          {texto}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Omitidas({ lista, nombre }) {
   if (!lista.length) return null;
   return (
@@ -118,6 +131,10 @@ export default function FacturacionPage() {
   const [buscar, setBuscar] = useState("");   // la búsqueda, 350 ms después
   // Por fecha de emisión (usuario, 2026-10-16).
   const [fechas, setFechas] = useState({});
+  // Orden y empresa (usuario, 2026-10-28): los aplica el servidor, como la
+  // búsqueda, porque la tabla va de 100 en 100. Ver ordenar_facturas.
+  const [orden, setOrden] = useState("fecha");
+  const [empresa, setEmpresa] = useState("");
   // Al teclear salen varias peticiones: solo vale la última.
   const ultima = useRef(0);
   const [subiendo, setSubiendo] = useState(false);
@@ -137,7 +154,8 @@ export default function FacturacionPage() {
   }, [busqueda]);
 
   const enAuditoria = pagina === "auditoria";
-  const filtros = useMemo(() => ({ estado, search: buscar, ...fechas }), [estado, buscar, fechas]);
+  const filtros = useMemo(() => ({ estado, search: buscar, ...fechas, orden, empresa }),
+    [estado, buscar, fechas, orden, empresa]);
 
   // Página 1 de nuevo: al entrar, al cambiar un filtro y tras cada escritura.
   const cargar = useCallback(async () => {
@@ -271,15 +289,16 @@ export default function FacturacionPage() {
       <FiltrosLista endpoint="facturacion" soloFechas filtros={fechas} onChange={setFechas} />
 
       <div className="toolbar">
-        <div className="fc-filtro" role="group" aria-label="Estado de la factura">
-          {[["activa", "Activas"], ["cancelada", "Canceladas"]].map(([valor, texto]) => (
-            <button key={valor} aria-pressed={estado === valor}
-              className={estado === valor ? "activo" : ""}
-              onClick={() => setEstado(valor)}>
-              {texto}
-            </button>
-          ))}
-        </div>
+        <Botonera etiqueta="Estado de la factura" valor={estado} onChange={setEstado}
+          opciones={[["activa", "Activas"], ["cancelada", "Canceladas"]]} />
+        {!enAuditoria && (
+          <>
+            <Botonera etiqueta="Ordenar por" valor={orden} onChange={setOrden}
+              opciones={[["fecha", "Por fecha"], ["factura", "Por No. factura"]]} />
+            <Botonera etiqueta="Empresa" valor={empresa} onChange={setEmpresa}
+              opciones={[["", "Todas"], ["fraba", "Fraba"], ["soluciones", "Soluciones"]]} />
+          </>
+        )}
         <div className="np-resumen">
           {total} {total === 1 ? "factura" : "facturas"}
         </div>
