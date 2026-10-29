@@ -1148,3 +1148,63 @@ aplicada solo en local.
 - **No subir `docs/planes/20261022_MovimientosCheque.csv`**: trae movimientos bancarios
   reales.
 - Sigue abierto todo lo de la §19 (total de cartera, cabecera del PDF).
+
+## 21. Sesión del 2026-10-28 — Orden de Facturación, folios viejos para Sistemas y XML sin descripción. DESPLEGADO
+
+Sin migración. Backend `d793c63f` y `b9e6dc0e`; frontend `325afdb` y `cc3d4ed`. Los
+cuatro despliegues terminaron en verde.
+
+### Facturación: orden y vista por empresa
+
+- Dos botoneras nuevas en Facturación (no en Auditoría): **Por fecha / Por No.
+  factura** y **Todas / Fraba / Soluciones**. Las aplica el servidor
+  (`?orden=` y `?empresa=` en `/facturas/`, función `ordenar_facturas`) porque la
+  tabla va de 100 en 100.
+- **Por fecha** (por defecto): las que aún no tienen XML van **arriba**, ordenadas
+  por la fecha PIS de su maniobra (decisión del usuario: no mezclarlas con las
+  cargadas). Debajo, las cargadas por fecha de emisión. Siempre de la más nueva
+  a la más vieja.
+- **Por No. factura** con una empresa: por folio numérico (S 2000, S 1999…).
+- **Por No. factura en Todas**: S y SEF no comparten numeración, así que se
+  intercalan por fecha (emisión, o PIS si no hay XML) y el folio desempata
+  dentro del mismo día. Propuesta aceptada por el usuario.
+- `FacturaSerializer` expone ahora `fecha_pis` (de la maniobra ligada).
+
+### Folios: lista completa para Sistemas
+
+- `GET /folios/disponibles/?tabla=…&todos=1` devuelve **todos** los folios libres
+  (sin maniobra y con ASIGNACIÓN vacía), solo para `admin_de_sistemas` (403 al
+  resto). No genera lote.
+- En el selector de folio de Maniobras, Sistemas ve esa lista debajo de "Asignar
+  folio". Sirve para ponerle un folio viejo a un registro antiguo que se captura
+  a mano. Para el resto de usuarios no cambia nada.
+- Para folios anteriores al lote más bajo, antes hay que generar sus lotes desde
+  Folios (botón de retroceder).
+
+### XML que no rellenan No. Identificación ni Descripción — NO era un bug
+
+- En prod, 125 de 346 facturas con UUID tenían los dos campos vacíos. Todas venían
+  del Excel de MariaFF (2026-10-13), con `updated_at` intacto desde entonces.
+- Causa: hasta el despliegue de `7a4bfa11` (2026-10-19 17:59 UTC) un XML cuyo UUID
+  ya estaba en la base se omitía con "Ese XML ya estaba cargado", sin copiar esos
+  dos campos. Los XML se subieron antes, o no se han vuelto a subir desde
+  entonces. Ver §18.
+- Comprobado: se subieron 4 XML de ejemplo (S 2000, S 1999, SEF 471, SEF 473) y se
+  rellenaron bien.
+- **El usuario tiene que volver a subir los XML de esas facturas**, en lotes de
+  menos de 100: Django rechaza la petición entera a partir de 101 archivos
+  (`DATA_UPLOAD_MAX_NUMBER_FILES`).
+- Diagnóstico de solo lectura: `bash migrar_prod.sh xml [rutas .xml]` (llama a
+  `PRACTICAS/diagnostico_xml.py`, fuera de los repos). Sin archivos da el
+  recuento de vacías; con archivos, la rama que tomaría `cargar_xml` para cada uno.
+
+### Queda abierto
+
+- Que el recuento de vacías de `migrar_prod.sh xml` baje a 0 cuando el usuario
+  termine de resubir los XML.
+- Si la lista de folios de Sistemas se hace larga (~100 por tabla hoy), poner un
+  buscador dentro del desplegable.
+- Más de 100 XML en un lote dan un 400 entero. Si alguna vez hace falta, que el
+  frontend los mande en tandas.
+- En la BD local, la factura SEF 470 (id 77) tiene un `updated_at` del 2026-10-28
+  por una prueba mía que no se deshizo. Lo demás se restauró a mano.
