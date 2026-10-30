@@ -34,6 +34,7 @@ const porId = (arr) => [...arr].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
 const COLUMNAS_FECHA = new Set([
   "fecha_salida",
   "fecha_vencimiento_poliza",
+  "fecha_tag_anam",
   "fecha_vencimiento_licencia",
   "fecha_vencimiento_permisos_full",
   "fecha_vencimiento_fisico_mecanica",
@@ -117,7 +118,9 @@ export default function NoEcoPage() {
     coordinador: "Coordinador",
     poliza: "Póliza",
     fecha_vencimiento_poliza: "Fecha Vencimiento Póliza",
-    tag: "Tag",
+    tag: "TAG PASE",
+    // La expedición: vence al año y avisa un mes antes (AlertasVencimientoView).
+    fecha_tag_anam: "TAG ANAM",
     cargo: "Cargo",
     telefono: "Teléfono",
     transportista: "Transportista",
@@ -134,7 +137,8 @@ export default function NoEcoPage() {
   const configFormularios = {
     tractos: [
       { name: "no_eco", label: "No. Eco", type: "text" },
-      { name: "tag", label: "Tag", type: "text", required: false },
+      { name: "tag", label: "TAG PASE", type: "text", required: false },
+      { name: "fecha_tag_anam", label: "TAG ANAM (fecha de expedición)", type: "date", required: false },
       { name: "unidad", label: "Unidad", type: "text" },
       { name: "anio", label: "Año", type: "number" },
       { name: "placas", label: "Placas", type: "text" },

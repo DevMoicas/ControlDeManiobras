@@ -2,7 +2,7 @@ import { AlertTriangle } from "lucide-react";
 import "./AlertaVencimiento.css";
 
 // Qué se lee en cada aviso, por tipo. Es una tabla y no un if encadenado porque
-// son siete y todos dicen lo mismo con otras dos palabras. El backend manda solo
+// son ocho y todos dicen lo mismo con otras dos palabras. El backend manda solo
 // el tipo (AlertasVencimientoView) y él decide con cuánta antelación avisa cada
 // uno: aquí no hay ninguna fecha que calcular.
 //
@@ -13,6 +13,9 @@ const TEXTOS = {
   },
   poliza: {
     sujeto: <>La <strong>Póliza</strong> del carro</>, verbo: "vence", accion: "la póliza",
+  },
+  tag_anam: {
+    sujeto: <>El <strong>TAG ANAM</strong> del tracto</>, verbo: "vence", accion: "el TAG ANAM",
   },
   permisos_full_tracto: {
     sujeto: <>Los <strong>Permisos Full</strong> del tracto</>, verbo: "vencen", accion: "los permisos",
