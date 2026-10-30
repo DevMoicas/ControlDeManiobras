@@ -719,6 +719,21 @@ class CuentasPorCobrarTests(Base):
         self.assertEqual(fuera.status_code, 403)
 
 
+class XmlPendienteDelSegundoSemestreTests(Base):
+    """Usuario, 2026-10-30: sin XML y PIS antes del 1 de julio no sale; con XML, sí."""
+
+    def test_oculta_solo_las_vacias_de_antes_de_julio(self):
+        junio = Maniobra.objects.create(folio='J', fecha_pis=date(2026, 6, 30))
+        julio = Maniobra.objects.create(folio='L', fecha_pis=date(2026, 7, 1))
+        Factura.objects.create(serie='S', folio='1', maniobra=junio)                 # oculta
+        Factura.objects.create(serie='S', folio='2', maniobra=junio, uuid='u-2',
+                               fecha_emision=date(2026, 6, 30))                      # con XML
+        Factura.objects.create(serie='S', folio='3', maniobra=julio)                 # pendiente
+        Factura.objects.create(serie='S', folio='4')                                 # sin ligar
+        filas = self.usuario('admin', staff=True).get(URL).data['results']
+        self.assertEqual(sorted(f['folio'] for f in filas), ['2', '3', '4'])
+
+
 class PaginaDeCienTests(Base):
     """Las dos tablas de 100 en 100, con la búsqueda y las fechas aplicadas en
     el servidor sobre TODAS las filas (usuario, 2026-10-16)."""
@@ -760,7 +775,7 @@ class PaginaDeCienTests(Base):
     def test_orden_por_fecha_o_por_factura_y_empresa(self):
         """Usuario, 2026-10-28: sin XML arriba por fecha PIS; por factura, el
         número dentro de una empresa y en Todas la fecha con el folio de desempate."""
-        vieja = Maniobra.objects.create(folio='M-1', fecha_pis=date(2026, 3, 1))
+        vieja = Maniobra.objects.create(folio='M-1', fecha_pis=date(2026, 7, 1))
         nueva = Maniobra.objects.create(folio='M-2', fecha_pis=date(2026, 9, 1))
         F = lambda serie, folio, emision=None, m=None: Factura.objects.create(
             serie=serie, folio=folio, empresa={'S': 'fraba', 'SEF': 'soluciones'}[serie],

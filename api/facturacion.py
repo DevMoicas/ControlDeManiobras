@@ -85,6 +85,10 @@ EMPRESA_DE_SERIE = {'SEF': 'soluciones', 'S': 'fraba'}  # P29, P61
 # 2026-10-15 al 16 fue julio): las anteriores no entran, para no tener que subir
 # el XML de cada factura vieja.
 INICIO_FACTURACION = date(2026, 1, 1)
+# Las filas SIN XML de maniobras anteriores al segundo semestre no salen en el
+# listado (usuario, 2026-10-30): no se les va a subir el XML. Se ocultan, no se
+# borran, y si llega su XML la fila se rellena y vuelve a salir.
+INICIO_XML_PENDIENTE = date(2026, 7, 1)
 
 _PIEZA = re.compile(r'^([A-Z]*)(\d+)$')
 
@@ -814,7 +818,8 @@ class FacturaViewSet(CancelableMixin, mixins.ListModelMixin, viewsets.GenericVie
         return qs.filter(estado=estado) if estado in ('activa', 'cancelada') else qs
 
     def list(self, request, *args, **kwargs):
-        filas = self.get_serializer(self.get_queryset(), many=True).data
+        qs = self.get_queryset().exclude(uuid__isnull=True, maniobra__fecha_pis__lt=INICIO_XML_PENDIENTE)
+        filas = self.get_serializer(qs, many=True).data
         # Una factura que cobró dos servicios se liga a uno; los demás que la
         # nombran salen al lado para que no parezca que no se facturaron.
         nombran = {}
