@@ -23,6 +23,7 @@ from PIL import Image
 from rest_framework.test import APIClient
 
 from api.models import Chofer, FotoRegistro, Maniobra, Remolque, Tracto
+from api.views import _un_anio_despues
 
 SUBIR = '/api/fotos/subir/'
 CATALOGOS = '/api/fotos/catalogos/'
@@ -241,6 +242,20 @@ class AlertasDeVencimientoTests(BaseCatalogos):
         self.tracto.fecha_vencimiento_poliza = date.today() + timedelta(days=20)
         self.tracto.save()
         self.assertNotIn('poliza', self.tipos(self.cliente.get(ALERTAS)))
+
+    def test_el_tag_anam_vence_al_anio_y_avisa_con_un_mes(self):
+        """Se captura la expedicion: la alerta trae el vencimiento, un año despues."""
+        self.tracto.fecha_tag_anam = date.today() - timedelta(days=350)
+        self.tracto.save()
+        alerta = next(a for a in self.cliente.get(ALERTAS).data if a['tipo'] == 'tag_anam')
+        self.assertEqual(alerta['fecha_raw'], _un_anio_despues(self.tracto.fecha_tag_anam).isoformat())
+
+        self.tracto.fecha_tag_anam = date.today() - timedelta(days=300)   # vence en ~2 meses
+        self.tracto.save()
+        self.assertNotIn('tag_anam', self.tipos(self.cliente.get(ALERTAS)))
+
+    def test_el_tag_anam_del_29_de_febrero_vence_el_28(self):
+        self.assertEqual(_un_anio_despues(date(2028, 2, 29)), date(2029, 2, 28))
 
     def test_el_remolque_avisa_con_su_placa(self):
         remolque = Remolque.objects.create(color='ROJO', tipo='CAJA', placas='XYZ789')

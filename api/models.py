@@ -14,7 +14,10 @@ class Tracto(models.Model):
     anio = models.IntegerField()
     placas = models.CharField(max_length=255, unique=True, validators=[MinLengthValidator(6)])
     tipo = models.CharField(max_length=255)
-    tag = models.CharField(max_length=100, null=True, blank=True)
+    tag = models.CharField(max_length=100, null=True, blank=True)  # en pantalla, "TAG PASE"
+    # TAG ANAM: la fecha de EXPEDICION; vale un año y avisa 30 dias antes de
+    # vencer (usuario, 2026-10-30). Justo detras de `tag`: es el orden de la tabla.
+    fecha_tag_anam = models.DateField(null=True, blank=True)
     # Número de póliza, alfanumérico. Declarado JUSTO antes de su fecha a
     # propósito: el serializer usa fields='__all__' y CatalogosPage pinta las
     # columnas en el orden que llegan, así que este orden ES el de la tabla.

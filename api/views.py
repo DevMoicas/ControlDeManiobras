@@ -3384,9 +3384,32 @@ class AlertasVencimientoView(APIView):
                         'fecha_raw': fila[campo].isoformat(),
                     })
 
+        # TAG ANAM: se captura la expedición y vence al año (usuario, 2026-10-30).
+        # Avisa con el mes de la licencia. Se calcula aquí y no en el filtro: el
+        # 29 de febrero no tiene "mismo día" al año siguiente.
+        for t in Tracto.objects.filter(fecha_tag_anam__isnull=False).values(
+                'fecha_tag_anam', 'unidad', 'anio', 'placas'):
+            vence = _un_anio_despues(t['fecha_tag_anam'])
+            if hoy <= vence <= limite_licencia:
+                nombre = ' '.join(str(t[c]) for c in ('unidad', 'anio', 'placas') if t[c]).strip()
+                alertas.append({
+                    'tipo':      'tag_anam',
+                    'nombre':    nombre or '(sin datos)',
+                    'fecha':     vence.strftime('%d/%m/%Y'),
+                    'fecha_raw': vence.isoformat(),
+                })
+
         alertas.sort(key=lambda a: a['fecha_raw'])
 
         return Response(alertas)
+
+
+def _un_anio_despues(dia):
+    """El mismo día del año siguiente; el 29 de febrero pasa al 28."""
+    try:
+        return dia.replace(year=dia.year + 1)
+    except ValueError:
+        return dia.replace(year=dia.year + 1, day=28)
 
 
 
