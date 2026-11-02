@@ -340,10 +340,10 @@ export default function CtaPortModal({ onCerrar }) {
           {/* Carga — auto desde folio y editable */}
           <div className="cpm-seccion">
             <h3 className="cpm-seccion-titulo">Carga</h3>
-            {/* Solo cuando la maniobra tiene UN operador y dos contenedores: es
-                el único caso ambiguo (¿los lleva los dos o solo uno?). Con dos
-                operadores manda el folio y no hay nada que elegir. */}
-            {tieneDosContenedores(folioElegido) && (
+            {/* Siempre que haya dos contenedores, también con dos operadores:
+                en doble operador o viaje a mitades los dos llevan ambos. Con dos
+                operadores arranca en la parte que manda el backend. */}
+            {tieneDosContenedores(folioElegido && { ...folioElegido, dos_operadores: false }) && (
               <div className="cpm-campo" style={{ marginBottom: 10 }}>
                 <label className="cpm-label" htmlFor="cpm-parte-carga">
                   Contenedores en este documento

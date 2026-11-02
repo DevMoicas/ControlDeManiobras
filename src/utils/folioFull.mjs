@@ -6,10 +6,9 @@
 // divergen, /folios/disponibles/ vuelve a ofrecer el número como libre y dos
 // maniobras acaban en el mismo folio de papel.
 //
-// Solo la columna FOLIO. Un Full repartido entre dos operadores gasta un folio
-// por operador y cada uno lleva UN contenedor, así que ahí ninguno de los dos
-// ampara un full: con folio_2 puesto el sufijo se retira (decidido con el
-// usuario, 2026-08-24).
+// Solo la columna FOLIO. Un segundo operador NO retira el sufijo: hay Full con
+// doble operador o a mitades en los que los dos llevan ambos contenedores
+// (usuario, 2026-11-02; antes, desde 2026-08-24, folio_2 lo quitaba).
 
 export const SUFIJO_FULL = "-2";
 
@@ -32,8 +31,8 @@ export function sinSufijoFull(codigo) {
 // un registro viejo renombraría su folio sin que nadie haya pulsado Full.
 // Deseleccionar el tipo de servicio también retira el sufijo: es justo el clic
 // equivocado del que hay que poder volver.
-export function codigoFolioFull({ folio, folio_2, tipo_servicio } = {}) {
+export function codigoFolioFull({ folio, tipo_servicio } = {}) {
   if (!folio) return "";
   const base = sinSufijoFull(folio);
-  return tipo_servicio === "full" && !folio_2 ? base + SUFIJO_FULL : base;
+  return tipo_servicio === "full" ? base + SUFIJO_FULL : base;
 }

@@ -38,8 +38,9 @@ test("dejar de ser Full devuelve el código base", () => {
   }
 });
 
-test("Full repartido en dos operadores: ningún folio lleva sufijo", () => {
-  assert.equal(codigoFolioFull({ folio: "F-2279-2", folio_2: "F-2280", tipo_servicio: "full" }), "F-2279");
+test("Full con segundo operador: el folio conserva el sufijo", () => {
+  assert.equal(codigoFolioFull({ folio: "F-2279-2", folio_2: "F-2280", tipo_servicio: "full" }), "F-2279-2");
+  assert.equal(codigoFolioFull({ folio: "F-2279", operador_2: "X", tipo_servicio: "full" }), "F-2279-2");
 });
 
 test("sin folio no hay nada que renombrar", () => {
