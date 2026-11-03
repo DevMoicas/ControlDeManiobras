@@ -26,8 +26,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 import os
+import shutil
 import subprocess
 import tempfile
+import threading
+from pathlib import Path
 import logging
 import io
 from datetime import date, datetime, timedelta, timezone as dt_timezone
@@ -114,12 +117,19 @@ def _xlsx_a_pdf(xlsx_path: str, output_dir: str) -> str:
     env = os.environ.copy()
     env['HOME'] = output_dir   # LibreOffice necesita HOME para su perfil temporal
 
+    # Perfil de LibreOffice FIJO, uno por hilo: crearlo de cero era el 70 % de
+    # cada PDF (medido 2026-11-03: 7.1 s con perfil nuevo, 2.0 s reutilizado).
+    # Uno por pid+hilo y no uno global: dos soffice con el mismo perfil a la vez
+    # chocan, y un hilo de gunicorn atiende una petición cada vez.
+    perfil = Path(tempfile.gettempdir()) / f'lo-perfil-{os.getpid()}-{threading.get_ident()}'
+
     result = None
     for binario in _LIBREOFFICE_BINS:
         try:
             result = subprocess.run(
                 [
                     binario,
+                    f'-env:UserInstallation={perfil.as_uri()}',
                     '--headless',
                     '--norestore',
                     '--convert-to', 'pdf',
@@ -133,6 +143,11 @@ def _xlsx_a_pdf(xlsx_path: str, output_dir: str) -> str:
             break
         except FileNotFoundError:
             continue
+        except subprocess.TimeoutExpired:
+            # Un soffice cortado a medias puede dejar el perfil inservible y
+            # tumbar todos los PDF siguientes de este hilo: se tira y se rehace.
+            shutil.rmtree(perfil, ignore_errors=True)
+            raise
 
     if result is None:
         raise Exception(
@@ -141,6 +156,7 @@ def _xlsx_a_pdf(xlsx_path: str, output_dir: str) -> str:
         )
 
     if result.returncode != 0:
+        shutil.rmtree(perfil, ignore_errors=True)  # mismo motivo que arriba
         raise Exception(
             f"LibreOffice falló (código {result.returncode}): "
             f"{result.stderr.decode('utf-8', errors='replace')}"
@@ -150,6 +166,7 @@ def _xlsx_a_pdf(xlsx_path: str, output_dir: str) -> str:
     pdf_path = os.path.join(output_dir, pdf_name)
 
     if not os.path.exists(pdf_path):
+        shutil.rmtree(perfil, ignore_errors=True)  # mismo motivo que arriba
         raise Exception("LibreOffice no generó el archivo PDF esperado.")
 
     return pdf_path
