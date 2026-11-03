@@ -1,0 +1,53 @@
+/* Contrapeso del botón "Inicio" de App.css: mismo lenguaje (píldora blanca
+   translúcida con desenfoque, azul primario, y al pasar por encima se rellena),
+   pero abajo a la derecha. Ese costado está libre: los avisos viven arriba a la
+   izquierda y las acciones de la tabla, en su cabecera. */
+
+.ba-boton {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  /* Por debajo de los modales (9999) y de la pila de avisos (10000): no debe
+     flotar por encima de un diálogo abierto. */
+  z-index: 900;
+
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid #dbe4f3;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(6px);
+  color: var(--primary, #2563eb);
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(16, 40, 80, 0.12);
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease,
+              box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.ba-boton:hover {
+  background: var(--primary, #2563eb);
+  color: #fff;
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+  /* translateY explícito: anula el scale(1.05) del `button:hover` global. */
+  transform: translateY(-2px);
+}
+
+.ba-boton:active { transform: translateY(0); }
+
+.ba-boton:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .ba-boton { right: 14px; bottom: 14px; width: 42px; height: 42px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ba-boton { transition: none; }
+  .ba-boton:hover, .ba-boton:active { transform: none; }
+}

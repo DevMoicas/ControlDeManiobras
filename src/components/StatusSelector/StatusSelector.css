@@ -1,0 +1,201 @@
+/* ─── StatusSelector.css ───────────────────────────────────────────────────── */
+
+.status-selector {
+  position: relative;
+  display: inline-block;
+}
+
+/* ── Trigger (botón) ─────────────────────────────────────────────────────── */
+.status-selector__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s, filter 0.15s;
+  white-space: nowrap;
+  min-width: 110px;
+  justify-content: space-between;
+}
+.status-selector__trigger:hover:not(:disabled) {
+  filter: brightness(0.93);
+}
+.status-selector__trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.status-selector__trigger--loading {
+  justify-content: center;
+}
+
+/* ── Colores del trigger y de las opciones, por status ────────────────────────
+   Antes estos colores vivían en StatusBadge.css y se heredaban. Pero StatusBadge
+   es un componente que no usa NADIE, así que su CSS nunca entraba al bundle: el
+   trigger llevaba todo este tiempo sin color de fondo. Se definen aquí para que
+   el selector sea autosuficiente y no dependa de una hoja que no se carga.
+   (De paso: el texto de 'activo' era #c6e5b1 sobre fondo #dcfce7 — verde claro
+   sobre verde claro, ilegible. Ahora usa un verde oscuro con contraste real.) */
+.badge-status--activo {
+  background-color: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+.badge-status--pendiente {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+.badge-status--quemada,
+.badge-status--cancelado {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+.badge-status--por-salir {
+  background-color: #ede9fe;
+  color: #6d28d9;
+  border-color: #c4b5fd;
+}
+/* Entregado deja la FILA en el color por defecto (statusConfig.js: rowClass
+   vacia). El chip no puede ser blanco puro: el desplegable ya es #fff y la
+   opcion desapareceria. Gris neutro, que es como se lee "sin color". */
+.badge-status--entregado {
+  background-color: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+/* ── Dots de color ────────────────────────────────────────────────────────────
+   Con 2 status se muestran 2 puntos en el trigger: el fondo ya dice cuál domina,
+   los puntos revelan cuál es el otro. */
+.status-selector__dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.status-selector__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: currentColor;
+  flex-shrink: 0;
+  /* borde blanco: los puntos se leen aunque el fondo del trigger sea del mismo tono */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85);
+}
+
+/* Color explícito por status — antes dependían de la clase badge-status--* del
+   padre, lo que no servía al haber 2 puntos de status distintos en el mismo botón. */
+.status-selector__dot--activo    { background-color: #c6e5b1; }
+.status-selector__dot--pendiente { background-color: #96c6e0; }
+.status-selector__dot--quemada   { background-color: #ff6961; }
+.status-selector__dot--por_salir { background-color: #c7b0d4; }
+/* Entregado: punto blanco, el aro gris lo dibuja sobre el chip claro. */
+.status-selector__dot--entregado {
+  background-color: #ffffff;
+  box-shadow: 0 0 0 1px #9ca3af;
+}
+.status-selector__dot--vacio {
+  background-color: transparent;
+  box-shadow: 0 0 0 1px #9ca3af;
+}
+
+.status-selector__label {
+  flex: 1;
+  text-align: left;
+}
+
+.status-selector__chevron {
+  font-size: 0.55rem;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* ── Spinner ──────────────────────────────────────────────────────────────── */
+.status-selector__spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: ss-spin 0.6s linear infinite;
+  opacity: 0.7;
+}
+@keyframes ss-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Lista desplegable ────────────────────────────────────────────────────── */
+.status-selector__list {
+  /* position: fixed + coords (JSX) → se renderiza en un portal fuera de la tabla
+     para que el overflow no lo recorte. Mismo patrón que VacioStatusSelector,
+     TransportistaSelector y OperadorSelector. `top`/`left` los pone el JSX. */
+  position: fixed;
+  z-index: 9999;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  min-width: 160px;
+  animation: ss-fadeIn 0.12s ease;
+}
+@keyframes ss-fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Opción ───────────────────────────────────────────────────────────────── */
+.status-selector__option {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.12s;
+  outline: none;
+}
+.status-selector__option:hover,
+.status-selector__option:focus {
+  filter: brightness(0.92);
+}
+.status-selector__option--selected {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+/* Tope de 2 alcanzado: las opciones restantes se atenúan en vez de ignorar el clic
+   en silencio. El usuario ve que existen, y que para elegirlas debe quitar una.
+   useDropdownNav ya salta las opciones aria-disabled al navegar con flechas. */
+.status-selector__option--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+.status-selector__option--disabled:hover,
+.status-selector__option--disabled:focus {
+  filter: grayscale(0.6);  /* anula el brightness del hover normal */
+}
+
+.status-selector__check {
+  margin-left: auto;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+/* Trigger sin ningún status asignado */
+.status-selector__trigger--vacio {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}

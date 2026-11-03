@@ -1,0 +1,28 @@
+# Excepciones de `npm audit` — tarea 7.3 (OWASP A06)
+#
+# Un identificador de aviso (GHSA-…) por línea. Las líneas vacías y las que
+# empiezan por # se ignoran.
+#
+# Regla: toda excepción lleva escrito su MOTIVO y su CONDICIÓN DE RETIRADA.
+# Una excepción sin motivo es un silencio, no una decisión — y dentro de seis
+# meses nadie sabrá si seguía siendo cierta.
+#
+# Revisar en cada actualización de dependencias.
+
+# GHSA-qwww-vcr4-c8h2 (react-router, modo RSC) — RETIRADA el 2026-10-08: arreglada
+# en react-router 7.18.2; el proyecto ya va en 7.18.4.
+
+# GHSA-vfj7-8cjw-p6xm — braces: "stack-exhaustion denial of service through
+# deeply nested patterns" (severidad alta).
+#
+#   Motivo: solo entra por tailwindcss@3 (chokidar y micromatch), que se ejecuta
+#   al COMPILAR, en local y en el CI, y no llega al bundle que se sirve. Los
+#   patrones que expande son los globs de `content` de tailwind.config.js,
+#   escritos por nosotros: ningún usuario puede meterle un patrón anidado.
+#
+#   El único arreglo que propone npm es tailwindcss@4, un cambio MAYOR (otra
+#   configuración, otro motor): no se mete de rebote en un despliegue.
+#
+#   Retirar: al migrar a tailwindcss 4, o si sale un parche de braces dentro de
+#   la línea 3.x que chokidar/micromatch acepten. Comprobar con `npm audit`.
+GHSA-vfj7-8cjw-p6xm

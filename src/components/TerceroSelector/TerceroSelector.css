@@ -1,0 +1,99 @@
+.ts-container {
+  position: relative;
+  display: inline-block;
+}
+
+.ts-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+  font-family: inherit;
+}
+
+.ts-trigger--activo { background: #ffedd5; color: #9a3412; }
+.ts-trigger--vacio  { background: #f3f4f6; color: #6b7280; }
+
+.ts-trigger:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.ts-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.ts-chevron {
+  font-size: 0.65rem;
+}
+
+@keyframes ts-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ts-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(0,0,0,0.15);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: ts-spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+.ts-dropdown {
+  /* position: fixed + coords (JSX) → portal fuera de la tabla para que el
+     overflow no lo recorte. `top`/`left` los pone el JSX. */
+  position: fixed;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  z-index: 9999;
+  min-width: 130px;
+  animation: ts-fadeIn 0.12s ease;
+}
+
+@keyframes ts-fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ts-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 2px 0;
+  background: #ffedd5;
+  color: #9a3412;
+  transition: filter 0.1s ease;
+}
+
+.ts-option:hover {
+  filter: brightness(0.95);
+}
+
+.ts-option--selected {
+  outline: 2px solid rgba(0,0,0,0.15);
+}
+
+.ts-check {
+  font-size: 0.75rem;
+}

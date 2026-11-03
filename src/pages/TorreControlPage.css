@@ -1,0 +1,463 @@
+/* Torre de control: rejilla mensual arriba, cajón de unidades libres abajo.
+   Mismos tokens que el resto del sistema (--primary, --text, --bg, borde
+   #e6ecf5, radio 14px) para que no parezca una página de otra aplicación. */
+
+.tc-container {
+  min-height: 100vh;
+  padding: 78px 24px 60px;
+  background:
+    radial-gradient(900px 420px at 100% -10%, #e8f0ff 0%, transparent 60%),
+    var(--bg);
+}
+
+.tc-estado {
+  text-align: center;
+  color: var(--text);
+  margin-top: 40px;
+}
+
+/* ── Cabecera y navegación ────────────────────────────────────────────────── */
+
+.tc-header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.tc-eyebrow {
+  margin: 0 0 6px;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--primary);
+}
+
+.tc-navegacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.tc-mes {
+  margin: 0;
+  min-width: 260px;
+  font-size: 1.6rem;
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+.tc-flecha {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e6ecf5;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.tc-flecha:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ── Aviso de meses anteriores ────────────────────────────────────────────── */
+
+.tc-aviso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 980px;
+  margin: 0 auto 20px;
+  padding: 12px 16px;
+  border: 1px solid #f0c36d;
+  border-left: 4px solid #e0a020;
+  border-radius: 14px;
+  background: #fff8e8;
+  color: #6b4c00;
+}
+
+.tc-aviso-ir {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 6px 12px;
+  border: 1px solid #e0a020;
+  border-radius: 999px;
+  background: #fff;
+  color: #6b4c00;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── Dos columnas: reporte a la izquierda, calendario a la derecha ────────── */
+
+.tc-columnas {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+/* Por debajo de esto el calendario ya no cabe al lado sin encogerse: el reporte
+   pasa arriba y la rejilla debajo, cada uno a su ancho. */
+@media (max-width: 1080px) {
+  .tc-columnas { grid-template-columns: 1fr; }
+}
+
+/* ── Reporte: una fila por unidad ─────────────────────────────────────────── */
+
+.tc-reporte {
+  padding: 14px 16px 16px;
+  border: 1px solid #e6ecf5;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.tc-reporte-cabecera {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tc-vaciar {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid #d9e2ef;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tc-vaciar:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.tc-vaciar:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.tc-reporte-titulo {
+  margin: 0;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: center;
+  color: var(--text);
+}
+
+.tc-reporte-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tc-reporte-fila {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px 11px;
+  border: 1px solid #eef2f8;
+  border-radius: 11px;
+  background: #fbfcfe;
+}
+
+.tc-reporte-cabeza {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tc-reporte-eco {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.tc-reporte-acciones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  min-width: 0;
+}
+
+/* Quita el folio y libera la unidad de ese viaje. En rojo apagado: no borra
+   nada de la maniobra, solo deshace la asignación. */
+.tc-reporte-quitar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #f0c9c9;
+  border-radius: 50%;
+  background: #fff;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+.tc-reporte-quitar:hover { background: #fdeeee; border-color: #b91c1c; }
+
+/* El botón del FolioSelector es compartido con los documentos: aquí solo se
+   ajusta el ancho para que quepa en la columna sin empujar la X. */
+.tc-reporte-acciones .fsl-wrapper { min-width: 0; }
+
+.tc-reporte-acciones .fsl-btn {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Lo que dice la maniobra del folio. Nada de esto se guarda aquí: se lee cada
+   vez, y un dato vacío simplemente no aparece. */
+.tc-reporte-datos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 0.79rem;
+  color: #5c6b85;
+}
+
+.tc-reporte-ruta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tc-reporte-operador { font-style: italic; }
+
+.tc-reporte-fechas {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ── Rejilla del mes ──────────────────────────────────────────────────────── */
+
+/* Desplaza en horizontal dentro de su contenedor en vez de encoger las
+   columnas: siete días con bolitas dentro no caben en un móvil sin volverse
+   ilegibles. Mismo recurso que las tablas del sistema. */
+.tc-rejilla-scroll {
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.tc-rejilla {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(116px, 1fr));
+  gap: 6px;
+  min-width: 812px;   /* 7 × 116 */
+}
+
+.tc-dia-nombre {
+  padding: 9px 0;
+  margin-bottom: 2px;
+  border-radius: 10px;
+  background: #e4ecfa;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-align: center;
+  /* Iban en --primary a 0.78rem: un azul claro y fino sobre fondo claro que
+     apenas se leía. Texto principal sobre pastilla, que es lo que ya usa el
+     resto del sistema para las cabeceras de tabla. */
+  color: var(--text);
+}
+
+.tc-celda {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 104px;
+  padding: 6px;
+  border: 1px solid #e6ecf5;
+  border-radius: 14px;
+  background: #fff;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.tc-celda-hueca {
+  border: none;
+  background: transparent;
+}
+
+/* Resalta la casilla bajo el puntero, para saber en cuál se va a soltar. El
+   :not() deja fuera los huecos anteriores al día 1: no son destino válido y
+   marcarlos prometería un sitio donde no se puede soltar nada.
+   El fantasma que sigue al ratón lleva pointer-events: none, así que el :hover
+   sigue cayendo en la casilla de debajo también mientras se arrastra. */
+.tc-celda:not(.tc-celda-hueca):hover {
+  border-color: var(--primary);
+  background: #f4f8ff;
+}
+
+.tc-celda-hoy {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary) inset;
+}
+
+.tc-numero {
+  font-size: 0.8rem;
+  color: #8a97ab;
+}
+
+.tc-celda-bolitas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* ── Unidades libres ──────────────────────────────────────────────────────── */
+
+.tc-libres {
+  max-width: 980px;
+  margin: 26px auto 0;
+  padding: 14px 16px 18px;
+  border: 1px solid #e6ecf5;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.tc-libres-titulo {
+  margin: 0 0 14px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-align: center;
+  /* Era 0.9rem en --primary: el mismo problema de contraste que tenían los días
+     de la semana. Es el título de una de las dos zonas de la pantalla, así que
+     va en texto principal y a un tamaño que se lea de un vistazo. */
+  color: var(--text);
+}
+
+/* Orden de lectura normal: el No. Eco menor a la izquierda, creciendo hacia la
+   derecha. El DOM ya viene ascendente, así que el orden visual y el del
+   tabulador coinciden sin trucos de dirección. */
+.tc-libres-fila {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  /* Mantiene su alto aunque se quede vacía: si la fila desapareciera, colocar
+     la última bolita de un color haría saltar el cajón entero. */
+  min-height: 34px;
+}
+
+.tc-libres-fila + .tc-libres-fila { margin-top: 8px; }
+
+.tc-libres-vacio {
+  margin: 0;
+  color: #8a97ab;
+}
+
+/* ── La bolita ────────────────────────────────────────────────────────────── */
+
+.tc-bolita {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 62px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: grab;
+  /* Los dos imprescindibles para arrastrar:
+     · touch-action: none — sin esto el navegador se queda el gesto del dedo
+       para hacer scroll y el arrastre se cancela nada más mover.
+     · user-select: none — sin esto el ratón selecciona el texto al arrastrar. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Verde el día en que sale, roja el día en que vuelve. Son los mismos tonos
+   que ya usan los lomos de status en Maniobras, para no estrenar vocabulario de
+   color en una pantalla nueva. */
+.tc-bolita-inicio { background: #15803d; }
+.tc-bolita-fin    { background: #b91c1c; }
+
+.tc-bolita-atenuada {
+  opacity: 0.3;
+}
+
+/* Leyenda del cajón: sin esto, verde y rojo son dos colores sin significado. */
+.tc-libres-pista {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  gap: 6px;
+  margin: -6px 0 12px;
+  color: #8a97ab;
+  font-size: 1rem;
+}
+
+.tc-punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.tc-punto-inicio { background: #15803d; }
+.tc-punto-fin    { background: #b91c1c; margin-left: 10px; }
+
+/* La copia que sigue al dedo o al ratón. pointer-events: none es obligatorio:
+   si capturara el puntero, elementFromPoint leería el fantasma en vez de la
+   casilla que hay debajo y no se podría soltar en ningún sitio. */
+.tc-fantasma {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  position: fixed;
+  z-index: 1000;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #15803d;
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
+/* Va DESPUÉS de .tc-fantasma a propósito: las dos son un solo selector de clase,
+   así que con la misma especificidad manda la última. Puesta antes, la copia de
+   la bolita roja se arrastraría en verde. */
+.tc-fantasma-fin { background: #b91c1c; }
