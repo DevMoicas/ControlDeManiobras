@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { apiClient } from "../api/apiClient";
 import CeldaEditable from "../components/CeldaEditable/CeldaEditable";
 import { useAlerta } from "../components/Alertas/Alertas";
+import { useAutoRefresco } from "../hooks/useAutoRefresco";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import "./NominaPage.css";
 import "./FacturacionPage.css";
@@ -44,6 +45,7 @@ export default function GastosFinancierosPage() {
   }, [mes, alerta]);
 
   useEffect(() => { if (acceso?.ver && mes) cargar(); }, [acceso, mes, cargar]);
+  useAutoRefresco("finanzas", cargar, { query: "de=capturamensual", activo: Boolean(acceso?.ver && mes) });
 
   const agregar = async (e, tipo) => {
     e.preventDefault();

@@ -5,6 +5,7 @@ import { enFechas } from "../utils/filtroFechas.mjs";
 import FiltrosLista from "../components/FiltrosLista/FiltrosLista";
 import CeldaEditable from "../components/CeldaEditable/CeldaEditable";
 import { useAlerta } from "../components/Alertas/Alertas";
+import { useAutoRefresco } from "../hooks/useAutoRefresco";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import "./NominaPage.css";
 import "./FacturacionPage.css";
@@ -102,6 +103,7 @@ function GastosFijos({ esStaff }) {
   }, [anio, mitad, empresa, alerta]);
 
   useEffect(() => { cargar(); }, [cargar]);
+  useAutoRefresco("finanzas", cargar, { query: "de=gastofijo,gastofijopago" });
 
   const moverMitad = (paso) => {
     const total = anio * 2 + mitad + paso;
@@ -321,6 +323,11 @@ function Cuentas({ origen, esStaff }) {
   }, [origen, conManiobra, alerta]);
 
   useEffect(() => { cargar(); }, [cargar]);
+  // Fletes y locales salen de las maniobras y vacíos de terceros; la empresa,
+  // de su factura.
+  useAutoRefresco("finanzas", cargar, {
+    query: conManiobra ? "de=cuentaporpagar,maniobra,vacio,factura" : "de=cuentaporpagar",
+  });
 
   const abrirCaptura = (fila) => {
     setNueva(fila);

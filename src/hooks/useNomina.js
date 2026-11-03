@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiClient } from "../api/apiClient";
+import { useAutoRefresco } from "./useAutoRefresco";
 import { prepararPayload, CAMPOS_CON_FORMULA_NOMINA } from "../utils/formulaSuma.mjs";
 
 /**
@@ -38,6 +39,17 @@ export function useNomina() {
   }, []);
 
   useEffect(() => { cargar(); }, [cargar]);
+
+  // Lo que cambie otro admin, sin el "Cargando nómina…" de pantalla completa.
+  const refrescar = useCallback(async () => {
+    try {
+      const data = await apiClient.get("/nomina/");
+      setFilas(Array.isArray(data) ? data : (data?.results ?? []));
+    } catch {
+      // Se reintenta con el siguiente cambio.
+    }
+  }, []);
+  useAutoRefresco("finanzas", refrescar, { query: "de=nomina,empleado,vacacion,sueldo" });
 
   /**
    * Guarda UNA celda. Devuelve la fila que responde el backend.

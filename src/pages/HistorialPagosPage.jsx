@@ -4,6 +4,7 @@ import { apiClient } from "../api/apiClient";
 import SearchBar from "../components/SearchBar/SearchBar";
 import { filtrarBusqueda } from "../utils/buscar.mjs";
 import { useAlerta } from "../components/Alertas/Alertas";
+import { useAutoRefresco } from "../hooks/useAutoRefresco";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import "./NominaPage.css";
 import "./FacturacionPage.css";
@@ -39,6 +40,7 @@ export default function HistorialPagosPage() {
       if (a?.ver) cargar();
     }).catch(() => setAcceso({ ver: false }));
   }, []);
+  useAutoRefresco("finanzas", cargar, { query: "de=pago,abono", activo: Boolean(acceso?.ver) });
 
   const cancelar = async (p) => {
     if (!await preguntar({

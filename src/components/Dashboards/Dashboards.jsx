@@ -5,6 +5,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell,
 } from "recharts";
 import { apiClient } from "../../api/apiClient";
+import { useAutoRefresco } from "../../hooks/useAutoRefresco";
 import "./Dashboards.css";
 
 // Los dashboards de Finanzas (Fase 6 de PLAN_MODULO_FINANZAS.md). Cada uno es
@@ -50,8 +51,15 @@ const hoyISO = () => {
 const periodoInicial = () => ({ desde: `${new Date().getFullYear()}-01-01`, hasta: hoyISO() });
 
 // ── Datos ────────────────────────────────────────────────────────────────────
+// Lo que pintan los dashboards. Sin nómina (es solo de staff): sus sueldos
+// entran al recargar o al cambiar de dashboard.
+const TABLAS_DASHBOARDS = "de=factura,pago,abono,cuentaporpagar,gastofijo,gastofijopago,"
+  + "capturamensual,maniobra,gasto,reporteviaje";
+
 function useDashboard(nombre, filtros, activo = true) {
   const [estado, setEstado] = useState({ datos: null, cargando: true, error: null });
+  const [version, setVersion] = useState(0);
+  useAutoRefresco("finanzas", () => setVersion((v) => v + 1), { query: TABLAS_DASHBOARDS, activo });
   const clave = JSON.stringify(filtros);
   useEffect(() => {
     if (!activo) { setEstado({ datos: null, cargando: false, error: null }); return; }
@@ -62,7 +70,7 @@ function useDashboard(nombre, filtros, activo = true) {
       .then((datos) => vigente && setEstado({ datos, cargando: false, error: null }))
       .catch((err) => vigente && setEstado({ datos: null, cargando: false, error: err.message }));
     return () => { vigente = false; };
-  }, [nombre, clave, activo]);
+  }, [nombre, clave, activo, version]);
   return estado;
 }
 

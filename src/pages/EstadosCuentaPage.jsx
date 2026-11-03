@@ -1,8 +1,9 @@
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useCallback } from "react";
 import { ChevronDown, ChevronRight, Download, Loader } from "lucide-react";
 import { apiClient } from "../api/apiClient";
 import { filtrarBusqueda } from "../utils/buscar.mjs";
 import { useAlerta } from "../components/Alertas/Alertas";
+import { useAutoRefresco } from "../hooks/useAutoRefresco";
 import "./NominaPage.css";
 import "./FacturacionPage.css";
 import "./FinanzasCaptura.css";
@@ -43,13 +44,15 @@ export default function EstadosCuentaPage() {
   useEffect(() => {
     apiClient.get("/facturas/acceso/").then(setAcceso).catch(() => setAcceso({ ver: false }));
   }, []);
-  useEffect(() => {
-    if (!acceso?.ver) return;
+  const cargar = useCallback(() => {
     apiClient.get("/facturas/cuentas-por-cobrar/").then((d) => setFacturas(d.facturas)).catch((err) => {
       setFacturas([]);
       alerta({ tipo: "error", msg: err.message });
     });
-  }, [acceso, alerta]);
+  }, [alerta]);
+  useEffect(() => { if (acceso?.ver) cargar(); }, [acceso, cargar]);
+  // Maniobra: de ella sale el cliente principal de cada factura.
+  useAutoRefresco("finanzas", cargar, { query: "de=factura,maniobra", activo: Boolean(acceso?.ver) });
 
   if (!acceso) return <div className="nomina-container" />;
   if (!acceso.ver) {

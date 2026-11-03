@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { SquarePen, Trash2 } from "lucide-react";
 import { overlayMotion, contentMotion } from "../animations/modalMotion";
 import { apiClient } from "../api/apiClient";
+import { useAutoRefresco } from "../hooks/useAutoRefresco";
 import { useAuthContext } from "../context/AuthContext";
 import SearchBar from "../components/SearchBar/SearchBar";
 import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
@@ -47,6 +48,10 @@ export default function CostosExtraPage() {
     // la edición y el borrado, sin recargarla entera cada vez.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // Lo que cambie otra persona sí se pide: esas respuestas no llegan aquí.
+  useAutoRefresco("finanzas", () => apiClient.get("/costos-extra/")
+    .then((res) => setData(Array.isArray(res) ? res : (res?.results ?? [])))
+    .catch(() => {}), { query: "de=costoextra" });
 
   const abrirAgregar = () => {
     setFormData(VACIO);

@@ -4,6 +4,7 @@ import { apiClient } from "../api/apiClient";
 import CampoFecha from "../components/CampoFecha/CampoFecha";
 import { aBackend } from "../components/CeldaEditable/fechaCelda.mjs";
 import { useAlerta } from "../components/Alertas/Alertas";
+import { useAutoRefresco } from "../hooks/useAutoRefresco";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
 import "./NominaPage.css";
 import "./FacturacionPage.css";
@@ -191,6 +192,13 @@ export default function CompensacionPage() {
       .then((d) => { const f = (d || []).find((x) => x.id === id); if (f) setFactura(f); })
       .catch(() => {});
   };
+
+  // Lo que guarde otra persona: los pagos por aplicar y, si hay una factura
+  // abierta, su saldo y sus abonos. El borrador no se toca: es solo de aquí.
+  useAutoRefresco("finanzas", () => {
+    cargarPorAplicar();
+    if (factura) refrescarFactura(factura.id);
+  }, { query: "de=pago,abono,factura", activo: Boolean(acceso?.ver) });
 
   const elegir = (f) => {
     setFactura(f);

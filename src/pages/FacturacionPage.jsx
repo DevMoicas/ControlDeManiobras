@@ -7,6 +7,7 @@ import BarraScrollTabla from "../components/BarraScrollTabla/BarraScrollTabla";
 import BotonArriba from "../components/BotonArriba/BotonArriba";
 import { useAlerta } from "../components/Alertas/Alertas";
 import { useConfirmacion } from "../components/Confirmacion/Confirmacion";
+import { useAutoRefresco } from "../hooks/useAutoRefresco";
 import "./NominaPage.css";
 import "./FacturacionPage.css";
 import "./FinanzasCaptura.css";
@@ -198,6 +199,30 @@ export default function FacturacionPage() {
   };
 
   useEffect(() => { if (acceso?.ver) cargar(); }, [acceso, cargar]);
+
+  // Lo que cambie otra persona, sin el "Cargando" ni volver a la página 1: se
+  // piden otra vez las mismas páginas que ya hay en pantalla.
+  const refrescar = async () => {
+    if (loading || cargandoMas) return;
+    const yo = ultima.current;
+    const paginas = Math.max(1, siguiente ? siguiente - 1 : Math.ceil(filas.length / 100));
+    try {
+      const datos = await Promise.all(Array.from({ length: paginas },
+        (_, i) => traerPagina(enAuditoria, filtros, i + 1)));
+      if (yo !== ultima.current) return; // cambió un filtro mientras tanto
+      setFilas(datos.flatMap((d) => d.results));
+      setTotal(datos[0].count);
+      setSiguiente(datos.at(-1).next ? paginas + 1 : null);
+      if (enAuditoria) setAuditoria(datos[0]);
+    } catch {
+      // Se reintenta con el siguiente cambio.
+    }
+  };
+  // Maniobra: el No. Factura de Control de viajes es lo que liga cada factura.
+  useAutoRefresco("finanzas", refrescar, {
+    query: `de=${enAuditoria ? "facturaexcel,factura" : "factura,maniobra"}`,
+    activo: Boolean(acceso?.ver),
+  });
   useEffect(() => setResumen(null), [pagina]);
 
   const visibles = filas;
