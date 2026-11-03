@@ -273,3 +273,42 @@ class CapturasMensualesTests(Base):
         self.assertEqual([c['concepto'] for c in self.com.get(f'{self.URL}?mes=2026-08').data], ['IVA'])
         self.assertEqual(self.com.delete(f"{self.URL}{r.data['id']}/").status_code, 403)
         self.assertEqual(self.admin.delete(f"{self.URL}{r.data['id']}/").status_code, 204)
+
+
+class FinanzasCambiosTests(Base):
+    """El reloj del refresco automático de Finanzas (FinanzasCambiosView)."""
+
+    URL = '/api/finanzas/cambios/'
+
+    def firma(self, cliente, de):
+        r = cliente.get(self.URL, {'de': de})
+        self.assertEqual(r.status_code, 200, r.data)
+        return r.data['t']
+
+    def test_cambia_con_alta_edicion_y_borrado(self):
+        from api.models import CapturaMensual, CostoExtra
+        for de, crear in (
+            ('capturamensual', lambda: CapturaMensual.objects.create(
+                mes=date(2026, 9, 1), tipo='interes', concepto='x', monto=1)),
+            ('costoextra', lambda: CostoExtra.objects.create(movimiento='Grúa', costo=1)),
+        ):
+            vacia = self.firma(self.com, de)
+            fila = crear()
+            alta = self.firma(self.com, de)
+            setattr(fila, 'monto' if de == 'capturamensual' else 'costo', 2)
+            fila.save()
+            editada = self.firma(self.com, de)
+            fila.delete()
+            self.assertEqual(len({vacia, alta, editada}), 3, de)
+            self.assertNotEqual(self.firma(self.com, de), editada, de)
+
+    def test_tablas_y_permisos(self):
+        self.assertEqual(self.com.get(self.URL).status_code, 400)
+        self.assertEqual(self.com.get(self.URL, {'de': 'auth_user'}).status_code, 400)
+        # Nómina y Auditoría solo para staff: para los demás no existen.
+        for de in ('empleado', 'facturaexcel'):
+            self.assertEqual(self.com.get(self.URL, {'de': de}).status_code, 400)
+        self.firma(self.admin, 'empleado')
+        op = self.usuario('op')
+        self.assertEqual(op.get(self.URL, {'de': 'factura'}).status_code, 403)
+        self.firma(op, 'costoextra')  # se lee sin ser de Finanzas, como su viewset

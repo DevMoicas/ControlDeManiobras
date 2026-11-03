@@ -6,20 +6,25 @@ paréntesis, p. ej. (P34), remite a PREGUNTAS_MODULO_FINANZAS.md.
 Quién entra: el mismo grupo que Facturación (P45, P56): staff o los cuatro
 cargos. Cancelar y borrar, solo staff.
 """
+import hashlib
 import re
 import unicodedata
 from datetime import date, datetime, timedelta
 
-from django.db.models import Exists, OuterRef, Q, Value
+from django.db.models import Count, Exists, Max, OuterRef, Q, Value
 from django.db.models.functions import Coalesce, Trim, Upper
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .facturacion import ZONA_OPERACION, _dinero, puede_finanzas
-from .models import (CapturaMensual, CuentaPorPagar, Factura, GastoFijo, GastoFijoPago,
-                     Maniobra, Transportista, UnidadTercero, Vacio)
+from .models import (Abono, CapturaMensual, CostoExtra, CuentaPorPagar, Empleado, Factura,
+                     FacturaExcel, Gasto, GastoFijo, GastoFijoPago, Maniobra, NominaEmpleado,
+                     Pago, ReporteViaje, SueldoHistorial, Transportista, UnidadTercero, Vacio,
+                     VacacionDia)
+from .throttling import SondeoThrottle
 
 # Fletes y locales aparecen desde aquí (decidido con el usuario el 2026-09-30,
 # igual que Facturación, P4): el histórico viejo no se llena de filas vacías.
@@ -424,3 +429,53 @@ class CapturaMensualViewSet(SoloFinanzasMixin, SoloStaffBorraMixin, viewsets.Mod
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self._usuario())
+
+
+# ── Refresco automático de Finanzas ──────────────────────────────────────────
+# La misma idea que CambiosMixin (views.py) para pantallas que no son UNA tabla:
+# cada página dice qué tablas pinta (`?de=factura,abono`) y recarga cuando la
+# firma cambia. Aquí `t` es solo una firma opaca: el front la compara con === y
+# no la usa como fecha, así que caben tablas sin columna de modificación.
+_TABLAS_FINANZAS = {
+    'factura': Factura, 'pago': Pago, 'abono': Abono,
+    'cuentaporpagar': CuentaPorPagar, 'gastofijo': GastoFijo, 'gastofijopago': GastoFijoPago,
+    'capturamensual': CapturaMensual, 'maniobra': Maniobra,
+    'vacio': Vacio, 'gasto': Gasto, 'reporteviaje': ReporteViaje,
+}
+# Lectura abierta, como su viewset: el selector de Maniobras lo usa.
+_TABLAS_LIBRES = {'costoextra': CostoExtra}
+# Solo staff, como sus pantallas (Nómina, Auditoría): para los demás no existen.
+# Además el rol `standard` de Postgres no tiene GRANT sobre ellas (0067, 0081).
+_TABLAS_STAFF = {
+    'facturaexcel': FacturaExcel, 'nomina': NominaEmpleado, 'empleado': Empleado,
+    'vacacion': VacacionDia, 'sueldo': SueldoHistorial,
+}
+
+
+def _firma_tabla(modelo):
+    campos = {f.name for f in modelo._meta.concrete_fields}
+    marca = next((c for c in ('updated_at', 'actualizado_en') if c in campos), None)
+    if marca:
+        # Max detecta altas y ediciones; Count, los borrados (ver CambiosMixin).
+        return tuple(modelo.objects.aggregate(t=Max(marca), n=Count('pk')).values())
+    # ponytail: sin columna de modificación se firma la tabla entera. Son
+    # catálogos de decenas a pocos miles de filas (costos extra, empleados,
+    # vacaciones, sueldos): milisegundos. Si una crece a decenas de miles,
+    # darle updated_at y que entre por la rama de arriba.
+    return hashlib.sha1(repr(list(modelo.objects.order_by('pk').values_list())).encode()).hexdigest()
+
+
+class FinanzasCambiosView(APIView):
+    """`GET /finanzas/cambios/?de=factura,abono` → `{t, n}` para useAutoRefresco."""
+    throttle_classes = [SondeoThrottle]
+
+    def get(self, request):
+        nombres = [n for n in request.query_params.get('de', '').split(',') if n]
+        if not set(nombres) <= _TABLAS_LIBRES.keys() and not puede_finanzas(request.user):
+            raise PermissionDenied('Finanzas es solo para dirección, comercial y administradores.')
+        tablas = {**_TABLAS_LIBRES, **_TABLAS_FINANZAS,
+                  **(_TABLAS_STAFF if request.user.is_staff else {})}
+        if not nombres or not set(nombres) <= tablas.keys():
+            raise ValidationError({'de': 'Tabla no válida.'})
+        firmas = [(n, _firma_tabla(tablas[n])) for n in sorted(set(nombres))]
+        return Response({'t': hashlib.sha1(repr(firmas).encode()).hexdigest(), 'n': 0})

@@ -5,7 +5,8 @@ from rest_framework_simplejwt.views import TokenRefreshView, TokenBlacklistView
 
 from .dashboards import DashboardViewSet
 from .facturacion import AbonoViewSet, FacturaExcelViewSet, FacturaViewSet, PagoViewSet
-from .finanzas import CapturaMensualViewSet, CuentaPorPagarViewSet, GastoFijoViewSet
+from .finanzas import (CapturaMensualViewSet, CuentaPorPagarViewSet, FinanzasCambiosView,
+                       GastoFijoViewSet)
 from .views import (
     TractoViewSet,
     TorreControlViewSet,
@@ -83,6 +84,7 @@ router.register(r'dashboards', DashboardViewSet, basename='dashboards')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('finanzas/cambios/', FinanzasCambiosView.as_view(), name='finanzas-cambios'),
 
     # Documentos de viaje (generan PDF vía LibreOffice)
     path('documentos/bitacora-sueno/', DocumentoBitacoraSuenoView.as_view(), name='bitacora-sueno'),
