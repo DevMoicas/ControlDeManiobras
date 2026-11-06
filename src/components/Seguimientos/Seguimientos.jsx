@@ -43,6 +43,7 @@ const COLUMNAS_PENDIENTES = [
   { key: "contenedor",              label: "Contenedor",      key2: "contenedor_2" },
   { key: "tipo",                    label: "Tipo de carga",   key2: "tipo_2", esTipo: true },
   { key: "peso",                    label: "Peso",            key2: "peso_2", sufijo: "KG" },
+  { key: "referencia",              label: "Referencia" },
   { key: "status_piso",             label: "Status Piso" },
   { key: "origen",                  label: "Origen" },
   { key: "destino",                 label: "Destino" },
@@ -57,6 +58,7 @@ const COLUMNAS_PENDIENTES = [
 const COLUMNAS_ACTIVOS = [
   { key: "contenedor",                 label: "Contenedor",       key2: "contenedor_2" },
   { key: "tipo",                       label: "Tipo",             key2: "tipo_2", esTipo: true },
+  { key: "referencia",                 label: "Referencia" },
   // Misma posición relativa que en pendientes: justo antes de ORIGEN.
   { key: "status_piso",                label: "Status Piso" },
   { key: "origen",                     label: "Origen" },
