@@ -204,6 +204,59 @@ class SeAbreElReporteTests(BaseReporteAutomatico):
         self.assertEqual(ReporteViaje.objects.count(), 0)
 
 
+class SeSueltaElFolioTests(BaseReporteAutomatico):
+    """Quitar o cambiar el folio es corregir un error: su reporte se va con el
+    (usuario, 2026-11-12), y vuelve a nacer limpio al asignarlo bien."""
+
+    def test_quitar_el_folio_borra_su_reporte_aunque_tenga_captura(self):
+        m = self.maniobra()
+        self.poner_folio(m.id)
+        ReporteViaje.objects.filter(folio='F-2279').update(km_inicial=100)
+
+        self.patch(m.id, folio='')
+
+        self.assertEqual(ReporteViaje.objects.count(), 0)
+
+    def test_reasignarlo_a_otro_viaje_lo_rehace_con_los_datos_de_ese(self):
+        mala = self.maniobra(cliente='EQUIVOCADO')
+        buena = self.maniobra(cliente='YAZAKI')
+        self.poner_folio(mala.id)
+        self.patch(mala.id, folio='')
+
+        self.poner_folio(buena.id)
+
+        self.assertEqual(self.reporte().cliente, 'YAZAKI')
+
+    def test_cambiar_un_folio_por_otro_mueve_el_reporte(self):
+        m = self.maniobra()
+        self.poner_folio(m.id)
+
+        self.poner_folio(m.id, folio='F-3000')
+
+        self.assertEqual(list(ReporteViaje.objects.values_list('folio', flat=True)),
+                         ['F-3000'])
+
+    def test_pasar_el_folio_a_la_otra_columna_no_lo_borra(self):
+        m = self.maniobra()
+        self.poner_folio(m.id)
+
+        self.patch(m.id, folio='', folio_2='F-2279')
+
+        self.assertEqual(ReporteViaje.objects.count(), 1)
+
+    def test_no_borra_el_de_un_folio_que_otra_maniobra_sigue_usando(self):
+        """La API ya rechaza el duplicado; esto cubre los datos viejos que lo
+        tengan repetido, armados directo en la base."""
+        m = self.maniobra()
+        self.poner_folio(m.id)
+        self.maniobra(folio_2='F-2279')
+
+        r = self.patch(m.id, folio='')
+
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertTrue(ReporteViaje.objects.filter(folio='F-2279').exists())
+
+
 class NoSeAbreElReporteTests(BaseReporteAutomatico):
     """Los dos criterios, y por que hacen falta los dos."""
 

@@ -947,6 +947,29 @@ def _crear_reportes_del_folio(maniobra):
     return creados
 
 
+def _soltar_reportes_del_folio(maniobra, antes):
+    """Borra el reporte del folio que esta maniobra acaba de soltar. Devuelve cuantos.
+
+    Quitar o cambiar un folio es corregir un error (usuario, 2026-11-12): el
+    reporte nacio con los datos de un viaje que no era el suyo, y como el folio
+    es UNIQUE, al asignarlo despues al viaje correcto get_or_create encontraria
+    ese reporte viejo y no lo rehace. Se borra siempre, aunque ya tenga captura
+    (decision del usuario); sus cargas caen con el CASCADE.
+
+    No se borra si el folio sigue en uso: en la propia maniobra (un Full que pasa
+    el folio de una columna a la otra) o en otra maniobra que ya lo tenga.
+    """
+    actuales = {(maniobra.folio or '').strip(), (maniobra.folio_2 or '').strip()}
+    soltados = {(antes.get(c) or '').strip() for c in ('folio', 'folio_2')} - actuales - {''}
+    borrados = 0
+    for folio in soltados:
+        if Maniobra.objects.filter(Q(folio=folio) | Q(folio_2=folio)).exists():
+            continue
+        borrados += ReporteViaje.objects.filter(folio=folio).delete()[1].get(
+            ReporteViaje._meta.label, 0)
+    return borrados
+
+
 # Los huecos con los que nace el reporte, y las columnas de la maniobra de las
 # que cuelgan. El folio se pone casi siempre ANTES de saber quien lo llevara (ver
 # _sincronizar_asignacion_folios) y antes de capturar las placas del puerto, asi
@@ -1361,13 +1384,15 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
             # copiarla solo al crear el gasto lo dejaba vacio para siempre.
             if maniobra.fecha_entrega_mercancia != fecha_entrega_antes:
                 _sincronizar_fecha_entrega(maniobra, self._usuario())
-            # El reporte de viaje, al pasar ESE folio de vacio a lleno: un Full
+            # El reporte de viaje: el del folio que se suelta (quitado o cambiado
+            # por otro) se borra, y el del folio que llega nace. Un Full
             # repartido abre el del segundo operador cuando aparece su folio, no
-            # antes. Si no hay folio nuevo pero si cambio alguno de los datos que
+            # antes. Si no cambio ningun folio pero si alguno de los datos que
             # se capturan mas tarde (las placas del puerto, el operador), se
             # rematan los huecos del reporte que ya existe.
-            if ((not folio_antes and (maniobra.folio or '').strip())
-                    or (not folio_2_antes and (maniobra.folio_2 or '').strip())):
+            _soltar_reportes_del_folio(maniobra, antes)
+            if (((maniobra.folio or '').strip() not in ('', folio_antes))
+                    or ((maniobra.folio_2 or '').strip() not in ('', folio_2_antes))):
                 _crear_reportes_del_folio(maniobra)
             elif tuple(getattr(maniobra, c) for c in _FUENTES_DEL_REPORTE) != fuentes_antes:
                 _completar_reportes_del_folio(maniobra)
