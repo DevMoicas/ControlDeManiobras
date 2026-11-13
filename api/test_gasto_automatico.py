@@ -179,14 +179,63 @@ class NoSeCreaElGastoTests(BaseGastoAutomatico):
 
         self.assertEqual(Gasto.objects.count(), 1)
 
-    def test_quitar_el_folio_no_borra_el_gasto(self):
-        """Borrar destruiria importes capturados, y destroy en gastos esta
-        reservado a admin."""
+    def test_quitar_el_folio_borra_el_gasto_en_ceros_y_reasignarlo_lo_recrea(self):
+        """No hay gasto sin folio (usuario, 2026-11-13)."""
         m = Maniobra.objects.create(solicita='PRUEBA')
         self.poner_folio(m.id)
 
-        self.cliente.patch(f'{URL}{m.id}/', {'folio': ''}, format='json')
+        r = self.cliente.patch(f'{URL}{m.id}/', {'folio': ''}, format='json')
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual(Gasto.objects.count(), 0)
 
+        self.poner_folio(m.id)
+        self.assertEqual(Gasto.objects.count(), 1)
+
+    def test_no_se_puede_quitar_el_folio_si_el_gasto_tiene_importes(self):
+        """Borrarlo perderia lo capturado: se bloquea y la maniobra no cambia."""
+        for campo in ('casetas_ida', 'entregado'):
+            with self.subTest(campo=campo):
+                Gasto.objects.all().delete()
+                m = Maniobra.objects.create(solicita='PRUEBA', folio='F-2279')
+                Gasto.objects.create(maniobra=m, **{campo: 150})
+
+                r = self.cliente.patch(f'{URL}{m.id}/', {'folio': ''}, format='json')
+
+                self.assertEqual(r.status_code, 400)
+                self.assertIn('importes', r.data['detail'])
+                m.refresh_from_db()
+                self.assertEqual(m.folio, 'F-2279')
+                self.assertEqual(Gasto.objects.count(), 1)
+
+    def test_editar_otra_cosa_con_importes_no_se_bloquea(self):
+        m = Maniobra.objects.create(solicita='PRUEBA', folio='F-2279')
+        Gasto.objects.create(maniobra=m, casetas_ida=150)
+
+        r = self.cliente.patch(f'{URL}{m.id}/', {'destino': 'GUADALAJARA'}, format='json')
+
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual(Gasto.objects.count(), 1)
+
+    def test_gastos_tiene_reloj_de_cambios_para_el_refresco(self):
+        """El gasto que nace en Maniobras tiene que verse en Gastos sin recargar."""
+        m = Maniobra.objects.create(solicita='PRUEBA')
+        antes = self.cliente.get('/api/gastos/cambios/').data
+        self.poner_folio(m.id)
+
+        despues = self.cliente.get('/api/gastos/cambios/').data
+
+        self.assertEqual((antes['n'], despues['n']), (0, 1))
+        nuevos = self.cliente.get(f"/api/gastos/?modificado_desde={antes['t'] or '2000-01-01T00:00:00Z'}").data
+        self.assertEqual(len(nuevos['results'] if isinstance(nuevos, dict) else nuevos), 1)
+
+    def test_crear_a_mano_un_gasto_que_ya_existe_explica_por_que(self):
+        m = Maniobra.objects.create(solicita='PRUEBA')
+        self.poner_folio(m.id)
+
+        r = self.cliente.post('/api/gastos/', {'maniobra': m.id}, format='json')
+
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('ya tiene su gasto', r.data['detail'])
         self.assertEqual(Gasto.objects.count(), 1)
 
     def test_crear_una_maniobra_sin_folio_no_crea_gasto(self):

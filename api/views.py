@@ -638,6 +638,18 @@ def _sincronizar_fecha_entrega(maniobra, usuario):
     return True
 
 
+def _gasto_con_importes(maniobra):
+    """El gasto de la maniobra si ya tiene dinero capturado, o None.
+
+    Es lo que impide quitar el folio (usuario, 2026-11-13): borrar ese gasto
+    perderia importes. `entregado` va aparte porque no entra en gastos_totales.
+    """
+    gasto = Gasto.objects.filter(maniobra=maniobra).first()
+    if gasto and (gasto.gastos_totales or gasto.entregado):
+        return gasto
+    return None
+
+
 # ── Vacios automaticos al asignar el folio ───────────────────────────────────
 # Mismo disparo que el gasto: el contenedor que trae el viaje hay que devolverlo,
 # asi que nace en Vacios en cuanto la maniobra tiene folio. Carga suelta no lleva
@@ -1363,9 +1375,20 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
         fecha_entrega_antes = serializer.instance.fecha_entrega_mercancia
         no_factura_antes = serializer.instance.no_factura
         fecha_pis_antes = serializer.instance.fecha_pis
+        # Quitar el folio borra su gasto: no hay gasto sin folio (usuario,
+        # 2026-11-13). Si ya tiene importes, no se deja quitar el folio. Cambiarlo
+        # por otro (A -> B) no cuenta como quitarlo: el gasto sigue a la maniobra.
+        quita_folio = bool(folio_antes) and not (
+            serializer.validated_data.get('folio', serializer.instance.folio) or '').strip()
+        if quita_folio and _gasto_con_importes(serializer.instance):
+            raise ValidationError({'detail': (
+                'No se puede quitar el folio: su gasto ya tiene importes '
+                'capturados. Bórralos en Gastos primero.')})
         with transaction.atomic(using=get_db_alias()):
             super().perform_update(serializer)
             maniobra = serializer.instance
+            if quita_folio:
+                Gasto.objects.filter(maniobra=maniobra).delete()
             # Solo al pasar de vacio a lleno. Cambiar un folio por otro no crea
             # nada: el gasto sigue enlazado a la maniobra y lee el folio de ella.
             if not folio_antes and (maniobra.folio or '').strip():
@@ -1736,7 +1759,7 @@ class DispositivoConfianzaViewSet(viewsets.ViewSet):
         disp.save(update_fields=['revocado_en'])
         _cerrar_todas_las_sesiones(request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
-class GastoViewSet(viewsets.ModelViewSet):
+class GastoViewSet(CambiosMixin, viewsets.ModelViewSet):
     # select_related evita el N+1 que dispara GastoSerializer.folio
     # (source='maniobra.folio') al serializar cada fila. El orden real lo pone
     # get_queryset(); este order_by es solo la red de seguridad de DRF.
@@ -1755,8 +1778,9 @@ class GastoViewSet(viewsets.ModelViewSet):
         ISO, que en texto ya ordena como fecha.
 
         Lo que no case con ninguno de los dos formatos ('' , '200', textos
-        sueltos) vale NULL y cae al final con nulls_last: sin fecha no hay sitio
-        donde colocarlo, y arriba estorbaria justo lo que se viene a mirar.
+        sueltos) vale NULL y sale ARRIBA con nulls_first (usuario, 2026-11-13):
+        casi siempre es el gasto recien nacido al asignar el folio, que aun no
+        tiene fecha de entrega y es justo el que hay que capturar.
 
         Se normaliza al LEER y no se toca el dato guardado: reescribir la columna
         cambiaria lo que ve el usuario en filas que nadie pidio tocar. El id
@@ -1778,7 +1802,18 @@ class GastoViewSet(viewsets.ModelViewSet):
         )
         return (super().get_queryset()
                 .annotate(fecha_orden=clave_fecha)
-                .order_by(F('fecha_orden').desc(nulls_last=True), '-id'))
+                .order_by(F('fecha_orden').desc(nulls_first=True), '-id'))
+
+    def create(self, request, *args, **kwargs):
+        # El UNIQUE de maniobra_id ya lo rechaza, pero como {"maniobra": [...]} en
+        # ingles, y el front solo enseña `detail`. Casi siempre es el gasto que
+        # nacio solo al asignar el folio y esta arriba de la lista, sin fecha.
+        maniobra_id = str(request.data.get('maniobra') or '')
+        if maniobra_id.isdigit() and Gasto.objects.filter(maniobra_id=maniobra_id).exists():
+            return Response({'detail': (
+                'Ese folio ya tiene su gasto. Búscalo en la lista: si no tiene '
+                'fecha de entrega, aparece arriba.')}, status=400)
+        return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         maniobra_id = self.request.data.get('maniobra')

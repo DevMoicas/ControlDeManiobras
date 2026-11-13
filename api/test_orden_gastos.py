@@ -77,16 +77,16 @@ class OrdenDeGastosTests(TestCase):
             '21/06/2026',   # junio 21 — despues del 28, aunque el texto diga "21"
         ])
 
-    def test_lo_que_no_es_una_fecha_cae_al_final(self):
-        # '' , NULL y basura tecleada: sin fecha no hay donde colocarlos, y
-        # arriba estorbarian justo lo que se viene a mirar.
+    def test_lo_que_no_es_una_fecha_sale_arriba(self):
+        # '' , NULL y basura tecleada van ARRIBA (usuario, 2026-11-13): son los
+        # gastos recien nacidos al asignar el folio, que aun esperan su fecha.
         self.gasto('', 'F-1')
         self.gasto(None, 'F-2')
         self.gasto('200', 'F-3')
         self.gasto('2026-05-13', 'F-4')
 
-        self.assertEqual(self.fechas_en_pantalla()[0], '2026-05-13')
-        self.assertEqual(sorted(x or '' for x in self.fechas_en_pantalla()[1:]), ['', '', '200'])
+        self.assertEqual(self.fechas_en_pantalla()[-1], '2026-05-13')
+        self.assertEqual(sorted(x or '' for x in self.fechas_en_pantalla()[:-1]), ['', '', '200'])
 
     def test_el_id_desempata_para_que_la_paginacion_no_repita_filas(self):
         # Dos gastos del mismo dia: sin desempate el orden es arbitrario entre
