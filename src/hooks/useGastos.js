@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiClient } from "../api/apiClient";
 import { prepararPayload } from "../utils/formulaSuma.mjs";
+import { useAutoRefresco } from "./useAutoRefresco";
 
 const PAGE_SIZE = 60;
 
@@ -74,6 +75,40 @@ export const useGastos = () => {
         await apiClient.delete(`/gastos/${id}/`);
         setGastos((prev) => prev.filter((g) => g.id !== id));
     }, []);
+
+    // Refresco automático, como en Vacíos: el gasto nace (o se borra) al poner
+    // o quitar el folio en Maniobras, y tiene que verse aquí sin recargar.
+    const aplicarCambios = useCallback(async ({ desde, hayBorrados }) => {
+        // ponytail: un borrado recarga la primera página y pierde el scroll; mismo
+        // compromiso que useVacios.
+        if (hayBorrados) {
+            pageRef.current = 1;
+            fetchPage(1, true);
+            return;
+        }
+        const params = new URLSearchParams({ page_size: PAGE_SIZE });
+        if (desde) params.set("modificado_desde", desde);
+        try {
+            const data = await apiClient.get(`/gastos/?${params.toString()}`);
+            const cambiados = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
+            if (!cambiados.length) return;
+            setGastos((prev) => {
+                const pendientes = new Map(cambiados.map((g) => [g.id, g]));
+                const mezclado = prev.map((g) => {
+                    const nuevo = pendientes.get(g.id);
+                    if (!nuevo) return g;
+                    pendientes.delete(g.id);
+                    return nuevo;
+                });
+                // Las altas, arriba: es donde se buscan, aunque aún no tengan fecha.
+                return [...pendientes.values(), ...mezclado];
+            });
+        } catch {
+            // Se reintenta en el siguiente cambio.
+        }
+    }, [fetchPage]);
+
+    useAutoRefresco("gastos", aplicarCambios);
 
     return {
         gastos, loading, loadingMore, hasMore, error,

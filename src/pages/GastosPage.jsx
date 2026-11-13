@@ -431,8 +431,9 @@ export default function GastosPage() {
       setNuevoGasto(GASTO_VACIO);
       setModoAgregar(false);
       setNotif({ tipo: "ok", msg: "Gasto agregado correctamente." });
-    } catch {
-      setNotif({ tipo: "error", msg: "Error al agregar el gasto." });
+    } catch (err) {
+      // El backend explica el caso típico: ese folio ya tiene su gasto.
+      setNotif({ tipo: "error", msg: err.message || "Error al agregar el gasto." });
     } finally {
       setIsSubmitting(false);
     }
