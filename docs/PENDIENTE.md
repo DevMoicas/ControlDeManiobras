@@ -1249,14 +1249,19 @@ Solo frontend, sin migración ni cambios de backend. Commits `b91f214` y `b77476
 
 ### Inicio
 
-- Sin tarjetas de módulos. Bienvenida (logo, saludo según la hora local, fecha y
-  reloj al segundo) y a la derecha Seguimientos arriba y Avisos debajo, con
+- Sin tarjetas de módulos. Bienvenida (logo, saludo según la hora local con el
+  First Name de `auth_user`, fecha y reloj al segundo) y a la derecha Seguimientos arriba y Avisos debajo, con
   estilo del Diseño 1. Avisos dice "Sin vencimientos próximos." cuando no hay.
 - `src/components/InicioEscena/`: escena SVG animada del puerto. Un full de FRABA
   (dos contenedores rojos, cabina blanca con el logo) avanza mientras el fondo
   pasa en dos capas, mar con buques y un puerto con grúas naranjas, estibas
   irregulares y tractos estacionados. Sol (6–20 h) y luna (20–6 h) en tres
   posiciones por franja horaria. Respeta `prefers-reduced-motion`.
+
+- El nombre del saludo viaja como claim `first_name` en el JWT (backend
+  `58bf72b5`, frontend `4260149`; prueba en `api/test_token_claims.py`). Nunca se
+  muestra el usuario de acceso: sin First Name, o con una sesión abierta antes
+  del cambio, sale solo el saludo hasta volver a entrar.
 
 ### Herramientas
 
