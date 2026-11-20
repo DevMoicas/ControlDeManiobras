@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, CircleDollarSign, UserCircle, Truck, Wallet, Container, Library, FileText, Hash, Bitcoin, HandCoins, ListChecks, TowerControl, ClipboardList, ChevronRight } from 'lucide-react';
 import './App.css';
 import { useAuthContext } from './context/AuthContext';
 import { useInactivityTimer } from './hooks/useInactivityTimer';
@@ -35,105 +34,83 @@ import ReporteViajePage from './pages/ReporteViajePage';
 import { useAlertasVencimiento } from './hooks/useAlertasVencimiento';
 import AlertaVencimiento from './components/AlertaVencimiento/AlertaVencimiento';
 import Seguimientos from './components/Seguimientos/Seguimientos';
-const HOME_MODULES = [
-  { to: 'maniobras',       icon: Truck,       title: 'Maniobras',           desc: 'Registra y consulta los servicios.' },
-  { to: 'gastos-efectivo', icon: CircleDollarSign,      title: 'Gastos efectivo',     desc: 'Controla los gastos de cada operación.' },
-  { to: 'vacios',          icon: Container, title: 'Vacíos',              desc: 'Administra los contenedores vacíos.' },
-  { to: 'movimientos-locales', icon: Wallet, title: 'Movimientos locales', desc: 'Controla los movimientos locales pendientes y pagados.' },
-  { to: 'folios',          icon: Hash,        title: 'Folios',              desc: 'Genera y administra los folios de Manzanillo y Lázaro Cárdenas.' },
-  { to: 'catalogos',       icon: Library,     title: 'Catálogos',           desc: 'Gestiona operadores, placas, patios, unidades, etc.' },
-  { to: 'documentos-viaje',icon: FileText,    title: 'Documentos de viaje', desc: 'Genera la documentación de cada viaje.' },
-  { to: 'finanzas',        icon: Bitcoin,   title: 'Finanzas',            desc: 'Costos extra, nómina, facturación y estados de cuenta.' },
-  { to: 'pendientes',      icon: ListChecks,  title: 'Pendientes',          desc: 'Listas de pendientes por persona.' },
-  { to: 'torre-control',   icon: TowerControl, title: 'Torre de control',    desc: 'Tablero de unidades ocupadas por día.' },
-  { to: 'reportes-viaje',  icon: ClipboardList, title: 'Reportes de viaje',   desc: 'El reporte del coordinador por cada folio.' },
-];
+import BarraLateral from './components/BarraLateral/BarraLateral';
+import InicioEscena from './components/InicioEscena/InicioEscena';
+// Los últimos: a igual especificidad, los temas ganan por orden.
+import './temaOpcion1.css';
+import './temaOpcion2.css';
+// Hora en tiempo real bajo la fecha del inicio. Componente aparte para que el
+// tic de cada segundo no vuelva a pintar la escena entera.
+function Reloj() {
+  const [ahora, setAhora] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setAhora(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <time className="inicio-hora" dateTime={ahora.toISOString()}>
+      {ahora.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', second: '2-digit' })}
+    </time>
+  );
+}
 
+// Inicio: solo el logo, los seguimientos y los avisos (usuario, 2026-11-19); la
+// navegación entera vive en la barra lateral. Tres bloques separados:
+// seguimientos | logo con la escena del patio | avisos (App.css, "INICIO").
 function Home() {
-  const navigate = useNavigate();
+  const { user } = useAuthContext();
   const { alertas, error: errorAlertas } = useAlertasVencimiento();
-  // Folios solo para admin con cargo Sistemas (usuario, 2026-10-14). Lo decide
-  // el backend; hasta que conteste la tarjeta no sale, como en Finanzas.
-  const [verFolios, setVerFolios] = useState(false);
+  // Hora local del equipo del usuario (su zona horaria). Se refresca cada
+  // minuto para que el saludo y la fecha cambien solos si el inicio se queda
+  // abierto al pasar de mañana a tarde o a otro día.
+  const [ahora, setAhora] = useState(() => new Date());
   useEffect(() => {
-    apiClient.get('/folios/acceso/')
-      .then((a) => setVerFolios(Boolean(a?.ver)))
-      .catch(() => setVerFolios(false));
+    const id = setInterval(() => setAhora(new Date()), 60_000);
+    return () => clearInterval(id);
   }, []);
-  // Finanzas: admin y cargos de Finanzas (comercial y dirección, usuario 2026-10-14).
-  const [verFinanzas, setVerFinanzas] = useState(false);
-  useEffect(() => {
-    apiClient.get('/facturas/acceso/')
-      .then((a) => setVerFinanzas(Boolean(a?.ver)))
-      .catch(() => setVerFinanzas(false));
-  }, []);
-  const modulos = HOME_MODULES.filter((m) =>
-    (m.to !== 'folios' || verFolios) && (m.to !== 'finanzas' || verFinanzas));
+  const hora = ahora.getHours();
+  const saludo = hora < 12 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
+  const fecha = ahora.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
-    <div className="home-page">
-
-      <header className="home-topbar">
-        <div className="home-brand">
-          <span className="home-brand-mark"><Truck size={20} /></span>
-          <span className="home-brand-name">Control de Maniobras</span>
+    <div className="home-page inicio">
+      <main className="inicio-main">
+        <div className="inicio-bloque inicio-bloque--seg">
+          <Seguimientos />
         </div>
-        <button className="home-profile" onClick={() => navigate('perfil')} title="Ver perfil">
-          <UserCircle size={26} />
-        </button>
-      </header>
 
-      <main className="home-main">
-        <div className="home-head">
-          {/* Columna derecha: el resumen de seguimientos y, debajo, las alertas
-              de vencimiento. Va anclada al borde de la ventana y FUERA del flujo
-              (ver .home-lateral en App.css) para no empujar el logo hacia abajo.
-              Al apilarlas en el mismo contenedor, las alertas caen bajo el panel
-              sin depender de su altura. */}
-          <div className="home-lateral">
-            <Seguimientos />
+        <section className="inicio-bloque inicio-hero">
+          <img src={logoFraba} alt="Logo Fraba" className="inicio-logo" />
+          <h1 className="inicio-saludo">
+            {saludo}{user?.username ? `, ${user.username}` : ''}
+          </h1>
+          <p className="inicio-fecha">{fecha}</p>
+          <Reloj />
+          <InicioEscena ahora={ahora} />
+        </section>
 
-            {/* Alertas de vencimiento — visibles para cualquier usuario con sesión.
-                Si la consulta falla se avisa, en vez de dejar el hueco vacío: una
-                alerta que no llega no puede parecerse a que no haya ninguna. */}
-            {(alertas.length > 0 || errorAlertas) && (
-              <div className="home-alertas-container">
-                {errorAlertas ? (
-                  <div className="av-card av-card--fallo" role="alert">
-                    <p className="av-mensaje">
-                      No se pudieron cargar las alertas de vencimiento.
-                      Recarga la página; si sigue igual, vuelve a iniciar sesión.
-                    </p>
-                  </div>
-                ) : (
-                  alertas.map((alerta, index) => (
-                    <AlertaVencimiento key={`${alerta.tipo}-${index}`} alerta={alerta} />
-                  ))
-                )}
+        {/* Alertas de vencimiento — visibles para cualquier usuario con sesión.
+            Si la consulta falla se avisa, en vez de dejar el hueco vacío: una
+            alerta que no llega no puede parecerse a que no haya ninguna. */}
+        <section className="inicio-bloque inicio-avisos" aria-labelledby="inicio-avisos-titulo">
+          <h2 id="inicio-avisos-titulo" className="seg-header">Avisos</h2>
+          <div className="home-alertas-container inicio-alertas">
+            {errorAlertas ? (
+              <div className="av-card av-card--fallo" role="alert">
+                <p className="av-mensaje">
+                  No se pudieron cargar las alertas de vencimiento.
+                  Recarga la página; si sigue igual, vuelve a iniciar sesión.
+                </p>
               </div>
+            ) : alertas.length > 0 ? (
+              alertas.map((alerta, index) => (
+                <AlertaVencimiento key={`${alerta.tipo}-${index}`} alerta={alerta} />
+              ))
+            ) : (
+              <p className="inicio-sin-avisos">Sin vencimientos próximos.</p>
             )}
           </div>
-
-          <img src={logoFraba} alt="Logo Fraba" className="home-logo" />
-          <h1>Control de Maniobras</h1>
-          <p>Elige un módulo para comenzar.</p>
-        </div>
-
-        <div className="grid">
-          {modulos.map(({ to, icon: Icon, title, desc }, i) => (
-            <button
-              key={to}
-              className="card"
-              style={{ animationDelay: `${i * 60}ms` }}
-              onClick={() => navigate(to)}
-            >
-              <span className="card-icon"><Icon size={45} /></span>
-              <span className="card-title">{title}</span>
-              <span className="card-desc">{desc}</span>
-              <span className="card-go"><ChevronRight size={18} /></span>
-            </button>
-          ))}
-        </div>
+        </section>
       </main>
     </div>
   );
@@ -142,19 +119,31 @@ function Home() {
 function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuthContext();
+  const { user, logout, isAdmin } = useAuthContext();
 
-  const showBackButton = location.pathname !== '/home' && location.pathname !== '/home/';
-  // Dentro de una subpágina de Finanzas hay DOS niveles a los que volver, así
-  // que se añade el atajo al hub. En el hub mismo no: desde ahí solo se sube.
-  const enSubpaginaFinanzas = location.pathname.startsWith('/home/finanzas/');
-  // El hub de Finanzas es la única página con barra superior propia
-  // (.home-topbar), y el botón flotante le caería justo encima. Ahí baja por
-  // debajo de la barra; en el resto se queda donde ha estado siempre.
-  // Lo mismo con el submenú de Cuentas por cobrar, que es otro hub.
-  const enHubFinanzas = /^\/home\/finanzas(\/cuentas-por-cobrar)?\/?$/.test(location.pathname);
-  // Tercer nivel: dentro de una de sus páginas se puede volver al submenú.
-  const enCuentasPorCobrar = location.pathname.startsWith('/home/finanzas/cuentas-por-cobrar/');
+  // Folios solo para admin con cargo Sistemas (usuario, 2026-10-14); Finanzas
+  // para admin y cargos de Finanzas. Lo decide el backend: hasta que conteste
+  // no salen ni en la barra lateral ni en las tarjetas del inicio.
+  const [verFolios, setVerFolios] = useState(false);
+  const [verFinanzas, setVerFinanzas] = useState(false);
+  useEffect(() => {
+    apiClient.get('/folios/acceso/')
+      .then((a) => setVerFolios(Boolean(a?.ver)))
+      .catch(() => setVerFolios(false));
+    apiClient.get('/facturas/acceso/')
+      .then((a) => setVerFinanzas(Boolean(a?.ver)))
+      .catch(() => setVerFinanzas(false));
+  }, []);
+
+  // Comparación de rediseños: Diseño opcional 2 (temaOpcion2.css) en Maniobras
+  // y Diseño opcional 1 (temaOpcion1.css) en todo lo demás. Va en <body> y no
+  // en la raíz de este árbol: alertas y desplegables se pintan por portal en
+  // body. Al salir (login) se quita: el login conserva su propio diseño.
+  const temaActivo = location.pathname.startsWith('/home/maniobras') ? 'tema-opcion2' : 'tema-opcion1';
+  useEffect(() => {
+    document.body.classList.add(temaActivo);
+    return () => document.body.classList.remove(temaActivo);
+  }, [temaActivo]);
 
   // Al cambiar de página, volver arriba. React Router NO reposiciona el scroll:
   // se conserva el de la página anterior, así que entrar a una página desde una
@@ -197,49 +186,12 @@ function AppRoutes() {
   }, [confirmarAviso]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div className="app-shell">
+      <BarraLateral verFolios={verFolios} verFinanzas={verFinanzas} isAdmin={isAdmin} />
 
+      <div className="app-contenido">
       {/* Contenido principal — crece para llenar el espacio disponible */}
       <div style={{ flex: 1, position: 'relative', paddingBottom: '40px' }}>
-
-        {showBackButton && (
-          /* Los botones se apilan en una zona con flex en vez de posicionarse
-             uno a uno: así el segundo no depende del ancho del primero, que
-             cambia al ocultarse la etiqueta en pantallas angostas.
-             Orden de migas: Inicio (arriba del todo) y luego Finanzas. */
-          <div className={`home-back-zona${enHubFinanzas ? ' home-back-zona--bajo' : ''}`}>
-            <button
-              onClick={() => navigate('/home')}
-              className="home-back"
-              title="Regresar al inicio"
-            >
-              <span className="home-back-icon"><HomeIcon size={24} /></span>
-              <span className="home-back-label">Inicio</span>
-            </button>
-
-            {enSubpaginaFinanzas && (
-              <button
-                onClick={() => navigate('/home/finanzas')}
-                className="home-back"
-                title="Regresar a Finanzas"
-              >
-                <span className="home-back-icon"><Bitcoin size={24} /></span>
-                <span className="home-back-label">Finanzas</span>
-              </button>
-            )}
-
-            {enCuentasPorCobrar && (
-              <button
-                onClick={() => navigate('/home/finanzas/cuentas-por-cobrar')}
-                className="home-back"
-                title="Regresar a Cuentas por cobrar"
-              >
-                <span className="home-back-icon"><HandCoins size={24} /></span>
-                <span className="home-back-label">Cuentas por cobrar</span>
-              </button>
-            )}
-          </div>
-        )}
 
         <Routes>
           <Route path="/" element={<Home />} />
@@ -322,6 +274,7 @@ function AppRoutes() {
           © 2026 FRABA Todos los derechos reservados
         </span>
       </footer>
+      </div>
 
       {/* Modal de aviso de inactividad (10 min). El de expiración vive ahora en
           el login: a los 20 min ya no hay sesión que avisar desde aquí. */}

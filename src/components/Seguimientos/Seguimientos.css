@@ -295,7 +295,7 @@
   border-color: #16a34a;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1448px) {  /* mismo corte que .home-lateral en App.css */
   .seg-panel {
     width: 100%;
   }

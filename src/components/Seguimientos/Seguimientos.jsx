@@ -312,7 +312,7 @@ export default function Seguimientos() {
 
   return (
     <aside className="seg-panel" aria-label="Seguimientos">
-      <h2 className="seg-header">SEGUIMIENTOS</h2>
+      <h2 className="seg-header">Seguimientos</h2>
       <div className="seg-cuerpo">
         {error ? (
           <p className="seg-fallo">No se pudo cargar el resumen.</p>
