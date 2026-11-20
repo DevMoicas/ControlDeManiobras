@@ -982,36 +982,35 @@ def _soltar_reportes_del_folio(maniobra, antes):
     return borrados
 
 
-# Los huecos con los que nace el reporte, y las columnas de la maniobra de las
-# que cuelgan. El folio se pone casi siempre ANTES de saber quien lo llevara (ver
-# _sincronizar_asignacion_folios) y antes de capturar las placas del puerto, asi
-# que sin este remate los tres se teclearian a mano en cada viaje.
-_HUECOS_DEL_REPORTE  = ('operador', 'coordinador', 'recoleccion', 'fecha')
-_FUENTES_DEL_REPORTE = ('placas_pis', 'asignacion_operador_status', 'operador_2',
-                        'ruta_inicio')
+def _completar_reportes_del_folio(maniobra, previos):
+    """El reporte sigue a la maniobra en todo lo precargado. Devuelve cuantos toco.
 
-
-def _completar_reportes_del_folio(maniobra):
-    """Rellena SOLO los huecos que siguen vacios. Devuelve cuantos reportes toco.
-
-    Solo lo vacio: el reporte se FIRMA, asi que lo que un coordinador haya
-    escrito ahi manda sobre lo que diga la maniobra despues (usuario,
-    2026-09-03). Esto no es una sincronizacion permanente como
-    _sincronizar_fecha_entrega — es el remate de la precarga, que llega tarde
-    porque el dato llega tarde.
+    `previos` es {folio: datos} de _reportes_del_viaje ANTES de la edicion. Un
+    campo del reporte se actualiza si esta vacio o si todavia dice lo que decia
+    la maniobra: entonces nadie lo cambio a mano y debe seguirla (usuario,
+    2026-11-20 — operador, unidad, remolques… se quedaban viejos). Si el
+    coordinador escribio otra cosa, manda lo suyo: el reporte se FIRMA
+    (usuario, 2026-09-03).
     """
     tocados = 0
     for folio, datos in _reportes_del_viaje(maniobra):
+        antes = previos.get(folio, {})
+        if datos == antes:
+            continue
         reporte = ReporteViaje.objects.filter(folio=folio).first()
         if reporte is None:
             continue
-        huecos = [c for c in _HUECOS_DEL_REPORTE if datos[c] and not getattr(reporte, c)]
-        if not huecos:
-            continue
-        for campo in huecos:
-            setattr(reporte, campo, datos[campo])
-        reporte.save(update_fields=huecos + ['actualizado_en'])
-        tocados += 1
+        cambiados = []
+        for campo, nuevo in datos.items():
+            actual = getattr(reporte, campo)
+            if nuevo == actual:
+                continue
+            if (not actual and nuevo) or (campo in antes and actual == antes[campo]):
+                setattr(reporte, campo, nuevo)
+                cambiados.append(campo)
+        if cambiados:
+            reporte.save(update_fields=cambiados + ['actualizado_en'])
+            tocados += 1
     return tocados
 
 
@@ -1362,11 +1361,10 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
                  'folio_2': serializer.instance.folio_2}
         folio_antes   = (antes['folio']   or '').strip()
         folio_2_antes = (antes['folio_2'] or '').strip()
-        # Los datos que el reporte precarga pero la maniobra suele saber DESPUES
-        # de asignar el folio. Se comparan antes/despues para no lanzar las
-        # consultas del remate en cada edicion de una maniobra cualquiera.
-        fuentes_antes = tuple(getattr(serializer.instance, c)
-                              for c in _FUENTES_DEL_REPORTE)
+        # Lo que el reporte precargaria ANTES de esta edicion: el reporte sigue a
+        # la maniobra solo donde aun dice eso (ver _completar_reportes_del_folio).
+        # ponytail: 2-4 consultas por edicion con folio; mapa en bloque si pesa.
+        reportes_antes = dict(_reportes_del_viaje(serializer.instance))
         # Si el viaje ya tenia segundo operador antes de esta edicion: es lo que
         # distingue "se acaba de repartir el Full" de "ya venia repartido".
         operador_2_antes = (serializer.instance.operador_2 or '').strip()
@@ -1410,15 +1408,13 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
             # El reporte de viaje: el del folio que se suelta (quitado o cambiado
             # por otro) se borra, y el del folio que llega nace. Un Full
             # repartido abre el del segundo operador cuando aparece su folio, no
-            # antes. Si no cambio ningun folio pero si alguno de los datos que
-            # se capturan mas tarde (las placas del puerto, el operador), se
-            # rematan los huecos del reporte que ya existe.
+            # antes. Si no cambio ningun folio, el reporte que ya existe sigue a
+            # la maniobra en lo precargado (operador, unidad, remolques…).
             _soltar_reportes_del_folio(maniobra, antes)
             if (((maniobra.folio or '').strip() not in ('', folio_antes))
                     or ((maniobra.folio_2 or '').strip() not in ('', folio_2_antes))):
                 _crear_reportes_del_folio(maniobra)
-            elif tuple(getattr(maniobra, c) for c in _FUENTES_DEL_REPORTE) != fuentes_antes:
-                _completar_reportes_del_folio(maniobra)
+            _completar_reportes_del_folio(maniobra, reportes_antes)
             # La asignacion, en cambio, se recalcula siempre: el folio suele
             # ponerse antes de saber quien lo llevara.
             _sincronizar_asignacion_folios(maniobra, antes)

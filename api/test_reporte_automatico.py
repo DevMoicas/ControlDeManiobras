@@ -596,6 +596,37 @@ class FechaDelViajeTests(BaseReporteAutomatico):
         self.assertEqual(r.status_code, 201, r.data)
 
 
+class SigueALaManiobraTests(BaseReporteAutomatico):
+    """Lo precargado sigue a la maniobra mientras nadie lo cambie a mano en el
+    reporte (usuario, 2026-11-20)."""
+
+    def test_cambiar_operador_y_unidades_en_la_maniobra_llega_al_reporte(self):
+        self.chofer('JUAN PEREZ', coordinador='ANA LOPEZ')
+        self.chofer('LUIS GOMEZ', coordinador='PEDRO RUIZ')
+        m = self.maniobra(asignacion_operador_status='JUAN PEREZ', unidad='T-01',
+                          remolque='R-01', destino='GDL')
+        self.poner_folio(m.id)
+
+        self.patch(m.id, asignacion_operador_status='LUIS GOMEZ', unidad='T-02',
+                   remolque='R-02', destino='MTY')
+
+        r = self.reporte()
+        self.assertEqual((r.operador, r.coordinador, r.unidad, r.remolque_1, r.destino),
+                         ('LUIS GOMEZ', 'PEDRO RUIZ', 'T-02', 'R-02', 'MTY'))
+
+    def test_lo_que_el_coordinador_cambio_a_mano_no_se_pisa(self):
+        m = self.maniobra(unidad='T-01', remolque='R-01')
+        self.poner_folio(m.id)
+        self.cliente.patch(f'{REPORTES}{self.reporte().id}/',
+                           {'unidad': 'T-99'}, format='json')
+
+        self.patch(m.id, unidad='T-02', remolque='R-02')
+
+        r = self.reporte()
+        self.assertEqual(r.unidad, 'T-99')
+        self.assertEqual(r.remolque_1, 'R-02')
+
+
 class FechaDeRutaInicioNaiveTests(SimpleTestCase):
     """`maniobras.ruta_inicio` es `timestamp WITHOUT time zone` en la base de
     verdad, aunque el modelo diga DateTimeField: la tabla es managed=False.
