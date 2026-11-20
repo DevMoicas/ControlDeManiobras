@@ -82,7 +82,10 @@ function Home() {
         <section className="inicio-bloque inicio-hero">
           <img src={logoFraba} alt="Logo Fraba" className="inicio-logo" />
           <h1 className="inicio-saludo">
-            {saludo}{user?.username ? `, ${user.username}` : ''}
+            {/* El First Name registrado, nunca el usuario de acceso; sin nombre
+                registrado (o con una sesión de antes de este cambio) solo
+                el saludo. */}
+            {saludo}{user?.first_name?.trim() ? `, ${user.first_name.trim()}` : ''}
           </h1>
           <p className="inicio-fecha">{fecha}</p>
           <Reloj />

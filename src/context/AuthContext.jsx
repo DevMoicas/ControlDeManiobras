@@ -5,7 +5,8 @@ import { apiClient } from "../api/apiClient";
 const AuthContext = createContext(null);
 
 // ── Decodificador seguro del payload JWT ──
-const ALLOWED_CLAIMS = ["user_id", "username", "role", "exp", "iat"];
+// first_name: nombre para el saludo del inicio (no sensible, 2026-11-19).
+const ALLOWED_CLAIMS = ["user_id", "username", "first_name", "role", "exp", "iat"];
 
 function decodeJwtPayload(token) {
   try {
