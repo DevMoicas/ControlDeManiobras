@@ -393,6 +393,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
  
         # Solo claims no sensibles
         token["username"] = user.username
+        # Nombre para mostrar (saludo del inicio, 2026-11-19): el First Name de
+        # auth_user, no el usuario con el que se entra. Viaja también en los
+        # access renovados, que copian los claims del refresh.
+        token["first_name"] = user.first_name
         token["role"] = "admin" if user.is_staff else "standard"
 
         return token
