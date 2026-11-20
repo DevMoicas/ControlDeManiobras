@@ -18,7 +18,7 @@ from .Serializers import (CustomTokenObtainPairSerializer, DispositivoConfianzaS
 from . import confianza
 from .db_context import get_db_alias
 from .dashboards import choferes_fraba, clave_ruta
-from .facturacion import (admin_de_sistemas, cuentas_por_cobrar, puede_finanzas,
+from .facturacion import (PaginaDeCien, admin_de_sistemas, cuentas_por_cobrar, puede_finanzas,
                           sincronizar_facturas, ve_rendimiento)
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -3724,7 +3724,7 @@ class ReporteViajeViewSet(viewsets.ModelViewSet):
     reserva a admin, como en el resto del proyecto — un reporte es un documento
     que se firma, y borrarlo no es una corrección, es tirar el registro.
 
-    Paginado (el PAGE_SIZE=60 global): a diferencia de Folios o Pendientes, esta
+    Paginado de 100 en 100 (usuario, 2026-11-20; el resto va a 60): a diferencia de Folios o Pendientes, esta
     tabla crece sin techo y la pantalla la recorre con buscador, no de una vez.
 
     `?folio=` para preguntar si un folio ya tiene reporte antes de abrir uno
@@ -3732,6 +3732,7 @@ class ReporteViajeViewSet(viewsets.ModelViewSet):
     """
     queryset               = ReporteViaje.objects.prefetch_related('cargas')
     serializer_class       = ReporteViajeSerializer
+    pagination_class       = PaginaDeCien
     authentication_classes = [JWTAuthentication]
     permission_classes     = [IsAuthenticated]
     throttle_classes       = [UserRateThrottle, AnonRateThrottle]
