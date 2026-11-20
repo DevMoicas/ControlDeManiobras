@@ -1211,8 +1211,8 @@ cuatro despliegues terminaron en verde.
 
 ## 22. Sesión del 2026-11-19 — Rediseño del frontend: barra lateral, inicio nuevo y dos diseños a comparar. DESPLEGADO
 
-Solo frontend, sin migración ni cambios de backend. Commit `b91f214` en
-`feature/inicio-botones`; el despliegue terminó en verde.
+Solo frontend, sin migración ni cambios de backend. Commits `b91f214` y `b77476d` en
+`feature/inicio-botones`; los dos despliegues terminaron en verde.
 
 ### Diseños opcionales (comparación en producción)
 
@@ -1222,7 +1222,9 @@ Solo frontend, sin migración ni cambios de backend. Commit `b91f214` en
   las páginas con sesión menos Maniobras.
 - **Diseño opcional 2** (`src/temaOpcion2.css`, `tema-opcion2`): "consola
   diurna" (variante nocturna guardada en `tema-opcion2--nocturna`), ámbar y
-  Barlow. Solo en Maniobras.
+  Barlow. Estuvo en Maniobras para comparar; desde `b77476d` (mismo día)
+  Maniobras vuelve al Diseño 1 y el 2 queda guardado sin aplicarse (para
+  reactivarlo: `temaActivo` en `App.jsx`).
 - Los dos son overrides de tokens por clase en `<body>` (así alcanzan a los
   portales) importados al final de `App.jsx`. **Los colores de status de
   Maniobras y el balde no se tocan** (decisión del usuario): siguen mandando las
@@ -1269,7 +1271,8 @@ Solo frontend, sin migración ni cambios de backend. Commit `b91f214` en
 
 ### Queda abierto
 
-- Elegir entre el Diseño 1 y el 2 y consolidar el elegido.
+- Queda el Diseño 1 en toda la app: pasar sus valores a los tokens de cada hoja y
+  decidir si `temaOpcion2.css` se borra.
 - Página de Mantenimiento (hoy solo el hueco en la barra).
 - Estilos muertos de los botones de regreso (`.home-back*`, `.home-lateral`,
   `.home-head`) en `App.css` y los temas: se pueden borrar.
