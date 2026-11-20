@@ -1,0 +1,363 @@
+/* ── DISEÑO OPCIONAL 1 — navy + teal (muestra "Frontend Sistema de Finanzas") ──
+   Toma el lenguaje de docs/planes/"Frontend Sistema de Finanzas" (navy + teal,
+   DM Sans, Fraunces solo en el título de la página) y lo aplica SIN tocar el
+   JSX de las páginas: App.jsx pone `.tema-opcion1` en <body> en todas las
+   pantallas con sesión menos Maniobras, que lleva el Diseño opcional 2 para
+   comparar (el login conserva su diseño).
+
+   Cómo gana sin pelear con cada hoja:
+   1. Las páginas leen sus tokens de var(--primary), var(--text), var(--bg)…
+      así que redefinirlos aquí los hereda todo el árbol, portales incluidos.
+   2. Los tokens locales fijos (--card-bg, --ink…) se reescriben en el propio
+      contenedor, con un nivel más de especificidad.
+   3. El cuerpo de las tablas cambia SOLO por tokens: los colores de status de
+      Maniobras y el balde (row-pintada) son reglas de la página y tienen que
+      seguir ganando. Por eso aquí no hay ningún `td { background }`.
+
+   Importada la última en App.jsx: a igual especificidad, gana por orden.
+   ponytail: tema por overrides y una regla de fuente con !important; lo limpio
+   a la larga es mover estos valores a los tokens de cada hoja y borrar este
+   archivo. */
+
+/* ── Tokens globales (valores exactos de la muestra) ──────────────────────── */
+.tema-opcion1 {
+  --navy:        #102a43;
+  --teal:        #087e8b;
+  --teal-hover:  #056974;
+  --teal-claro:  #30b8b1;  /* brand-mark de la muestra */
+  --mint:        #d9f2ef;
+  --paper:       #ffffff;  /* fondo de página en blanco (usuario, 2026-11-19); la muestra usaba #f5f7f8 */
+  --line:        #dce4e8;
+  --line-soft:   #edf0f2;
+  --head-bg:     #f7f9fa;
+  --head-text:   #596871;
+  --row-hover:   #f8fcfc;
+  --segmento:    #eef2f3;
+  --secundario:  #eef3f4;
+  --secundario-hover: #dfe9ea;
+  --coral:       #c9584b;
+  --coral-soft:  #f9e2e0;
+  --coral-texto: #a33e36;  /* texto del btn-danger de la muestra */
+  --amber:       #d99822;
+  --muted:       #687782;
+  --focus-ring:  0 0 0 2px #5accc7;
+  --sombra:      0 6px 20px rgba(16, 42, 67, 0.045);
+
+  /* Los que heredan las páginas (App.css :root) */
+  --primary:       var(--teal);
+  --primary-light: var(--mint);
+  --text:          #17212b;
+  --text-light:    var(--muted);
+  --bg:            var(--paper);
+  --hover-negro:   var(--navy);
+
+  accent-color: var(--teal);
+  background: var(--paper);
+}
+.tema-opcion1 ::selection { background: var(--mint); color: var(--navy); }
+
+/* Una sola familia en toda la app. !important porque Oswald e IBM Plex Mono
+   están declaradas en ~25 hojas con más especificidad que cualquier regla
+   general; los títulos de página la recuperan abajo, también con !important. */
+.tema-opcion1, .tema-opcion1 * {
+  font-family: 'DM Sans', system-ui, sans-serif !important;
+}
+
+/* Pie: lleva el color inline en App.jsx, de ahí el !important. */
+.tema-opcion1 footer { background-color: var(--navy) !important; }
+
+/* ── Contenedores de página ───────────────────────────────────────────────── */
+.tema-opcion1 :is(.maniobras-container, .gastos-container, .vacios-container,
+                 .nomina-container, .noeco-container, .ml-page, .fp-page, .rv-page) {
+  --primary-hover: var(--teal-hover);
+  --card-bg:       #fff;
+  --paper-deep:    var(--row-hover);
+  --paper-line:    var(--line);
+  --border-color:  var(--line);
+  --border-soft:   var(--line-soft);
+  --danger:        var(--coral);
+  --danger-soft:   var(--coral-soft);
+  --ink:           var(--text);
+  --rule:          rgba(16, 42, 67, 0.16);
+  --grid-line:     rgba(16, 42, 67, 0.06);
+  --row-line:      var(--line-soft);
+  --sheet-edge:    var(--line);
+}
+/* Fondo plano de la muestra, sin el degradado azul de las esquinas. */
+.tema-opcion1 :is(.maniobras-container, .gastos-container, .vacios-container,
+                 .nomina-container, .noeco-container, .ml-page, .fp-page, .rv-page,
+                 .dvp-page, .pd-container, .tc-container, .perfil-page,
+                 .home-page, .db-pagina) {
+  background: var(--paper);
+}
+
+/* ── Encabezado ───────────────────────────────────────────────────────────── */
+/* Sin antetítulo: el título se sostiene solo. */
+.tema-opcion1 :is(.mp-eyebrow, .vp-eyebrow, .gp-eyebrow, .cp-eyebrow, .fz-eyebrow,
+                 .ml-eyebrow, .dvp-eyebrow, .pd-eyebrow, .rv-eyebrow) {
+  display: none;
+}
+/* Torre de Control no tiene título: su rótulo hace de título. */
+.tema-opcion1 :is(.maniobras-title, .gastos-title, .vacios-title, .noeco-title,
+                 .db-titulo-pagina, .ml-title, .fp-title, .dvp-title, .pd-title,
+                 .rv-title, .tc-eyebrow),
+.tema-opcion1 .home-page .home-head > h1 {
+  font-family: 'Fraunces', Georgia, serif !important;
+  font-weight: 600;
+  font-size: 2.1rem;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--navy);
+  text-wrap: balance;
+}
+.tema-opcion1 :is(.mp-lead, .vp-lead, .gp-lead, .cp-lead, .ml-lead, .dvp-lead, .pd-lead),
+.tema-opcion1 .home-page .home-head > p {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* ── Botones ──────────────────────────────────────────────────────────────── */
+/* Fuera la mayúscula espaciada: los botones de la muestra van en caja normal. */
+.tema-opcion1 button, .tema-opcion1 button * {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+/* El botón global de App.css (azul #007bff y scale 1.05 al pasar): :where()
+   deja la especificidad igual a la suya, así que cualquier botón con clase y
+   hover propio sigue mandando. */
+:where(.tema-opcion1) button { background-color: var(--teal); }
+:where(.tema-opcion1) button:hover { background-color: var(--teal-hover); transform: none; }
+
+.tema-opcion1 :is(.maniobras-container, .gastos-container, .vacios-container,
+                 .nomina-container, .noeco-container)
+  :is(.btn-agregar, .btn-accion, .btn-guardar, .btn-cancelar, .btn-filtro,
+      .btn-reporte, .btn-ordenar, .btn-salto, .gastos-admin-btn, .cp-btn) {
+  font-weight: 700;
+  font-size: 0.85rem;
+  border-radius: 9px;
+}
+
+/* Descartar: el btn-danger de la muestra (fondo coral claro, texto coral
+   oscuro). Sustituye al Cancelar rojo global de App.css (.btn-cancelar-app)
+   mientras el tema esté puesto. */
+.tema-opcion1 .btn-cancelar-app.btn-cancelar-app.btn-cancelar-app,
+.tema-opcion1 :is(.maniobras-container, .gastos-container, .vacios-container,
+                 .nomina-container, .noeco-container) :is(.btn-cancelar, .btn-cancelar-fila) {
+  background: var(--coral-soft);
+  color: var(--coral-texto);
+  border-color: transparent;
+}
+.tema-opcion1 .btn-cancelar-app.btn-cancelar-app.btn-cancelar-app:hover:not(:disabled),
+.tema-opcion1 :is(.maniobras-container, .gastos-container, .vacios-container,
+                 .nomina-container, .noeco-container)
+  :is(.btn-cancelar, .btn-cancelar-fila):hover:not(:disabled) {
+  background: var(--coral);
+  border-color: var(--coral);
+  color: #fff;
+}
+
+/* Admin Gastos: botón secundario de la muestra. */
+.tema-opcion1 .gastos-container .gastos-admin-btn {
+  background: var(--secundario);
+  border-color: transparent;
+  color: var(--navy);
+}
+.tema-opcion1 .gastos-container .gastos-admin-btn:hover {
+  background: var(--secundario-hover);
+  color: var(--navy);
+}
+
+/* Filtros de status: control segmentado. */
+.tema-opcion1 :is(.maniobras-container, .vacios-container) .filtros-status {
+  background: var(--segmento);
+  border: 0;
+  box-shadow: none;
+  border-radius: 11px;
+}
+.tema-opcion1 :is(.maniobras-container, .vacios-container) .btn-filtro {
+  color: var(--muted);
+  border-color: transparent;
+}
+.tema-opcion1 :is(.maniobras-container, .vacios-container) .btn-filtro:hover {
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--navy);
+}
+.tema-opcion1 :is(.maniobras-container, .vacios-container) .btn-filtro.active,
+.tema-opcion1 :is(.maniobras-container, .vacios-container) .btn-filtro.active:hover {
+  background: #fff;
+  border-color: transparent;
+  color: var(--navy);
+  box-shadow: 0 1px 3px rgba(16, 42, 67, 0.14);
+}
+
+/* ── Tablas ───────────────────────────────────────────────────────────────── */
+.tema-opcion1 :is(.maniobras-container, .gastos-container, .vacios-container,
+                 .nomina-container, .noeco-container, .ml-page, .rv-page) .table-responsive {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--sombra);
+  /* auto y no thin: el pulgar fino es un blanco demasiado pequeño. */
+  scrollbar-width: auto;
+  scrollbar-color: #94a6b1 #eef2f4;
+}
+
+/* Cabecera clara de la muestra en todas las tablas. Opaca: las tablas la
+   congelan arriba. :is() toma la especificidad de su argumento más fuerte
+   (.custom-table thead th), así empata o gana a la de cada hoja. */
+.tema-opcion1 :is(.maniobras-table th, .gastos-table th, .vacios-table th,
+                 .nomina-table th, .custom-table thead th, .ml-tabla th, .fp-th,
+                 .rv-tabla th, .rv-cargas th) {
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--head-bg);
+  color: var(--head-text);
+  border-bottom: 1px solid var(--line);
+}
+.tema-opcion1 :is(.maniobras-table, .gastos-table, .vacios-table, .nomina-table,
+                 .custom-table, .ml-tabla, .fp-tabla, .rv-tabla, .rv-cargas) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Barras de título de panel (no son cabeceras de columna): navy de la muestra. */
+.tema-opcion1 :is(.pd-tablero-head, .seg-header, .seg-modal-header, .rv-bloque-titulo) {
+  background: var(--navy);
+}
+.tema-opcion1 .rv-avance-barra > span { background: var(--teal); }
+
+/* ── Campos ───────────────────────────────────────────────────────────────── */
+.tema-opcion1 :is(input, select, textarea):focus {
+  border-color: var(--teal);
+  box-shadow: var(--focus-ring);
+}
+/* El buscador compartido viene con !important desde cada página. */
+.tema-opcion1 :is(.mp-search, .gp-search, .vp-search, .np-search) input {
+  border-color: var(--line) !important;
+  border-radius: 10px !important;
+}
+.tema-opcion1 :is(.mp-search, .gp-search, .vp-search, .np-search) input:focus {
+  border-color: var(--teal) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+/* ── Estados ──────────────────────────────────────────────────────────────── */
+.tema-opcion1 :is(.loading-text, .error-title, .end-of-list, .np-resumen) {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.tema-opcion1 :is(.maniobras-container, .gastos-container, .vacios-container,
+                 .nomina-container, .noeco-container) :is(.loading-box, .error-box) {
+  border-color: var(--line);
+  border-radius: 12px;
+  box-shadow: var(--sombra);
+}
+
+/* ── Modales ──────────────────────────────────────────────────────────────── */
+.tema-opcion1 .modal-overlay { background: rgba(8, 25, 39, 0.52); }
+.tema-opcion1 .modal-content {
+  border-radius: 18px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+/* Fuera el lomo lateral: la tarjeta ya se separa del fondo. */
+.tema-opcion1 :is(.maniobras-container, .gastos-container, .vacios-container)
+  .modal-content::before { display: none; }
+.tema-opcion1 :is(.modal-titulo, .modal-title, .ml-modal-titulo) {
+  font-weight: 700;
+  font-size: 1.2rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--navy);
+}
+.tema-opcion1 .modal-campo label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #425460;
+}
+
+/* ── Inicio y hubs de Finanzas (tarjetas de App.css) ──────────────────────── */
+.tema-opcion1 .home-page .home-topbar {
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom-color: var(--line);
+}
+.tema-opcion1 .home-page .home-brand-mark {
+  background: var(--teal-claro);
+  color: #082f38;
+  box-shadow: none;
+}
+.tema-opcion1 .home-page .home-brand-name {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+  color: var(--navy);
+}
+.tema-opcion1 .home-page .card {
+  border-color: var(--line);
+  border-radius: 15px;
+  box-shadow: var(--sombra);
+}
+.tema-opcion1 .home-page .card:hover {
+  border-color: #9fd3cf;
+  box-shadow: 0 14px 30px -10px rgba(8, 126, 139, 0.28);
+}
+.tema-opcion1 .home-page .card-title {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--navy);
+}
+
+/* ── Dashboards ───────────────────────────────────────────────────────────── */
+.tema-opcion1 .db-panel {
+  border-color: var(--line);
+  border-radius: 15px;
+  box-shadow: var(--sombra);
+}
+.tema-opcion1 .db-panel h2 {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--navy);
+}
+.tema-opcion1 .db-kpi { border-color: var(--line-soft); background: var(--head-bg); }
+.tema-opcion1 .db-kpi strong {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--navy);
+}
+.tema-opcion1 .db-selector {
+  width: fit-content;
+  padding: 4px;
+  gap: 4px;
+  background: var(--segmento);
+  border-radius: 11px;
+}
+.tema-opcion1 .db-selector button {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+.tema-opcion1 .db-selector button:hover { color: var(--navy); }
+.tema-opcion1 .db-selector button.activo {
+  background: #fff;
+  border-color: transparent;
+  color: var(--navy);
+  box-shadow: 0 1px 3px rgba(16, 42, 67, 0.14);
+}
+.tema-opcion1 .db-selector button:focus-visible { outline-color: var(--teal); }
+
+/* ── Botones flotantes de regreso ─────────────────────────────────────────── */
+.tema-opcion1 .home-back {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--navy);
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.92);
+}
+.tema-opcion1 .home-back:hover {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}

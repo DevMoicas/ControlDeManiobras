@@ -1,0 +1,662 @@
+:root {
+  --primary: #2563eb;
+  --primary-light: #eaf1ff;
+  --text: #1f2937;
+  --text-light: #6b7280;
+  --bg: #f4f7fb;
+  /* Fondo de hover de opciones, botones secundarios y de cerrar: negro tinta, texto en blanco. */
+  --hover-negro: #23201c;
+}
+
+/* ===== HOME / PANEL DE CONTROL ===== */
+.home-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(900px 420px at 100% -10%, #e8f0ff 0%, transparent 60%),
+    var(--bg);
+}
+
+/* Barra superior */
+.home-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  border-bottom: 1px solid #e6ecf5;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(6px);
+}
+.home-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.home-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.28);
+}
+.home-brand-name {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  font-size: 1.08rem;
+  color: var(--primary);
+}
+.home-profile {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-light);
+  padding: 6px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+.home-profile:hover {
+  color: #fff;
+  background: var(--hover-negro);
+  transform: none;
+}
+.home-profile:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Cuerpo */
+.home-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 46px 28px 60px;
+}
+.home-head {
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  /* Ancla del panel de Seguimientos, que va a la altura del logo (ver
+     components/Seguimientos/Seguimientos.css). */
+  position: relative;
+}
+.home-logo {
+  display: block;
+  width: auto;
+  max-height: 220px;
+  object-fit: contain;
+  margin-bottom: 20px;
+}
+/* Hijos DIRECTOS a propósito: dentro de .home-head cuelga también la columna
+   .home-lateral (seguimientos + alertas de vencimiento), y como descendientes
+   estas reglas le repintaban los textos con el gris y la tipografía del título. */
+.home-head > h1 {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text);
+  font-size: 1.95rem;
+  font-weight: 600;
+  margin: 0;
+}
+.home-head > p {
+  margin: 6px 0 0;
+  color: var(--text-light);
+  font-size: 0.98rem;
+}
+
+.home-page .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 300px);
+  justify-content: center;
+  gap: 20px;
+}
+
+/* Tarjeta de módulo */
+.home-page .card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 16px;
+  row-gap: 7px;
+  align-items: start;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #e6ecf5;
+  border-radius: 14px;
+  padding: 26px;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 1px 2px rgba(16, 40, 80, 0.04);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  animation: rise-in 0.4s ease both;
+}
+.home-page .card:hover {
+  transform: translateY(-4px);
+  border-color: #c7d9f7;
+  background: #fff;
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.13);
+}
+.home-page .card:active {
+  transform: translateY(-1px);
+}
+.home-page .card:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.card-icon {
+  grid-row: 1 / span 2;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--primary-light);
+  color: var(--primary);
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.home-page .card:hover .card-icon {
+  background: var(--primary);
+  color: #fff;
+}
+.card-title {
+  align-self: center;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.card-desc {
+  grid-column: 2 / span 2;
+  color: var(--text-light);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+.card-go {
+  align-self: center;
+  color: #b6c2d6;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+.home-page .card:hover .card-go {
+  color: var(--primary);
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page .card {
+    animation: none;
+  }
+}
+
+/* Botón "Regresar al inicio" — píldora vidrio presente en cada subpágina.
+   Reusa el lenguaje de la Home: glass de la topbar + azul del brand-mark + Oswald. */
+/* La zona lleva la posición; los botones solo se alinean dentro. Antes la
+   posición vivía en .home-back, y con dos botones el segundo habría necesitado
+   un `left` calculado a mano que se rompe al ocultarse las etiquetas en móvil. */
+.home-back-zona {
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Por debajo de la barra superior (14 + 36 del brand-mark + 14 + 1 de borde =
+   65px) en las páginas que la tienen, para no taparle el rótulo. */
+.home-back-zona--bajo {
+  top: 80px;
+}
+
+.home-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px 11px 15px;
+  border: 1px solid #dbe4f3;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(6px);
+  color: var(--primary);
+  cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(16, 40, 80, 0.08);
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease,
+              box-shadow 0.18s ease, transform 0.18s ease;
+}
+.home-back:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+  transform: translateY(-1px);
+}
+.home-back:active {
+  transform: translateY(0);
+}
+.home-back:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.home-back-icon {
+  display: grid;
+  place-items: center;
+}
+.home-back-label {
+  line-height: 1;
+  padding-top: 1px;
+}
+
+/* En pantallas angostas solo el ícono, para no encimar el título de la página */
+@media (max-width: 480px) {
+  .home-back-label { display: none; }
+  .home-back { padding: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-back { transition: none; }
+  .home-back:hover { transform: none; }
+}
+
+
+/*  CSS YA EXISTENTE*/
+
+
+.home-container {
+  padding: 40px;
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+.buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  gap: 12px;
+  max-width: 420px;
+  margin: 20px auto;
+}
+
+button {
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: #007bff;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background-color: #2563EB;
+  transform: scale(1.05);
+  color: white;
+}
+
+/* ── Botón Cancelar, el mismo en toda la app (usuario, 2026-09-30) ───────────
+   Blanco con borde y letra rojos; en hover, fondo rojo. Solo toca colores: el
+   tamaño y la tipografía siguen siendo los de cada pantalla.
+
+   La clase va repetida para ganar en especificidad a las reglas locales de cada
+   modal (la más fuerte es `.maniobras-container .btn-cancelar:hover:not(:disabled)`,
+   0,4,0) sin recurrir a !important. #dc2626 sobre blanco da 4.8:1 (AA). */
+.btn-cancelar-app.btn-cancelar-app.btn-cancelar-app {
+  border: 1px solid #dc2626;
+  background: #fff;
+  color: #dc2626;
+}
+.btn-cancelar-app.btn-cancelar-app.btn-cancelar-app:hover:not(:disabled) {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #fff;
+}
+.btn-cancelar-app.btn-cancelar-app.btn-cancelar-app:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+.btn-cancelar-app.btn-cancelar-app.btn-cancelar-app:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* PÁGINAS VACÍAS */
+.blank-page {
+  min-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-family: Arial, sans-serif;
+}
+
+.blank-page h2 {
+  margin: 0;
+  font-size: 36px;
+}
+
+.blank-page p {
+  color: #666;
+}
+/* LAYOUT BASE — necesario para que el footer quede siempre abajo */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+/* Columna derecha del inicio: el panel de Seguimientos y, debajo, las alertas de
+   vencimiento. Fuera del flujo para no empujar el logo ni las tarjetas.
+
+   El `right` negativo rompe el ancho máximo de .home-main (1040 px centrados)
+   para anclarse al borde de la VENTANA: la distancia entre los dos bordes es
+   (100vw - ancho)/2, y 50% - 50vw la cancela. El número final es el margen con
+   el borde derecho de la página, y manda para las dos cosas de la columna. */
+.home-lateral {
+  position: absolute;
+  top: 0;
+  right: calc(50% - (100vw - var(--bl-ancho, 0px)) / 2 + 100px);  /* la barra lateral resta su ancho */
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;   /* las alertas son más anchas que el panel: se alinean por la derecha */
+  gap: 16px;
+  text-align: left;        /* .home-head centra el texto; aquí no */
+}
+
+.home-alertas-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+/* Por debajo de 1200px no hay hueco al lado del logo: la columna vuelve al flujo,
+   encima del logo y a todo el ancho, en vez de taparlo.
+   El corte estaba en 760px y era demasiado tarde: entre 760 y 1200 la columna
+   seguía absoluta con `right: calc(50% - 50vw + 100px)`, que a esos anchos la
+   mete DENTRO del contenido y se comía el logo y el título.
+   Va emparejado con el mismo corte en Seguimientos.css: si solo cambiara uno,
+   el panel volvería al flujo pero clavado a 320px. */
+@media (max-width: 1448px) {  /* 1200 + barra lateral (248) */
+  .home-lateral {
+    position: static;
+    align-items: stretch;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  .home-alertas-container {
+    align-items: stretch;
+  }
+}
+
+/* Corrige home-page para que no compita con el flex del layout */
+.home-page {
+  min-height: calc(100vh - 40px); /* descuenta la altura del footer */
+}
+
+/* ── Cabecera fija en las tablas ───────────────────────────────────────────────
+   La cabecera solo se queda quieta si ALGO scrollea en vertical. Los paneles de
+   tabla ya llevan `overflow-x: auto`, y eso los convierte en contenedor de
+   scroll en LOS DOS ejes (la spec fuerza a `auto` el `visible` que queda), pero
+   sin una altura tope la caja crece con el contenido: no scrollea nunca, el que
+   se mueve es el documento y el `sticky` no tiene a qué agarrarse. Esa era la
+   única diferencia con Maniobras, la que ya llevaba tope y por eso funcionaba.
+
+   Solo actúa en las tablas LARGAS: una corta no llega al tope y su caja sigue
+   ajustándose al contenido, exactamente igual que antes.
+
+   Los 300px son lo que ocupa la página POR ENCIMA de la tabla (título, barra de
+   acciones, buscador). Se queda corto a propósito: pasarse deja la caja por
+   debajo del pliegue, y entonces lo primero que scrollea es el documento — con
+   la cabecera saliéndose de la pantalla, que es justo lo que se viene a
+   arreglar. Quedarse corto solo desaprovecha unos píxeles. Una página con menos
+   cabecera la aprieta declarando --tabla-tope en su propia hoja.
+
+   z-index 10: por debajo de los desplegables, que se pintan en portal. Las
+   tablas con la primera columna congelada suben su esquina a 11 en su hoja. */
+.tabla-cabecera-fija {
+  overflow: auto;
+  max-height: calc(100vh - var(--tabla-tope, 300px));
+  -webkit-overflow-scrolling: touch;
+}
+.tabla-cabecera-fija thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* ===== INICIO (usuario, 2026-11-19) ======================================
+   Sin tarjetas de módulos: la navegación vive en la barra lateral. Tres
+   bloques separados: la bienvenida con la escena del patio (InicioEscena.jsx)
+   a la izquierda, y a la derecha Seguimientos arriba y Avisos debajo. En
+   móvil, uno bajo otro. */
+.inicio-main {
+  box-sizing: border-box;
+  min-height: calc(100dvh - 80px);   /* el pie y su hueco: centra a la vista */
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 36px 32px;
+  display: grid;
+  /* Bienvenida a la izquierda; Seguimientos arriba a la derecha y Avisos
+     justo debajo (usuario, 2026-11-19). La última fila se come el sobrante
+     para que los dos de la derecha no se estiren. */
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  grid-template-rows: auto auto 1fr;
+  grid-template-areas: "hero seg" "hero avisos" "hero .";
+  align-content: center;
+  align-items: start;
+  gap: 28px;
+}
+.inicio-bloque--seg { grid-area: seg; }
+.inicio-hero        { grid-area: hero; align-self: stretch; }
+.inicio-avisos      { grid-area: avisos; }
+
+.inicio-bloque {
+  box-sizing: border-box;
+  min-width: 0;
+  border-radius: 18px;
+}
+/* Seguimientos y Avisos: a lo ancho de su columna, alto según su contenido. */
+.inicio .seg-panel {
+  width: 100%;
+  border-radius: 18px;
+  border-color: #dce4e8;
+  box-shadow: 0 14px 32px -20px rgb(16 42 67 / 0.25);
+}
+
+.inicio-avisos {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #dce4e8;
+  background: #fff;
+  box-shadow: 0 14px 32px -20px rgb(16 42 67 / 0.25);
+}
+.inicio-alertas {
+  align-items: stretch;
+  gap: 12px;
+  padding: 14px;
+  overflow-y: auto;
+  max-height: 520px;
+}
+.inicio-alertas .av-card { max-width: none; min-width: 0; }
+.inicio-sin-avisos {
+  margin: 0;
+  padding: 18px 8px;
+  text-align: center;
+  color: #4f6470;
+  font-size: 0.92rem;
+}
+
+.inicio-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 44px 28px 0;
+  border: 1px solid #dce4e8;
+  border-radius: 24px;
+  text-align: center;
+  background:
+    radial-gradient(520px 260px at 50% 0%, rgb(48 184 177 / 0.22), transparent 70%),
+    radial-gradient(320px 200px at 100% 100%, rgb(8 126 139 / 0.10), transparent 70%),
+    linear-gradient(180deg, #eef8f7, #ffffff 80%);
+  box-shadow: 0 18px 40px -18px rgb(16 42 67 / 0.22);
+}
+/* Retícula de puntos que se desvanece hacia los bordes. */
+.inicio-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(rgb(8 126 139 / 0.16) 1px, transparent 1.6px) 0 0 / 20px 20px;
+  -webkit-mask-image: radial-gradient(closest-side, #000 30%, transparent);
+          mask-image: radial-gradient(closest-side, #000 30%, transparent);
+}
+
+.inicio-logo {
+  display: block;
+  margin: 0 auto 22px;
+  width: auto;
+  max-width: 100%;
+  max-height: clamp(130px, 18vw, 200px);
+  object-fit: contain;
+  animation: inicio-entra 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+/* Los temas ponen su familia a todo con !important; el saludo lleva la de
+   título del Diseño 1, con un nivel más de especificidad. */
+body .inicio .inicio-saludo {
+  font-family: 'Fraunces', Georgia, serif !important;
+}
+.inicio-saludo {
+  margin: 0;
+  font-size: clamp(1.4rem, 1rem + 1.2vw, 2rem);
+  font-weight: 600;
+  line-height: 1.15;
+  color: #102a43;
+  text-wrap: balance;
+}
+.inicio-fecha {
+  margin: 25px 0 0;
+  color: #4f6470;
+  font-size: 0.98rem;
+}
+.inicio-fecha::first-letter { text-transform: uppercase; }
+.inicio-hora {
+  display: block;
+  margin-top: 25px;
+  color: #087e8b;
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;   /* los dígitos no bailan cada segundo */
+  letter-spacing: 0.01em;
+}
+
+/* Escena del patio, pegada al pie del bloque y sangrando hasta sus bordes. */
+.inicio-escena {
+  display: block;
+  width: calc(100% + 56px);
+  margin: auto -28px 0;
+  padding-top: 28px;
+  height: auto;
+}
+/* En carretera: el carril corre hacia atrás, las llantas giran y la
+   carrocería cabecea. Un periodo de raya (22 + 16) por vuelta del carril para
+   que el bucle no salte. */
+.inicio-escena .ie-carril { animation: inicio-carril 1.1s linear infinite; }
+.inicio-escena .ie-llanta {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: inicio-llanta 1s linear infinite;
+}
+.inicio-escena .ie-carroceria { animation: inicio-cabeceo 0.9s ease-in-out infinite alternate; }
+/* El fondo pasa hacia atrás en dos capas (parallax): el plano medio da una
+   vuelta (mar + puerto, 1520) cada 70 s, unos 35 s por fondo: ritmo lento
+   (usuario, 2026-11-19); el horizonte va aún más lento, y eso da la
+   profundidad. */
+.inicio-escena .ie-panorama { animation: inicio-panorama 70s linear infinite; }
+.inicio-escena .ie-lejos    { animation: inicio-panorama 200s linear infinite; }
+
+@keyframes inicio-entra {
+  from { opacity: 0; translate: 0 10px; }
+}
+@keyframes inicio-carril  { to { stroke-dashoffset: 38; } }
+@keyframes inicio-llanta  { to { rotate: 1turn; } }
+@keyframes inicio-cabeceo { to { translate: 0 -1.2px; } }
+@keyframes inicio-panorama { to { translate: -1520px 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .inicio-logo,
+  .inicio-escena :is(.ie-carril, .ie-llanta, .ie-carroceria, .ie-panorama, .ie-lejos) { animation: none; }
+}
+
+@media (max-width: 700px) {
+  .inicio-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-template-areas: "hero" "seg" "avisos";
+    padding: 20px 16px;
+    gap: 18px;
+  }
+  .inicio-hero { padding: 32px 18px 0; }
+  .inicio-escena { width: calc(100% + 36px); margin-inline: -18px; }
+}
+
+/* Seguimientos y Avisos con el lenguaje del Diseño 1 (usuario, 2026-11-19):
+   panel blanco de la muestra (.panel: borde --line, radio 15, sombra suave);
+   la barra de título lleva el color de la barra lateral. `body` da el
+   nivel que hace falta para ganar a temaOpcion1.css, que se carga después. */
+body .inicio :is(.seg-panel, .inicio-avisos) {
+  border: 1px solid #dce4e8;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgb(16 42 67 / 0.045);
+}
+/* Barra de título con el mismo fondo que la barra lateral (BarraLateral.css). */
+body .inicio .seg-header {
+  padding: 12px 20px;
+  background: color-mix(in oklab, #087e8b 42%, #102a43);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+body .inicio .seg-cuerpo { padding: 8px 20px 14px; }
+body .inicio .seg-fila + .seg-fila { border-top: 1px solid #edf0f2; }
+body .inicio .seg-fila--boton:is(:hover, :focus-visible) { background: #f8fcfc; }
+body .inicio .seg-fila--boton:focus-visible { outline: 2px solid #5accc7; outline-offset: -2px; }
+body .inicio .seg-etiqueta { color: #596871; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
+body .inicio .seg-numero { color: #102a43; font-size: 18px; letter-spacing: -0.02em; }
+
+body .inicio .inicio-alertas { padding: 14px 20px 20px; gap: 10px; }
+/* Aviso: el rojo suave de la muestra (badge-overdue), con borde completo. */
+body .inicio .av-card {
+  padding: 12px 14px;
+  border: 1px solid #f3c9c4;
+  border-radius: 11px;
+  background: #fce3e1;
+}
+body .inicio .av-urgente { color: #a93d35; font-size: 12px; }
+body .inicio .av-mensaje { color: #3d2522; font-size: 13px; }
+body .inicio .av-card--fallo { border-color: #dce4e8; background: #f7f9fa; }
+body .inicio .inicio-sin-avisos { color: #687782; font-size: 13px; padding: 10px 0 4px; text-align: left; }

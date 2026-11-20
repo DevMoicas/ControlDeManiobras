@@ -1,0 +1,194 @@
+/* Barra de navegación lateral (usuario, 2026-11-19): la de la muestra
+   "Frontend Sistema de Finanzas", con los verdes del Diseño opcional 1.
+   Es igual en todas las páginas, también en Maniobras (Diseño 2): por eso
+   lleva sus propios valores y no los tokens del tema activo. */
+
+:root {
+  --bl-ancho: 248px;
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+.app-contenido {
+  flex: 1;
+  min-width: 0;            /* que las tablas anchas no estiren la columna */
+  display: flex;
+  flex-direction: column;
+}
+
+.bl {
+  --bl-fondo: color-mix(in oklab, #087e8b 42%, #102a43);
+  --bl-texto: #cfe6e4;
+  --bl-texto-suave: #93b8b9;
+  --bl-hover: rgb(255 255 255 / 0.08);
+  --bl-activo: #d9f2ef;
+  --bl-activo-texto: #0b3d45;
+  --bl-foco: #5accc7;
+
+  /* La ventana es el scroller (las páginas leen window.scrollY), así que la
+     barra se pega arriba en vez de ser ella la que haga scroll de la página. */
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  flex-shrink: 0;
+  width: var(--bl-ancho);
+  height: 100dvh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: var(--bl-fondo);
+  color: var(--bl-texto);
+  color-scheme: dark;
+  scrollbar-color: rgb(255 255 255 / 0.22) transparent;
+  z-index: 900;            /* bajo modales (1000) y desplegables en portal */
+}
+
+/* Mismo tipo en todas las páginas: los temas ponen su familia con !important
+   a todo (`.tema-opcionN *`), y aquí se gana con un nivel más. */
+body .bl, body .bl * {
+  font-family: 'DM Sans', system-ui, sans-serif !important;
+}
+
+.bl-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px;
+}
+.bl-marca-icono {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #30b8b1;
+  color: #062c31;
+  flex-shrink: 0;
+}
+.bl-marca-nombre {
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.2;
+  color: #fff;
+}
+.bl-menu { display: none; }
+
+.bl-nav {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 16px;
+}
+.bl-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bl-sublista {
+  padding-left: 14px;
+  margin-top: 2px;
+}
+.bl-sublista[hidden] { display: none; }
+.bl-pie {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgb(255 255 255 / 0.12);
+}
+
+.bl-item {
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--bl-texto);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.bl-item svg { flex-shrink: 0; }
+.bl-texto { flex: 1; min-width: 0; }
+
+.bl-item:hover { background: var(--bl-hover); color: #fff; }
+.bl-item:focus-visible {
+  outline: 2px solid var(--bl-foco);
+  outline-offset: 1px;
+}
+.bl-item[aria-current="page"] {
+  background: var(--bl-activo);
+  color: var(--bl-activo-texto);
+  font-weight: 700;
+}
+
+.bl-grupo--activo { color: #fff; font-weight: 600; }
+.bl-chevron { transition: rotate 0.18s ease; }
+.bl-grupo[aria-expanded="false"] .bl-chevron { rotate: -90deg; }
+
+.bl-item--off,
+.bl-item--off:hover {
+  cursor: default;
+  background: transparent;
+  color: var(--bl-texto-suave);
+}
+.bl-pronto {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+  white-space: nowrap;
+}
+
+@media (forced-colors: active) {
+  .bl-item[aria-current="page"] { outline: 2px solid CanvasText; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bl-item, .bl-chevron { transition: none; }
+}
+
+/* Angosto: la barra pasa arriba, a todo el ancho, y la lista se pliega tras
+   "Menú". Se cierra sola al navegar (BarraLateral.jsx). */
+@media (max-width: 900px) {
+  :root { --bl-ancho: 0px; }
+  .app-shell { flex-direction: column; }
+  .bl {
+    width: 100%;
+    height: auto;
+    max-height: 100dvh;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .bl-marca-nombre { flex: 1; }
+  .bl-menu {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid rgb(255 255 255 / 0.25);
+    border-radius: 9px;
+    background: transparent;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .bl-menu:focus-visible { outline: 2px solid var(--bl-foco); outline-offset: 1px; }
+  .bl-nav { display: none; }
+  .bl-nav--abierto { display: flex; }
+}

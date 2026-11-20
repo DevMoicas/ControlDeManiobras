@@ -1,0 +1,510 @@
+/* ── DISEÑO OPCIONAL 2 — "Consola" (solo Maniobras, para comparar) ───────────
+   Tablero de despacho: rótulo industrial (Barlow), ámbar como único acento
+   (acción primaria, selección, foco). Los colores de status de las filas son
+   los del diseño original de Maniobras, sin tocar.
+
+   Dos variantes con el mismo código; solo cambian los tokens:
+   · DIURNA (la que se ve ahora): acero claro sobre el blanco de la página.
+   · NOCTURNA: grafito. Para verla, añadir `tema-opcion2--nocturna` junto a
+     `tema-opcion2` en App.jsx.
+   El fondo de la página es blanco en las dos (usuario, 2026-11-19).
+
+   Igual que el Diseño 1, no toca JSX: App.jsx pone `.tema-opcion2` en <body>
+   en /home/maniobras (y `.tema-opcion1` en el resto). Body y no la página
+   porque selectores, calendario, alertas y confirmación se pintan por portal.
+
+   Las reglas de la página llevan `.maniobras-container` (0,2,x); aquí todo
+   cuelga además de `.tema-opcion2`, un nivel más, así que gana sin !important
+   salvo donde la página ya lo usa (buscador) o el color va inline (pie).
+
+   ponytail: overrides sobre la hoja de Maniobras; si este diseño gana, lo
+   limpio es reescribir los tokens de ManiobrasPage.css y borrar este archivo. */
+
+/* ── Tokens: CONSOLA DIURNA ───────────────────────────────────────────────── */
+.tema-opcion2 {
+  --o2-esquema:    light;
+  --o2-fondo:      #ffffff;  /* página */
+  --o2-tinta:      #0d1217;  /* texto directo sobre la página */
+  --o2-tinta-2:    #4b5866;
+
+  --o2-superficie: #f4f6f8;  /* cuerpo de la tabla, menús, modal */
+  --o2-elevada:    #e7ecf0;  /* cabecera de tabla, pastillas */
+  --o2-hover:      #dce3e9;
+  --o2-fila-hover: #edf1f4;
+  --o2-campo:      #ffffff;  /* inputs: el blanco de la hoja */
+  --o2-linea:      #ccd5dd;
+  --o2-linea-suave:#e0e6eb;
+  --o2-hueco:      #b3bfca;  /* borde punteado de lo vacío */
+  --o2-rejilla:    rgba(13, 18, 23, 0.06);
+  --o2-regla:      rgba(13, 18, 23, 0.14);
+  --o2-texto:      #0f1720;
+  --o2-texto-2:    #4b5866;  /* 6.6:1 sobre la superficie */
+  --o2-texto-3:    #65727e;  /* placeholders y vacíos, 4.6:1 */
+  --o2-pastilla:   #2b3742;  /* texto de las pastillas de selector */
+
+  --o2-ambar:      #f5a524;  /* relleno: lleva tinta oscura encima */
+  --o2-ambar-hover:#e8960f;
+  --o2-ambar-tinta:#9a5b00;  /* ámbar como TEXTO o icono sobre claro, 5:1 */
+  --o2-sobre-ambar:#1a1204;
+  --o2-anillo:     0 0 0 3px rgba(232, 150, 15, 0.38);
+  --o2-velo:       rgba(255, 255, 255, 0.7);   /* hover de celda editable */
+
+  --o2-scroll:       #a9b5c0;
+  --o2-scroll-hover: #8996a3;
+  --o2-sombra-tabla: 0 1px 2px rgba(13, 18, 23, 0.08), 0 18px 38px -24px rgba(13, 18, 23, 0.35);
+  --o2-sombra-menu:  0 14px 34px rgba(13, 18, 23, 0.18);
+  --o2-sombra-modal: 0 28px 64px rgba(13, 18, 23, 0.3);
+  --o2-sombra-pildora: 0 4px 14px rgba(13, 18, 23, 0.12);
+  --o2-velo-modal:   rgba(13, 18, 23, 0.45);
+  --o2-columna-sombra: rgba(13, 18, 23, 0.22);
+  --o2-pie:          #0d1217;
+
+  /* Señales (rojo de peligro, verde de éxito, morado de foto) */
+  --o2-quemada:    #dc2626;
+  --o2-activo-texto:    #146c3a;
+  --o2-por-salir-texto: #6d28d9;
+  --o2-error-texto:     #b91c1c;
+  --o2-tercero:         #c2410c;
+  --o2-tercero-texto:   #9a3412;
+}
+
+/* ── Tokens: CONSOLA NOCTURNA (variante guardada) ─────────────────────────── */
+.tema-opcion2.tema-opcion2--nocturna {
+  --o2-esquema:    dark;
+  --o2-superficie: #141b22;
+  --o2-elevada:    #1b242d;
+  --o2-hover:      #222d38;
+  --o2-fila-hover: #19222b;
+  --o2-campo:      #0f151b;
+  --o2-linea:      #2a3641;
+  --o2-linea-suave:#1e2831;
+  --o2-hueco:      #33414e;
+  --o2-rejilla:    rgba(255, 255, 255, 0.045);
+  --o2-regla:      rgba(255, 255, 255, 0.1);
+  --o2-texto:      #e6edf3;
+  --o2-texto-2:    #9fb0bf;
+  --o2-texto-3:    #7d8fa0;
+  --o2-pastilla:   #cfdae4;
+
+  --o2-ambar-hover:#ffb84d;
+  --o2-ambar-tinta:#f5a524;
+  --o2-anillo:     0 0 0 3px rgba(245, 165, 36, 0.32);
+  --o2-velo:       rgba(255, 255, 255, 0.06);
+
+  --o2-scroll:       #3b4957;
+  --o2-scroll-hover: #50606f;
+  --o2-sombra-menu:  0 16px 40px rgba(0, 0, 0, 0.55);
+  --o2-sombra-modal: 0 30px 70px rgba(0, 0, 0, 0.6);
+  --o2-sombra-pildora: 0 6px 18px rgba(0, 0, 0, 0.45);
+  --o2-velo-modal:   rgba(3, 6, 9, 0.72);
+  --o2-columna-sombra: rgba(0, 0, 0, 0.7);
+  --o2-pie:          #090d11;
+
+  --o2-quemada:    #ff5d5d;
+  --o2-activo-texto:    #6ee7a4;
+  --o2-por-salir-texto: #cdb4ff;
+  --o2-error-texto:     #ff8a8a;
+  --o2-tercero:         #fb923c;
+  --o2-tercero-texto:   #fdba74;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+.tema-opcion2 {
+  /* Los de App.css :root que heredan página y componentes */
+  --primary:       var(--o2-ambar);
+  --primary-light: color-mix(in srgb, var(--o2-ambar) 16%, transparent);
+  --text:          var(--o2-texto);
+  --text-light:    var(--o2-texto-2);
+  --bg:            var(--o2-fondo);
+  --hover-negro:   var(--o2-hover);
+
+  accent-color: var(--o2-ambar);
+  background: var(--o2-fondo);
+  color: var(--o2-tinta);
+}
+/* Opaca: se lee igual sobre el blanco que sobre la consola. */
+.tema-opcion2 ::selection { background: var(--o2-ambar); color: var(--o2-sobre-ambar); }
+
+/* Superficies de consola: el color-scheme va SOLO donde hay fondo propio, así
+   fechas, selects y scroll nativos siguen a la consola y no al blanco. */
+.tema-opcion2 :is(.maniobras-container .table-responsive, .maniobras-container .modal-content,
+                  .maniobras-container .filtros-status, .maniobras-container .loading-box,
+                  .maniobras-container .error-box, .mp-search input, .bst,
+                  [class*="-dropdown"], .status-selector__list, .color-selector__panel,
+                  .campo-fecha-pop, .al-pila, .cf-cuerpo, .fm-content, .db-filtros) {
+  color-scheme: var(--o2-esquema);
+}
+
+/* Una familia de rótulo industrial (la de la señalética de patio y tablero),
+   con cifras tabulares. !important por lo mismo que en el Diseño 1: Oswald e
+   IBM Plex Mono vienen declaradas con más especificidad en cada hoja. */
+.tema-opcion2, .tema-opcion2 * {
+  font-family: 'Barlow', system-ui, sans-serif !important;
+}
+
+.tema-opcion2 footer {
+  background-color: var(--o2-pie) !important;
+  border-top-color: transparent !important;
+}
+.tema-opcion2 footer span { color: #a9b5c0 !important; }
+
+/* ── Página ───────────────────────────────────────────────────────────────── */
+.tema-opcion2 .maniobras-container {
+  --primary-blue:  var(--o2-ambar);
+  --primary-hover: var(--o2-ambar-hover);
+  --primary-soft:  color-mix(in srgb, var(--o2-ambar) 16%, transparent);
+  --card-bg:       var(--o2-superficie);
+  --paper-deep:    var(--o2-fila-hover);
+  --paper-line:    var(--o2-linea);
+  --text-main:     var(--o2-texto);
+  --text-muted:    var(--o2-texto-2);
+  --border-color:  var(--o2-linea);
+  --border-soft:   var(--o2-linea-suave);
+  --danger:        var(--o2-quemada);
+  --danger-soft:   color-mix(in srgb, var(--o2-quemada) 14%, transparent);
+  --ink:           var(--o2-texto);
+  --rule:          var(--o2-regla);
+  --grid-line:     var(--o2-rejilla);
+  --row-line:      var(--o2-linea-suave);
+  --sheet-edge:    var(--o2-linea);
+
+  background: var(--o2-fondo);
+  /* Lo que va directo sobre el blanco; dentro de la consola manda --text-main. */
+  color: var(--o2-tinta);
+}
+
+/* Encabezado: sin antetítulo; título en el corte semicondensado del rótulo. */
+.tema-opcion2 .maniobras-container .mp-eyebrow { display: none; }
+.tema-opcion2 .maniobras-container .maniobras-title {
+  font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif !important;
+  font-weight: 600;
+  font-size: 2.3rem;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--o2-tinta);
+  text-wrap: balance;
+}
+.tema-opcion2 .maniobras-container .mp-lead { color: var(--o2-tinta-2); }
+/* Textos que quedan sobre el blanco, fuera de la consola. */
+.tema-opcion2 .maniobras-container :is(.loading-more, .end-of-list) { color: var(--o2-tinta-2); }
+
+/* ── Buscador (la página lo fija con !important) ──────────────────────────── */
+.tema-opcion2 .maniobras-container .mp-search input {
+  background: var(--o2-superficie) !important;
+  border-color: var(--o2-linea) !important;
+  color: var(--o2-texto) !important;
+  box-shadow: none !important;
+}
+.tema-opcion2 .maniobras-container .mp-search input::placeholder { color: var(--o2-texto-3); }
+.tema-opcion2 .maniobras-container .mp-search input:focus {
+  border-color: var(--o2-ambar-hover) !important;
+  box-shadow: var(--o2-anillo) !important;
+}
+.tema-opcion2 .maniobras-container .mp-search svg { color: var(--o2-texto-3); }
+
+/* ── Botones ──────────────────────────────────────────────────────────────── */
+.tema-opcion2 button, .tema-opcion2 button * {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+/* Botón global de App.css: misma especificidad (:where), el de clase manda. */
+:where(.tema-opcion2) button { background-color: var(--o2-ambar); color: var(--o2-sobre-ambar); }
+:where(.tema-opcion2) button:hover { background-color: var(--o2-ambar-hover); color: var(--o2-sobre-ambar); transform: none; }
+
+/* Primario: ámbar con tinta oscura (el blanco sobre ámbar no llega a 3:1). */
+.tema-opcion2 .maniobras-container :is(.btn-agregar, .btn-guardar, .btn-guardar-fila) {
+  background: var(--o2-ambar);
+  color: var(--o2-sobre-ambar);
+  font-weight: 700;
+}
+.tema-opcion2 .maniobras-container :is(.btn-agregar, .btn-guardar, .btn-guardar-fila):hover:not(:disabled) {
+  background: var(--o2-ambar-hover);
+  color: var(--o2-sobre-ambar);
+}
+
+/* Secundarios del tablero (saltos ⇤/⇥, balde). */
+.tema-opcion2 .maniobras-container .btn-salto,
+.tema-opcion2 .pc-boton {
+  background: var(--o2-elevada);
+  border-color: var(--o2-linea);
+  color: var(--o2-texto-2);
+}
+.tema-opcion2 .maniobras-container .btn-salto:hover,
+.tema-opcion2 .pc-boton:hover {
+  background: var(--o2-hover);
+  border-color: var(--o2-hueco);
+  color: var(--o2-texto);
+}
+
+/* Descartar: contorno rojo de señal, relleno al pasar. Incluye el Cancelar
+   global de App.css (tres clases repetidas: aquí van cuatro). */
+.tema-opcion2 .maniobras-container :is(.btn-cancelar, .btn-cancelar-fila),
+.tema-opcion2 .btn-cancelar-app.btn-cancelar-app.btn-cancelar-app {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--o2-quemada) 60%, transparent);
+  color: var(--o2-error-texto);
+}
+.tema-opcion2 .maniobras-container :is(.btn-cancelar, .btn-cancelar-fila):hover:not(:disabled),
+.tema-opcion2 .btn-cancelar-app.btn-cancelar-app.btn-cancelar-app:hover:not(:disabled) {
+  background: var(--o2-quemada);
+  border-color: var(--o2-quemada);
+  color: #fff;
+}
+
+/* Filtros de status: ranura hundida, la pastilla activa es la señal ámbar. */
+.tema-opcion2 .maniobras-container .filtros-status {
+  background: var(--o2-elevada);
+  border-color: var(--o2-linea);
+  box-shadow: inset 0 1px 2px rgba(13, 18, 23, 0.12);
+}
+.tema-opcion2 .maniobras-container .btn-filtro { color: var(--o2-texto-2); font-weight: 600; }
+.tema-opcion2 .maniobras-container .btn-filtro:hover { background: var(--o2-hover); color: var(--o2-texto); }
+.tema-opcion2 .maniobras-container .btn-filtro.active,
+.tema-opcion2 .maniobras-container .btn-filtro.active:hover {
+  background: var(--o2-ambar);
+  color: var(--o2-sobre-ambar);
+  font-weight: 700;
+}
+
+/* Iconos de fila: cada acción con su señal. */
+.tema-opcion2 .maniobras-container .btn-editar   { color: var(--o2-ambar-tinta); }
+.tema-opcion2 .maniobras-container .btn-foto     { color: var(--o2-por-salir-texto); }
+.tema-opcion2 .maniobras-container .btn-eliminar { color: var(--o2-error-texto); }
+.tema-opcion2 .maniobras-container :is(.btn-editar, .btn-foto):hover {
+  background: var(--o2-hover);
+  color: var(--o2-texto);
+}
+.tema-opcion2 .maniobras-container .btn-eliminar:hover {
+  background: color-mix(in srgb, var(--o2-quemada) 14%, transparent);
+  color: var(--o2-error-texto);
+}
+.tema-opcion2 .maniobras-container :is(.btn-icon, .btn-filtro, .btn-salto, .btn-agregar):focus-visible {
+  outline-color: var(--o2-ambar-hover);
+}
+
+/* ── Tabla ────────────────────────────────────────────────────────────────── */
+.tema-opcion2 .maniobras-container .table-responsive {
+  border-radius: 10px;
+  box-shadow: var(--o2-sombra-tabla);
+}
+.tema-opcion2 .maniobras-container .table-scroll-wrapper { border-radius: 10px; }
+.tema-opcion2 .maniobras-container .table-scroll-wrapper::-webkit-scrollbar-thumb,
+.tema-opcion2 .bst::-webkit-scrollbar-thumb {
+  background: var(--o2-scroll);
+  border-color: var(--o2-superficie);
+}
+.tema-opcion2 .maniobras-container .table-scroll-wrapper::-webkit-scrollbar-thumb:hover,
+.tema-opcion2 .bst::-webkit-scrollbar-thumb:hover { background: var(--o2-scroll-hover); }
+
+.tema-opcion2 .maniobras-container .maniobras-table { font-variant-numeric: tabular-nums; }
+.tema-opcion2 .maniobras-container .maniobras-table th {
+  font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif !important;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  background: var(--o2-elevada);
+  color: var(--o2-texto-2);
+  border-bottom: 1px solid var(--o2-linea);
+}
+.tema-opcion2 .maniobras-container .btn-ordenar { color: var(--o2-texto-2); }
+.tema-opcion2 .maniobras-container .btn-ordenar:hover { color: var(--o2-ambar-tinta); }
+.tema-opcion2 .maniobras-container .btn-ordenar:focus-visible { outline-color: var(--o2-ambar-hover); }
+
+.tema-opcion2 .maniobras-container .maniobras-table td:first-child:not([colspan]) {
+  box-shadow: 8px 0 12px -10px var(--o2-columna-sombra);
+}
+
+/* Status: los colores de fila del diseño original (ManiobrasPage.css: relleno
+   completo, hover y lomo) se dejan tal cual, por decisión del usuario
+   (2026-11-19). Lo único que se fija es la tinta: esos rellenos son claros y
+   el texto tiene que ser oscuro también en la variante nocturna. */
+.tema-opcion2 .maniobras-container .maniobras-table tbody tr[class*="row-status--"]:not(.row-pintada) td {
+  color: #1f2937;
+}
+
+/* Celda editable: velo con anillo ámbar. */
+.tema-opcion2 .maniobras-container .mp-celda-texto:hover {
+  background: var(--o2-velo);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--o2-ambar-hover) 60%, transparent);
+}
+.tema-opcion2 .maniobras-container .mp-celda-texto:focus-visible { outline-color: var(--o2-ambar-hover); }
+.tema-opcion2 .maniobras-container .mp-placeholder { color: var(--o2-texto-3); }
+
+/* ── Campos (tabla, modal, filtros, calendario) ───────────────────────────── */
+.tema-opcion2 :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+                  select, textarea) {
+  background: var(--o2-campo);
+  border-color: var(--o2-linea);
+  color: var(--o2-texto);
+}
+.tema-opcion2 :is(input, select, textarea)::placeholder { color: var(--o2-texto-3); }
+/* Mismo :is() que la regla de fondo, o su border-color le ganaría al del foco. */
+.tema-opcion2 :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+                  select, textarea):focus {
+  outline: none;
+  border-color: var(--o2-ambar-hover);
+  box-shadow: var(--o2-anillo);
+}
+.tema-opcion2 :is(input, select, textarea):disabled { color: var(--o2-texto-3); opacity: 1; }
+
+/* ── Estados ──────────────────────────────────────────────────────────────── */
+.tema-opcion2 .maniobras-container :is(.loading-text, .error-title, .end-of-list) {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.tema-opcion2 .maniobras-container .error-title { color: var(--o2-error-texto); }
+
+/* ── Modal de edición ─────────────────────────────────────────────────────── */
+.tema-opcion2 .maniobras-container .modal-overlay { background: var(--o2-velo-modal); }
+.tema-opcion2 .maniobras-container .modal-content {
+  background: var(--o2-superficie);
+  border-color: var(--o2-linea);
+  border-radius: 14px;
+  box-shadow: var(--o2-sombra-modal);
+}
+/* Sin lomo lateral: la tarjeta ya se separa del velo. */
+.tema-opcion2 .maniobras-container .modal-content::before { display: none; }
+.tema-opcion2 .maniobras-container .modal-titulo {
+  font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif !important;
+  font-size: 1.35rem;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  color: var(--o2-texto);
+}
+.tema-opcion2 .maniobras-container .modal-campo label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--o2-texto-2);
+}
+.tema-opcion2 .maniobras-container .modal-cerrar { color: var(--o2-texto-2); }
+.tema-opcion2 .maniobras-container .modal-cerrar:hover { background: var(--o2-hover); color: var(--o2-texto); }
+
+/* ── Selectores de celda (Operador, Placas, Patio, Cliente…) ──────────────────
+   Cada uno traía su tinte propio; en la consola se igualan a una pastilla
+   elevada, y el vacío queda como hueco punteado. Los de status no entran: su
+   color ES el dato. */
+.tema-opcion2 [class*="-trigger"]:not([class*="status"]):not(.color-selector__trigger) {
+  background: var(--o2-elevada);
+  border-color: var(--o2-linea);
+  color: var(--o2-pastilla);
+}
+/* Mismo peso (0,4,0) que la regla de arriba: gana por orden. */
+.tema-opcion2 :is([class*="-trigger--empty"], [class*="-trigger--vacio"]):not([class*="status"]):not(.color-selector__trigger) {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--o2-hueco);
+  color: var(--o2-texto-3);
+}
+
+/* Tercero: el naranja dice "este viaje es de un tercero"; se conserva el tono. */
+.tema-opcion2 .ts-trigger--activo.ts-trigger--activo.ts-trigger--activo {
+  background: color-mix(in srgb, var(--o2-tercero) 14%, transparent);
+  border-color: color-mix(in srgb, var(--o2-tercero) 45%, transparent);
+  color: var(--o2-tercero-texto);
+}
+
+/* Menús desplegables (se pintan por portal en body). */
+.tema-opcion2 :is([class*="-dropdown"], .status-selector__list, .color-selector__panel, .campo-fecha-pop) {
+  background: var(--o2-superficie);
+  border-color: var(--o2-linea);
+  color: var(--o2-texto);
+  box-shadow: var(--o2-sombra-menu);
+}
+.tema-opcion2 [class*="-option--selected"] { background: color-mix(in srgb, var(--o2-ambar) 16%, transparent); }
+.tema-opcion2 :is([class*="-separador"], [class*="-pie"]) {
+  background: var(--o2-superficie);
+  border-color: var(--o2-linea);
+}
+.tema-opcion2 [class*="-state"]:not([class*="--error"]) { color: var(--o2-texto-3); }
+
+
+/* Balde de color de fila. */
+.tema-opcion2 :is(.color-selector__trigger, .color-selector__restablecer) {
+  background: var(--o2-elevada);
+  border-color: var(--o2-linea);
+  color: var(--o2-texto-2);
+}
+.tema-opcion2 :is(.color-selector__trigger, .color-selector__restablecer):hover:not(:disabled) {
+  border-color: var(--o2-ambar-hover);
+  color: var(--o2-ambar-tinta);
+}
+
+/* Calendario. */
+.tema-opcion2 .campo-fecha-pop .rdp-root {
+  --rdp-accent-color: var(--o2-ambar-tinta);
+  --rdp-accent-background-color: color-mix(in srgb, var(--o2-ambar) 16%, transparent);
+  --rdp-today-color: var(--o2-ambar-tinta);
+}
+.tema-opcion2 .campo-fecha-pop .rdp-selected .rdp-day_button,
+.tema-opcion2 .campo-fecha-pop :is(.campo-fecha-horas, .campo-fecha-rejilla) button.activo {
+  background: var(--o2-ambar);
+  color: var(--o2-sobre-ambar);
+}
+.tema-opcion2 .campo-fecha-pop .rdp-weekday { color: var(--o2-texto-3); }
+.tema-opcion2 .campo-fecha-pop :is(.campo-fecha-horas button, .campo-fecha-anio button) { color: var(--o2-texto); }
+.tema-opcion2 .campo-fecha-pop .campo-fecha-rejilla button {
+  background: var(--o2-elevada);
+  color: var(--o2-texto);
+}
+.tema-opcion2 .campo-fecha-pop .rdp-dropdown option { background: var(--o2-superficie); color: var(--o2-texto); }
+.tema-opcion2 .campo-fecha-pop :is(.campo-fecha-horas, .campo-fecha-pie) { border-color: var(--o2-linea); }
+.tema-opcion2 .campo-fecha-pop .campo-fecha-pie button {
+  background: var(--o2-elevada);
+  border-color: var(--o2-linea);
+  color: var(--o2-texto);
+}
+.tema-opcion2 .campo-fecha-limpiar { color: var(--o2-texto-3); }
+.tema-opcion2 .campo-fecha-limpiar:hover { background: var(--o2-hover); color: var(--o2-error-texto); }
+
+/* Filtros desplegables (FiltrosLista, estilos de Dashboards.css). */
+.tema-opcion2 :is(.db-filtros-boton, .db-limpiar) {
+  background: var(--o2-elevada);
+  border-color: var(--o2-linea);
+  color: var(--o2-texto-2);
+}
+.tema-opcion2 .db-filtros-boton[aria-expanded="true"] { background: var(--o2-hover); color: var(--o2-texto); }
+.tema-opcion2 .db-filtros label { color: var(--o2-tinta-2); }
+.tema-opcion2 .db-filtros-n { background: var(--o2-ambar); color: var(--o2-sobre-ambar); }
+
+/* Barra de scroll superior de la tabla. */
+.tema-opcion2 .bst { background: var(--o2-superficie); border-color: var(--o2-linea); }
+.tema-opcion2 .bst::-webkit-scrollbar-track { background: var(--o2-superficie); }
+
+/* ── Avisos y confirmación (portal) ───────────────────────────────────────── */
+.tema-opcion2 .al-pila {
+  --al-superficie:  var(--o2-superficie);
+  --al-borde:       var(--o2-linea);
+  --al-exito:       var(--o2-activo-texto);
+  --al-error:       var(--o2-error-texto);
+  --al-aviso:       var(--o2-ambar-tinta);
+}
+.tema-opcion2 .al-dato { color: var(--o2-texto-2); }
+.tema-opcion2 .cf-cuerpo {
+  --cf-borde:    var(--o2-linea);
+  --cf-primario: var(--o2-ambar);
+  --cf-peligro:  var(--o2-quemada);
+  background: var(--o2-superficie);
+}
+.tema-opcion2 .cf-dialogo::backdrop { background: var(--o2-velo-modal); }
+.tema-opcion2 .cf-dato { background: var(--o2-campo); }
+.tema-opcion2 .cf-btn--cancelar { background: transparent; }
+.tema-opcion2 .cf-btn--confirmar { color: var(--o2-sobre-ambar); }
+.tema-opcion2 .cf-cuerpo--peligro .cf-btn--confirmar { color: #fff; }
+
+/* Visor de fotos. */
+.tema-opcion2 .fm-content { background: var(--o2-superficie); color: var(--o2-texto); }
+
+/* ── Botones flotantes (regreso, subir) ───────────────────────────────────── */
+.tema-opcion2 :is(.home-back, .ba-boton) {
+  background: color-mix(in srgb, var(--o2-superficie) 92%, transparent);
+  border-color: var(--o2-linea);
+  color: var(--o2-texto);
+  box-shadow: var(--o2-sombra-pildora);
+}
+.tema-opcion2 .home-back { font-weight: 600; font-size: 0.95rem; }
+.tema-opcion2 :is(.home-back, .ba-boton):hover {
+  background: var(--o2-ambar);
+  border-color: var(--o2-ambar);
+  color: var(--o2-sobre-ambar);
+}

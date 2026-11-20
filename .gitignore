@@ -1,0 +1,20 @@
+node_modules
+
+# Artefactos de compilación (no se versionan)
+/dist/
+/build/
+
+# Variables de entorno — nunca subir al repositorio
+.env 
+# Skills de agente (instaladas con npx, locales de cada máquina)
+.agents/
+.claude/skills/
+.claude/agents/impeccable-*
+skills-lock.json
+.taste-skill/
+.impeccable/
+.claude/settings.local.json
+
+# graphify: caché y fotos por fecha se regeneran solas; el grafo y el reporte sí van
+graphify-out/cache/
+graphify-out/20*/

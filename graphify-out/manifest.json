@@ -1,0 +1,712 @@
+{
+  "AlterTractosSepararAnioUnidad.sql": {
+    "mtime": 1776813769.7220528,
+    "ast_hash": "5d92d32f1aef39657fc7d269339c5ae3",
+    "semantic_hash": "5d92d32f1aef39657fc7d269339c5ae3"
+  },
+  "InsertChoferes.sql": {
+    "mtime": 1776527843.1361725,
+    "ast_hash": "446d9a7563ed675ff797df6e70eff5d3",
+    "semantic_hash": "446d9a7563ed675ff797df6e70eff5d3"
+  },
+  "InsertEmpleados.sql": {
+    "mtime": 1779466643.1132245,
+    "ast_hash": "31a9c95b57e034f6325498e4bf139310",
+    "semantic_hash": "31a9c95b57e034f6325498e4bf139310"
+  },
+  "InsertGastos.sql": {
+    "mtime": 1777912531.7656105,
+    "ast_hash": "168d659a23cd78024de622725435959f",
+    "semantic_hash": "168d659a23cd78024de622725435959f"
+  },
+  "InsertManiobras.sql": {
+    "mtime": 1776527843.1397882,
+    "ast_hash": "43133ee30cf2a87ad3d263c0f56828cc",
+    "semantic_hash": "43133ee30cf2a87ad3d263c0f56828cc"
+  },
+  "InsertRemolques.sql": {
+    "mtime": 1776527843.1397882,
+    "ast_hash": "6ecd6d82cd9983f2e17281011b65ddb3",
+    "semantic_hash": "6ecd6d82cd9983f2e17281011b65ddb3"
+  },
+  "InsertTractos.sql": {
+    "mtime": 1776813769.7220528,
+    "ast_hash": "e8eddf2c323926ca1e98ce12853006d0",
+    "semantic_hash": "e8eddf2c323926ca1e98ce12853006d0"
+  },
+  "InsertVacios.sql": {
+    "mtime": 1778386276.2792876,
+    "ast_hash": "a6964c102024b03b411b40b2dc699b60",
+    "semantic_hash": "a6964c102024b03b411b40b2dc699b60"
+  },
+  "package.json": {
+    "mtime": 1791827076.9811745,
+    "ast_hash": "9b81a9c260c161477cb70060ae0c2bd8",
+    "semantic_hash": "9b81a9c260c161477cb70060ae0c2bd8"
+  },
+  "postcss.config.js": {
+    "mtime": 1776093157.4259443,
+    "ast_hash": "762a94d1749c8e97eebf3f94102e8eb2",
+    "semantic_hash": "762a94d1749c8e97eebf3f94102e8eb2"
+  },
+  "public/Manifest.json": {
+    "mtime": 1776527843.1439278,
+    "ast_hash": "6f2c7cc063463f7446e996430009f409",
+    "semantic_hash": "6f2c7cc063463f7446e996430009f409"
+  },
+  "schema.sql": {
+    "mtime": 1779467705.3956196,
+    "ast_hash": "c88bb0eeb2da5fd5a2c62ef9d8eae02c",
+    "semantic_hash": "c88bb0eeb2da5fd5a2c62ef9d8eae02c"
+  },
+  "src/Login/Login.jsx": {
+    "mtime": 1784832233.4887812,
+    "ast_hash": "96693fca6ac8f4671560013745a8f222",
+    "semantic_hash": "96693fca6ac8f4671560013745a8f222"
+  },
+  "src/ReportWebVitals.js": {
+    "mtime": 1776527843.1480625,
+    "ast_hash": "7b53dd6884cebc3c01f67ae53965b296",
+    "semantic_hash": "7b53dd6884cebc3c01f67ae53965b296"
+  },
+  "src/api/apiClient.js": {
+    "mtime": 1787853189.8718176,
+    "ast_hash": "cfd01d9d3f5bba334340152142e52d75",
+    "semantic_hash": "cfd01d9d3f5bba334340152142e52d75"
+  },
+  "src/components/BitacoraSuenoModal/BitacoraSuenoModal.jsx": {
+    "mtime": 1791827026.2494168,
+    "ast_hash": "e3d50953f4ab022d55a963e55b825168",
+    "semantic_hash": "e3d50953f4ab022d55a963e55b825168"
+  },
+  "src/components/ClienteSelector/ClienteSelector.jsx": {
+    "mtime": 1786030844.4397774,
+    "ast_hash": "ef6a7c4959182a24071214b5f4d0badb",
+    "semantic_hash": "ef6a7c4959182a24071214b5f4d0badb"
+  },
+  "src/components/CtaPortModal/CtaPortModal.jsx": {
+    "mtime": 1793638001.8093767,
+    "ast_hash": "da959ee37ee78ae37f090c8f624fc7a2",
+    "semantic_hash": "da959ee37ee78ae37f090c8f624fc7a2"
+  },
+  "src/components/FolioSelector/FolioSelector.jsx": {
+    "mtime": 1787865548.4123502,
+    "ast_hash": "10210c129f32097f73083ed78991ccda",
+    "semantic_hash": "10210c129f32097f73083ed78991ccda"
+  },
+  "src/components/FotoModal/FotoModal.jsx": {
+    "mtime": 1786642356.4404705,
+    "ast_hash": "2fafd62308bf881c524406a3f2de594b",
+    "semantic_hash": "2fafd62308bf881c524406a3f2de594b"
+  },
+  "src/components/OperadorSelector/OperadorSelector.jsx": {
+    "mtime": 1784915779.3375385,
+    "ast_hash": "be2781edec7afdcc44abb57e1a655f0f",
+    "semantic_hash": "be2781edec7afdcc44abb57e1a655f0f"
+  },
+  "src/components/PatioSelector/PatioSelector.jsx": {
+    "mtime": 1784939847.7403548,
+    "ast_hash": "efc1147c87c510c73d9ab1f2621afdf2",
+    "semantic_hash": "efc1147c87c510c73d9ab1f2621afdf2"
+  },
+  "src/components/PlacasSelector/PlacasSelector.jsx": {
+    "mtime": 1783721638.527527,
+    "ast_hash": "89eaec50fa8d302a28cc98be8b061a8c",
+    "semantic_hash": "89eaec50fa8d302a28cc98be8b061a8c"
+  },
+  "src/components/ProtectedRoute/ProtectedRoute.jsx": {
+    "mtime": 1783976456.961359,
+    "ast_hash": "71af3a2223db1b59886219397d63bf60",
+    "semantic_hash": "71af3a2223db1b59886219397d63bf60"
+  },
+  "src/components/RemolqueSelector/RemolqueSelector.jsx": {
+    "mtime": 1787249324.7771592,
+    "ast_hash": "f5ee3efe47a752c6b1199cc376716c49",
+    "semantic_hash": "f5ee3efe47a752c6b1199cc376716c49"
+  },
+  "src/components/SearchBar/SearchBar.jsx": {
+    "mtime": 1787845716.080967,
+    "ast_hash": "2ec696478d98b37e8fd3206017bfefa6",
+    "semantic_hash": "2ec696478d98b37e8fd3206017bfefa6"
+  },
+  "src/components/StatusBadge/StatusBadge.jsx": {
+    "mtime": 1787788078.928352,
+    "ast_hash": "f4e5fa7357b484bbb1eed4a11850378b",
+    "semantic_hash": "f4e5fa7357b484bbb1eed4a11850378b"
+  },
+  "src/components/StatusSelector/StatusSelector.jsx": {
+    "mtime": 1788279067.6848443,
+    "ast_hash": "bcd16383e3fe028b0d86ed154497d910",
+    "semantic_hash": "bcd16383e3fe028b0d86ed154497d910"
+  },
+  "src/components/VacioStatusSelector/VacioStatusSelector.jsx": {
+    "mtime": 1786555543.1400137,
+    "ast_hash": "59918fd985f25cc83033309b119f191a",
+    "semantic_hash": "59918fd985f25cc83033309b119f191a"
+  },
+  "src/config/statusConfig.js": {
+    "mtime": 1790360680.5506756,
+    "ast_hash": "e71f60e7ab5dd32a51ae1dce90a3a603",
+    "semantic_hash": "e71f60e7ab5dd32a51ae1dce90a3a603"
+  },
+  "src/context/AuthContext.jsx": {
+    "mtime": 1784832211.974463,
+    "ast_hash": "2e2c69d85d59b0f27cd4b57780ee7997",
+    "semantic_hash": "2e2c69d85d59b0f27cd4b57780ee7997"
+  },
+  "src/hooks/useGastos.js": {
+    "mtime": 1794609298.2622552,
+    "ast_hash": "2a0738527e858b42b487c3ff41077dc1",
+    "semantic_hash": ""
+  },
+  "src/hooks/useManiobras.js": {
+    "mtime": 1791824837.4619715,
+    "ast_hash": "a2849d274fee1d64d30c3de642fbf60b",
+    "semantic_hash": "a2849d274fee1d64d30c3de642fbf60b"
+  },
+  "src/hooks/useNoEco.js": {
+    "mtime": 1776527942.07645,
+    "ast_hash": "8b6bb1b740a9c17826fef53bc94676a6",
+    "semantic_hash": "8b6bb1b740a9c17826fef53bc94676a6"
+  },
+  "src/hooks/useStatusUpdate.js": {
+    "mtime": 1783985765.1267545,
+    "ast_hash": "4eeb8ca6a9ad3eb17599e54c59c93e39",
+    "semantic_hash": "4eeb8ca6a9ad3eb17599e54c59c93e39"
+  },
+  "src/hooks/useVacioStatusUpdate.js": {
+    "mtime": 1783973382.7731133,
+    "ast_hash": "89fe47732b523c4c7925f566061e8b4c",
+    "semantic_hash": "89fe47732b523c4c7925f566061e8b4c"
+  },
+  "src/hooks/useVacios.js": {
+    "mtime": 1788363189.1220818,
+    "ast_hash": "339eb409a43a2331a6f8c6e2378174fd",
+    "semantic_hash": "339eb409a43a2331a6f8c6e2378174fd"
+  },
+  "src/pages/AdminVaciosPage.jsx": {
+    "mtime": 1778359188.966271,
+    "ast_hash": "c286df3cb396f4b2210cef6bfc1fcb20",
+    "semantic_hash": "c286df3cb396f4b2210cef6bfc1fcb20"
+  },
+  "src/pages/AdministracionGastos.jsx": {
+    "mtime": 1784581070.9963372,
+    "ast_hash": "b821f933bcf9931e535fc4a334a4f165",
+    "semantic_hash": "b821f933bcf9931e535fc4a334a4f165"
+  },
+  "src/pages/AdministracionNoEco.jsx": {
+    "mtime": 1784581081.889351,
+    "ast_hash": "444f18c8a89c5565b63191f7ba73cd52",
+    "semantic_hash": "444f18c8a89c5565b63191f7ba73cd52"
+  },
+  "src/pages/CatalogosPage.jsx": {
+    "mtime": 1793403629.4291654,
+    "ast_hash": "cd8275becc76afdc8f90eb26b25c43a3",
+    "semantic_hash": "cd8275becc76afdc8f90eb26b25c43a3"
+  },
+  "src/pages/DocumentosViajePage.jsx": {
+    "mtime": 1785180164.2059069,
+    "ast_hash": "b9d7576bcf20557bf906cb902f4e3f70",
+    "semantic_hash": "b9d7576bcf20557bf906cb902f4e3f70"
+  },
+  "src/pages/GastosPage.jsx": {
+    "mtime": 1794609296.9139538,
+    "ast_hash": "e8ba65bd2c69572c7093597ad314b26f",
+    "semantic_hash": ""
+  },
+  "src/pages/ManiobrasPage.jsx": {
+    "mtime": 1792434256.0872703,
+    "ast_hash": "b6db0fc143ff6988279762cd31b259a2",
+    "semantic_hash": "b6db0fc143ff6988279762cd31b259a2"
+  },
+  "src/pages/PerfilPage.jsx": {
+    "mtime": 1786469446.788279,
+    "ast_hash": "9a869e1a896eb19c3b1c8772d77bcc30",
+    "semantic_hash": "9a869e1a896eb19c3b1c8772d77bcc30"
+  },
+  "src/pages/VaciosPage.jsx": {
+    "mtime": 1791827026.0664418,
+    "ast_hash": "36b6aff5a636bbef5e6a529b090bd81e",
+    "semantic_hash": "36b6aff5a636bbef5e6a529b090bd81e"
+  },
+  "tailwind.config.js": {
+    "mtime": 1776093157.4274883,
+    "ast_hash": "4b757fe4570d340309ba8a38eeec6168",
+    "semantic_hash": "4b757fe4570d340309ba8a38eeec6168"
+  },
+  "vite.config.js": {
+    "mtime": 1788375087.1752949,
+    "ast_hash": "0f8dfc4f7671c7206aadaf7190866b6c",
+    "semantic_hash": "0f8dfc4f7671c7206aadaf7190866b6c"
+  },
+  "public/robots.txt": {
+    "mtime": 1776057005.5653827,
+    "ast_hash": "61c27d2cd39a713f7829422c3d9edcc7",
+    "semantic_hash": "61c27d2cd39a713f7829422c3d9edcc7"
+  },
+  "public/Logo192.png": {
+    "mtime": 1776527843.141337,
+    "ast_hash": "33dbdd0177549353eeeb785d02c294af",
+    "semantic_hash": "33dbdd0177549353eeeb785d02c294af"
+  },
+  "public/Logo512.png": {
+    "mtime": 1776527843.1434166,
+    "ast_hash": "917515db74ea8d1aee6a246cfbcc0b45",
+    "semantic_hash": "917515db74ea8d1aee6a246cfbcc0b45"
+  },
+  "src/pages/Logo Fraba.png": {
+    "mtime": 1774639924.9920852,
+    "ast_hash": "03ae6d114e59302a94ea48e9ccf10cec",
+    "semantic_hash": "03ae6d114e59302a94ea48e9ccf10cec"
+  },
+  "public/staticwebapp.config.json": {
+    "mtime": 1788375087.1752949,
+    "ast_hash": "25d54923411d0dbee5d487891e2b96d5",
+    "semantic_hash": "25d54923411d0dbee5d487891e2b96d5"
+  },
+  "src/App.jsx": {
+    "mtime": 1792706552.1005294,
+    "ast_hash": "fc19ed6561de922d828d0363c0f6fd97",
+    "semantic_hash": "fc19ed6561de922d828d0363c0f6fd97"
+  },
+  "src/Login/mfa.mjs": {
+    "mtime": 1784821214.9586682,
+    "ast_hash": "1612a1504ef736245cbcbe68a786edfb",
+    "semantic_hash": "1612a1504ef736245cbcbe68a786edfb"
+  },
+  "src/Login/mfa.test.mjs": {
+    "mtime": 1784821219.9655337,
+    "ast_hash": "193b6c33686061b5954afffef97219c4",
+    "semantic_hash": "193b6c33686061b5954afffef97219c4"
+  },
+  "src/animations/modalMotion.js": {
+    "mtime": 1786469881.2183087,
+    "ast_hash": "d615cfd359298bff669fb22d36bc293f",
+    "semantic_hash": "d615cfd359298bff669fb22d36bc293f"
+  },
+  "src/api/catalogCache.js": {
+    "mtime": 1783721582.0197566,
+    "ast_hash": "ac32c310dc68e8dbf4d820e74148bf29",
+    "semantic_hash": "ac32c310dc68e8dbf4d820e74148bf29"
+  },
+  "src/components/AlertaVencimiento/AlertaVencimiento.jsx": {
+    "mtime": 1793403638.1035292,
+    "ast_hash": "6bb11fb823b9d6e03da0a24f9123f811",
+    "semantic_hash": "6bb11fb823b9d6e03da0a24f9123f811"
+  },
+  "src/components/Alertas/Alertas.jsx": {
+    "mtime": 1786469886.4171808,
+    "ast_hash": "e8fe1035b58d11f4f1d383ce995920bb",
+    "semantic_hash": "e8fe1035b58d11f4f1d383ce995920bb"
+  },
+  "src/components/BarraScrollTabla/BarraScrollTabla.jsx": {
+    "mtime": 1788796759.5041437,
+    "ast_hash": "bc49ac33de60afb265e89a2ab57e3ffc",
+    "semantic_hash": "bc49ac33de60afb265e89a2ab57e3ffc"
+  },
+  "src/components/BitacoraGastosModal/BitacoraGastosModal.jsx": {
+    "mtime": 1790799989.8982146,
+    "ast_hash": "a7f67d79d080996a8733ab5b93c0bd72",
+    "semantic_hash": "a7f67d79d080996a8733ab5b93c0bd72"
+  },
+  "src/components/BotonArriba/BotonArriba.jsx": {
+    "mtime": 1786478173.9038699,
+    "ast_hash": "d48e32e8b94dfc6a5e57a00f9f9306df",
+    "semantic_hash": "d48e32e8b94dfc6a5e57a00f9f9306df"
+  },
+  "src/components/CalendarioVacaciones/CalendarioVacaciones.jsx": {
+    "mtime": 1791995249.3657875,
+    "ast_hash": "7b03433d8dfca6c13309563174558ec8",
+    "semantic_hash": "7b03433d8dfca6c13309563174558ec8"
+  },
+  "src/components/CargoSelector/CargoSelector.jsx": {
+    "mtime": 1783721671.4203036,
+    "ast_hash": "5b62d03a7a7847d8671947abf31cb947",
+    "semantic_hash": "5b62d03a7a7847d8671947abf31cb947"
+  },
+  "src/components/CeldaEditable/CeldaEditable.jsx": {
+    "mtime": 1791827025.9310865,
+    "ast_hash": "3d10ddcf056ec3ae5af4716edf04204a",
+    "semantic_hash": "3d10ddcf056ec3ae5af4716edf04204a"
+  },
+  "src/components/CeldaEditable/fechaCelda.mjs": {
+    "mtime": 1788303887.6035366,
+    "ast_hash": "e1ee1c4520e7478ff17d512ad7df7452",
+    "semantic_hash": "e1ee1c4520e7478ff17d512ad7df7452"
+  },
+  "src/components/CeldaEditable/fechaCelda.test.mjs": {
+    "mtime": 1788303887.7881188,
+    "ast_hash": "d8a9e4ad7b4d641eee5e6e7ca9842cad",
+    "semantic_hash": "d8a9e4ad7b4d641eee5e6e7ca9842cad"
+  },
+  "src/components/CiudadSelector/CiudadSelector.jsx": {
+    "mtime": 1788466482.0161767,
+    "ast_hash": "167dbbc55aecd557dbae1e3ab068d1d9",
+    "semantic_hash": "167dbbc55aecd557dbae1e3ab068d1d9"
+  },
+  "src/components/ColorSelector/ColorSelector.jsx": {
+    "mtime": 1787856929.1583927,
+    "ast_hash": "2b3a6eff328cf792ecd6593dec1d0a88",
+    "semantic_hash": "2b3a6eff328cf792ecd6593dec1d0a88"
+  },
+  "src/components/Confirmacion/Confirmacion.jsx": {
+    "mtime": 1790799989.8971803,
+    "ast_hash": "42302c325b6e046ba635b816a7f31f8c",
+    "semantic_hash": "42302c325b6e046ba635b816a7f31f8c"
+  },
+  "src/components/CostosExtraSelector/CostosExtraSelector.jsx": {
+    "mtime": 1787785570.973059,
+    "ast_hash": "febefa64af0e7c152c92be84a65ac62a",
+    "semantic_hash": "febefa64af0e7c152c92be84a65ac62a"
+  },
+  "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx": {
+    "mtime": 1791827026.3784916,
+    "ast_hash": "cb080f83cb0570197101dd2774168f9d",
+    "semantic_hash": "cb080f83cb0570197101dd2774168f9d"
+  },
+  "src/components/Dashboards/Dashboards.jsx": {
+    "mtime": 1793729440.759936,
+    "ast_hash": "790c7e3d02c4a13e0f373e0147d14c1d",
+    "semantic_hash": "790c7e3d02c4a13e0f373e0147d14c1d"
+  },
+  "src/components/DocumentoCelda/DocumentoCelda.jsx": {
+    "mtime": 1788374756.6456397,
+    "ast_hash": "d6dac05ef97db654c9f32851a773f2a1",
+    "semantic_hash": "d6dac05ef97db654c9f32851a773f2a1"
+  },
+  "src/components/FolioDisponibleSelector/FolioDisponibleSelector.jsx": {
+    "mtime": 1793220313.6611898,
+    "ast_hash": "69310f83e67241dc592cbf62b0cbc43e",
+    "semantic_hash": "69310f83e67241dc592cbf62b0cbc43e"
+  },
+  "src/components/FotoModal/comprimirImagen.mjs": {
+    "mtime": 1786642286.81807,
+    "ast_hash": "793cbc6adfc7a42bdb61229930a126e8",
+    "semantic_hash": "793cbc6adfc7a42bdb61229930a126e8"
+  },
+  "src/components/FotoModal/comprimirImagen.test.mjs": {
+    "mtime": 1786642300.2369795,
+    "ast_hash": "3870e81fd4a7d8dd2b1afc59e333367f",
+    "semantic_hash": "3870e81fd4a7d8dd2b1afc59e333367f"
+  },
+  "src/components/InactivityModal/InactivityModal.jsx": {
+    "mtime": 1784741361.3547132,
+    "ast_hash": "bc1f9512e631e0f623320fcfbc2ebb00",
+    "semantic_hash": "bc1f9512e631e0f623320fcfbc2ebb00"
+  },
+  "src/components/PendientePagadoSelector/PendientePagadoSelector.jsx": {
+    "mtime": 1783012486.2217572,
+    "ast_hash": "1251d92392b4f37dd396a1277a62e33b",
+    "semantic_hash": "1251d92392b4f37dd396a1277a62e33b"
+  },
+  "src/components/PinturaCeldas/PinturaCeldas.jsx": {
+    "mtime": 1788294789.5667856,
+    "ast_hash": "f883c920d41d58e038a7c2b339799e53",
+    "semantic_hash": "f883c920d41d58e038a7c2b339799e53"
+  },
+  "src/components/ReporteVaciosModal/ReporteVaciosModal.jsx": {
+    "mtime": 1790799989.8982146,
+    "ast_hash": "7fa8c272a82250467f0bd1e5c1a653de",
+    "semantic_hash": "7fa8c272a82250467f0bd1e5c1a653de"
+  },
+  "src/components/Seguimientos/Seguimientos.jsx": {
+    "mtime": 1793979102.0748656,
+    "ast_hash": "a5fbca065f8cfe629f3b0901f4346edb",
+    "semantic_hash": "a5fbca065f8cfe629f3b0901f4346edb"
+  },
+  "src/components/TerceroSelector/TerceroSelector.jsx": {
+    "mtime": 1784941280.2055454,
+    "ast_hash": "6f3db18409b8bc08180dfe3170a94596",
+    "semantic_hash": "6f3db18409b8bc08180dfe3170a94596"
+  },
+  "src/components/TipoServicioSelector/TipoServicioSelector.jsx": {
+    "mtime": 1786555554.1286209,
+    "ast_hash": "007f12cf15abb4b23c6c88f09eaaffe2",
+    "semantic_hash": "007f12cf15abb4b23c6c88f09eaaffe2"
+  },
+  "src/components/TransportistaSelector/TransportistaSelector.jsx": {
+    "mtime": 1784917030.703859,
+    "ast_hash": "c95a620f2a5dc136f2e32aad9de9d004",
+    "semantic_hash": "c95a620f2a5dc136f2e32aad9de9d004"
+  },
+  "src/config/statusConfig.test.mjs": {
+    "mtime": 1790360785.8444386,
+    "ast_hash": "300947b60d98f85e4ec461607dd63e39",
+    "semantic_hash": "300947b60d98f85e4ec461607dd63e39"
+  },
+  "src/hooks/inactividad.mjs": {
+    "mtime": 1784737602.1064627,
+    "ast_hash": "c8d54823e2096c3109119ba8b133252b",
+    "semantic_hash": "c8d54823e2096c3109119ba8b133252b"
+  },
+  "src/hooks/inactividad.test.mjs": {
+    "mtime": 1784737611.541917,
+    "ast_hash": "bff9d5d905c04a466bc58284d7721a87",
+    "semantic_hash": "bff9d5d905c04a466bc58284d7721a87"
+  },
+  "src/hooks/useAlertasVencimiento.js": {
+    "mtime": 1783975189.0862696,
+    "ast_hash": "19f7ae7fa6ef47271a49a6f7f6a0b45f",
+    "semantic_hash": "19f7ae7fa6ef47271a49a6f7f6a0b45f"
+  },
+  "src/hooks/useArrastre.js": {
+    "mtime": 1787332871.80639,
+    "ast_hash": "6482fb1aa4dfe28e318b9a4f41852c73",
+    "semantic_hash": "6482fb1aa4dfe28e318b9a4f41852c73"
+  },
+  "src/hooks/useAutoRefresco.js": {
+    "mtime": 1787770343.6976106,
+    "ast_hash": "2f31bff3f80373e73bf16eebc8b05174",
+    "semantic_hash": "2f31bff3f80373e73bf16eebc8b05174"
+  },
+  "src/hooks/useDropdownNav.js": {
+    "mtime": 1783705541.9969182,
+    "ast_hash": "395bcaa57dc5f91486270a7e7f4d7b26",
+    "semantic_hash": "395bcaa57dc5f91486270a7e7f4d7b26"
+  },
+  "src/hooks/useFolios.js": {
+    "mtime": 1786468919.469433,
+    "ast_hash": "3a671ca02c652a563d9c5c5dc0815844",
+    "semantic_hash": "3a671ca02c652a563d9c5c5dc0815844"
+  },
+  "src/hooks/useInactivityTimer.js": {
+    "mtime": 1784737623.6645694,
+    "ast_hash": "d91d54c2d26a2a1716eae0dc54794080",
+    "semantic_hash": "d91d54c2d26a2a1716eae0dc54794080"
+  },
+  "src/hooks/useMovimientosLocales.js": {
+    "mtime": 1786468919.4709406,
+    "ast_hash": "9d16d35fa47957087d9559ce479e90fb",
+    "semantic_hash": "9d16d35fa47957087d9559ce479e90fb"
+  },
+  "src/hooks/useNomina.js": {
+    "mtime": 1793729440.7563183,
+    "ast_hash": "68e78f728f3e5e0d7b6d101b794cf23a",
+    "semantic_hash": "68e78f728f3e5e0d7b6d101b794cf23a"
+  },
+  "src/hooks/useReportesViaje.js": {
+    "mtime": 1791836262.9439394,
+    "ast_hash": "5c45bd012a620c44bd57983024b4f05e",
+    "semantic_hash": "5c45bd012a620c44bd57983024b4f05e"
+  },
+  "src/hooks/useTorreControl.js": {
+    "mtime": 1787355507.5236845,
+    "ast_hash": "8cc15c377a46e6f2e1a3ce4e5258a5de",
+    "semantic_hash": "8cc15c377a46e6f2e1a3ce4e5258a5de"
+  },
+  "src/index.jsx": {
+    "mtime": 1786469367.961404,
+    "ast_hash": "71006ffd472ed8ad4e89be55fc97fe6c",
+    "semantic_hash": "71006ffd472ed8ad4e89be55fc97fe6c"
+  },
+  "src/pages/CostosExtraPage.jsx": {
+    "mtime": 1793729440.7553163,
+    "ast_hash": "2305d4b1d16fc344f33994c59af8eddb",
+    "semantic_hash": "2305d4b1d16fc344f33994c59af8eddb"
+  },
+  "src/pages/CuentasPorPagarPage.jsx": {
+    "mtime": 1793729365.7058983,
+    "ast_hash": "914aa01c81d3fb7bc919ac5a96db01eb",
+    "semantic_hash": "914aa01c81d3fb7bc919ac5a96db01eb"
+  },
+  "src/pages/FacturacionPage.jsx": {
+    "mtime": 1793729283.219074,
+    "ast_hash": "3e09713f7174895b800f6b863b2e19bd",
+    "semantic_hash": "3e09713f7174895b800f6b863b2e19bd"
+  },
+  "src/pages/FinanzasPage.jsx": {
+    "mtime": 1792706575.6713693,
+    "ast_hash": "4372fba3130cfe415ebe8d96d15f128c",
+    "semantic_hash": "4372fba3130cfe415ebe8d96d15f128c"
+  },
+  "src/pages/FoliosPage.jsx": {
+    "mtime": 1791995303.455042,
+    "ast_hash": "ab4a9de79800906e8b92accf45e15665",
+    "semantic_hash": "ab4a9de79800906e8b92accf45e15665"
+  },
+  "src/pages/GastosFinancierosPage.jsx": {
+    "mtime": 1793729365.7043931,
+    "ast_hash": "4a7159d269c5b5bbfa6956b1f0079a8a",
+    "semantic_hash": "4a7159d269c5b5bbfa6956b1f0079a8a"
+  },
+  "src/pages/MovimientosLocalesPage.jsx": {
+    "mtime": 1791827025.996451,
+    "ast_hash": "2b7609c5eb0d56d76c241eb9df3e6cd7",
+    "semantic_hash": "2b7609c5eb0d56d76c241eb9df3e6cd7"
+  },
+  "src/pages/NominaPage.jsx": {
+    "mtime": 1791995210.774026,
+    "ast_hash": "05cc6171fde9a3a091e885d6152b1320",
+    "semantic_hash": "05cc6171fde9a3a091e885d6152b1320"
+  },
+  "src/pages/PendientesPage.jsx": {
+    "mtime": 1787699054.289881,
+    "ast_hash": "57ba4e0b6b7384671309fd4bae874efb",
+    "semantic_hash": "57ba4e0b6b7384671309fd4bae874efb"
+  },
+  "src/pages/ReporteViajePage.jsx": {
+    "mtime": 1792167389.7936966,
+    "ast_hash": "5c54be3b0fa3e3835c3824923a8a596b",
+    "semantic_hash": "5c54be3b0fa3e3835c3824923a8a596b"
+  },
+  "src/pages/TableroFinanzasPage.jsx": {
+    "mtime": 1790809812.6916966,
+    "ast_hash": "fd50e631d232779b4f2be8c184fe9cbd",
+    "semantic_hash": "fd50e631d232779b4f2be8c184fe9cbd"
+  },
+  "src/pages/TorreControlPage.jsx": {
+    "mtime": 1787359406.0365095,
+    "ast_hash": "63cdce8c3ae6023f69ac11e3062fa5c9",
+    "semantic_hash": "63cdce8c3ae6023f69ac11e3062fa5c9"
+  },
+  "src/utils/buscar.mjs": {
+    "mtime": 1787852819.7381072,
+    "ast_hash": "fc2d62922367cfe0d99a59bb7a08b6ec",
+    "semantic_hash": "fc2d62922367cfe0d99a59bb7a08b6ec"
+  },
+  "src/utils/buscar.test.mjs": {
+    "mtime": 1787852819.7778995,
+    "ast_hash": "47b366b59a171a4a4b007466ebefa7a0",
+    "semantic_hash": "47b366b59a171a4a4b007466ebefa7a0"
+  },
+  "src/utils/citaAbierta.mjs": {
+    "mtime": 1788368685.094704,
+    "ast_hash": "ea37c44f508dc7afe39a1285e049ba76",
+    "semantic_hash": "ea37c44f508dc7afe39a1285e049ba76"
+  },
+  "src/utils/citaAbierta.test.mjs": {
+    "mtime": 1788368685.120525,
+    "ast_hash": "47c0ed8ce3a56c6d9b12aca83b2ea3db",
+    "semantic_hash": "47c0ed8ce3a56c6d9b12aca83b2ea3db"
+  },
+  "src/utils/colorFila.mjs": {
+    "mtime": 1788293807.8057587,
+    "ast_hash": "362ec241d83d1c12d1ea53f1e3c4b4bf",
+    "semantic_hash": "362ec241d83d1c12d1ea53f1e3c4b4bf"
+  },
+  "src/utils/colorFila.test.mjs": {
+    "mtime": 1788293807.9914148,
+    "ast_hash": "dfaf8a3311f03a1676f07fd9f3f02518",
+    "semantic_hash": "dfaf8a3311f03a1676f07fd9f3f02518"
+  },
+  "src/utils/dobleValor.mjs": {
+    "mtime": 1787692675.7288165,
+    "ast_hash": "b40806237700ae71764fbbc5721de3f0",
+    "semantic_hash": "b40806237700ae71764fbbc5721de3f0"
+  },
+  "src/utils/dobleValor.test.mjs": {
+    "mtime": 1787692686.6025574,
+    "ast_hash": "72bc8ccb08c2002aef8f258d200eb494",
+    "semantic_hash": "72bc8ccb08c2002aef8f258d200eb494"
+  },
+  "src/utils/folioFull.mjs": {
+    "mtime": 1793638001.218297,
+    "ast_hash": "b8837bdf12b942bf02b50ba11d4bf095",
+    "semantic_hash": "b8837bdf12b942bf02b50ba11d4bf095"
+  },
+  "src/utils/folioFull.test.mjs": {
+    "mtime": 1793638001.5210931,
+    "ast_hash": "e1639202b3f7f6e46e1e11771b1e9e11",
+    "semantic_hash": "e1639202b3f7f6e46e1e11771b1e9e11"
+  },
+  "src/utils/formulaSuma.mjs": {
+    "mtime": 1788466431.9912019,
+    "ast_hash": "9e95a6967281b014d8df48424a8f3c30",
+    "semantic_hash": "9e95a6967281b014d8df48424a8f3c30"
+  },
+  "src/utils/formulaSuma.test.mjs": {
+    "mtime": 1787852788.8057292,
+    "ast_hash": "fa44fb4735df080b26202fccd87855bf",
+    "semantic_hash": "fa44fb4735df080b26202fccd87855bf"
+  },
+  "src/utils/reporteViaje.mjs": {
+    "mtime": 1792166071.519018,
+    "ast_hash": "cd5eebcd34b22346e35ac40e4ad06e85",
+    "semantic_hash": "cd5eebcd34b22346e35ac40e4ad06e85"
+  },
+  "src/utils/reporteViaje.test.mjs": {
+    "mtime": 1791836161.8942046,
+    "ast_hash": "ea6e8d9f6f3265d83b2276f7169b91bc",
+    "semantic_hash": "ea6e8d9f6f3265d83b2276f7169b91bc"
+  },
+  "src/utils/sumarPeso.mjs": {
+    "mtime": 1788470574.7817721,
+    "ast_hash": "e85800aac7dcd900d0bf4696dabc4c75",
+    "semantic_hash": "e85800aac7dcd900d0bf4696dabc4c75"
+  },
+  "src/utils/sumarPeso.test.mjs": {
+    "mtime": 1788470562.3053176,
+    "ast_hash": "f0ae2c34089cceff325677d0d0e7b09b",
+    "semantic_hash": "f0ae2c34089cceff325677d0d0e7b09b"
+  },
+  "src/utils/torreControl.mjs": {
+    "mtime": 1787353988.3664691,
+    "ast_hash": "3b72272091913c9b776270ea7a725e95",
+    "semantic_hash": "3b72272091913c9b776270ea7a725e95"
+  },
+  "src/utils/torreControl.test.mjs": {
+    "mtime": 1787353988.368011,
+    "ast_hash": "0bcc69df7285f89e57342387941b6e08",
+    "semantic_hash": "0bcc69df7285f89e57342387941b6e08"
+  },
+  ".github/workflows/frontend-ci.yml": {
+    "mtime": 1787269557.3285873,
+    "ast_hash": "7d1cb19cbfec12f4bc5df9e50d0746c3",
+    "semantic_hash": "7d1cb19cbfec12f4bc5df9e50d0746c3"
+  },
+  "audit-excepciones.txt": {
+    "mtime": 1791482432.830882,
+    "ast_hash": "a3f135cca6a8658ea34d7b0a2627af6a",
+    "semantic_hash": "a3f135cca6a8658ea34d7b0a2627af6a"
+  },
+  "index.html": {
+    "mtime": 1784580954.0762503,
+    "ast_hash": "933c98c753aa7b7a7cde9e2a6451729e",
+    "semantic_hash": "933c98c753aa7b7a7cde9e2a6451729e"
+  },
+  "src/components/CampoFecha/CampoFecha.jsx": {
+    "mtime": 1791829326.9149053,
+    "ast_hash": "6b13e079033370b18dc24be5e8209d09",
+    "semantic_hash": "6b13e079033370b18dc24be5e8209d09"
+  },
+  "src/components/CampoFecha/reglasFecha.mjs": {
+    "mtime": 1791826846.9170113,
+    "ast_hash": "0710e9b1fe0cf98fba52ab99bebadf4e",
+    "semantic_hash": "0710e9b1fe0cf98fba52ab99bebadf4e"
+  },
+  "src/components/CampoFecha/reglasFecha.test.mjs": {
+    "mtime": 1791827104.5126767,
+    "ast_hash": "9f36bc14e91cb61ab87fd0e006af1e1b",
+    "semantic_hash": "9f36bc14e91cb61ab87fd0e006af1e1b"
+  },
+  "src/components/FiltrosLista/FiltrosLista.jsx": {
+    "mtime": 1792434261.2702346,
+    "ast_hash": "92be96e2f9492a46081543b6734e255a",
+    "semantic_hash": "92be96e2f9492a46081543b6734e255a"
+  },
+  "src/pages/CompensacionPage.jsx": {
+    "mtime": 1793729365.7033894,
+    "ast_hash": "16fce6e083ea8562dfa2837744c25ccc",
+    "semantic_hash": "16fce6e083ea8562dfa2837744c25ccc"
+  },
+  "src/pages/EstadosCuentaPage.jsx": {
+    "mtime": 1793729300.802305,
+    "ast_hash": "7b52a0a7ca54739734270df0f88f1cda",
+    "semantic_hash": "7b52a0a7ca54739734270df0f88f1cda"
+  },
+  "src/pages/HistorialPagosPage.jsx": {
+    "mtime": 1793729365.7023895,
+    "ast_hash": "bd904736db955b1933cf68d239fecc43",
+    "semantic_hash": "bd904736db955b1933cf68d239fecc43"
+  },
+  "src/utils/filtroFechas.mjs": {
+    "mtime": 1792193045.188552,
+    "ast_hash": "db602c6de15fb6df0ad16f815b0efc31",
+    "semantic_hash": "db602c6de15fb6df0ad16f815b0efc31"
+  },
+  "src/utils/filtroFechas.test.mjs": {
+    "mtime": 1792193045.2411504,
+    "ast_hash": "a173ac0a2f6ec35d04c0b45fcc9686dd",
+    "semantic_hash": "a173ac0a2f6ec35d04c0b45fcc9686dd"
+  }
+}

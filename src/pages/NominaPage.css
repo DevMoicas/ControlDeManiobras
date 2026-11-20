@@ -1,0 +1,247 @@
+/* ── Nómina — sueldos, prima vacacional y finiquitos ─────────────────────────
+   Misma hoja de papel que Gastos y Vacíos: shell azul del app, Oswald display,
+   Inter cuerpo, cabecera oscura y crema en el cuerpo. Los tokens se copian tal
+   cual de .gastos-container — son los mismos valores a propósito, para que las
+   tablas del sistema se lean como una sola familia y no como tres parecidas.
+
+   Todo cuelga de .nomina-container: las clases de nombre genérico (.toolbar,
+   .loading-box…) las declaran también Gastos y Catálogos, y al scoparlas aquí
+   ganan por especificidad sin depender del orden del bundle.
+
+   Las fuentes vienen de index.html — sin @import, que bloquea el render. */
+
+.nomina-container {
+  --primary-blue:  var(--primary, #2563eb);
+  --primary-hover: #1d4ed8;
+  --card-bg:       #faf8f3;
+  --paper-deep:    #f3ede1;
+  --text-main:     var(--text, #1f2937);
+  --text-muted:    var(--text-light, #6b7280);
+  --border-color:  #e6ecf5;
+  --danger:        #dc2626;
+  --ink:           #23201c;                 /* tinta de imprenta */
+  --grid-line:     rgba(74, 58, 34, 0.10);  /* filetes entre columnas */
+  --row-line:      rgba(74, 58, 34, 0.13);  /* renglones */
+  --sheet-edge:    #e3dccd;                 /* canto de la hoja */
+
+  /* La cabecera de esta página es más corta que la de Gastos: solo buscador y
+     barra de acciones. Ver .tabla-cabecera-fija en App.css. */
+  --tabla-tope:    240px;
+
+  min-height: calc(100vh - 40px);
+  padding: 52px 28px 64px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--text-main);
+  background:
+    radial-gradient(900px 420px at 100% -8%, #e8f0ff 0%, transparent 58%),
+    var(--bg, #f4f7fb);
+}
+
+/* ── Estados de carga y error ─────────────────────────────────────────────── */
+.nomina-container .loading-box,
+.nomina-container .error-box {
+  max-width: 520px;
+  margin: 80px auto 0;
+  padding: 28px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: #fff;
+  text-align: center;
+}
+.nomina-container .loading-text { margin: 0; color: var(--text-muted); }
+.nomina-container .error-title {
+  margin: 0 0 8px;
+  font-family: 'Oswald', sans-serif;
+  color: var(--danger);
+}
+.nomina-container .error-text { margin: 0; color: var(--text-muted); }
+
+/* ── Buscador y barra de acciones ─────────────────────────────────────────── */
+.nomina-container .np-search { margin-top: 32px; }
+.nomina-container .np-search > div { margin-bottom: 0 !important; }
+
+.nomina-container .toolbar {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nomina-container .np-resumen {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Arriba a la derecha de la tabla, que es donde lo pidió el usuario. */
+.nomina-container .np-btn-calendario {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary-blue);
+  color: #fff;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+.nomina-container .np-btn-calendario:hover { background: var(--primary-hover); }
+.nomina-container .np-btn-calendario:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* ── La hoja ──────────────────────────────────────────────────────────────── */
+/* Radio corto y canto cálido en vez de tarjeta de 16px. La sombra larga la
+   despega del escritorio; la corta es el grosor del papel. */
+.nomina-container .table-responsive {
+  margin-top: 22px;
+  background: var(--card-bg);
+  border: 1px solid var(--sheet-edge);
+  border-radius: 6px;
+  box-shadow:
+    0 1px 2px rgba(74, 58, 34, 0.07),
+    0 18px 34px -24px rgba(74, 58, 34, 0.45);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #cec4b0 transparent;
+}
+.nomina-container .table-responsive::-webkit-scrollbar { width: 12px; height: 12px; }
+.nomina-container .table-responsive::-webkit-scrollbar-track,
+.nomina-container .table-responsive::-webkit-scrollbar-corner { background: var(--card-bg); }
+.nomina-container .table-responsive::-webkit-scrollbar-thumb {
+  background: #cec4b0;
+  border-radius: 999px;
+  border: 3px solid var(--card-bg);
+}
+.nomina-container .table-responsive::-webkit-scrollbar-thumb:hover { background: #b6a98e; }
+
+.nomina-container .nomina-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--ink);
+  /* Tabla de dinero: sin cifras de ancho fijo, los importes no caen en columna
+     y no se pueden comparar de un vistazo. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cabecera: la misma barra oscura, lisa y sin filetes, de Gastos y Vacíos. */
+.nomina-container .nomina-table th {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+  padding: 14px 16px;
+  background: #2b3e50;
+  color: #fff;
+  border-bottom: 1px solid #1e2b38;
+  min-width: 130px;
+}
+
+.nomina-container .nomina-table td {
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--row-line);
+  border-right: 1px solid var(--grid-line);
+  color: var(--ink);
+  vertical-align: middle;
+  min-width: 130px;
+  /* Opaco: lo exige el talón congelado de abajo. */
+  background: var(--card-bg);
+}
+.nomina-container .nomina-table td:last-child { border-right: none; }
+.nomina-container .nomina-table tbody tr:last-child td { border-bottom: none; }
+.nomina-container .nomina-table tbody tr { transition: background 0.12s; }
+.nomina-container .nomina-table tbody tr:hover td { background: var(--paper-deep); }
+
+/* ── El talón ─────────────────────────────────────────────────────────────────
+   La franja izquierda que identifica el registro. Aquí es el NOMBRE, que es de
+   quién es la fila: al desplazarse hacia Finiquito se perdía de vista. Mismo
+   gesto que la carta porte en Gastos y el folio en Maniobras. */
+.nomina-container .nomina-table th:first-child,
+.nomina-container .nomina-table td:first-child:not([colspan]) {
+  position: sticky;
+  left: 0;
+}
+.nomina-container .nomina-table td:first-child:not([colspan]) {
+  z-index: 5;
+  border-right: 2px solid rgba(74, 58, 34, 0.24);
+  box-shadow: 8px 0 10px -10px rgba(74, 58, 34, 0.5);
+}
+/* La esquina viaja en los dos ejes: por encima de ambos sticky. */
+.nomina-container .nomina-table thead th:first-child { z-index: 11; }
+
+/* ── Celdas ───────────────────────────────────────────────────────────────── */
+
+.nomina-container .np-nombre {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-weight: 600;
+}
+
+/* Los calculados y los del catálogo se leen distinto de los que se escriben:
+   sin esta pista, una celda que no responde al clic parece rota. */
+.nomina-container .np-calculado { color: #56504a; }
+
+/* Cero días porque falta la fecha de ingreso NO es un dato, es un aviso. */
+.nomina-container .np-sin-dato {
+  color: var(--danger);
+  font-weight: 600;
+  cursor: help;
+}
+
+.nomina-container .np-vacio {
+  padding: 40px;
+  text-align: center;
+  color: #9ca3af;
+}
+
+/* ── Baja ─────────────────────────────────────────────────────────────────── */
+/* El empleado dado de baja se queda en la tabla —hay que poder cerrarle el
+   finiquito— pero atenuado, para que no se confunda con la plantilla activa.
+   La opacidad va en el texto y no en la fila entera: atenuar el fondo dejaría
+   ver la fila de debajo a través del talón congelado. */
+.nomina-container .nomina-table tr.np-baja td { color: #8b8378; }
+.nomina-container .nomina-table tr.np-baja .np-nombre { font-weight: 500; }
+
+.nomina-container .np-etiqueta-baja {
+  align-self: flex-start;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f1ece2;
+  color: #8b8378;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .nomina-container { padding: 40px 14px 56px; }
+  .nomina-container .toolbar { flex-direction: column; align-items: stretch; }
+  .nomina-container .np-btn-calendario { width: 100%; justify-content: center; }
+  .nomina-container .nomina-table th,
+  .nomina-container .nomina-table td { min-width: 110px; padding: 10px 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nomina-container .nomina-table tbody tr,
+  .nomina-container .np-btn-calendario { transition: none; }
+}
