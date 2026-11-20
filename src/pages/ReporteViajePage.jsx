@@ -107,7 +107,7 @@ function SiNo({ value, onChange }) {
 
 export default function ReporteViajePage() {
   const {
-    reportes, total, completos, cargando, cargar, crear, actualizar, eliminar, buscarPorFolio, descargar,
+    reportes, total, completos, cargando, cargar, hayMas, cargandoMas, cargarMas, crear, actualizar, eliminar, buscarPorFolio, descargar,
   } = useReportesViaje();
   const alerta = useAlerta();
   const preguntar = useConfirmacion();
@@ -134,7 +134,7 @@ export default function ReporteViajePage() {
   }, [busqueda]);
 
   // Búsqueda y filtros van al servidor: el contador es el `count` de TODOS los
-  // que cumplen, no de la página de 60 que se pinta.
+  // que cumplen, no de las páginas de 100 ya cargadas.
   // ponytail: la búsqueda del servidor distingue acentos (icontains);
   // unaccent si llega a molestar.
   useEffect(() => {
@@ -142,6 +142,13 @@ export default function ReporteViajePage() {
       .catch(() => alerta({ tipo: "error", msg: "Error al cargar los reportes." }));
   }, [cargar, alerta, filtros, buscar]);
   const visibles = reportes;
+  // Scroll infinito dentro de la tabla (la que scrollea es .tabla-cabecera-fija).
+  const alBajarTabla = (e) => {
+    const t = e.currentTarget;
+    if (t.scrollTop + t.clientHeight >= t.scrollHeight - 300 && hayMas && !cargando && !cargandoMas) {
+      cargarMas().catch(() => alerta({ tipo: "error", msg: "Error al cargar más reportes." }));
+    }
+  };
   const filtrando = Boolean(buscar) || Object.values(filtros).some(Boolean);
 
   const cambiar = (campo, valor) => setAbierto((prev) => ({ ...prev, [campo]: valor }));
@@ -290,7 +297,7 @@ export default function ReporteViajePage() {
         </p>
 
         <div className="rv-hoja">
-         <div className="rv-tabla-scroll tabla-cabecera-fija">
+         <div className="rv-tabla-scroll tabla-cabecera-fija" onScroll={alBajarTabla}>
           <table className="rv-tabla">
             <thead>
               <tr>
@@ -373,6 +380,7 @@ export default function ReporteViajePage() {
                   </td>
                 </tr>
               ))}
+              {cargandoMas && <tr><td colSpan={8} className="rv-estado">Cargando más…</td></tr>}
             </tbody>
           </table>
          </div>

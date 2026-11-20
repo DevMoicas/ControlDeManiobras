@@ -7,13 +7,13 @@ import { conValor } from "../components/FiltrosLista/FiltrosLista";
  * useReportesViaje
  * Los reportes de viaje del coordinador. Uno por folio.
  *
- * Paginado en el servidor (PAGE_SIZE=60): a diferencia de Folios o Pendientes,
- * esta tabla crece sin techo. La pantalla la recorre con buscador, no de una vez.
+ * Paginado en el servidor de 100 en 100 (PaginaDeCien): a diferencia de Folios
+ * o Pendientes, esta tabla crece sin techo. La pantalla carga más al bajar.
  */
 export function useReportesViaje() {
   const [reportes, setReportes] = useState([]);
   // El contador de la pantalla: `count` del servidor, o sea TODOS los que
-  // cumplen los filtros, no solo la página de 60 que se pinta.
+  // cumplen los filtros, no solo las páginas de 100 ya cargadas.
   const [total, setTotal] = useState(0);
   // Cuántos de esos `total` están al 100 %: lo cuenta el servidor sobre todos.
   const [completos, setCompletos] = useState(0);
@@ -27,9 +27,18 @@ export function useReportesViaje() {
 
   const normalizar = (data) => (Array.isArray(data) ? data : (data?.results ?? []));
 
+  // Scroll infinito: la página que toca y los filtros con que se pidió la 1ª.
+  const [hayMas, setHayMas] = useState(false);
+  const [cargandoMas, setCargandoMas] = useState(false);
+  const pagina = useRef(1);
+  const filtrosActuales = useRef({});
+  const pidiendoMas = useRef(false);
+
   /** `filtros`: {search, fecha, desde, hasta, mes, coordinador, operador, ruta}. */
   const cargar = useCallback(async (filtros = {}) => {
     const yo = ++ultima.current;
+    filtrosActuales.current = filtros;
+    pagina.current = 1;
     setCargando(true);
     try {
       const data = await apiClient.get(`/reportes-viaje/?${new URLSearchParams(conValor(filtros))}`);
@@ -37,8 +46,34 @@ export function useReportesViaje() {
       setReportes(normalizar(data));
       setTotal(data?.count ?? normalizar(data).length);
       setCompletos(data?.completos ?? 0);
+      setHayMas(Boolean(data?.next));
     } finally {
       if (yo === ultima.current) setCargando(false);
+    }
+  }, []);
+
+  /** La siguiente página (100, la fija el backend) con los mismos filtros. */
+  const cargarMas = useCallback(async () => {
+    if (pidiendoMas.current) return;
+    pidiendoMas.current = true;
+    const yo = ultima.current;
+    setCargandoMas(true);
+    try {
+      const params = new URLSearchParams(conValor(filtrosActuales.current));
+      params.set("page", pagina.current + 1);
+      const data = await apiClient.get(`/reportes-viaje/?${params}`);
+      // Si cambió la búsqueda mientras tanto, esta página ya no vale.
+      if (yo !== ultima.current) return;
+      pagina.current += 1;
+      // Por id: un reporte creado arriba desplaza la paginación y repetiría filas.
+      setReportes((prev) => {
+        const ya = new Set(prev.map((r) => r.id));
+        return [...prev, ...normalizar(data).filter((r) => !ya.has(r.id))];
+      });
+      setHayMas(Boolean(data?.next));
+    } finally {
+      pidiendoMas.current = false;
+      setCargandoMas(false);
     }
   }, []);
 
@@ -95,5 +130,5 @@ export function useReportesViaje() {
     window.URL.revokeObjectURL(url);
   }, []);
 
-  return { reportes, total, completos, cargando, cargar, crear, actualizar, eliminar, buscarPorFolio, descargar };
+  return { reportes, total, completos, cargando, cargar, hayMas, cargandoMas, cargarMas, crear, actualizar, eliminar, buscarPorFolio, descargar };
 }
