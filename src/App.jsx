@@ -135,11 +135,13 @@ function AppRoutes() {
       .catch(() => setVerFinanzas(false));
   }, []);
 
-  // Comparación de rediseños: Diseño opcional 2 (temaOpcion2.css) en Maniobras
-  // y Diseño opcional 1 (temaOpcion1.css) en todo lo demás. Va en <body> y no
-  // en la raíz de este árbol: alertas y desplegables se pintan por portal en
-  // body. Al salir (login) se quita: el login conserva su propio diseño.
-  const temaActivo = location.pathname.startsWith('/home/maniobras') ? 'tema-opcion2' : 'tema-opcion1';
+  // Diseño opcional 1 (temaOpcion1.css) en todas las páginas, Maniobras
+  // incluida (usuario, 2026-11-19). El Diseño opcional 2 (temaOpcion2.css)
+  // queda guardado sin aplicarse: para volver a compararlo en Maniobras, poner
+  // aquí 'tema-opcion2' para esa ruta. Va en <body> y no en la raíz de este
+  // árbol: alertas y desplegables se pintan por portal en body. Al salir
+  // (login) se quita: el login conserva su propio diseño.
+  const temaActivo = 'tema-opcion1';
   useEffect(() => {
     document.body.classList.add(temaActivo);
     return () => document.body.classList.remove(temaActivo);
