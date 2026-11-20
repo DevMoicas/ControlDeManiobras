@@ -1208,3 +1208,70 @@ cuatro despliegues terminaron en verde.
   frontend los mande en tandas.
 - En la BD local, la factura SEF 470 (id 77) tiene un `updated_at` del 2026-10-28
   por una prueba mía que no se deshizo. Lo demás se restauró a mano.
+
+## 22. Sesión del 2026-11-19 — Rediseño del frontend: barra lateral, inicio nuevo y dos diseños a comparar. DESPLEGADO
+
+Solo frontend, sin migración ni cambios de backend. Commit `b91f214` en
+`feature/inicio-botones`; el despliegue terminó en verde.
+
+### Diseños opcionales (comparación en producción)
+
+- **Diseño opcional 1** (`src/temaOpcion1.css`, clase `tema-opcion1` en `<body>`):
+  navy `#102a43` + teal `#087e8b`, DM Sans y Fraunces en títulos, fondo blanco.
+  Tomado de la muestra `docs/planes/Frontend Sistema de Finanzas`. Va en todas
+  las páginas con sesión menos Maniobras.
+- **Diseño opcional 2** (`src/temaOpcion2.css`, `tema-opcion2`): "consola
+  diurna" (variante nocturna guardada en `tema-opcion2--nocturna`), ámbar y
+  Barlow. Solo en Maniobras.
+- Los dos son overrides de tokens por clase en `<body>` (así alcanzan a los
+  portales) importados al final de `App.jsx`. **Los colores de status de
+  Maniobras y el balde no se tocan** (decisión del usuario): siguen mandando las
+  reglas de `ManiobrasPage.css`.
+- Pendiente: que el usuario elija uno. El que se quede debería pasar a los tokens
+  de cada hoja y el archivo de tema borrarse (está anotado con `ponytail:`).
+
+### Navegación: barra lateral
+
+- `src/components/BarraLateral/` sustituye a los botones flotantes de regreso.
+  Árbol: Inicio · Viajes (Control de Maniobras, Vacíos, Gastos efectivo,
+  Movimientos locales, Folios, Documentos de viaje, Reportes de viaje, Torre de
+  control) · Finanzas (Facturas → Facturación, Cuentas por cobrar desplegable,
+  Cuentas por pagar, Costos extra, Nómina, Gastos financieros) · Dashboards ·
+  Mantenimiento (deshabilitado, "Próximamente": no existe la página) ·
+  Catálogos · Pendientes · Perfil.
+- Permisos iguales que antes: Folios y Finanzas según `/folios/acceso/` y
+  `/facturas/acceso/` (ahora se piden una vez en `AppRoutes`), Nómina solo admin.
+- Menos de 900 px: la barra pasa arriba plegada tras "Menú".
+- Los hubs de Finanzas y Cuentas por cobrar ya no están en la barra, pero sus
+  rutas siguen funcionando.
+
+### Inicio
+
+- Sin tarjetas de módulos. Bienvenida (logo, saludo según la hora local, fecha y
+  reloj al segundo) y a la derecha Seguimientos arriba y Avisos debajo, con
+  estilo del Diseño 1. Avisos dice "Sin vencimientos próximos." cuando no hay.
+- `src/components/InicioEscena/`: escena SVG animada del puerto. Un full de FRABA
+  (dos contenedores rojos, cabina blanca con el logo) avanza mientras el fondo
+  pasa en dos capas, mar con buques y un puerto con grúas naranjas, estibas
+  irregulares y tractos estacionados. Sol (6–20 h) y luna (20–6 h) en tres
+  posiciones por franja horaria. Respeta `prefers-reduced-motion`.
+
+### Herramientas
+
+- Skills de agente instaladas en local (modern-web-guidance, emilkowalski,
+  impeccable con su hook de diseño, design-taste-frontend), todas en
+  `.gitignore`.
+- Se deja de versionar `graphify-out/cache/` (se regenera); el grafo y el reporte
+  siguen en el repo.
+- Este repo de docs tiene ahora `.gitignore` para el material del usuario en
+  `planes/` (XML de facturas, CSV y estados de cuenta, Excel, páginas guardadas):
+  son datos reales, no documentación.
+
+### Queda abierto
+
+- Elegir entre el Diseño 1 y el 2 y consolidar el elegido.
+- Página de Mantenimiento (hoy solo el hueco en la barra).
+- Estilos muertos de los botones de regreso (`.home-back*`, `.home-lateral`,
+  `.home-head`) en `App.css` y los temas: se pueden borrar.
+- Sin revisión visual en navegador por mi parte (la app exige sesión): lo validó
+  el usuario en local.

@@ -1,0 +1,12 @@
+# Material de trabajo del usuario en planes/: facturas XML, movimientos y
+# estados de cuenta bancarios, Excel con datos de clientes y páginas guardadas
+# del navegador. Son datos reales o descargas, no documentación: nunca al repo.
+# Los que ya estaban versionados (FORMATO_LECTURA_FACTURACION.xlsx y el
+# codigo.html de la muestra de diseño) siguen versionados.
+docs/planes/*.xml
+docs/planes/*.csv
+docs/planes/*.pdf
+docs/planes/*.xlsx
+docs/planes/*.html
+docs/planes/*_files/*
+!docs/planes/Frontend Sistema de Finanzas_files/codigo.html
