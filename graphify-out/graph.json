@@ -464,20 +464,20 @@
       "norm_label": "app.jsx"
     },
     {
-      "label": "HOME_MODULES",
+      "label": "Reloj()",
       "file_type": "code",
       "source_file": "src/App.jsx",
-      "source_location": "L38",
+      "source_location": "L44",
       "_origin": "ast",
-      "id": "src_app_home_modules",
+      "id": "src_app_reloj",
       "community": 3,
-      "norm_label": "home_modules"
+      "norm_label": "reloj()"
     },
     {
       "label": "Home()",
       "file_type": "code",
       "source_file": "src/App.jsx",
-      "source_location": "L52",
+      "source_location": "L60",
       "_origin": "ast",
       "id": "src_app_home",
       "community": 3,
@@ -487,7 +487,7 @@
       "label": "AppRoutes()",
       "file_type": "code",
       "source_file": "src/App.jsx",
-      "source_location": "L142",
+      "source_location": "L122",
       "_origin": "ast",
       "id": "src_app_approutes",
       "community": 14,
@@ -500,7 +500,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "login_login",
-      "community": 23,
+      "community": 14,
       "norm_label": "login.jsx"
     },
     {
@@ -510,7 +510,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "login_login_lanegrid",
-      "community": 23,
+      "community": 14,
       "norm_label": "lanegrid"
     },
     {
@@ -520,7 +520,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "login_login_loginpage",
-      "community": 23,
+      "community": 14,
       "norm_label": "loginpage()"
     },
     {
@@ -530,7 +530,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "login_mfa",
-      "community": 23,
+      "community": 14,
       "norm_label": "mfa.mjs"
     },
     {
@@ -540,7 +540,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "login_mfa_pasosiguiente",
-      "community": 23,
+      "community": 14,
       "norm_label": "pasosiguiente()"
     },
     {
@@ -550,7 +550,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "login_mfa_test",
-      "community": 23,
+      "community": 14,
       "norm_label": "mfa.test.mjs"
     },
     {
@@ -580,7 +580,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "animations_modalmotion",
-      "community": 7,
+      "community": 0,
       "norm_label": "modalmotion.js"
     },
     {
@@ -590,7 +590,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "animations_modalmotion_overlaymotion",
-      "community": 7,
+      "community": 0,
       "norm_label": "overlaymotion"
     },
     {
@@ -600,7 +600,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "animations_modalmotion_contentmotion",
-      "community": 7,
+      "community": 0,
       "norm_label": "contentmotion"
     },
     {
@@ -610,7 +610,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "animations_modalmotion_alertamotion",
-      "community": 7,
+      "community": 29,
       "norm_label": "alertamotion"
     },
     {
@@ -810,7 +810,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "alertas_alertas",
-      "community": 7,
+      "community": 29,
       "norm_label": "alertas.jsx"
     },
     {
@@ -820,7 +820,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "alertas_alertas_familia",
-      "community": 7,
+      "community": 29,
       "norm_label": "familia"
     },
     {
@@ -830,7 +830,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "alertas_alertas_desenlace",
-      "community": 7,
+      "community": 29,
       "norm_label": "desenlace"
     },
     {
@@ -840,7 +840,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "alertas_alertas_vida_ms",
-      "community": 7,
+      "community": 29,
       "norm_label": "vida_ms"
     },
     {
@@ -850,7 +850,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "alertas_alertas_alertacontext",
-      "community": 7,
+      "community": 29,
       "norm_label": "alertacontext"
     },
     {
@@ -870,8 +870,78 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "alertas_alertas_alertasprovider",
-      "community": 7,
+      "community": 29,
       "norm_label": "alertasprovider()"
+    },
+    {
+      "label": "BarraLateral.jsx",
+      "file_type": "code",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "barralateral_barralateral",
+      "community": 31,
+      "norm_label": "barralateral.jsx"
+    },
+    {
+      "label": "arbol()",
+      "file_type": "code",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "barralateral_barralateral_arbol",
+      "community": 31,
+      "norm_label": "arbol()"
+    },
+    {
+      "label": "visibles()",
+      "file_type": "code",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L53",
+      "_origin": "ast",
+      "id": "barralateral_barralateral_visibles",
+      "community": 31,
+      "norm_label": "visibles()"
+    },
+    {
+      "label": "contiene()",
+      "file_type": "code",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L54",
+      "_origin": "ast",
+      "id": "barralateral_barralateral_contiene",
+      "community": 31,
+      "norm_label": "contiene()"
+    },
+    {
+      "label": "Grupo()",
+      "file_type": "code",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L57",
+      "_origin": "ast",
+      "id": "barralateral_barralateral_grupo",
+      "community": 31,
+      "norm_label": "grupo()"
+    },
+    {
+      "label": "Nodo()",
+      "file_type": "code",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L86",
+      "_origin": "ast",
+      "id": "barralateral_barralateral_nodo",
+      "community": 31,
+      "norm_label": "nodo()"
+    },
+    {
+      "label": "BarraLateral()",
+      "file_type": "code",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L111",
+      "_origin": "ast",
+      "id": "barralateral_barralateral_barralateral",
+      "community": 31,
+      "norm_label": "barralateral()"
     },
     {
       "label": "BarraScrollTabla.jsx",
@@ -990,7 +1060,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "calendariovacaciones_calendariovacaciones",
-      "community": 7,
+      "community": 2,
       "norm_label": "calendariovacaciones.jsx"
     },
     {
@@ -1000,7 +1070,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "calendariovacaciones_calendariovacaciones_dias",
-      "community": 7,
+      "community": 2,
       "norm_label": "dias"
     },
     {
@@ -1010,7 +1080,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "calendariovacaciones_calendariovacaciones_mesde",
-      "community": 7,
+      "community": 2,
       "norm_label": "mesde()"
     },
     {
@@ -1020,7 +1090,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "calendariovacaciones_calendariovacaciones_nombredelmes",
-      "community": 7,
+      "community": 2,
       "norm_label": "nombredelmes()"
     },
     {
@@ -1030,7 +1100,7 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "calendariovacaciones_calendariovacaciones_hoyiso",
-      "community": 7,
+      "community": 2,
       "norm_label": "hoyiso()"
     },
     {
@@ -1040,7 +1110,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "calendariovacaciones_calendariovacaciones_calendariovacaciones",
-      "community": 7,
+      "community": 2,
       "norm_label": "calendariovacaciones()"
     },
     {
@@ -1050,7 +1120,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "campofecha_campofecha",
-      "community": 9,
+      "community": 8,
       "norm_label": "campofecha.jsx"
     },
     {
@@ -1060,7 +1130,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "campofecha_campofecha_ahora",
-      "community": 9,
+      "community": 8,
       "norm_label": "ahora"
     },
     {
@@ -1070,7 +1140,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "campofecha_campofecha_primer_mes",
-      "community": 9,
+      "community": 8,
       "norm_label": "primer_mes"
     },
     {
@@ -1080,7 +1150,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "campofecha_campofecha_ultimo_mes",
-      "community": 9,
+      "community": 8,
       "norm_label": "ultimo_mes"
     },
     {
@@ -1090,7 +1160,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "campofecha_campofecha_meses",
-      "community": 9,
+      "community": 8,
       "norm_label": "meses"
     },
     {
@@ -1100,7 +1170,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "campofecha_campofecha_dosdigitos",
-      "community": 9,
+      "community": 8,
       "norm_label": "dosdigitos()"
     },
     {
@@ -1110,7 +1180,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "campofecha_campofecha_conhora",
-      "community": 9,
+      "community": 8,
       "norm_label": "conhora()"
     },
     {
@@ -1120,7 +1190,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "campofecha_campofecha_campofecha",
-      "community": 9,
+      "community": 8,
       "norm_label": "campofecha()"
     },
     {
@@ -1130,7 +1200,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "campofecha_reglasfecha",
-      "community": 9,
+      "community": 8,
       "norm_label": "reglasfecha.mjs"
     },
     {
@@ -1140,7 +1210,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "campofecha_reglasfecha_formato",
-      "community": 9,
+      "community": 8,
       "norm_label": "formato"
     },
     {
@@ -1150,7 +1220,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "campofecha_reglasfecha_entradas",
-      "community": 9,
+      "community": 8,
       "norm_label": "entradas"
     },
     {
@@ -1160,7 +1230,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "campofecha_reglasfecha_formatear",
-      "community": 9,
+      "community": 8,
       "norm_label": "formatear()"
     },
     {
@@ -1170,7 +1240,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "campofecha_reglasfecha_interpretar",
-      "community": 9,
+      "community": 8,
       "norm_label": "interpretar()"
     },
     {
@@ -1180,7 +1250,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "campofecha_reglasfecha_minutosdeldia",
-      "community": 9,
+      "community": 8,
       "norm_label": "minutosdeldia()"
     },
     {
@@ -1190,7 +1260,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "campofecha_reglasfecha_test",
-      "community": 9,
+      "community": 8,
       "norm_label": "reglasfecha.test.mjs"
     },
     {
@@ -1200,7 +1270,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "campofecha_reglasfecha_test_ymd",
-      "community": 9,
+      "community": 8,
       "norm_label": "ymd()"
     },
     {
@@ -1320,7 +1390,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ciudadselector_ciudadselector",
-      "community": 7,
+      "community": 0,
       "norm_label": "ciudadselector.jsx"
     },
     {
@@ -1330,7 +1400,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "ciudadselector_ciudadselector_ciudadselector",
-      "community": 7,
+      "community": 0,
       "norm_label": "ciudadselector()"
     },
     {
@@ -1360,7 +1430,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "colorselector_colorselector",
-      "community": 8,
+      "community": 2,
       "norm_label": "colorselector.jsx"
     },
     {
@@ -1370,7 +1440,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "colorselector_colorselector_colorselector",
-      "community": 8,
+      "community": 2,
       "norm_label": "colorselector()"
     },
     {
@@ -1380,7 +1450,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "confirmacion_confirmacion",
-      "community": 7,
+      "community": 30,
       "norm_label": "confirmacion.jsx"
     },
     {
@@ -1390,7 +1460,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "confirmacion_confirmacion_confirmacioncontext",
-      "community": 7,
+      "community": 30,
       "norm_label": "confirmacioncontext"
     },
     {
@@ -1410,7 +1480,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "confirmacion_confirmacion_confirmacionprovider",
-      "community": 7,
+      "community": 30,
       "norm_label": "confirmacionprovider()"
     },
     {
@@ -1420,7 +1490,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "costosextraselector_costosextraselector",
-      "community": 0,
+      "community": 13,
       "norm_label": "costosextraselector.jsx"
     },
     {
@@ -1430,7 +1500,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "costosextraselector_costosextraselector_costosextraselector",
-      "community": 0,
+      "community": 13,
       "norm_label": "costosextraselector()"
     },
     {
@@ -1440,7 +1510,7 @@
       "source_location": "L175",
       "_origin": "ast",
       "id": "costosextraselector_costosextraselector_formatearcosto",
-      "community": 0,
+      "community": 13,
       "norm_label": "formatearcosto()"
     },
     {
@@ -1660,7 +1730,7 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "dashboards_dashboards_barrafiltros",
-      "community": 5,
+      "community": 1,
       "norm_label": "barrafiltros()"
     },
     {
@@ -1680,7 +1750,7 @@
       "source_location": "L147",
       "_origin": "ast",
       "id": "dashboards_dashboards_kpi",
-      "community": 9,
+      "community": 8,
       "norm_label": "kpi()"
     },
     {
@@ -1840,7 +1910,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "documentocelda_documentocelda",
-      "community": 7,
+      "community": 0,
       "norm_label": "documentocelda.jsx"
     },
     {
@@ -1850,7 +1920,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "documentocelda_documentocelda_tipos_ok",
-      "community": 7,
+      "community": 0,
       "norm_label": "tipos_ok"
     },
     {
@@ -1860,7 +1930,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "documentocelda_documentocelda_abloburl",
-      "community": 7,
+      "community": 0,
       "norm_label": "abloburl()"
     },
     {
@@ -1870,7 +1940,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "documentocelda_documentocelda_documentocelda",
-      "community": 7,
+      "community": 0,
       "norm_label": "documentocelda()"
     },
     {
@@ -1890,7 +1960,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "filtroslista_filtroslista_convalor",
-      "community": 2,
+      "community": 13,
       "norm_label": "convalor()"
     },
     {
@@ -1910,7 +1980,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "filtroslista_filtroslista_filtroslista",
-      "community": 2,
+      "community": 7,
       "norm_label": "filtroslista()"
     },
     {
@@ -2070,7 +2140,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "inactivitymodal_inactivitymodal",
-      "community": 23,
+      "community": 3,
       "norm_label": "inactivitymodal.jsx"
     },
     {
@@ -2080,8 +2150,178 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "inactivitymodal_inactivitymodal_inactivitymodal",
-      "community": 23,
+      "community": 3,
       "norm_label": "inactivitymodal()"
+    },
+    {
+      "label": "InicioEscena.jsx",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena",
+      "community": 23,
+      "norm_label": "inicioescena.jsx"
+    },
+    {
+      "label": "LLANTAS",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_llantas",
+      "community": 23,
+      "norm_label": "llantas"
+    },
+    {
+      "label": "Remolque()",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L18",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_remolque",
+      "community": 23,
+      "norm_label": "remolque()"
+    },
+    {
+      "label": "BLOQUES",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L52",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_bloques",
+      "community": 23,
+      "norm_label": "bloques"
+    },
+    {
+      "label": "COLORES",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L64",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_colores",
+      "community": 23,
+      "norm_label": "colores"
+    },
+    {
+      "label": "Contenedor()",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L85",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_contenedor",
+      "community": 23,
+      "norm_label": "contenedor()"
+    },
+    {
+      "label": "BUQUE_CARGA",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L106",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_buque_carga",
+      "community": 23,
+      "norm_label": "buque_carga"
+    },
+    {
+      "label": "Chimenea()",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L114",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_chimenea",
+      "community": 23,
+      "norm_label": "chimenea()"
+    },
+    {
+      "label": "Caja()",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L126",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_caja",
+      "community": 23,
+      "norm_label": "caja()"
+    },
+    {
+      "label": "G",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L142",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_g",
+      "community": 23,
+      "norm_label": "g"
+    },
+    {
+      "label": "Grua()",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L144",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_grua",
+      "community": 23,
+      "norm_label": "grua()"
+    },
+    {
+      "label": "TractoMini()",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L181",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_tractomini",
+      "community": 23,
+      "norm_label": "tractomini()"
+    },
+    {
+      "label": "Lejos()",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L195",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_lejos",
+      "community": 23,
+      "norm_label": "lejos()"
+    },
+    {
+      "label": "Cerca()",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L210",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_cerca",
+      "community": 23,
+      "norm_label": "cerca()"
+    },
+    {
+      "label": "POSICIONES",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L259",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_posiciones",
+      "community": 23,
+      "norm_label": "posiciones"
+    },
+    {
+      "label": "cielo()",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L261",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_cielo",
+      "community": 23,
+      "norm_label": "cielo()"
+    },
+    {
+      "label": "InicioEscena()",
+      "file_type": "code",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L276",
+      "_origin": "ast",
+      "id": "inicioescena_inicioescena_inicioescena",
+      "community": 23,
+      "norm_label": "inicioescena()"
     },
     {
       "label": "OperadorSelector.jsx",
@@ -2130,7 +2370,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pendientepagadoselector_pendientepagadoselector",
-      "community": 0,
+      "community": 7,
       "norm_label": "pendientepagadoselector.jsx"
     },
     {
@@ -2140,7 +2380,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "pendientepagadoselector_pendientepagadoselector_opciones",
-      "community": 0,
+      "community": 7,
       "norm_label": "opciones"
     },
     {
@@ -2150,7 +2390,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "pendientepagadoselector_pendientepagadoselector_pendientepagadoselector",
-      "community": 0,
+      "community": 7,
       "norm_label": "pendientepagadoselector()"
     },
     {
@@ -2160,7 +2400,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pinturaceldas_pinturaceldas",
-      "community": 8,
+      "community": 2,
       "norm_label": "pinturaceldas.jsx"
     },
     {
@@ -2170,7 +2410,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "pinturaceldas_pinturaceldas_encajar",
-      "community": 8,
+      "community": 2,
       "norm_label": "encajar()"
     },
     {
@@ -2180,7 +2420,7 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "pinturaceldas_pinturaceldas_usepinturaceldas",
-      "community": 8,
+      "community": 2,
       "norm_label": "usepinturaceldas()"
     },
     {
@@ -2190,7 +2430,7 @@
       "source_location": "L139",
       "_origin": "ast",
       "id": "pinturaceldas_pinturaceldas_paleta",
-      "community": 8,
+      "community": 2,
       "norm_label": "paleta()"
     },
     {
@@ -2200,7 +2440,7 @@
       "source_location": "L183",
       "_origin": "ast",
       "id": "pinturaceldas_pinturaceldas_pinturaceldas",
-      "community": 8,
+      "community": 2,
       "norm_label": "pinturaceldas()"
     },
     {
@@ -2270,7 +2510,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "reportevaciosmodal_reportevaciosmodal",
-      "community": 7,
+      "community": 0,
       "norm_label": "reportevaciosmodal.jsx"
     },
     {
@@ -2280,7 +2520,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "reportevaciosmodal_reportevaciosmodal_reportevaciosmodal",
-      "community": 7,
+      "community": 0,
       "norm_label": "reportevaciosmodal()"
     },
     {
@@ -2390,7 +2630,7 @@
       "source_location": "L147",
       "_origin": "ast",
       "id": "seguimientos_seguimientos_lista",
-      "community": 5,
+      "community": 1,
       "norm_label": "lista()"
     },
     {
@@ -2560,7 +2800,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "vaciostatusselector_vaciostatusselector",
-      "community": 11,
+      "community": 8,
       "norm_label": "vaciostatusselector.jsx"
     },
     {
@@ -2570,7 +2810,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "vaciostatusselector_vaciostatusselector_vacio_statuses",
-      "community": 11,
+      "community": 8,
       "norm_label": "vacio_statuses"
     },
     {
@@ -2580,7 +2820,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "vaciostatusselector_vaciostatusselector_eir_statuses",
-      "community": 11,
+      "community": 8,
       "norm_label": "eir_statuses"
     },
     {
@@ -2590,7 +2830,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "vaciostatusselector_vaciostatusselector_sin_status",
-      "community": 11,
+      "community": 8,
       "norm_label": "sin_status"
     },
     {
@@ -2600,7 +2840,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "vaciostatusselector_vaciostatusselector_estilode",
-      "community": 11,
+      "community": 8,
       "norm_label": "estilode()"
     },
     {
@@ -2610,7 +2850,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "vaciostatusselector_vaciostatusselector_etiquetade",
-      "community": 11,
+      "community": 8,
       "norm_label": "etiquetade()"
     },
     {
@@ -2620,7 +2860,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "vaciostatusselector_vaciostatusselector_vaciostatusselector",
-      "community": 11,
+      "community": 8,
       "norm_label": "vaciostatusselector()"
     },
     {
@@ -2640,7 +2880,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "config_statusconfig_status_map",
-      "community": 1,
+      "community": 13,
       "norm_label": "status_map"
     },
     {
@@ -2787,7 +3027,7 @@
       "label": "ALLOWED_CLAIMS",
       "file_type": "code",
       "source_file": "src/context/AuthContext.jsx",
-      "source_location": "L8",
+      "source_location": "L9",
       "_origin": "ast",
       "id": "context_authcontext_allowed_claims",
       "community": 14,
@@ -2797,7 +3037,7 @@
       "label": "decodeJwtPayload()",
       "file_type": "code",
       "source_file": "src/context/AuthContext.jsx",
-      "source_location": "L10",
+      "source_location": "L11",
       "_origin": "ast",
       "id": "context_authcontext_decodejwtpayload",
       "community": 14,
@@ -2807,7 +3047,7 @@
       "label": "tokenStore",
       "file_type": "code",
       "source_file": "src/context/AuthContext.jsx",
-      "source_location": "L49",
+      "source_location": "L50",
       "_origin": "ast",
       "id": "context_authcontext_tokenstore",
       "community": 14,
@@ -2817,7 +3057,7 @@
       "label": "AuthProvider()",
       "file_type": "code",
       "source_file": "src/context/AuthContext.jsx",
-      "source_location": "L63",
+      "source_location": "L64",
       "_origin": "ast",
       "id": "context_authcontext_authprovider",
       "community": 14,
@@ -2827,7 +3067,7 @@
       "label": "useAuthContext()",
       "file_type": "code",
       "source_file": "src/context/AuthContext.jsx",
-      "source_location": "L187",
+      "source_location": "L188",
       "_origin": "ast",
       "id": "context_authcontext_useauthcontext",
       "community": 14,
@@ -2950,7 +3190,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_useautorefresco",
-      "community": 2,
+      "community": 10,
       "norm_label": "useautorefresco.js"
     },
     {
@@ -3010,7 +3250,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_usegastos",
-      "community": 2,
+      "community": 10,
       "norm_label": "usegastos.js"
     },
     {
@@ -3020,7 +3260,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "hooks_usegastos_usegastos",
-      "community": 4,
+      "community": 2,
       "norm_label": "usegastos()"
     },
     {
@@ -3060,7 +3300,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_usemaniobras",
-      "community": 2,
+      "community": 13,
       "norm_label": "usemaniobras.js"
     },
     {
@@ -3070,7 +3310,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "hooks_usemaniobras_status_backend",
-      "community": 2,
+      "community": 13,
       "norm_label": "status_backend"
     },
     {
@@ -3080,7 +3320,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "hooks_usemaniobras_usemaniobras",
-      "community": 2,
+      "community": 13,
       "norm_label": "usemaniobras()"
     },
     {
@@ -3090,7 +3330,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_usemovimientoslocales",
-      "community": 31,
+      "community": 7,
       "norm_label": "usemovimientoslocales.js"
     },
     {
@@ -3100,7 +3340,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "hooks_usemovimientoslocales_usemovimientoslocales",
-      "community": 31,
+      "community": 7,
       "norm_label": "usemovimientoslocales()"
     },
     {
@@ -3130,7 +3370,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_usenomina",
-      "community": 2,
+      "community": 10,
       "norm_label": "usenomina.js"
     },
     {
@@ -3140,7 +3380,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "hooks_usenomina_numericos",
-      "community": 2,
+      "community": 10,
       "norm_label": "numericos"
     },
     {
@@ -3150,7 +3390,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "hooks_usenomina_usenomina",
-      "community": 7,
+      "community": 4,
       "norm_label": "usenomina()"
     },
     {
@@ -3250,7 +3490,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_usevacios",
-      "community": 8,
+      "community": 10,
       "norm_label": "usevacios.js"
     },
     {
@@ -3260,7 +3500,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "hooks_usevacios_vacio_vacio",
-      "community": 8,
+      "community": 10,
       "norm_label": "vacio_vacio"
     },
     {
@@ -3270,7 +3510,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "hooks_usevacios_status_backend",
-      "community": 8,
+      "community": 10,
       "norm_label": "status_backend"
     },
     {
@@ -3280,7 +3520,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "hooks_usevacios_usevacios",
-      "community": 8,
+      "community": 4,
       "norm_label": "usevacios()"
     },
     {
@@ -3370,7 +3610,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_catalogospage",
-      "community": 7,
+      "community": 0,
       "norm_label": "catalogospage.jsx"
     },
     {
@@ -3380,7 +3620,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "pages_catalogospage_columnas_ocultas",
-      "community": 7,
+      "community": 0,
       "norm_label": "columnas_ocultas"
     },
     {
@@ -3390,7 +3630,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "pages_catalogospage_porid",
-      "community": 7,
+      "community": 0,
       "norm_label": "porid()"
     },
     {
@@ -3400,7 +3640,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "pages_catalogospage_columnas_fecha",
-      "community": 7,
+      "community": 0,
       "norm_label": "columnas_fecha"
     },
     {
@@ -3410,7 +3650,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "pages_catalogospage_documentos_en_fecha",
-      "community": 7,
+      "community": 0,
       "norm_label": "documentos_en_fecha"
     },
     {
@@ -3420,7 +3660,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "pages_catalogospage_documentos_sueltos",
-      "community": 7,
+      "community": 0,
       "norm_label": "documentos_sueltos"
     },
     {
@@ -3430,7 +3670,7 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "pages_catalogospage_valorparamostrar",
-      "community": 7,
+      "community": 0,
       "norm_label": "valorparamostrar()"
     },
     {
@@ -3550,7 +3790,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_costosextrapage",
-      "community": 7,
+      "community": 0,
       "norm_label": "costosextrapage.jsx"
     },
     {
@@ -3560,7 +3800,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "pages_costosextrapage_vacio",
-      "community": 7,
+      "community": 0,
       "norm_label": "vacio"
     },
     {
@@ -3860,7 +4100,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_facturacionpage",
-      "community": 2,
+      "community": 7,
       "norm_label": "facturacionpage.jsx"
     },
     {
@@ -3870,7 +4110,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "pages_facturacionpage_columnas_facturacion",
-      "community": 2,
+      "community": 7,
       "norm_label": "columnas_facturacion"
     },
     {
@@ -3880,7 +4120,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "pages_facturacionpage_columnas_auditoria",
-      "community": 2,
+      "community": 7,
       "norm_label": "columnas_auditoria"
     },
     {
@@ -3890,7 +4130,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "pages_facturacionpage_moneda",
-      "community": 2,
+      "community": 7,
       "norm_label": "moneda()"
     },
     {
@@ -3900,7 +4140,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "pages_facturacionpage_fechalegible",
-      "community": 2,
+      "community": 7,
       "norm_label": "fechalegible()"
     },
     {
@@ -3910,7 +4150,7 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "pages_facturacionpage_factura",
-      "community": 2,
+      "community": 7,
       "norm_label": "factura()"
     },
     {
@@ -3920,7 +4160,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "pages_facturacionpage_traerpagina",
-      "community": 2,
+      "community": 13,
       "norm_label": "traerpagina()"
     },
     {
@@ -3930,7 +4170,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "pages_facturacionpage_maniobra",
-      "community": 2,
+      "community": 7,
       "norm_label": "maniobra()"
     },
     {
@@ -3940,7 +4180,7 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "pages_facturacionpage_vence",
-      "community": 2,
+      "community": 7,
       "norm_label": "vence()"
     },
     {
@@ -3950,7 +4190,7 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "pages_facturacionpage_botonera",
-      "community": 2,
+      "community": 7,
       "norm_label": "botonera()"
     },
     {
@@ -3960,7 +4200,7 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "pages_facturacionpage_omitidas",
-      "community": 2,
+      "community": 7,
       "norm_label": "omitidas()"
     },
     {
@@ -3980,7 +4220,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_finanzaspage",
-      "community": 3,
+      "community": 10,
       "norm_label": "finanzaspage.jsx"
     },
     {
@@ -3990,7 +4230,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "pages_finanzaspage_modulos",
-      "community": 3,
+      "community": 10,
       "norm_label": "modulos"
     },
     {
@@ -4000,7 +4240,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "pages_finanzaspage_cuentas_por_cobrar",
-      "community": 3,
+      "community": 10,
       "norm_label": "cuentas_por_cobrar"
     },
     {
@@ -4010,7 +4250,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "pages_finanzaspage_cuentasporcobrarpage",
-      "community": 3,
+      "community": 10,
       "norm_label": "cuentasporcobrarpage()"
     },
     {
@@ -4020,7 +4260,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "pages_finanzaspage_finanzaspage",
-      "community": 3,
+      "community": 10,
       "norm_label": "finanzaspage()"
     },
     {
@@ -4030,7 +4270,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "pages_finanzaspage_hub",
-      "community": 3,
+      "community": 10,
       "norm_label": "hub()"
     },
     {
@@ -4140,7 +4380,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_gastospage",
-      "community": 8,
+      "community": 2,
       "norm_label": "gastospage.jsx"
     },
     {
@@ -4150,7 +4390,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "pages_gastospage_fechaparamostrar",
-      "community": 8,
+      "community": 2,
       "norm_label": "fechaparamostrar()"
     },
     {
@@ -4160,7 +4400,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "pages_gastospage_fechaadate",
-      "community": 8,
+      "community": 2,
       "norm_label": "fechaadate()"
     },
     {
@@ -4170,7 +4410,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "pages_gastospage_dateafechabackend",
-      "community": 8,
+      "community": 2,
       "norm_label": "dateafechabackend()"
     },
     {
@@ -4180,7 +4420,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "pages_gastospage_columnas",
-      "community": 8,
+      "community": 2,
       "norm_label": "columnas"
     },
     {
@@ -4190,7 +4430,7 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "pages_gastospage_columnas_moneda",
-      "community": 8,
+      "community": 2,
       "norm_label": "columnas_moneda"
     },
     {
@@ -4200,7 +4440,7 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "pages_gastospage_solo_margen",
-      "community": 8,
+      "community": 2,
       "norm_label": "solo_margen"
     },
     {
@@ -4210,7 +4450,7 @@
       "source_location": "L95",
       "_origin": "ast",
       "id": "pages_gastospage_columnasvisibles",
-      "community": 8,
+      "community": 2,
       "norm_label": "columnasvisibles()"
     },
     {
@@ -4220,7 +4460,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "pages_gastospage_gasto_vacio",
-      "community": 8,
+      "community": 2,
       "norm_label": "gasto_vacio"
     },
     {
@@ -4230,7 +4470,7 @@
       "source_location": "L113",
       "_origin": "ast",
       "id": "pages_gastospage_propspintado",
-      "community": 8,
+      "community": 2,
       "norm_label": "propspintado()"
     },
     {
@@ -4240,7 +4480,7 @@
       "source_location": "L120",
       "_origin": "ast",
       "id": "pages_gastospage_modal_cerrado",
-      "community": 8,
+      "community": 2,
       "norm_label": "modal_cerrado"
     },
     {
@@ -4250,7 +4490,7 @@
       "source_location": "L124",
       "_origin": "ast",
       "id": "pages_gastospage_filanueva",
-      "community": 8,
+      "community": 2,
       "norm_label": "filanueva()"
     },
     {
@@ -4260,7 +4500,7 @@
       "source_location": "L202",
       "_origin": "ast",
       "id": "pages_gastospage_modaleditar",
-      "community": 8,
+      "community": 2,
       "norm_label": "modaleditar()"
     },
     {
@@ -4270,7 +4510,7 @@
       "source_location": "L283",
       "_origin": "ast",
       "id": "pages_gastospage_intro",
-      "community": 8,
+      "community": 2,
       "norm_label": "intro()"
     },
     {
@@ -4280,7 +4520,7 @@
       "source_location": "L297",
       "_origin": "ast",
       "id": "pages_gastospage_gastospage",
-      "community": 4,
+      "community": 2,
       "norm_label": "gastospage()"
     },
     {
@@ -4350,7 +4590,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_maniobraspage",
-      "community": 0,
+      "community": 13,
       "norm_label": "maniobraspage.jsx"
     },
     {
@@ -4360,7 +4600,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "pages_maniobraspage_tiposplitinput",
-      "community": 0,
+      "community": 13,
       "norm_label": "tiposplitinput()"
     },
     {
@@ -4380,7 +4620,7 @@
       "source_location": "L131",
       "_origin": "ast",
       "id": "pages_maniobraspage_sinacentos",
-      "community": 0,
+      "community": 13,
       "norm_label": "sinacentos()"
     },
     {
@@ -4390,7 +4630,7 @@
       "source_location": "L138",
       "_origin": "ast",
       "id": "pages_maniobraspage_tabladefolios",
-      "community": 0,
+      "community": 13,
       "norm_label": "tabladefolios()"
     },
     {
@@ -4400,7 +4640,7 @@
       "source_location": "L152",
       "_origin": "ast",
       "id": "pages_maniobraspage_aplicarcambioplaza",
-      "community": 0,
+      "community": 13,
       "norm_label": "aplicarcambioplaza()"
     },
     {
@@ -4410,7 +4650,7 @@
       "source_location": "L172",
       "_origin": "ast",
       "id": "pages_maniobraspage_renombrarfolio",
-      "community": 29,
+      "community": 13,
       "norm_label": "renombrarfolio()"
     },
     {
@@ -4420,7 +4660,7 @@
       "source_location": "L194",
       "_origin": "ast",
       "id": "pages_maniobraspage_sincronizarfoliofull",
-      "community": 29,
+      "community": 13,
       "norm_label": "sincronizarfoliofull()"
     },
     {
@@ -4450,7 +4690,7 @@
       "source_location": "L270",
       "_origin": "ast",
       "id": "pages_maniobraspage_columnas",
-      "community": 0,
+      "community": 13,
       "norm_label": "columnas"
     },
     {
@@ -4460,7 +4700,7 @@
       "source_location": "L347",
       "_origin": "ast",
       "id": "pages_maniobraspage_idsdecostos",
-      "community": 0,
+      "community": 13,
       "norm_label": "idsdecostos()"
     },
     {
@@ -4470,7 +4710,7 @@
       "source_location": "L349",
       "_origin": "ast",
       "id": "pages_maniobraspage_maniobra_vacia",
-      "community": 0,
+      "community": 13,
       "norm_label": "maniobra_vacia"
     },
     {
@@ -4480,7 +4720,7 @@
       "source_location": "L368",
       "_origin": "ast",
       "id": "pages_maniobraspage_modal_cerrado",
-      "community": 0,
+      "community": 13,
       "norm_label": "modal_cerrado"
     },
     {
@@ -4490,7 +4730,7 @@
       "source_location": "L371",
       "_origin": "ast",
       "id": "pages_maniobraspage_fechaparamostrar",
-      "community": 0,
+      "community": 13,
       "norm_label": "fechaparamostrar()"
     },
     {
@@ -4500,7 +4740,7 @@
       "source_location": "L379",
       "_origin": "ast",
       "id": "pages_maniobraspage_fechahoraparamostrar",
-      "community": 0,
+      "community": 13,
       "norm_label": "fechahoraparamostrar()"
     },
     {
@@ -4510,7 +4750,7 @@
       "source_location": "L388",
       "_origin": "ast",
       "id": "pages_maniobraspage_horaadate",
-      "community": 0,
+      "community": 13,
       "norm_label": "horaadate()"
     },
     {
@@ -4520,7 +4760,7 @@
       "source_location": "L399",
       "_origin": "ast",
       "id": "pages_maniobraspage_dateahora",
-      "community": 0,
+      "community": 13,
       "norm_label": "dateahora()"
     },
     {
@@ -4530,7 +4770,7 @@
       "source_location": "L406",
       "_origin": "ast",
       "id": "pages_maniobraspage_fechaparabackend",
-      "community": 0,
+      "community": 13,
       "norm_label": "fechaparabackend()"
     },
     {
@@ -4540,7 +4780,7 @@
       "source_location": "L414",
       "_origin": "ast",
       "id": "pages_maniobraspage_fechaadate",
-      "community": 0,
+      "community": 13,
       "norm_label": "fechaadate()"
     },
     {
@@ -4550,7 +4790,7 @@
       "source_location": "L424",
       "_origin": "ast",
       "id": "pages_maniobraspage_dateafechabackend",
-      "community": 0,
+      "community": 13,
       "norm_label": "dateafechabackend()"
     },
     {
@@ -4560,7 +4800,7 @@
       "source_location": "L432",
       "_origin": "ast",
       "id": "pages_maniobraspage_filtros",
-      "community": 0,
+      "community": 13,
       "norm_label": "filtros"
     },
     {
@@ -4570,7 +4810,7 @@
       "source_location": "L443",
       "_origin": "ast",
       "id": "pages_maniobraspage_headerrow",
-      "community": 0,
+      "community": 13,
       "norm_label": "headerrow()"
     },
     {
@@ -4580,7 +4820,7 @@
       "source_location": "L471",
       "_origin": "ast",
       "id": "pages_maniobraspage_filanueva",
-      "community": 0,
+      "community": 13,
       "norm_label": "filanueva()"
     },
     {
@@ -4590,7 +4830,7 @@
       "source_location": "L658",
       "_origin": "ast",
       "id": "pages_maniobraspage_modaleditar",
-      "community": 0,
+      "community": 13,
       "norm_label": "modaleditar()"
     },
     {
@@ -4600,7 +4840,7 @@
       "source_location": "L876",
       "_origin": "ast",
       "id": "pages_maniobraspage_filamaniobra",
-      "community": 0,
+      "community": 13,
       "norm_label": "filamaniobra"
     },
     {
@@ -4610,7 +4850,7 @@
       "source_location": "L1316",
       "_origin": "ast",
       "id": "pages_maniobraspage_intro",
-      "community": 0,
+      "community": 13,
       "norm_label": "intro()"
     },
     {
@@ -4700,7 +4940,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "pages_movimientoslocalespage_movimientoslocalespage",
-      "community": 31,
+      "community": 7,
       "norm_label": "movimientoslocalespage()"
     },
     {
@@ -4760,7 +5000,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "pages_nominapage_nominapage",
-      "community": 7,
+      "community": 4,
       "norm_label": "nominapage()"
     },
     {
@@ -4770,7 +5010,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "pages_pendientespage",
-      "community": 7,
+      "community": 29,
       "norm_label": "pendientespage.jsx"
     },
     {
@@ -4780,7 +5020,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "pages_pendientespage_tableros",
-      "community": 7,
+      "community": 29,
       "norm_label": "tableros"
     },
     {
@@ -4790,7 +5030,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "pages_pendientespage_pendiente",
-      "community": 7,
+      "community": 29,
       "norm_label": "pendiente()"
     },
     {
@@ -4800,7 +5040,7 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "pages_pendientespage_tablero",
-      "community": 7,
+      "community": 29,
       "norm_label": "tablero()"
     },
     {
@@ -4950,7 +5190,7 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "pages_reporteviajepage_reporteviajepage",
-      "community": 11,
+      "community": 4,
       "norm_label": "reporteviajepage()"
     },
     {
@@ -5210,7 +5450,7 @@
       "source_location": "L375",
       "_origin": "ast",
       "id": "pages_vaciospage_vaciospage",
-      "community": 8,
+      "community": 4,
       "norm_label": "vaciospage()"
     },
     {
@@ -5350,7 +5590,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_colorfila",
-      "community": 8,
+      "community": 2,
       "norm_label": "colorfila.mjs"
     },
     {
@@ -5360,7 +5600,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "utils_colorfila_paleta_sheets",
-      "community": 8,
+      "community": 2,
       "norm_label": "paleta_sheets"
     },
     {
@@ -5370,7 +5610,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "utils_colorfila_escolorvalido",
-      "community": 8,
+      "community": 2,
       "norm_label": "escolorvalido()"
     },
     {
@@ -5380,7 +5620,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "utils_colorfila_luminancia",
-      "community": 8,
+      "community": 2,
       "norm_label": "luminancia()"
     },
     {
@@ -5390,7 +5630,7 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "utils_colorfila_contraste",
-      "community": 8,
+      "community": 2,
       "norm_label": "contraste()"
     },
     {
@@ -5400,7 +5640,7 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "utils_colorfila_textosobre",
-      "community": 8,
+      "community": 2,
       "norm_label": "textosobre()"
     },
     {
@@ -5410,7 +5650,7 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "utils_colorfila_estilocelda",
-      "community": 8,
+      "community": 2,
       "norm_label": "estilocelda()"
     },
     {
@@ -5420,7 +5660,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_colorfila_test",
-      "community": 8,
+      "community": 2,
       "norm_label": "colorfila.test.mjs"
     },
     {
@@ -5600,7 +5840,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_foliofull",
-      "community": 29,
+      "community": 13,
       "norm_label": "foliofull.mjs"
     },
     {
@@ -5610,7 +5850,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "utils_foliofull_tienesufijofull",
-      "community": 29,
+      "community": 13,
       "norm_label": "tienesufijofull()"
     },
     {
@@ -5620,7 +5860,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "utils_foliofull_sinsufijofull",
-      "community": 29,
+      "community": 13,
       "norm_label": "sinsufijofull()"
     },
     {
@@ -5630,7 +5870,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "utils_foliofull_codigofoliofull",
-      "community": 29,
+      "community": 13,
       "norm_label": "codigofoliofull()"
     },
     {
@@ -5640,7 +5880,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_foliofull_test",
-      "community": 29,
+      "community": 13,
       "norm_label": "foliofull.test.mjs"
     },
     {
@@ -5650,7 +5890,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_formulasuma",
-      "community": 2,
+      "community": 10,
       "norm_label": "formulasuma.mjs"
     },
     {
@@ -5660,7 +5900,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "utils_formulasuma_evaluarsuma",
-      "community": 2,
+      "community": 10,
       "norm_label": "evaluarsuma()"
     },
     {
@@ -5670,7 +5910,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "utils_formulasuma_campos_con_formula",
-      "community": 2,
+      "community": 10,
       "norm_label": "campos_con_formula"
     },
     {
@@ -5680,7 +5920,7 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "utils_formulasuma_campos_con_formula_nomina",
-      "community": 2,
+      "community": 10,
       "norm_label": "campos_con_formula_nomina"
     },
     {
@@ -5690,7 +5930,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "utils_formulasuma_essuresultado",
-      "community": 2,
+      "community": 10,
       "norm_label": "essuresultado()"
     },
     {
@@ -5700,7 +5940,7 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "utils_formulasuma_prepararpayload",
-      "community": 2,
+      "community": 10,
       "norm_label": "prepararpayload()"
     },
     {
@@ -5710,7 +5950,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_formulasuma_test",
-      "community": 2,
+      "community": 10,
       "norm_label": "formulasuma.test.mjs"
     },
     {
@@ -6694,9 +6934,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports",
@@ -6714,11 +6954,33 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.jsx",
-      "source_location": "L5",
+      "source_location": "L37",
       "weight": 1.0,
       "source": "src_app",
-      "target": "context_authcontext",
+      "target": "barralateral_barralateral",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/App.jsx",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "barralateral_barralateral_barralateral",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/App.jsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_app",
+      "target": "context_authcontext"
     },
     {
       "relation": "imports",
@@ -6738,9 +7000,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L35",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "hooks_usealertasvencimiento",
-      "confidence_score": 1.0
+      "target": "hooks_usealertasvencimiento"
     },
     {
       "relation": "imports",
@@ -6760,9 +7022,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "hooks_useinactivitytimer",
-      "confidence_score": 1.0
+      "target": "hooks_useinactivitytimer"
     },
     {
       "relation": "imports",
@@ -6782,9 +7044,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "inactivitymodal_inactivitymodal",
-      "confidence_score": 1.0
+      "target": "inactivitymodal_inactivitymodal"
     },
     {
       "relation": "imports",
@@ -6793,8 +7055,30 @@
       "source_file": "src/App.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "inactivitymodal_inactivitymodal_inactivitymodal",
+      "target": "inactivitymodal_inactivitymodal_inactivitymodal"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/App.jsx",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "inicioescena_inicioescena",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/App.jsx",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "src_app",
+      "target": "inicioescena_inicioescena_inicioescena",
       "confidence_score": 1.0
     },
     {
@@ -6804,9 +7088,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_administraciongastos",
-      "confidence_score": 1.0
+      "target": "pages_administraciongastos"
     },
     {
       "relation": "imports",
@@ -6815,9 +7099,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_administraciongastos_dashboardgastos",
-      "confidence_score": 1.0
+      "target": "pages_administraciongastos_dashboardgastos"
     },
     {
       "relation": "imports_from",
@@ -6826,9 +7110,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_administracionnoeco",
-      "confidence_score": 1.0
+      "target": "pages_administracionnoeco"
     },
     {
       "relation": "imports",
@@ -6837,9 +7121,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_administracionnoeco_administracionnoeco",
-      "confidence_score": 1.0
+      "target": "pages_administracionnoeco_administracionnoeco"
     },
     {
       "relation": "imports_from",
@@ -6848,9 +7132,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_adminvaciospage",
-      "confidence_score": 1.0
+      "target": "pages_adminvaciospage"
     },
     {
       "relation": "imports",
@@ -6859,9 +7143,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_adminvaciospage_adminvaciospage",
-      "confidence_score": 1.0
+      "target": "pages_adminvaciospage_adminvaciospage"
     },
     {
       "relation": "imports_from",
@@ -6958,9 +7242,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_documentosviajepage",
-      "confidence_score": 1.0
+      "target": "pages_documentosviajepage"
     },
     {
       "relation": "imports",
@@ -6969,9 +7253,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_documentosviajepage_documentosviajepage",
-      "confidence_score": 1.0
+      "target": "pages_documentosviajepage_documentosviajepage"
     },
     {
       "relation": "imports_from",
@@ -7211,9 +7495,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L32",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_pendientespage",
-      "confidence_score": 1.0
+      "target": "pages_pendientespage"
     },
     {
       "relation": "imports",
@@ -7222,9 +7506,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L32",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_pendientespage_pendientespage",
-      "confidence_score": 1.0
+      "target": "pages_pendientespage_pendientespage"
     },
     {
       "relation": "imports_from",
@@ -7233,9 +7517,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_perfilpage",
-      "confidence_score": 1.0
+      "target": "pages_perfilpage"
     },
     {
       "relation": "imports",
@@ -7244,9 +7528,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_perfilpage_perfilpage",
-      "confidence_score": 1.0
+      "target": "pages_perfilpage_perfilpage"
     },
     {
       "relation": "imports_from",
@@ -7277,9 +7561,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L26",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_tablerofinanzaspage",
-      "confidence_score": 1.0
+      "target": "pages_tablerofinanzaspage"
     },
     {
       "relation": "imports",
@@ -7288,9 +7572,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L26",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_tablerofinanzaspage_tablerofinanzaspage",
-      "confidence_score": 1.0
+      "target": "pages_tablerofinanzaspage_tablerofinanzaspage"
     },
     {
       "relation": "imports_from",
@@ -7299,9 +7583,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L33",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_torrecontrolpage",
-      "confidence_score": 1.0
+      "target": "pages_torrecontrolpage"
     },
     {
       "relation": "imports",
@@ -7310,9 +7594,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L33",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "pages_torrecontrolpage_torrecontrolpage",
-      "confidence_score": 1.0
+      "target": "pages_torrecontrolpage_torrecontrolpage"
     },
     {
       "relation": "imports_from",
@@ -7343,9 +7627,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "protectedroute_protectedroute",
-      "confidence_score": 1.0
+      "target": "protectedroute_protectedroute"
     },
     {
       "relation": "imports",
@@ -7354,9 +7638,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "protectedroute_protectedroute_protectedroute",
-      "confidence_score": 1.0
+      "target": "protectedroute_protectedroute_protectedroute"
     },
     {
       "relation": "imports_from",
@@ -7404,11 +7688,11 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.jsx",
-      "source_location": "L38",
+      "source_location": "L44",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "src_app",
-      "target": "src_app_home_modules"
+      "target": "src_app_reloj",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports_from",
@@ -7417,8 +7701,19 @@
       "source_file": "src/index.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_index",
-      "target": "src_app",
+      "target": "src_app"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/App.jsx",
+      "source_location": "L61",
+      "weight": 1.0,
+      "source": "src_app_home",
+      "target": "context_authcontext_useauthcontext",
       "confidence_score": 1.0
     },
     {
@@ -7428,9 +7723,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L54",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_home",
-      "target": "hooks_usealertasvencimiento_usealertasvencimiento",
-      "confidence_score": 1.0
+      "target": "hooks_usealertasvencimiento_usealertasvencimiento"
     },
     {
       "relation": "calls",
@@ -7439,9 +7734,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L145",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_approutes",
-      "target": "context_authcontext_useauthcontext",
-      "confidence_score": 1.0
+      "target": "context_authcontext_useauthcontext"
     },
     {
       "relation": "calls",
@@ -7450,9 +7745,9 @@
       "source_file": "src/App.jsx",
       "source_location": "L185",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_app_approutes",
-      "target": "hooks_useinactivitytimer_useinactivitytimer",
-      "confidence_score": 1.0
+      "target": "hooks_useinactivitytimer_useinactivitytimer"
     },
     {
       "relation": "imports",
@@ -7461,9 +7756,9 @@
       "source_file": "src/index.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_index",
-      "target": "src_app_approutes",
-      "confidence_score": 1.0
+      "target": "src_app_approutes"
     },
     {
       "relation": "imports_from",
@@ -7558,9 +7853,9 @@
       "source_file": "src/index.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_index",
-      "target": "login_login",
-      "confidence_score": 1.0
+      "target": "login_login"
     },
     {
       "relation": "calls",
@@ -7591,9 +7886,9 @@
       "source_file": "src/index.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_index",
-      "target": "login_login_loginpage",
-      "confidence_score": 1.0
+      "target": "login_login_loginpage"
     },
     {
       "relation": "contains",
@@ -7696,9 +7991,9 @@
       "source_file": "src/components/BitacoraSuenoModal/BitacoraSuenoModal.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bitacorasuenomodal_bitacorasuenomodal",
-      "target": "animations_modalmotion",
-      "confidence_score": 1.0
+      "target": "animations_modalmotion"
     },
     {
       "relation": "imports_from",
@@ -7707,9 +8002,9 @@
       "source_file": "src/components/CalendarioVacaciones/CalendarioVacaciones.jsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "calendariovacaciones_calendariovacaciones",
-      "target": "animations_modalmotion",
-      "confidence_score": 1.0
+      "target": "animations_modalmotion"
     },
     {
       "relation": "imports_from",
@@ -7718,9 +8013,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "animations_modalmotion",
-      "confidence_score": 1.0
+      "target": "animations_modalmotion"
     },
     {
       "relation": "imports_from",
@@ -7729,9 +8024,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "animations_modalmotion",
-      "confidence_score": 1.0
+      "target": "animations_modalmotion"
     },
     {
       "relation": "imports_from",
@@ -7762,9 +8057,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "animations_modalmotion",
-      "confidence_score": 1.0
+      "target": "animations_modalmotion"
     },
     {
       "relation": "imports_from",
@@ -7773,9 +8068,9 @@
       "source_file": "src/pages/CostosExtraPage.jsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_costosextrapage",
-      "target": "animations_modalmotion",
-      "confidence_score": 1.0
+      "target": "animations_modalmotion"
     },
     {
       "relation": "imports_from",
@@ -7784,9 +8079,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "animations_modalmotion",
-      "confidence_score": 1.0
+      "target": "animations_modalmotion"
     },
     {
       "relation": "imports_from",
@@ -7795,9 +8090,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "animations_modalmotion",
-      "confidence_score": 1.0
+      "target": "animations_modalmotion"
     },
     {
       "relation": "imports_from",
@@ -7806,9 +8101,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "animations_modalmotion",
-      "confidence_score": 1.0
+      "target": "animations_modalmotion"
     },
     {
       "relation": "imports_from",
@@ -7817,9 +8112,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "animations_modalmotion",
-      "confidence_score": 1.0
+      "target": "animations_modalmotion"
     },
     {
       "relation": "imports_from",
@@ -7839,9 +8134,9 @@
       "source_file": "src/components/Seguimientos/Seguimientos.jsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "seguimientos_seguimientos",
-      "target": "animations_modalmotion",
-      "confidence_score": 1.0
+      "target": "animations_modalmotion"
     },
     {
       "relation": "imports",
@@ -8317,9 +8612,9 @@
       "source_file": "src/components/BitacoraSuenoModal/BitacoraSuenoModal.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bitacorasuenomodal_bitacorasuenomodal",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8328,9 +8623,9 @@
       "source_file": "src/components/CalendarioVacaciones/CalendarioVacaciones.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "calendariovacaciones_calendariovacaciones",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8394,9 +8689,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8405,9 +8700,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8416,9 +8711,9 @@
       "source_file": "src/components/Dashboards/Dashboards.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "dashboards_dashboards",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8438,9 +8733,9 @@
       "source_file": "src/components/FiltrosLista/FiltrosLista.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "filtroslista_filtroslista",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8449,9 +8744,9 @@
       "source_file": "src/components/FolioDisponibleSelector/FolioDisponibleSelector.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "foliodisponibleselector_foliodisponibleselector",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8526,9 +8821,9 @@
       "source_file": "src/hooks/useManiobras.js",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "hooks_usemaniobras",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8559,9 +8854,9 @@
       "source_file": "src/hooks/useNomina.js",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "hooks_usenomina",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8570,9 +8865,9 @@
       "source_file": "src/hooks/useReportesViaje.js",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "hooks_usereportesviaje",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8658,9 +8953,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8669,9 +8964,9 @@
       "source_file": "src/pages/CompensacionPage.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_compensacionpage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8680,9 +8975,9 @@
       "source_file": "src/pages/CostosExtraPage.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_costosextrapage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8691,9 +8986,9 @@
       "source_file": "src/pages/CuentasPorPagarPage.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_cuentasporpagarpage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8702,9 +8997,9 @@
       "source_file": "src/pages/EstadosCuentaPage.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_estadoscuentapage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8713,9 +9008,9 @@
       "source_file": "src/pages/FacturacionPage.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_facturacionpage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8724,9 +9019,9 @@
       "source_file": "src/pages/FinanzasPage.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_finanzaspage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8735,9 +9030,9 @@
       "source_file": "src/pages/FoliosPage.jsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_foliospage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8746,9 +9041,9 @@
       "source_file": "src/pages/GastosFinancierosPage.jsx",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastosfinancierospage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8757,9 +9052,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8768,9 +9063,9 @@
       "source_file": "src/pages/HistorialPagosPage.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_historialpagospage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8779,9 +9074,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L38",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8812,9 +9107,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8834,9 +9129,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -8889,9 +9184,9 @@
       "source_file": "src/components/Seguimientos/Seguimientos.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "seguimientos_seguimientos",
-      "target": "api_apiclient",
-      "confidence_score": 1.0
+      "target": "api_apiclient"
     },
     {
       "relation": "imports_from",
@@ -9709,9 +10004,9 @@
       "source_file": "src/components/CalendarioVacaciones/CalendarioVacaciones.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "calendariovacaciones_calendariovacaciones",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9742,9 +10037,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9753,9 +10048,9 @@
       "source_file": "src/pages/CompensacionPage.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_compensacionpage",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9764,9 +10059,9 @@
       "source_file": "src/pages/CostosExtraPage.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_costosextrapage",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9775,9 +10070,9 @@
       "source_file": "src/pages/CuentasPorPagarPage.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_cuentasporpagarpage",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9786,9 +10081,9 @@
       "source_file": "src/pages/EstadosCuentaPage.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_estadoscuentapage",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9797,9 +10092,9 @@
       "source_file": "src/pages/FacturacionPage.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_facturacionpage",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9808,9 +10103,9 @@
       "source_file": "src/pages/GastosFinancierosPage.jsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastosfinancierospage",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9819,9 +10114,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9830,9 +10125,9 @@
       "source_file": "src/pages/HistorialPagosPage.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_historialpagospage",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9841,9 +10136,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L26",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9852,9 +10147,9 @@
       "source_file": "src/pages/NominaPage.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_nominapage",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9885,9 +10180,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9907,9 +10202,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports_from",
@@ -9918,9 +10213,9 @@
       "source_file": "src/index.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_index",
-      "target": "alertas_alertas",
-      "confidence_score": 1.0
+      "target": "alertas_alertas"
     },
     {
       "relation": "imports",
@@ -10072,9 +10367,9 @@
       "source_file": "src/pages/CuentasPorPagarPage.jsx",
       "source_location": "L297",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_cuentasporpagarpage_cuentas",
-      "target": "alertas_alertas_usealerta",
-      "confidence_score": 1.0
+      "target": "alertas_alertas_usealerta"
     },
     {
       "relation": "calls",
@@ -10083,9 +10378,9 @@
       "source_file": "src/pages/CuentasPorPagarPage.jsx",
       "source_location": "L80",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_cuentasporpagarpage_gastosfijos",
-      "target": "alertas_alertas_usealerta",
-      "confidence_score": 1.0
+      "target": "alertas_alertas_usealerta"
     },
     {
       "relation": "imports",
@@ -10358,8 +10653,123 @@
       "source_file": "src/index.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_index",
-      "target": "alertas_alertas_alertasprovider",
+      "target": "alertas_alertas_alertasprovider"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "barralateral_barralateral",
+      "target": "barralateral_barralateral_arbol",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L111",
+      "weight": 1.0,
+      "source": "barralateral_barralateral",
+      "target": "barralateral_barralateral_barralateral",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "barralateral_barralateral",
+      "target": "barralateral_barralateral_contiene",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "barralateral_barralateral",
+      "target": "barralateral_barralateral_grupo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L86",
+      "weight": 1.0,
+      "source": "barralateral_barralateral",
+      "target": "barralateral_barralateral_nodo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "barralateral_barralateral",
+      "target": "barralateral_barralateral_visibles",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L137",
+      "weight": 1.0,
+      "source": "barralateral_barralateral_barralateral",
+      "target": "barralateral_barralateral_arbol",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L137",
+      "weight": 1.0,
+      "source": "barralateral_barralateral_barralateral",
+      "target": "barralateral_barralateral_visibles",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "barralateral_barralateral_contiene",
+      "target": "barralateral_barralateral_visibles",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L80",
+      "weight": 1.0,
+      "source": "barralateral_barralateral_grupo",
+      "target": "barralateral_barralateral_visibles",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/BarraLateral/BarraLateral.jsx",
+      "source_location": "L60",
+      "weight": 1.0,
+      "source": "barralateral_barralateral_grupo",
+      "target": "barralateral_barralateral_contiene",
       "confidence_score": 1.0
     },
     {
@@ -10379,9 +10789,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports_from",
@@ -10390,9 +10800,9 @@
       "source_file": "src/pages/CostosExtraPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_costosextrapage",
-      "target": "barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports_from",
@@ -10401,9 +10811,9 @@
       "source_file": "src/pages/FacturacionPage.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_facturacionpage",
-      "target": "barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports_from",
@@ -10412,9 +10822,9 @@
       "source_file": "src/pages/FoliosPage.jsx",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_foliospage",
-      "target": "barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports_from",
@@ -10423,9 +10833,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports_from",
@@ -10434,9 +10844,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports_from",
@@ -10445,9 +10855,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports_from",
@@ -10456,9 +10866,9 @@
       "source_file": "src/pages/NominaPage.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_nominapage",
-      "target": "barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports_from",
@@ -10467,9 +10877,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports",
@@ -10478,9 +10888,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports",
@@ -10489,9 +10899,9 @@
       "source_file": "src/pages/CostosExtraPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_costosextrapage",
-      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports",
@@ -10500,9 +10910,9 @@
       "source_file": "src/pages/FacturacionPage.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_facturacionpage",
-      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports",
@@ -10511,9 +10921,9 @@
       "source_file": "src/pages/FoliosPage.jsx",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_foliospage",
-      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports",
@@ -10522,9 +10932,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports",
@@ -10533,9 +10943,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports",
@@ -10544,9 +10954,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports",
@@ -10555,9 +10965,9 @@
       "source_file": "src/pages/NominaPage.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_nominapage",
-      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "imports",
@@ -10566,9 +10976,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla",
-      "confidence_score": 1.0
+      "target": "barrascrolltabla_barrascrolltabla_barrascrolltabla"
     },
     {
       "relation": "contains",
@@ -10792,9 +11202,9 @@
       "source_file": "src/components/BitacoraSuenoModal/BitacoraSuenoModal.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bitacorasuenomodal_bitacorasuenomodal",
-      "target": "folioselector_folioselector",
-      "confidence_score": 1.0
+      "target": "folioselector_folioselector"
     },
     {
       "relation": "imports",
@@ -10803,9 +11213,9 @@
       "source_file": "src/components/BitacoraSuenoModal/BitacoraSuenoModal.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bitacorasuenomodal_bitacorasuenomodal",
-      "target": "folioselector_folioselector_folioselector",
-      "confidence_score": 1.0
+      "target": "folioselector_folioselector_folioselector"
     },
     {
       "relation": "imports_from",
@@ -10814,9 +11224,9 @@
       "source_file": "src/components/BitacoraSuenoModal/BitacoraSuenoModal.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bitacorasuenomodal_bitacorasuenomodal",
-      "target": "operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector"
     },
     {
       "relation": "imports",
@@ -10825,9 +11235,9 @@
       "source_file": "src/components/BitacoraSuenoModal/BitacoraSuenoModal.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bitacorasuenomodal_bitacorasuenomodal",
-      "target": "operadorselector_operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector_operadorselector"
     },
     {
       "relation": "imports_from",
@@ -10836,9 +11246,9 @@
       "source_file": "src/components/BitacoraSuenoModal/BitacoraSuenoModal.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bitacorasuenomodal_bitacorasuenomodal",
-      "target": "placasselector_placasselector",
-      "confidence_score": 1.0
+      "target": "placasselector_placasselector"
     },
     {
       "relation": "imports",
@@ -10847,9 +11257,9 @@
       "source_file": "src/components/BitacoraSuenoModal/BitacoraSuenoModal.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bitacorasuenomodal_bitacorasuenomodal",
-      "target": "placasselector_placasselector_placasselector",
-      "confidence_score": 1.0
+      "target": "placasselector_placasselector_placasselector"
     },
     {
       "relation": "imports_from",
@@ -10858,9 +11268,9 @@
       "source_file": "src/components/BitacoraSuenoModal/BitacoraSuenoModal.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bitacorasuenomodal_bitacorasuenomodal",
-      "target": "remolqueselector_remolqueselector",
-      "confidence_score": 1.0
+      "target": "remolqueselector_remolqueselector"
     },
     {
       "relation": "imports",
@@ -10869,9 +11279,9 @@
       "source_file": "src/components/BitacoraSuenoModal/BitacoraSuenoModal.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bitacorasuenomodal_bitacorasuenomodal",
-      "target": "remolqueselector_remolqueselector_remolqueselector",
-      "confidence_score": 1.0
+      "target": "remolqueselector_remolqueselector_remolqueselector"
     },
     {
       "relation": "imports_from",
@@ -10912,9 +11322,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba"
     },
     {
       "relation": "imports_from",
@@ -10923,9 +11333,9 @@
       "source_file": "src/pages/CostosExtraPage.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_costosextrapage",
-      "target": "botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba"
     },
     {
       "relation": "imports_from",
@@ -10934,9 +11344,9 @@
       "source_file": "src/pages/FacturacionPage.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_facturacionpage",
-      "target": "botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba"
     },
     {
       "relation": "imports_from",
@@ -10945,9 +11355,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba"
     },
     {
       "relation": "imports_from",
@@ -10956,9 +11366,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba"
     },
     {
       "relation": "imports_from",
@@ -10967,9 +11377,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba"
     },
     {
       "relation": "imports_from",
@@ -10978,9 +11388,9 @@
       "source_file": "src/pages/NominaPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_nominapage",
-      "target": "botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba"
     },
     {
       "relation": "imports_from",
@@ -11000,9 +11410,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba"
     },
     {
       "relation": "imports",
@@ -11011,9 +11421,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "botonarriba_botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba_botonarriba"
     },
     {
       "relation": "imports",
@@ -11022,9 +11432,9 @@
       "source_file": "src/pages/CostosExtraPage.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_costosextrapage",
-      "target": "botonarriba_botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba_botonarriba"
     },
     {
       "relation": "imports",
@@ -11033,9 +11443,9 @@
       "source_file": "src/pages/FacturacionPage.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_facturacionpage",
-      "target": "botonarriba_botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba_botonarriba"
     },
     {
       "relation": "imports",
@@ -11044,9 +11454,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "botonarriba_botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba_botonarriba"
     },
     {
       "relation": "imports",
@@ -11055,9 +11465,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "botonarriba_botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba_botonarriba"
     },
     {
       "relation": "imports",
@@ -11066,9 +11476,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "botonarriba_botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba_botonarriba"
     },
     {
       "relation": "imports",
@@ -11077,9 +11487,9 @@
       "source_file": "src/pages/NominaPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_nominapage",
-      "target": "botonarriba_botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba_botonarriba"
     },
     {
       "relation": "imports",
@@ -11099,9 +11509,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "botonarriba_botonarriba_botonarriba",
-      "confidence_score": 1.0
+      "target": "botonarriba_botonarriba_botonarriba"
     },
     {
       "relation": "contains",
@@ -11160,9 +11570,9 @@
       "source_file": "src/components/CalendarioVacaciones/CalendarioVacaciones.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "calendariovacaciones_calendariovacaciones",
-      "target": "ciudadselector_ciudadselector",
-      "confidence_score": 1.0
+      "target": "ciudadselector_ciudadselector"
     },
     {
       "relation": "imports",
@@ -11171,9 +11581,9 @@
       "source_file": "src/components/CalendarioVacaciones/CalendarioVacaciones.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "calendariovacaciones_calendariovacaciones",
-      "target": "ciudadselector_ciudadselector_ciudadselector",
-      "confidence_score": 1.0
+      "target": "ciudadselector_ciudadselector_ciudadselector"
     },
     {
       "relation": "imports_from",
@@ -11182,9 +11592,9 @@
       "source_file": "src/components/CalendarioVacaciones/CalendarioVacaciones.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "calendariovacaciones_calendariovacaciones",
-      "target": "colorselector_colorselector",
-      "confidence_score": 1.0
+      "target": "colorselector_colorselector"
     },
     {
       "relation": "imports",
@@ -11193,9 +11603,9 @@
       "source_file": "src/components/CalendarioVacaciones/CalendarioVacaciones.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "calendariovacaciones_calendariovacaciones",
-      "target": "colorselector_colorselector_colorselector",
-      "confidence_score": 1.0
+      "target": "colorselector_colorselector_colorselector"
     },
     {
       "relation": "imports_from",
@@ -11204,9 +11614,9 @@
       "source_file": "src/components/CalendarioVacaciones/CalendarioVacaciones.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "calendariovacaciones_calendariovacaciones",
-      "target": "confirmacion_confirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion"
     },
     {
       "relation": "imports",
@@ -11226,9 +11636,9 @@
       "source_file": "src/components/CalendarioVacaciones/CalendarioVacaciones.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "calendariovacaciones_calendariovacaciones",
-      "target": "utils_colorfila",
-      "confidence_score": 1.0
+      "target": "utils_colorfila"
     },
     {
       "relation": "imports",
@@ -11248,9 +11658,9 @@
       "source_file": "src/components/CalendarioVacaciones/CalendarioVacaciones.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "calendariovacaciones_calendariovacaciones",
-      "target": "utils_torrecontrol",
-      "confidence_score": 1.0
+      "target": "utils_torrecontrol"
     },
     {
       "relation": "imports",
@@ -11817,9 +12227,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "cargoselector_cargoselector",
-      "confidence_score": 1.0
+      "target": "cargoselector_cargoselector"
     },
     {
       "relation": "calls",
@@ -11839,9 +12249,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "cargoselector_cargoselector_cargoselector",
-      "confidence_score": 1.0
+      "target": "cargoselector_cargoselector_cargoselector"
     },
     {
       "relation": "contains",
@@ -11860,9 +12270,9 @@
       "source_file": "src/components/CeldaEditable/CeldaEditable.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "celdaeditable_celdaeditable",
-      "target": "celdaeditable_fechacelda",
-      "confidence_score": 1.0
+      "target": "celdaeditable_fechacelda"
     },
     {
       "relation": "imports",
@@ -12108,9 +12518,9 @@
       "source_file": "src/components/FiltrosLista/FiltrosLista.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "filtroslista_filtroslista",
-      "target": "celdaeditable_fechacelda",
-      "confidence_score": 1.0
+      "target": "celdaeditable_fechacelda"
     },
     {
       "relation": "imports_from",
@@ -12119,9 +12529,9 @@
       "source_file": "src/pages/CompensacionPage.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_compensacionpage",
-      "target": "celdaeditable_fechacelda",
-      "confidence_score": 1.0
+      "target": "celdaeditable_fechacelda"
     },
     {
       "relation": "imports_from",
@@ -12130,9 +12540,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "celdaeditable_fechacelda",
-      "confidence_score": 1.0
+      "target": "celdaeditable_fechacelda"
     },
     {
       "relation": "imports_from",
@@ -12141,9 +12551,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "celdaeditable_fechacelda",
-      "confidence_score": 1.0
+      "target": "celdaeditable_fechacelda"
     },
     {
       "relation": "imports_from",
@@ -12284,9 +12694,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L173",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage_filanueva",
-      "target": "celdaeditable_fechacelda_adatehora",
-      "confidence_score": 1.0
+      "target": "celdaeditable_fechacelda_adatehora"
     },
     {
       "relation": "calls",
@@ -12295,9 +12705,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L289",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage_modaleditar",
-      "target": "celdaeditable_fechacelda_adatehora",
-      "confidence_score": 1.0
+      "target": "celdaeditable_fechacelda_adatehora"
     },
     {
       "relation": "imports",
@@ -12328,9 +12738,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L174",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage_filanueva",
-      "target": "celdaeditable_fechacelda_abackendhora",
-      "confidence_score": 1.0
+      "target": "celdaeditable_fechacelda_abackendhora"
     },
     {
       "relation": "calls",
@@ -12339,9 +12749,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L290",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage_modaleditar",
-      "target": "celdaeditable_fechacelda_abackendhora",
-      "confidence_score": 1.0
+      "target": "celdaeditable_fechacelda_abackendhora"
     },
     {
       "relation": "imports",
@@ -12426,9 +12836,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "ciudadselector_ciudadselector",
-      "confidence_score": 1.0
+      "target": "ciudadselector_ciudadselector"
     },
     {
       "relation": "imports_from",
@@ -12437,9 +12847,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "ciudadselector_ciudadselector",
-      "confidence_score": 1.0
+      "target": "ciudadselector_ciudadselector"
     },
     {
       "relation": "imports_from",
@@ -12448,9 +12858,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "ciudadselector_ciudadselector",
-      "confidence_score": 1.0
+      "target": "ciudadselector_ciudadselector"
     },
     {
       "relation": "imports_from",
@@ -12459,9 +12869,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L32",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "ciudadselector_ciudadselector",
-      "confidence_score": 1.0
+      "target": "ciudadselector_ciudadselector"
     },
     {
       "relation": "imports_from",
@@ -12492,9 +12902,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "ciudadselector_ciudadselector_ciudadselector",
-      "confidence_score": 1.0
+      "target": "ciudadselector_ciudadselector_ciudadselector"
     },
     {
       "relation": "imports",
@@ -12503,9 +12913,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "ciudadselector_ciudadselector_ciudadselector",
-      "confidence_score": 1.0
+      "target": "ciudadselector_ciudadselector_ciudadselector"
     },
     {
       "relation": "imports",
@@ -12514,9 +12924,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "ciudadselector_ciudadselector_ciudadselector",
-      "confidence_score": 1.0
+      "target": "ciudadselector_ciudadselector_ciudadselector"
     },
     {
       "relation": "imports",
@@ -12525,9 +12935,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L32",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "ciudadselector_ciudadselector_ciudadselector",
-      "confidence_score": 1.0
+      "target": "ciudadselector_ciudadselector_ciudadselector"
     },
     {
       "relation": "imports",
@@ -12579,9 +12989,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "clienteselector_clienteselector",
-      "confidence_score": 1.0
+      "target": "clienteselector_clienteselector"
     },
     {
       "relation": "imports_from",
@@ -12590,9 +13000,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "clienteselector_clienteselector",
-      "confidence_score": 1.0
+      "target": "clienteselector_clienteselector"
     },
     {
       "relation": "imports_from",
@@ -12601,9 +13011,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "clienteselector_clienteselector",
-      "confidence_score": 1.0
+      "target": "clienteselector_clienteselector"
     },
     {
       "relation": "calls",
@@ -12623,9 +13033,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "clienteselector_clienteselector_clienteselector",
-      "confidence_score": 1.0
+      "target": "clienteselector_clienteselector_clienteselector"
     },
     {
       "relation": "imports",
@@ -12634,9 +13044,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "clienteselector_clienteselector_clienteselector",
-      "confidence_score": 1.0
+      "target": "clienteselector_clienteselector_clienteselector"
     },
     {
       "relation": "imports",
@@ -12645,9 +13055,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "clienteselector_clienteselector_clienteselector",
-      "confidence_score": 1.0
+      "target": "clienteselector_clienteselector_clienteselector"
     },
     {
       "relation": "contains",
@@ -12721,9 +13131,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "colorselector_colorselector",
-      "confidence_score": 1.0
+      "target": "colorselector_colorselector"
     },
     {
       "relation": "imports_from",
@@ -12732,9 +13142,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "colorselector_colorselector",
-      "confidence_score": 1.0
+      "target": "colorselector_colorselector"
     },
     {
       "relation": "imports_from",
@@ -12743,9 +13153,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "colorselector_colorselector",
-      "confidence_score": 1.0
+      "target": "colorselector_colorselector"
     },
     {
       "relation": "calls",
@@ -12776,9 +13186,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "colorselector_colorselector_colorselector",
-      "confidence_score": 1.0
+      "target": "colorselector_colorselector_colorselector"
     },
     {
       "relation": "imports",
@@ -12787,9 +13197,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "colorselector_colorselector_colorselector",
-      "confidence_score": 1.0
+      "target": "colorselector_colorselector_colorselector"
     },
     {
       "relation": "imports",
@@ -12798,9 +13208,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "colorselector_colorselector_colorselector",
-      "confidence_score": 1.0
+      "target": "colorselector_colorselector_colorselector"
     },
     {
       "relation": "contains",
@@ -12861,9 +13271,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "confirmacion_confirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion"
     },
     {
       "relation": "imports_from",
@@ -12872,9 +13282,9 @@
       "source_file": "src/pages/CompensacionPage.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_compensacionpage",
-      "target": "confirmacion_confirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion"
     },
     {
       "relation": "imports_from",
@@ -12883,9 +13293,9 @@
       "source_file": "src/pages/CostosExtraPage.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_costosextrapage",
-      "target": "confirmacion_confirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion"
     },
     {
       "relation": "imports_from",
@@ -12894,9 +13304,9 @@
       "source_file": "src/pages/CuentasPorPagarPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_cuentasporpagarpage",
-      "target": "confirmacion_confirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion"
     },
     {
       "relation": "imports_from",
@@ -12905,9 +13315,9 @@
       "source_file": "src/pages/FacturacionPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_facturacionpage",
-      "target": "confirmacion_confirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion"
     },
     {
       "relation": "imports_from",
@@ -12916,9 +13326,9 @@
       "source_file": "src/pages/GastosFinancierosPage.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastosfinancierospage",
-      "target": "confirmacion_confirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion"
     },
     {
       "relation": "imports_from",
@@ -12927,9 +13337,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "confirmacion_confirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion"
     },
     {
       "relation": "imports_from",
@@ -12938,9 +13348,9 @@
       "source_file": "src/pages/HistorialPagosPage.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_historialpagospage",
-      "target": "confirmacion_confirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion"
     },
     {
       "relation": "imports_from",
@@ -12949,9 +13359,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "confirmacion_confirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion"
     },
     {
       "relation": "imports_from",
@@ -12982,9 +13392,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "confirmacion_confirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion"
     },
     {
       "relation": "imports_from",
@@ -13004,9 +13414,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "confirmacion_confirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion"
     },
     {
       "relation": "imports_from",
@@ -13015,9 +13425,9 @@
       "source_file": "src/index.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_index",
-      "target": "confirmacion_confirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion"
     },
     {
       "relation": "imports",
@@ -13147,9 +13557,9 @@
       "source_file": "src/pages/CuentasPorPagarPage.jsx",
       "source_location": "L298",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_cuentasporpagarpage_cuentas",
-      "target": "confirmacion_confirmacion_useconfirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion_useconfirmacion"
     },
     {
       "relation": "calls",
@@ -13158,9 +13568,9 @@
       "source_file": "src/pages/CuentasPorPagarPage.jsx",
       "source_location": "L81",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_cuentasporpagarpage_gastosfijos",
-      "target": "confirmacion_confirmacion_useconfirmacion",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion_useconfirmacion"
     },
     {
       "relation": "imports",
@@ -13389,9 +13799,9 @@
       "source_file": "src/index.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_index",
-      "target": "confirmacion_confirmacion_confirmacionprovider",
-      "confidence_score": 1.0
+      "target": "confirmacion_confirmacion_confirmacionprovider"
     },
     {
       "relation": "contains",
@@ -13420,9 +13830,9 @@
       "source_file": "src/pages/CostosExtraPage.jsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_costosextrapage",
-      "target": "costosextraselector_costosextraselector",
-      "confidence_score": 1.0
+      "target": "costosextraselector_costosextraselector"
     },
     {
       "relation": "imports_from",
@@ -13431,9 +13841,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "costosextraselector_costosextraselector",
-      "confidence_score": 1.0
+      "target": "costosextraselector_costosextraselector"
     },
     {
       "relation": "imports",
@@ -13442,9 +13852,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "costosextraselector_costosextraselector_costosextraselector",
-      "confidence_score": 1.0
+      "target": "costosextraselector_costosextraselector_costosextraselector"
     },
     {
       "relation": "imports",
@@ -13484,9 +13894,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "folioselector_folioselector",
-      "confidence_score": 1.0
+      "target": "folioselector_folioselector"
     },
     {
       "relation": "imports",
@@ -13495,9 +13905,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "folioselector_folioselector_folioselector",
-      "confidence_score": 1.0
+      "target": "folioselector_folioselector_folioselector"
     },
     {
       "relation": "imports_from",
@@ -13506,9 +13916,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector"
     },
     {
       "relation": "imports",
@@ -13517,9 +13927,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "operadorselector_operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector_operadorselector"
     },
     {
       "relation": "imports_from",
@@ -13528,9 +13938,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "placasselector_placasselector",
-      "confidence_score": 1.0
+      "target": "placasselector_placasselector"
     },
     {
       "relation": "imports",
@@ -13539,9 +13949,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "placasselector_placasselector_placasselector",
-      "confidence_score": 1.0
+      "target": "placasselector_placasselector_placasselector"
     },
     {
       "relation": "imports_from",
@@ -13550,9 +13960,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "remolqueselector_remolqueselector",
-      "confidence_score": 1.0
+      "target": "remolqueselector_remolqueselector"
     },
     {
       "relation": "imports",
@@ -13561,9 +13971,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "remolqueselector_remolqueselector_remolqueselector",
-      "confidence_score": 1.0
+      "target": "remolqueselector_remolqueselector_remolqueselector"
     },
     {
       "relation": "imports_from",
@@ -13572,9 +13982,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "tiposervicioselector_tiposervicioselector",
-      "confidence_score": 1.0
+      "target": "tiposervicioselector_tiposervicioselector"
     },
     {
       "relation": "imports",
@@ -13605,9 +14015,9 @@
       "source_file": "src/components/CtaPortModal/CtaPortModal.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportmodal_ctaportmodal",
-      "target": "utils_doblevalor",
-      "confidence_score": 1.0
+      "target": "utils_doblevalor"
     },
     {
       "relation": "imports",
@@ -13713,9 +14123,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "folioselector_folioselector",
-      "confidence_score": 1.0
+      "target": "folioselector_folioselector"
     },
     {
       "relation": "imports",
@@ -13724,9 +14134,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "folioselector_folioselector_folioselector",
-      "confidence_score": 1.0
+      "target": "folioselector_folioselector_folioselector"
     },
     {
       "relation": "imports_from",
@@ -13735,9 +14145,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector"
     },
     {
       "relation": "imports",
@@ -13746,9 +14156,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "operadorselector_operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector_operadorselector"
     },
     {
       "relation": "imports_from",
@@ -13757,9 +14167,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "placasselector_placasselector",
-      "confidence_score": 1.0
+      "target": "placasselector_placasselector"
     },
     {
       "relation": "imports",
@@ -13768,9 +14178,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "placasselector_placasselector_placasselector",
-      "confidence_score": 1.0
+      "target": "placasselector_placasselector_placasselector"
     },
     {
       "relation": "imports_from",
@@ -13779,9 +14189,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "remolqueselector_remolqueselector",
-      "confidence_score": 1.0
+      "target": "remolqueselector_remolqueselector"
     },
     {
       "relation": "imports",
@@ -13790,9 +14200,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "remolqueselector_remolqueselector_remolqueselector",
-      "confidence_score": 1.0
+      "target": "remolqueselector_remolqueselector_remolqueselector"
     },
     {
       "relation": "imports_from",
@@ -13801,9 +14211,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "tiposervicioselector_tiposervicioselector",
-      "confidence_score": 1.0
+      "target": "tiposervicioselector_tiposervicioselector"
     },
     {
       "relation": "imports",
@@ -13834,9 +14244,9 @@
       "source_file": "src/components/CtaPorteTercerosModal/CtaPorteTercerosModal.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "ctaportetercerosmodal_ctaportetercerosmodal",
-      "target": "utils_doblevalor",
-      "confidence_score": 1.0
+      "target": "utils_doblevalor"
     },
     {
       "relation": "imports",
@@ -14242,9 +14652,9 @@
       "source_file": "src/components/Dashboards/Dashboards.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "dashboards_dashboards",
-      "target": "hooks_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco"
     },
     {
       "relation": "imports",
@@ -14473,9 +14883,9 @@
       "source_file": "src/components/Dashboards/Dashboards.jsx",
       "source_location": "L62",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "dashboards_dashboards_usedashboard",
-      "target": "hooks_useautorefresco_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco_useautorefresco"
     },
     {
       "relation": "calls",
@@ -14646,9 +15056,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "documentocelda_documentocelda",
-      "confidence_score": 1.0
+      "target": "documentocelda_documentocelda"
     },
     {
       "relation": "imports",
@@ -14657,9 +15067,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "documentocelda_documentocelda_documentocelda",
-      "confidence_score": 1.0
+      "target": "documentocelda_documentocelda_documentocelda"
     },
     {
       "relation": "contains",
@@ -14883,9 +15293,9 @@
       "source_file": "src/components/FolioDisponibleSelector/FolioDisponibleSelector.jsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "foliodisponibleselector_foliodisponibleselector",
-      "target": "hooks_usedropdownnav",
-      "confidence_score": 1.0
+      "target": "hooks_usedropdownnav"
     },
     {
       "relation": "imports",
@@ -14894,9 +15304,9 @@
       "source_file": "src/components/FolioDisponibleSelector/FolioDisponibleSelector.jsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "foliodisponibleselector_foliodisponibleselector",
-      "target": "hooks_usedropdownnav_usedropdownnav",
-      "confidence_score": 1.0
+      "target": "hooks_usedropdownnav_usedropdownnav"
     },
     {
       "relation": "imports_from",
@@ -14970,9 +15380,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "folioselector_folioselector",
-      "confidence_score": 1.0
+      "target": "folioselector_folioselector"
     },
     {
       "relation": "imports_from",
@@ -14981,9 +15391,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "folioselector_folioselector",
-      "confidence_score": 1.0
+      "target": "folioselector_folioselector"
     },
     {
       "relation": "imports_from",
@@ -15014,9 +15424,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "folioselector_folioselector_folioselector",
-      "confidence_score": 1.0
+      "target": "folioselector_folioselector_folioselector"
     },
     {
       "relation": "imports",
@@ -15025,9 +15435,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "folioselector_folioselector_folioselector",
-      "confidence_score": 1.0
+      "target": "folioselector_folioselector_folioselector"
     },
     {
       "relation": "imports",
@@ -15131,9 +15541,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L33",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "fotomodal_fotomodal",
-      "confidence_score": 1.0
+      "target": "fotomodal_fotomodal"
     },
     {
       "relation": "imports_from",
@@ -15142,9 +15552,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "fotomodal_fotomodal",
-      "confidence_score": 1.0
+      "target": "fotomodal_fotomodal"
     },
     {
       "relation": "calls",
@@ -15186,9 +15596,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L33",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "fotomodal_fotomodal_fotomodal",
-      "confidence_score": 1.0
+      "target": "fotomodal_fotomodal_fotomodal"
     },
     {
       "relation": "imports",
@@ -15197,9 +15607,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "fotomodal_fotomodal_fotomodal",
-      "confidence_score": 1.0
+      "target": "fotomodal_fotomodal_fotomodal"
     },
     {
       "relation": "contains",
@@ -15286,6 +15696,177 @@
       "target": "inactivitymodal_inactivitymodal_inactivitymodal"
     },
     {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L66",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_bloques",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L106",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_buque_carga",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L126",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_caja",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L210",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_cerca",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L114",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_chimenea",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L261",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_cielo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_colores",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L85",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_contenedor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L142",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_g",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L144",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_grua",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L276",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_inicioescena",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L195",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_lejos",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_llantas",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L259",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_posiciones",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_remolque",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L181",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_tractomini",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/InicioEscena/InicioEscena.jsx",
+      "source_location": "L277",
+      "weight": 1.0,
+      "source": "inicioescena_inicioescena_inicioescena",
+      "target": "inicioescena_inicioescena_cielo",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -15324,9 +15905,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector"
     },
     {
       "relation": "imports_from",
@@ -15335,9 +15916,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector"
     },
     {
       "relation": "imports_from",
@@ -15346,9 +15927,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector"
     },
     {
       "relation": "imports_from",
@@ -15357,9 +15938,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector"
     },
     {
       "relation": "calls",
@@ -15379,9 +15960,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "operadorselector_operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector_operadorselector"
     },
     {
       "relation": "imports",
@@ -15390,9 +15971,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "operadorselector_operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector_operadorselector"
     },
     {
       "relation": "imports",
@@ -15401,9 +15982,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "operadorselector_operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector_operadorselector"
     },
     {
       "relation": "imports",
@@ -15412,9 +15993,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "operadorselector_operadorselector_operadorselector",
-      "confidence_score": 1.0
+      "target": "operadorselector_operadorselector_operadorselector"
     },
     {
       "relation": "imports_from",
@@ -15423,9 +16004,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "patioselector_patioselector",
-      "confidence_score": 1.0
+      "target": "patioselector_patioselector"
     },
     {
       "relation": "imports_from",
@@ -15434,9 +16015,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "patioselector_patioselector",
-      "confidence_score": 1.0
+      "target": "patioselector_patioselector"
     },
     {
       "relation": "imports_from",
@@ -15445,9 +16026,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L29",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "patioselector_patioselector",
-      "confidence_score": 1.0
+      "target": "patioselector_patioselector"
     },
     {
       "relation": "imports_from",
@@ -15488,9 +16069,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "patioselector_patioselector_patioselector",
-      "confidence_score": 1.0
+      "target": "patioselector_patioselector_patioselector"
     },
     {
       "relation": "imports",
@@ -15499,9 +16080,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "patioselector_patioselector_patioselector",
-      "confidence_score": 1.0
+      "target": "patioselector_patioselector_patioselector"
     },
     {
       "relation": "imports",
@@ -15510,9 +16091,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L29",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "patioselector_patioselector_patioselector",
-      "confidence_score": 1.0
+      "target": "patioselector_patioselector_patioselector"
     },
     {
       "relation": "calls",
@@ -15532,9 +16113,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "pendientepagadoselector_pendientepagadoselector",
-      "confidence_score": 1.0
+      "target": "pendientepagadoselector_pendientepagadoselector"
     },
     {
       "relation": "imports_from",
@@ -15585,9 +16166,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "pendientepagadoselector_pendientepagadoselector_pendientepagadoselector",
-      "confidence_score": 1.0
+      "target": "pendientepagadoselector_pendientepagadoselector_pendientepagadoselector"
     },
     {
       "relation": "calls",
@@ -15607,9 +16188,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "pinturaceldas_pinturaceldas",
-      "confidence_score": 1.0
+      "target": "pinturaceldas_pinturaceldas"
     },
     {
       "relation": "imports_from",
@@ -15618,9 +16199,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L35",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "pinturaceldas_pinturaceldas",
-      "confidence_score": 1.0
+      "target": "pinturaceldas_pinturaceldas"
     },
     {
       "relation": "imports_from",
@@ -15629,9 +16210,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "pinturaceldas_pinturaceldas",
-      "confidence_score": 1.0
+      "target": "pinturaceldas_pinturaceldas"
     },
     {
       "relation": "contains",
@@ -15790,9 +16371,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "pinturaceldas_pinturaceldas_pinturaceldas",
-      "confidence_score": 1.0
+      "target": "pinturaceldas_pinturaceldas_pinturaceldas"
     },
     {
       "relation": "imports",
@@ -15801,9 +16382,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L35",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "pinturaceldas_pinturaceldas_pinturaceldas",
-      "confidence_score": 1.0
+      "target": "pinturaceldas_pinturaceldas_pinturaceldas"
     },
     {
       "relation": "imports",
@@ -15812,9 +16393,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "pinturaceldas_pinturaceldas_pinturaceldas",
-      "confidence_score": 1.0
+      "target": "pinturaceldas_pinturaceldas_pinturaceldas"
     },
     {
       "relation": "imports_from",
@@ -15823,9 +16404,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "placasselector_placasselector",
-      "confidence_score": 1.0
+      "target": "placasselector_placasselector"
     },
     {
       "relation": "imports_from",
@@ -15834,9 +16415,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "placasselector_placasselector",
-      "confidence_score": 1.0
+      "target": "placasselector_placasselector"
     },
     {
       "relation": "imports_from",
@@ -15845,9 +16426,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "placasselector_placasselector",
-      "confidence_score": 1.0
+      "target": "placasselector_placasselector"
     },
     {
       "relation": "imports_from",
@@ -15888,9 +16469,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "placasselector_placasselector_placasselector",
-      "confidence_score": 1.0
+      "target": "placasselector_placasselector_placasselector"
     },
     {
       "relation": "imports",
@@ -15899,9 +16480,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "placasselector_placasselector_placasselector",
-      "confidence_score": 1.0
+      "target": "placasselector_placasselector_placasselector"
     },
     {
       "relation": "imports",
@@ -15910,9 +16491,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "placasselector_placasselector_placasselector",
-      "confidence_score": 1.0
+      "target": "placasselector_placasselector_placasselector"
     },
     {
       "relation": "calls",
@@ -15964,9 +16545,9 @@
       "source_file": "src/index.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_index",
-      "target": "protectedroute_protectedroute",
-      "confidence_score": 1.0
+      "target": "protectedroute_protectedroute"
     },
     {
       "relation": "calls",
@@ -15986,9 +16567,9 @@
       "source_file": "src/index.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_index",
-      "target": "protectedroute_protectedroute_protectedroute",
-      "confidence_score": 1.0
+      "target": "protectedroute_protectedroute_protectedroute"
     },
     {
       "relation": "imports_from",
@@ -15997,9 +16578,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "remolqueselector_remolqueselector",
-      "confidence_score": 1.0
+      "target": "remolqueselector_remolqueselector"
     },
     {
       "relation": "imports_from",
@@ -16008,9 +16589,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "remolqueselector_remolqueselector",
-      "confidence_score": 1.0
+      "target": "remolqueselector_remolqueselector"
     },
     {
       "relation": "imports_from",
@@ -16051,9 +16632,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "remolqueselector_remolqueselector_remolqueselector",
-      "confidence_score": 1.0
+      "target": "remolqueselector_remolqueselector_remolqueselector"
     },
     {
       "relation": "imports",
@@ -16062,9 +16643,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "remolqueselector_remolqueselector_remolqueselector",
-      "confidence_score": 1.0
+      "target": "remolqueselector_remolqueselector_remolqueselector"
     },
     {
       "relation": "calls",
@@ -16084,9 +16665,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L35",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "reportevaciosmodal_reportevaciosmodal",
-      "confidence_score": 1.0
+      "target": "reportevaciosmodal_reportevaciosmodal"
     },
     {
       "relation": "contains",
@@ -16105,9 +16686,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L35",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "reportevaciosmodal_reportevaciosmodal_reportevaciosmodal",
-      "confidence_score": 1.0
+      "target": "reportevaciosmodal_reportevaciosmodal_reportevaciosmodal"
     },
     {
       "relation": "imports_from",
@@ -16116,9 +16697,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar"
     },
     {
       "relation": "imports_from",
@@ -16127,9 +16708,9 @@
       "source_file": "src/pages/CostosExtraPage.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_costosextrapage",
-      "target": "searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar"
     },
     {
       "relation": "imports_from",
@@ -16138,9 +16719,9 @@
       "source_file": "src/pages/FacturacionPage.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_facturacionpage",
-      "target": "searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar"
     },
     {
       "relation": "imports_from",
@@ -16149,9 +16730,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar"
     },
     {
       "relation": "imports_from",
@@ -16160,9 +16741,9 @@
       "source_file": "src/pages/HistorialPagosPage.jsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_historialpagospage",
-      "target": "searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar"
     },
     {
       "relation": "imports_from",
@@ -16171,9 +16752,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L24",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar"
     },
     {
       "relation": "imports_from",
@@ -16182,9 +16763,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar"
     },
     {
       "relation": "imports_from",
@@ -16193,9 +16774,9 @@
       "source_file": "src/pages/NominaPage.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_nominapage",
-      "target": "searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar"
     },
     {
       "relation": "imports_from",
@@ -16204,9 +16785,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar"
     },
     {
       "relation": "imports_from",
@@ -16215,9 +16796,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar"
     },
     {
       "relation": "contains",
@@ -16236,9 +16817,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "searchbar_searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar_searchbar"
     },
     {
       "relation": "imports",
@@ -16247,9 +16828,9 @@
       "source_file": "src/pages/CostosExtraPage.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_costosextrapage",
-      "target": "searchbar_searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar_searchbar"
     },
     {
       "relation": "imports",
@@ -16258,9 +16839,9 @@
       "source_file": "src/pages/FacturacionPage.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_facturacionpage",
-      "target": "searchbar_searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar_searchbar"
     },
     {
       "relation": "imports",
@@ -16269,9 +16850,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "searchbar_searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar_searchbar"
     },
     {
       "relation": "imports",
@@ -16280,9 +16861,9 @@
       "source_file": "src/pages/HistorialPagosPage.jsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_historialpagospage",
-      "target": "searchbar_searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar_searchbar"
     },
     {
       "relation": "imports",
@@ -16291,9 +16872,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L24",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "searchbar_searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar_searchbar"
     },
     {
       "relation": "imports",
@@ -16302,9 +16883,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "searchbar_searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar_searchbar"
     },
     {
       "relation": "imports",
@@ -16313,9 +16894,9 @@
       "source_file": "src/pages/NominaPage.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_nominapage",
-      "target": "searchbar_searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar_searchbar"
     },
     {
       "relation": "imports",
@@ -16324,9 +16905,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L17",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "searchbar_searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar_searchbar"
     },
     {
       "relation": "imports",
@@ -16335,9 +16916,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "searchbar_searchbar_searchbar",
-      "confidence_score": 1.0
+      "target": "searchbar_searchbar_searchbar"
     },
     {
       "relation": "imports_from",
@@ -16346,9 +16927,9 @@
       "source_file": "src/components/Seguimientos/Seguimientos.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "seguimientos_seguimientos",
-      "target": "config_statusconfig",
-      "confidence_score": 1.0
+      "target": "config_statusconfig"
     },
     {
       "relation": "imports",
@@ -16468,9 +17049,9 @@
       "source_file": "src/components/Seguimientos/Seguimientos.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "seguimientos_seguimientos",
-      "target": "utils_doblevalor",
-      "confidence_score": 1.0
+      "target": "utils_doblevalor"
     },
     {
       "relation": "imports",
@@ -16523,9 +17104,9 @@
       "source_file": "src/components/Seguimientos/Seguimientos.jsx",
       "source_location": "L100",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "seguimientos_seguimientos_celda",
-      "target": "utils_doblevalor_conunidad",
-      "confidence_score": 1.0
+      "target": "utils_doblevalor_conunidad"
     },
     {
       "relation": "calls",
@@ -16534,9 +17115,9 @@
       "source_file": "src/components/Seguimientos/Seguimientos.jsx",
       "source_location": "L95",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "seguimientos_seguimientos_celda",
-      "target": "utils_doblevalor_textodelpar",
-      "confidence_score": 1.0
+      "target": "utils_doblevalor_textodelpar"
     },
     {
       "relation": "imports",
@@ -16577,9 +17158,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "statusselector_statusselector",
-      "confidence_score": 1.0
+      "target": "statusselector_statusselector"
     },
     {
       "relation": "imports_from",
@@ -16697,9 +17278,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "statusselector_statusselector_statusselector",
-      "confidence_score": 1.0
+      "target": "statusselector_statusselector_statusselector"
     },
     {
       "relation": "calls",
@@ -16752,9 +17333,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "terceroselector_terceroselector",
-      "confidence_score": 1.0
+      "target": "terceroselector_terceroselector"
     },
     {
       "relation": "imports_from",
@@ -16795,9 +17376,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "terceroselector_terceroselector_terceroselector",
-      "confidence_score": 1.0
+      "target": "terceroselector_terceroselector_terceroselector"
     },
     {
       "relation": "calls",
@@ -16817,9 +17398,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "tiposervicioselector_tiposervicioselector",
-      "confidence_score": 1.0
+      "target": "tiposervicioselector_tiposervicioselector"
     },
     {
       "relation": "imports_from",
@@ -16933,9 +17514,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L472",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage_filanueva",
-      "target": "tiposervicioselector_tiposervicioselector_esserviciofull",
-      "confidence_score": 1.0
+      "target": "tiposervicioselector_tiposervicioselector_esserviciofull"
     },
     {
       "relation": "calls",
@@ -16944,9 +17525,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L665",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage_modaleditar",
-      "target": "tiposervicioselector_tiposervicioselector_esserviciofull",
-      "confidence_score": 1.0
+      "target": "tiposervicioselector_tiposervicioselector_esserviciofull"
     },
     {
       "relation": "imports",
@@ -16955,9 +17536,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "tiposervicioselector_tiposervicioselector_tiposervicioselector",
-      "confidence_score": 1.0
+      "target": "tiposervicioselector_tiposervicioselector_tiposervicioselector"
     },
     {
       "relation": "calls",
@@ -16977,9 +17558,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "transportistaselector_transportistaselector",
-      "confidence_score": 1.0
+      "target": "transportistaselector_transportistaselector"
     },
     {
       "relation": "imports_from",
@@ -16988,9 +17569,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "transportistaselector_transportistaselector",
-      "confidence_score": 1.0
+      "target": "transportistaselector_transportistaselector"
     },
     {
       "relation": "imports_from",
@@ -17031,9 +17612,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "transportistaselector_transportistaselector_transportistaselector",
-      "confidence_score": 1.0
+      "target": "transportistaselector_transportistaselector_transportistaselector"
     },
     {
       "relation": "imports",
@@ -17042,9 +17623,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "transportistaselector_transportistaselector_transportistaselector",
-      "confidence_score": 1.0
+      "target": "transportistaselector_transportistaselector_transportistaselector"
     },
     {
       "relation": "calls",
@@ -17064,9 +17645,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "vaciostatusselector_vaciostatusselector",
-      "confidence_score": 1.0
+      "target": "vaciostatusselector_vaciostatusselector"
     },
     {
       "relation": "imports_from",
@@ -17075,9 +17656,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "vaciostatusselector_vaciostatusselector",
-      "confidence_score": 1.0
+      "target": "vaciostatusselector_vaciostatusselector"
     },
     {
       "relation": "imports_from",
@@ -17086,9 +17667,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "vaciostatusselector_vaciostatusselector",
-      "confidence_score": 1.0
+      "target": "vaciostatusselector_vaciostatusselector"
     },
     {
       "relation": "imports_from",
@@ -17212,9 +17793,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "vaciostatusselector_vaciostatusselector_vaciostatusselector",
-      "confidence_score": 1.0
+      "target": "vaciostatusselector_vaciostatusselector_vaciostatusselector"
     },
     {
       "relation": "imports",
@@ -17223,9 +17804,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L16",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "vaciostatusselector_vaciostatusselector_vaciostatusselector",
-      "confidence_score": 1.0
+      "target": "vaciostatusselector_vaciostatusselector_vaciostatusselector"
     },
     {
       "relation": "imports",
@@ -17234,9 +17815,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "vaciostatusselector_vaciostatusselector_vaciostatusselector",
-      "confidence_score": 1.0
+      "target": "vaciostatusselector_vaciostatusselector_vaciostatusselector"
     },
     {
       "relation": "calls",
@@ -17398,9 +17979,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "config_statusconfig",
-      "confidence_score": 1.0
+      "target": "config_statusconfig"
     },
     {
       "relation": "calls",
@@ -17590,9 +18171,9 @@
       "source_file": "src/pages/CatalogosPage.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_catalogospage",
-      "target": "context_authcontext",
-      "confidence_score": 1.0
+      "target": "context_authcontext"
     },
     {
       "relation": "imports_from",
@@ -17601,9 +18182,9 @@
       "source_file": "src/pages/CostosExtraPage.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_costosextrapage",
-      "target": "context_authcontext",
-      "confidence_score": 1.0
+      "target": "context_authcontext"
     },
     {
       "relation": "imports_from",
@@ -17612,9 +18193,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "context_authcontext",
-      "confidence_score": 1.0
+      "target": "context_authcontext"
     },
     {
       "relation": "imports_from",
@@ -17623,9 +18204,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L31",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "context_authcontext",
-      "confidence_score": 1.0
+      "target": "context_authcontext"
     },
     {
       "relation": "imports_from",
@@ -17634,9 +18215,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "context_authcontext",
-      "confidence_score": 1.0
+      "target": "context_authcontext"
     },
     {
       "relation": "imports_from",
@@ -17656,9 +18237,9 @@
       "source_file": "src/pages/ReporteViajePage.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_reporteviajepage",
-      "target": "context_authcontext",
-      "confidence_score": 1.0
+      "target": "context_authcontext"
     },
     {
       "relation": "imports_from",
@@ -17667,9 +18248,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "context_authcontext",
-      "confidence_score": 1.0
+      "target": "context_authcontext"
     },
     {
       "relation": "imports_from",
@@ -17678,9 +18259,9 @@
       "source_file": "src/index.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_index",
-      "target": "context_authcontext",
-      "confidence_score": 1.0
+      "target": "context_authcontext"
     },
     {
       "relation": "imports",
@@ -17689,9 +18270,9 @@
       "source_file": "src/index.jsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_index",
-      "target": "context_authcontext_authprovider",
-      "confidence_score": 1.0
+      "target": "context_authcontext_authprovider"
     },
     {
       "relation": "imports",
@@ -18132,9 +18713,9 @@
       "source_file": "src/hooks/useGastos.js",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "hooks_usegastos",
-      "target": "hooks_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco"
     },
     {
       "relation": "imports_from",
@@ -18143,9 +18724,9 @@
       "source_file": "src/hooks/useManiobras.js",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "hooks_usemaniobras",
-      "target": "hooks_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco"
     },
     {
       "relation": "imports_from",
@@ -18154,9 +18735,9 @@
       "source_file": "src/hooks/useNomina.js",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "hooks_usenomina",
-      "target": "hooks_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco"
     },
     {
       "relation": "imports_from",
@@ -18176,9 +18757,9 @@
       "source_file": "src/pages/CompensacionPage.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_compensacionpage",
-      "target": "hooks_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco"
     },
     {
       "relation": "imports_from",
@@ -18187,9 +18768,9 @@
       "source_file": "src/pages/CostosExtraPage.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_costosextrapage",
-      "target": "hooks_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco"
     },
     {
       "relation": "imports_from",
@@ -18198,9 +18779,9 @@
       "source_file": "src/pages/CuentasPorPagarPage.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_cuentasporpagarpage",
-      "target": "hooks_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco"
     },
     {
       "relation": "imports_from",
@@ -18209,9 +18790,9 @@
       "source_file": "src/pages/EstadosCuentaPage.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_estadoscuentapage",
-      "target": "hooks_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco"
     },
     {
       "relation": "imports_from",
@@ -18220,9 +18801,9 @@
       "source_file": "src/pages/FacturacionPage.jsx",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_facturacionpage",
-      "target": "hooks_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco"
     },
     {
       "relation": "imports_from",
@@ -18231,9 +18812,9 @@
       "source_file": "src/pages/GastosFinancierosPage.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastosfinancierospage",
-      "target": "hooks_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco"
     },
     {
       "relation": "imports_from",
@@ -18242,9 +18823,9 @@
       "source_file": "src/pages/HistorialPagosPage.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_historialpagospage",
-      "target": "hooks_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco"
     },
     {
       "relation": "imports",
@@ -18253,9 +18834,9 @@
       "source_file": "src/hooks/useGastos.js",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "hooks_usegastos",
-      "target": "hooks_useautorefresco_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco_useautorefresco"
     },
     {
       "relation": "calls",
@@ -18396,9 +18977,9 @@
       "source_file": "src/pages/CuentasPorPagarPage.jsx",
       "source_location": "L328",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_cuentasporpagarpage_cuentas",
-      "target": "hooks_useautorefresco_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco_useautorefresco"
     },
     {
       "relation": "calls",
@@ -18407,9 +18988,9 @@
       "source_file": "src/pages/CuentasPorPagarPage.jsx",
       "source_location": "L106",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_cuentasporpagarpage_gastosfijos",
-      "target": "hooks_useautorefresco_useautorefresco",
-      "confidence_score": 1.0
+      "target": "hooks_useautorefresco_useautorefresco"
     },
     {
       "relation": "imports",
@@ -18526,9 +19107,9 @@
       "source_file": "src/pages/FoliosPage.jsx",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_foliospage",
-      "target": "hooks_usefolios",
-      "confidence_score": 1.0
+      "target": "hooks_usefolios"
     },
     {
       "relation": "imports",
@@ -18591,9 +19172,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "hooks_usegastos",
-      "confidence_score": 1.0
+      "target": "hooks_usegastos"
     },
     {
       "relation": "imports",
@@ -18707,9 +19288,9 @@
       "source_file": "src/pages/MovimientosLocalesPage.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_movimientoslocalespage",
-      "target": "hooks_usemovimientoslocales",
-      "confidence_score": 1.0
+      "target": "hooks_usemovimientoslocales"
     },
     {
       "relation": "imports",
@@ -18770,9 +19351,9 @@
       "source_file": "src/hooks/useNomina.js",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "hooks_usenomina",
-      "target": "utils_formulasuma",
-      "confidence_score": 1.0
+      "target": "utils_formulasuma"
     },
     {
       "relation": "imports",
@@ -18911,9 +19492,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "hooks_usestatusupdate",
-      "confidence_score": 1.0
+      "target": "hooks_usestatusupdate"
     },
     {
       "relation": "imports",
@@ -19007,9 +19588,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "hooks_usevaciostatusupdate",
-      "confidence_score": 1.0
+      "target": "hooks_usevaciostatusupdate"
     },
     {
       "relation": "imports_from",
@@ -19018,9 +19599,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "hooks_usevaciostatusupdate",
-      "confidence_score": 1.0
+      "target": "hooks_usevaciostatusupdate"
     },
     {
       "relation": "imports",
@@ -19103,9 +19684,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "hooks_usevacios",
-      "confidence_score": 1.0
+      "target": "hooks_usevacios"
     },
     {
       "relation": "imports",
@@ -19135,9 +19716,9 @@
       "source_file": "src/index.jsx",
       "source_location": "L13",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_index",
-      "target": "src_index_root",
-      "confidence_score": 1.0
+      "target": "src_index_root"
     },
     {
       "relation": "contains",
@@ -19738,9 +20319,9 @@
       "source_file": "src/pages/EstadosCuentaPage.jsx",
       "source_location": "L4",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_estadoscuentapage",
-      "target": "utils_buscar",
-      "confidence_score": 1.0
+      "target": "utils_buscar"
     },
     {
       "relation": "imports",
@@ -20206,9 +20787,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "utils_buscar",
-      "confidence_score": 1.0
+      "target": "utils_buscar"
     },
     {
       "relation": "imports",
@@ -20228,9 +20809,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "utils_colorfila",
-      "confidence_score": 1.0
+      "target": "utils_colorfila"
     },
     {
       "relation": "imports",
@@ -20261,9 +20842,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage",
-      "target": "utils_formulasuma",
-      "confidence_score": 1.0
+      "target": "utils_formulasuma"
     },
     {
       "relation": "imports",
@@ -20294,9 +20875,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L113",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage_propspintado",
-      "target": "utils_colorfila_escolorvalido",
-      "confidence_score": 1.0
+      "target": "utils_colorfila_escolorvalido"
     },
     {
       "relation": "calls",
@@ -20305,9 +20886,9 @@
       "source_file": "src/pages/GastosPage.jsx",
       "source_location": "L116",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_gastospage_propspintado",
-      "target": "utils_colorfila_textosobre",
-      "confidence_score": 1.0
+      "target": "utils_colorfila_textosobre"
     },
     {
       "relation": "calls",
@@ -20377,9 +20958,9 @@
       "source_file": "src/pages/HistorialPagosPage.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_historialpagospage",
-      "target": "utils_buscar",
-      "confidence_score": 1.0
+      "target": "utils_buscar"
     },
     {
       "relation": "imports",
@@ -20691,9 +21272,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L29",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "utils_buscar",
-      "confidence_score": 1.0
+      "target": "utils_buscar"
     },
     {
       "relation": "imports",
@@ -20713,9 +21294,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "utils_colorfila",
-      "confidence_score": 1.0
+      "target": "utils_colorfila"
     },
     {
       "relation": "imports",
@@ -20746,9 +21327,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L36",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage",
-      "target": "utils_doblevalor",
-      "confidence_score": 1.0
+      "target": "utils_doblevalor"
     },
     {
       "relation": "imports",
@@ -20845,9 +21426,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L117",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage_aplicarcambiotiposervicio",
-      "target": "utils_doblevalor_leerpar",
-      "confidence_score": 1.0
+      "target": "utils_doblevalor_leerpar"
     },
     {
       "relation": "calls",
@@ -20911,9 +21492,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L215",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage_tipofullinput",
-      "target": "utils_doblevalor_leerpar",
-      "confidence_score": 1.0
+      "target": "utils_doblevalor_leerpar"
     },
     {
       "relation": "calls",
@@ -20922,9 +21503,9 @@
       "source_file": "src/pages/ManiobrasPage.jsx",
       "source_location": "L236",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_maniobraspage_dobleinput",
-      "target": "utils_doblevalor_leerpar",
-      "confidence_score": 1.0
+      "target": "utils_doblevalor_leerpar"
     },
     {
       "relation": "contains",
@@ -21053,9 +21634,9 @@
       "source_file": "src/pages/NominaPage.jsx",
       "source_location": "L5",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_nominapage",
-      "target": "utils_buscar",
-      "confidence_score": 1.0
+      "target": "utils_buscar"
     },
     {
       "relation": "imports",
@@ -21806,9 +22387,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L24",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "utils_buscar",
-      "confidence_score": 1.0
+      "target": "utils_buscar"
     },
     {
       "relation": "imports",
@@ -21828,9 +22409,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "utils_citaabierta",
-      "confidence_score": 1.0
+      "target": "utils_citaabierta"
     },
     {
       "relation": "imports",
@@ -21861,9 +22442,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage",
-      "target": "utils_colorfila",
-      "confidence_score": 1.0
+      "target": "utils_colorfila"
     },
     {
       "relation": "imports",
@@ -21905,9 +22486,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L119",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage_propspintado",
-      "target": "utils_colorfila_escolorvalido",
-      "confidence_score": 1.0
+      "target": "utils_colorfila_escolorvalido"
     },
     {
       "relation": "calls",
@@ -21916,9 +22497,9 @@
       "source_file": "src/pages/VaciosPage.jsx",
       "source_location": "L122",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pages_vaciospage_propspintado",
-      "target": "utils_colorfila_textosobre",
-      "confidence_score": 1.0
+      "target": "utils_colorfila_textosobre"
     },
     {
       "relation": "calls",
@@ -23718,5 +24299,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "3b5a4b19de6877c1da6e3359aab5f2667828e5a5"
+  "built_at_commit": "426014945fb3180404caf3406577d3555ce2340a"
 }

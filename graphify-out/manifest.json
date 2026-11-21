@@ -150,9 +150,9 @@
     "semantic_hash": "e71f60e7ab5dd32a51ae1dce90a3a603"
   },
   "src/context/AuthContext.jsx": {
-    "mtime": 1784832211.974463,
-    "ast_hash": "2e2c69d85d59b0f27cd4b57780ee7997",
-    "semantic_hash": "2e2c69d85d59b0f27cd4b57780ee7997"
+    "mtime": 1795134630.0697286,
+    "ast_hash": "761fa6b41804d861941ef1c3af75534f",
+    "semantic_hash": ""
   },
   "src/hooks/useGastos.js": {
     "mtime": 1794609298.2622552,
@@ -265,9 +265,9 @@
     "semantic_hash": "25d54923411d0dbee5d487891e2b96d5"
   },
   "src/App.jsx": {
-    "mtime": 1792706552.1005294,
-    "ast_hash": "fc19ed6561de922d828d0363c0f6fd97",
-    "semantic_hash": "fc19ed6561de922d828d0363c0f6fd97"
+    "mtime": 1795134636.1808941,
+    "ast_hash": "0485bd49dc09d33497968f2b11056ae0",
+    "semantic_hash": ""
   },
   "src/Login/mfa.mjs": {
     "mtime": 1784821214.9586682,
@@ -410,9 +410,9 @@
     "semantic_hash": "7fa8c272a82250467f0bd1e5c1a653de"
   },
   "src/components/Seguimientos/Seguimientos.jsx": {
-    "mtime": 1793979102.0748656,
-    "ast_hash": "a5fbca065f8cfe629f3b0901f4346edb",
-    "semantic_hash": "a5fbca065f8cfe629f3b0901f4346edb"
+    "mtime": 1795125600.925362,
+    "ast_hash": "4148fb901f37c75b57110339dc0cbf6f",
+    "semantic_hash": ""
   },
   "src/components/TerceroSelector/TerceroSelector.jsx": {
     "mtime": 1784941280.2055454,
@@ -660,9 +660,9 @@
     "semantic_hash": "a3f135cca6a8658ea34d7b0a2627af6a"
   },
   "index.html": {
-    "mtime": 1784580954.0762503,
-    "ast_hash": "933c98c753aa7b7a7cde9e2a6451729e",
-    "semantic_hash": "933c98c753aa7b7a7cde9e2a6451729e"
+    "mtime": 1795114361.265952,
+    "ast_hash": "3794aef56d3276f773028e56c38ccc28",
+    "semantic_hash": ""
   },
   "src/components/CampoFecha/CampoFecha.jsx": {
     "mtime": 1791829326.9149053,
@@ -708,5 +708,15 @@
     "mtime": 1792193045.2411504,
     "ast_hash": "a173ac0a2f6ec35d04c0b45fcc9686dd",
     "semantic_hash": "a173ac0a2f6ec35d04c0b45fcc9686dd"
+  },
+  "src/components/BarraLateral/BarraLateral.jsx": {
+    "mtime": 1795120057.5715065,
+    "ast_hash": "13999c2ddc1a91a5c56357fb37fb0dcc",
+    "semantic_hash": ""
+  },
+  "src/components/InicioEscena/InicioEscena.jsx": {
+    "mtime": 1795133410.4020886,
+    "ast_hash": "90c1de000ccce5d25d94704f2cd99561",
+    "semantic_hash": ""
   }
 }
