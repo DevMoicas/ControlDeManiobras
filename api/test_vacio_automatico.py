@@ -257,3 +257,30 @@ class NoSeCreaElVacioTests(BaseVacioAutomatico):
         fila.refresh_from_db()
         self.assertEqual(fila.operador, 'OTRO OPERADOR')
         self.assertEqual(Vacio.objects.count(), 2)
+
+
+class OperadorSigueALaManiobraTests(BaseVacioAutomatico):
+    """OP DEL VIAJE sigue a la maniobra salvo que en Vacios lo cambiaran a mano
+    (usuario, 2026-11-20)."""
+
+    def cambiar_operador(self, maniobra_id, operador):
+        return self.cliente.patch(f'{URL}{maniobra_id}/',
+                                  {'asignacion_operador_status': operador}, format='json')
+
+    def test_cambiar_el_operador_en_la_maniobra_llega_al_vacio(self):
+        m = self.sencillo()
+        self.poner_folio(m.id)
+
+        r = self.cambiar_operador(m.id, 'LUIS GOMEZ RUIZ')
+
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual(Vacio.objects.get().operador, 'LUIS GOMEZ RUIZ')
+
+    def test_el_operador_cambiado_a_mano_en_vacios_no_se_pisa(self):
+        m = self.sencillo()
+        self.poner_folio(m.id)
+        Vacio.objects.update(operador='OTRO OPERADOR')
+
+        self.cambiar_operador(m.id, 'LUIS GOMEZ RUIZ')
+
+        self.assertEqual(Vacio.objects.get().operador, 'OTRO OPERADOR')

@@ -725,6 +725,30 @@ def _vacio_pendiente(contenedor):
     return Vacio.objects.filter(status='pendiente', contenedor__icontains=contenedor).first()
 
 
+def _sincronizar_operador_vacios(maniobra, filas_antes, usuario):
+    """OP DEL VIAJE sigue a la maniobra, como el reporte (usuario, 2026-11-20).
+
+    Por contenedor, entre los vacios enlazados a esta maniobra. Solo si el
+    vacio esta vacio o aun dice el operador de antes: si en Vacios lo cambiaron
+    a mano, manda lo suyo. Devuelve cuantos toco.
+    """
+    antes = {c: op for c, _, op in filas_antes}
+    cambios = {c: op for c, _, op in _filas_de_vacios(maniobra)
+               if c in antes and op != antes[c]}
+    if not cambios:
+        return 0
+    tocados = 0
+    for vacio in Vacio.objects.filter(maniobra=maniobra, contenedor__in=list(cambios)):
+        actual = (vacio.operador or '').strip()
+        if actual and actual != antes[vacio.contenedor]:
+            continue
+        vacio.operador   = cambios[vacio.contenedor]
+        vacio.updated_by = usuario
+        vacio.save()
+        tocados += 1
+    return tocados
+
+
 def _separar_full_repartido(filas, usuario):
     """El Full dado de alta con un solo operador ocupa UNA fila con los dos
     contenedores. Cuando aparece el segundo operador, esa fila pasa a ser la del
@@ -1365,6 +1389,8 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
         # la maniobra solo donde aun dice eso (ver _completar_reportes_del_folio).
         # ponytail: 2-4 consultas por edicion con folio; mapa en bloque si pesa.
         reportes_antes = dict(_reportes_del_viaje(serializer.instance))
+        # Lo mismo para OP DEL VIAJE de los vacios (sin consultas: es en memoria).
+        vacios_antes = _filas_de_vacios(serializer.instance)
         # Si el viaje ya tenia segundo operador antes de esta edicion: es lo que
         # distingue "se acaba de repartir el Full" de "ya venia repartido".
         operador_2_antes = (serializer.instance.operador_2 or '').strip()
@@ -1400,6 +1426,7 @@ class ManiobraViewSet(CambiosMixin, AuditoriaMixin, viewsets.ModelViewSet):
                     not folio_antes
                     or (not operador_2_antes and (maniobra.operador_2 or '').strip())):
                 _crear_vacios_del_folio(maniobra, self._usuario())
+            _sincronizar_operador_vacios(maniobra, vacios_antes, self._usuario())
             # La fecha de entrega baja al gasto cada vez que cambia en la
             # maniobra: se pone casi siempre DESPUES de asignar el folio, asi que
             # copiarla solo al crear el gasto lo dejaba vacio para siempre.
