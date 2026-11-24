@@ -62,7 +62,7 @@ const factura = (f) => (f.serie ? `${f.serie} ${f.folio}` : "Sin No. Factura");
 const traerPagina = (enAuditoria, filtros, page) => apiClient.get(
   `${enAuditoria ? "/facturas-excel/comparacion/" : "/facturas/"}?${new URLSearchParams(conValor({ ...filtros, page }))}`);
 
-function Maniobra({ f }) {
+function Maniobra({ f, onSugerir }) {
   // Una factura que cobró varios servicios: se liga a uno y los demás van al lado.
   const otras = f.comparte_con?.length ? (
     <span className="fc-pendiente" title="Esta factura cobra también estos servicios">
@@ -70,9 +70,87 @@ function Maniobra({ f }) {
     </span>
   ) : null;
   return f.maniobra ? <>{f.maniobra_folio || `Maniobra ${f.maniobra}`}{otras}</> : (
-    <span className="fc-pendiente" title="Ninguna maniobra tiene este número en su No. Factura">
-      Pendiente de ligar
-    </span>
+    <>
+      <span className="fc-pendiente" title="Ninguna maniobra tiene este número en su No. Factura">
+        Pendiente de ligar
+      </span>
+      {onSugerir && <button className="fc-accion fc-sugerir" onClick={onSugerir}>Sugerencias</button>}
+    </>
+  );
+}
+
+// Sugerencias para una factura pendiente de ligar (usuario, 2026-11-23): las
+// busca el backend por contenedor, referencia o pedimento de la descripción
+// del XML. Ligar pide confirmación con la ficha de la maniobra.
+const ruta = (m) => [m.origen, m.destino].filter(Boolean).join(" → ");
+
+function FichaManiobra({ m }) {
+  const datos = [["Folio", m.folio], ["Cliente", m.cliente], ["Servicio", m.tipo_servicio],
+    ["Ruta", ruta(m)], ["Contenedor", m.contenedor], ["Referencia", m.referencia],
+    ["Pedimento", m.pedimento], ["Fecha PIS", fechaLegible(m.fecha_pis)],
+    ["Entrega", fechaLegible(m.fecha_entrega_mercancia)], ["Unidad", m.unidad]];
+  return (
+    <dl className="fc-ficha">
+      {datos.filter(([, v]) => v).map(([k, v]) => (
+        <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
+      ))}
+    </dl>
+  );
+}
+
+function Sugerencias({ f, onCerrar, onLigada }) {
+  const alerta = useAlerta();
+  const preguntar = useConfirmacion();
+  const dialogo = useRef(null);
+  const [lista, setLista] = useState(null);
+
+  useEffect(() => { dialogo.current?.showModal(); }, []);
+  useEffect(() => {
+    apiClient.get(`/facturas/${f.id}/sugerencias/`).then(setLista)
+      .catch((err) => { setLista([]); alerta({ tipo: "error", msg: err.message || "No se pudieron buscar sugerencias." }); });
+  }, [f.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ligar = async (m) => {
+    if (!await preguntar({
+      titulo: "Ligar factura",
+      mensaje: `Se escribirá ${f.factura} en el No. Factura de esta maniobra, como si se capturara en Control de viajes. Verifica que sea la correcta.`,
+      detalle: <FichaManiobra m={m} />,
+      accion: "Ligar",
+    })) return;
+    try {
+      await apiClient.post(`/facturas/${f.id}/ligar/`, { maniobra: m.id });
+      alerta({ tipo: "ok", msg: `${f.factura} quedó ligada a ${m.folio || `la maniobra ${m.id}`}.` });
+      onLigada(f.id);
+      dialogo.current?.close();
+    } catch (err) {
+      alerta({ tipo: "error", msg: err.message || "No se pudo ligar la factura." });
+    }
+  };
+
+  return (
+    <dialog ref={dialogo} className="fc-sugerencias" aria-labelledby="fc-sug-titulo" onClose={onCerrar}>
+      <h1 id="fc-sug-titulo">Maniobras sugeridas para {f.factura}</h1>
+      {lista === null ? <p>Buscando…</p> : !lista.length ? (
+        <p>Ninguna maniobra sin No. Factura tiene el contenedor, la referencia o el pedimento de esta
+          factura. Lígala capturando su No. Factura en Control de viajes.</p>
+      ) : (
+        <ul>
+          {lista.map((m) => (
+            <li key={m.id}>
+              <div>
+                <strong>{m.folio || `Maniobra ${m.id}`}</strong> · {m.cliente || "Sin cliente"}
+                {ruta(m) && <> · {ruta(m)}</>}
+                <span className="fc-coincide">Coincide por {m.coincide.join(", ")}</span>
+              </div>
+              <button className="fc-accion" onClick={() => ligar(m)}>Ligar</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <button className="fc-cerrar" onClick={() => dialogo.current?.close()} aria-label="Cerrar sugerencias">
+        <X size={16} />
+      </button>
+    </dialog>
   );
 }
 
@@ -140,6 +218,7 @@ export default function FacturacionPage() {
   const ultima = useRef(0);
   const [subiendo, setSubiendo] = useState(false);
   const [resumen, setResumen] = useState(null);
+  const [sugerir, setSugerir] = useState(null); // {id, factura} con la ventana abierta
   const tablaRef = useRef(null);
   const archivoRef = useRef(null);
 
@@ -237,7 +316,15 @@ export default function FacturacionPage() {
     else archivos.forEach((a) => datos.append("archivos", a));
     setSubiendo(true);
     try {
-      setResumen(await apiClient.upload(enAuditoria ? "/facturas-excel/cargar/" : "/facturas/xml/", datos));
+      const r = await apiClient.upload(enAuditoria ? "/facturas-excel/cargar/" : "/facturas/xml/", datos);
+      setResumen(r);
+      // Aviso al subir (usuario, 2026-11-23): el No. Factura no está en ninguna maniobra.
+      const sueltas = r.no_registradas ?? [];
+      const nombres = sueltas.map((x) => x.factura).join(", ");
+      if (sueltas.length) alerta({ tipo: "aviso", msg: (sueltas.length === 1
+        ? `La factura ${nombres} no está registrada en ninguna maniobra. Queda pendiente de ligar.`
+        : `Las facturas ${nombres} no están registradas en ninguna maniobra. Quedan pendientes de ligar.`)
+        + (sueltas.some((x) => x.sugeridas) ? " Revisa las maniobras sugeridas en el resumen." : "") });
       cargar();
     } catch (err) {
       alerta({ tipo: "error", msg: err.message || "No se pudo cargar el archivo." });
@@ -374,6 +461,20 @@ export default function FacturacionPage() {
               )}.
             </p>
           )}
+          {!enAuditoria && resumen.no_registradas?.length > 0 && (
+            <ul className="fc-sueltas">
+              {resumen.no_registradas.map((x) => (
+                <li key={x.id}>
+                  {x.factura} —{" "}
+                  {x.sugeridas ? (
+                    <button className="fc-accion" onClick={() => setSugerir(x)}>
+                      Ver {x.sugeridas} {x.sugeridas === 1 ? "maniobra sugerida" : "maniobras sugeridas"}
+                    </button>
+                  ) : "sin sugerencias: captura su No. Factura en Control de viajes"}
+                </li>
+              ))}
+            </ul>
+          )}
           <Omitidas lista={resumen.omitidas} nombre={(o) => (enAuditoria ? `Fila ${o.fila}` : o.archivo)} />
         </section>
       )}
@@ -408,7 +509,8 @@ export default function FacturacionPage() {
                   <td className="fc-total">{moneda(f.total)}</td>
                   {!enAuditoria && <td>{f.no_identificacion}</td>}
                   {!enAuditoria && <td className="fc-descripcion">{f.descripcion}</td>}
-                  <td><Maniobra f={f} /></td>
+                  <td><Maniobra f={f} onSugerir={enAuditoria ? null
+                    : () => setSugerir({ id: f.id, factura: factura(f) })} /></td>
                   {!enAuditoria && <td className="fc-total">{moneda(f.saldo_pendiente)}</td>}
                   {!enAuditoria && <td>{f.fecha_cobro ? fechaLegible(f.fecha_cobro) : "Sin cobrar"}</td>}
                   {!enAuditoria && <td>{f.clave_rastreo}</td>}
@@ -429,6 +531,14 @@ export default function FacturacionPage() {
           </table>
         </div>
       </div>
+
+      {sugerir && (
+        <Sugerencias f={sugerir} onCerrar={() => setSugerir(null)}
+          onLigada={(id) => {
+            setResumen((r) => r && { ...r, no_registradas: r.no_registradas?.filter((x) => x.id !== id) });
+            cargar();
+          }} />
+      )}
 
       <BotonArriba />
     </div>

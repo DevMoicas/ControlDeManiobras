@@ -71,6 +71,8 @@ export function ConfirmacionProvider({ children }) {
             <p className="cf-titulo" id="cf-titulo">{pregunta.titulo}</p>
             <p className="cf-mensaje">{pregunta.mensaje}</p>
             {pregunta.dato && <p className="cf-dato">{pregunta.dato}</p>}
+            {/* detalle: opcional, un nodo (p. ej. la ficha de una maniobra). */}
+            {pregunta.detalle && <div className="cf-detalle">{pregunta.detalle}</div>}
             <div className="cf-acciones">
               <button
                 type="button"

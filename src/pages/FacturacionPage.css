@@ -94,3 +94,43 @@
 
 /* Facturación: la descripción del XML puede ser larga. */
 .nomina-container .fc-descripcion { min-width: 420px; white-space: normal; }
+
+/* Sugerencias de maniobra para una factura pendiente de ligar (2026-11-23). */
+.nomina-container .fc-sugerir { margin-left: 6px; }
+.nomina-container .fc-sueltas { list-style: none; padding-left: 0; }
+.nomina-container .fc-sueltas li + li { margin-top: 6px; }
+
+.nomina-container .fc-sugerencias {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 64px);
+  padding: 20px 22px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text-main);
+  overscroll-behavior: contain;
+}
+.fc-sugerencias::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+.nomina-container .fc-sugerencias h1 { margin: 0 36px 12px 0; font-size: 1.05rem; }
+.nomina-container .fc-sugerencias p { margin: 0; color: var(--text-muted); line-height: 1.5; }
+.nomina-container .fc-sugerencias ul { margin: 0; padding: 0; list-style: none; }
+.nomina-container .fc-sugerencias li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-color);
+}
+.nomina-container .fc-sugerencias li .fc-accion:hover { border-color: var(--primary-blue); color: var(--primary-blue); }
+.nomina-container .fc-coincide { display: block; margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+
+/* La ficha de la maniobra en la confirmación de Ligar (va en el top layer, fuera de .nomina-container). */
+.fc-ficha { display: grid; gap: 4px; margin: 0; font-size: 0.85rem; }
+.fc-ficha div { display: grid; grid-template-columns: 7.5rem 1fr; gap: 8px; }
+.fc-ficha dt { color: var(--text-light, #6b7280); }
+.fc-ficha dd { margin: 0; overflow-wrap: anywhere; }

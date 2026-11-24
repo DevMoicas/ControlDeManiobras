@@ -136,3 +136,6 @@
     .cf-dialogo[open]::backdrop { opacity: 0; }
   }
 }
+
+/* Detalle opcional bajo el mensaje (p. ej. la ficha de una maniobra). */
+.cf-detalle { margin-top: 10px; }

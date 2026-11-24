@@ -1,21 +1,55 @@
-/* Dashboards de Finanzas. Tipografía y tinta del sistema (P50): Oswald en
-   títulos, Inter en el cuerpo. Los colores de las series viven en el JSX
-   (paleta validada); aquí solo superficie, texto y rejilla. */
+/* Dashboards de Finanzas. Tinta y superficies del Diseño opcional 1 (tokens de
+   temaOpcion1.css, con su valor de respaldo). Los colores de las series viven
+   en el JSX (paleta validada); aquí solo superficie, texto y rejilla.
+   .db-kpis/.db-kpi/.db-aviso/.db-nota los usa también Estados de cuenta, y
+   .db-filtros FiltrosLista: lo propio de los dashboards va bajo .db-panel. */
 
 .db-panel {
   margin: 0 0 24px;
-  padding: 20px 22px;
-  border: 1px solid #e6ecf5;
-  border-radius: 14px;
+  border: 1px solid var(--line, #dce4e8);
+  border-radius: 15px;
   background: #fff;
-  font-family: 'Inter', system-ui, sans-serif;
-  color: #1f2937;
+  color: var(--text, #17212b);
+  box-shadow: var(--sombra, 0 6px 20px rgba(16, 42, 67, 0.045));
+  container-type: inline-size;
 }
-.db-panel h2 { margin: 0 0 14px; font-family: 'Oswald', sans-serif; font-size: 22px; }
-.db-panel h3 { margin: 18px 0 6px; font-size: 14px; font-weight: 600; color: #374151; }
-.db-panel[aria-busy="true"] { opacity: 0.7; }
+.db-panel[aria-busy="true"] .db-cuerpo { opacity: 0.6; transition: opacity 160ms ease; }
 
-/* Filtros en una fila, encima de las gráficas. */
+/* Cabecera: nombre y, debajo, la barra de filtros en una franja propia. */
+.db-cabecera {
+  display: grid;
+  gap: 14px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--line-soft, #edf0f2);
+}
+.db-panel h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--navy, #102a43);
+  text-wrap: balance;
+}
+.db-cuerpo { padding: 20px 24px 24px; }
+.db-panel h3,
+.db-figura figcaption {
+  margin: 26px 0 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--navy, #102a43);
+}
+.db-seccion-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin: 26px 0 10px;
+}
+.db-seccion-cabeza > h3,
+.db-seccion-cabeza > figcaption { margin: 0; }
+.db-figura { margin: 0; min-width: 0; }
+
+/* ── Filtros ──────────────────────────────────────────────────────────────── */
 .db-filtros {
   display: flex;
   flex-wrap: wrap;
@@ -51,6 +85,54 @@
   color: #374151;
 }
 
+/* En el panel: los dos periodos como un solo control "desde – hasta". */
+.db-panel .db-filtros { margin: 0; gap: 10px 12px; }
+.db-panel .db-filtros label { color: var(--head-text, #596871); }
+.db-panel .db-filtros :is(input[type="date"], select) {
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border-color: var(--line, #dce4e8);
+  border-radius: 9px;
+}
+.db-panel .db-filtros select { min-width: 140px; }
+/* Rótulo arriba y "desde – hasta" en una línea, como un solo control. */
+.db-periodo {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  column-gap: 6px;
+  row-gap: 3px;
+}
+.db-periodo-titulo {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--head-text, #596871);
+}
+.db-periodo > span:not(.db-periodo-titulo) { color: var(--muted, #687782); }
+.db-panel .db-periodo input[type="date"] { width: 9.5rem; }
+.db-comparacion { margin-inline-start: auto; align-self: end; }
+/* Panel angosto: fechas que caben, comparación a la izquierda y cifras del
+   resumen apiladas sin la hairline lateral. */
+@container (width < 560px) {
+  .db-cabecera, .db-cuerpo { padding-inline: 16px; }
+  .db-periodo { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); width: 100%; }
+  .db-panel .db-periodo input[type="date"] { width: 100%; }
+  .db-comparacion { margin-inline-start: 0; }
+  .db-panel .db-cuerpo dl.db-kpis .db-kpi { padding: 6px 0; border-inline-start: 0; }
+}
+.db-panel .db-filtros .db-comparar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  font-size: 12px;
+  color: var(--head-text, #596871);
+  cursor: pointer;
+}
+
+/* ── Resumen: cifras en una franja, separadas por hairlines ───────────────── */
 .db-kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -70,6 +152,33 @@
 /* La variación va en tinta de texto con su flecha: el color nunca va solo. */
 .db-kpi-comparado { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #4b5563; }
 
+.db-panel dl.db-kpis {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0;
+  margin: 0 0 8px;
+}
+.db-panel dl.db-kpis .db-kpi {
+  align-content: start;
+  gap: 2px;
+  margin: 0;
+  padding: 2px 24px 4px;
+  border: 0;
+  border-inline-start: 1px solid var(--line, #dce4e8);
+  border-radius: 0;
+  background: none;
+}
+.db-panel dl.db-kpis .db-kpi:first-child { padding-inline-start: 0; border-inline-start: 0; }
+.db-panel .db-kpi dt { font-size: 0.78rem; font-weight: 600; color: var(--head-text, #596871); }
+.db-panel .db-kpi dd { margin: 0; }
+.db-panel .db-kpi-valor {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--navy, #102a43);
+}
+.db-panel .db-kpi-comparado { font-size: 0.78rem; color: var(--muted, #687782); }
+
 .db-aviso {
   display: flex;
   align-items: center;
@@ -81,15 +190,48 @@
   color: #78350f;
   font-size: 13px;
 }
+.db-panel .db-aviso { margin: 12px 0 0; border-radius: 10px; background: #fbf1dc; color: #6f4a0a; }
+.db-panel .db-aviso + .db-aviso { margin-top: 6px; }
 .db-nota { margin: 4px 0 8px; font-size: 13px; color: #6b7280; }
+.db-panel .db-nota { margin: 12px 0 0; color: var(--muted, #687782); }
+.db-tenue { color: var(--muted, #687782); }
 
+/* Dos columnas (gráfica + tabla) solo cuando el panel tiene ancho. */
 .db-dos {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 16px;
   align-items: start;
 }
+.db-dos-ancho { grid-template-columns: 1fr; gap: 8px 28px; }
+@container (width > 1050px) {
+  .db-dos-ancho { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+  .db-dos-ancho > .db-tabla { margin-top: 26px; }
+}
 
+/* ── Leyenda y muestras ───────────────────────────────────────────────────── */
+.db-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  color: var(--head-text, #596871);
+}
+.db-leyenda li { display: inline-flex; align-items: center; }
+.db-muestra {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-inline-end: 7px;
+  border-radius: 3px;
+  vertical-align: -1px;
+}
+
+/* ── Tablas ───────────────────────────────────────────────────────────────── */
 .db-tabla { margin-top: 14px; overflow-x: auto; }
 .db-tabla table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .db-tabla th {
@@ -108,12 +250,225 @@
 }
 .db-tabla .db-vacio { color: #9ca3af; text-align: center; }
 
+.db-panel .db-tabla {
+  margin-top: 0;
+  max-block-size: min(560px, 70vh);
+  border: 1px solid var(--line, #dce4e8);
+  border-radius: 12px;
+  scrollbar-color: #94a6b1 #eef2f4;
+}
+.db-panel .db-tabla:focus-visible { outline: 2px solid var(--teal, #087e8b); outline-offset: 2px; }
+.db-panel .db-tabla table { border-collapse: separate; border-spacing: 0; font-size: 0.84rem; }
+.db-panel .db-tabla thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+  padding: 10px 14px;
+  background: var(--head-bg, #f7f9fa);
+  border-bottom: 1px solid var(--line, #dce4e8);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--head-text, #596871);
+}
+.db-panel .db-tabla tbody :is(th, td),
+.db-panel .db-tabla tfoot :is(th, td) {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line-soft, #edf0f2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.db-panel .db-tabla tbody th { font-weight: 600; color: var(--navy, #102a43); text-align: left; }
+.db-panel .db-tabla tbody tr:last-child :is(th, td) { border-bottom: 0; }
+.db-panel .db-tabla tbody tr:hover :is(th, td) { background: var(--row-hover, #f8fcfc); }
+.db-panel .db-tabla tfoot :is(th, td) {
+  position: sticky;
+  inset-block-end: 0;
+  background: #fff;
+  border-top: 1px solid var(--line, #dce4e8);
+  border-bottom: 0;
+  font-weight: 700;
+  color: var(--navy, #102a43);
+  text-align: left;
+}
+.db-panel .db-tabla .num { text-align: right; }
+.db-panel .db-tabla .db-vacio { padding: 28px; color: var(--muted, #687782); text-align: center; }
+
+.db-cambio { display: inline-flex; align-items: center; gap: 4px; }
+.db-negativo { color: var(--coral-texto, #a33e36); }
+
+/* 1 · Franja de mezcla, fina y sin texto (las cifras están en la fila). */
+.db-mezcla {
+  display: flex;
+  gap: 2px;
+  width: clamp(140px, 22cqi, 260px);
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+}
+.db-mezcla > span { min-width: 3px; }
+.db-mezcla-vacia { background: var(--line-soft, #edf0f2); }
+
+/* 3 · Estado de resultados: Concepto, Total y % fijos a la izquierda; los meses
+   corren detrás. Sombra en el borde derecho solo mientras queden meses ocultos
+   (fondos `local` + `scroll`: la tapa blanca viaja con el contenido). */
+.db-estado {
+  --c1: 13.5rem;
+  --c2: 9.5rem;
+  background:
+    linear-gradient(to right, rgb(255 255 255 / 0), #fff 70%) right / 48px 100% no-repeat local,
+    radial-gradient(farthest-side at 100% 50%, rgb(16 42 67 / 0.18), transparent) right / 16px 100% no-repeat scroll,
+    #fff;
+}
+.db-estado :is(tbody, thead) :is(th, td):nth-child(-n + 3) { position: sticky; z-index: 1; background: #fff; }
+.db-estado :is(tbody, thead) :is(th, td):nth-child(1) { inset-inline-start: 0; min-width: var(--c1); }
+.db-estado :is(tbody, thead) :is(th, td):nth-child(2) { inset-inline-start: var(--c1); min-width: var(--c2); }
+.db-estado :is(tbody, thead) :is(th, td):nth-child(3) { inset-inline-start: calc(var(--c1) + var(--c2)); }
+.db-panel .db-estado thead th:nth-child(-n + 3) { z-index: 3; background: var(--head-bg, #f7f9fa); }
+.db-panel .db-estado tbody td:not(:nth-child(-n + 3)) { background: transparent; }
+.db-panel .db-estado tbody th { font-weight: 500; color: var(--text, #17212b); }
+.db-signo { display: inline-block; width: 1.4em; color: var(--muted, #687782); font-weight: 400; }
+.db-panel .db-estado tr.db-subtotal :is(th, td) {
+  border-top: 1px solid var(--line, #dce4e8);
+  background: var(--head-bg, #f7f9fa);
+  font-weight: 700;
+  color: var(--navy, #102a43);
+}
+.db-panel .db-estado tr.db-subtotal:last-child :is(th, td) { background: var(--mint, #d9f2ef); }
+.db-panel .db-estado tr.db-subtotal :is(th, td).db-negativo { color: var(--coral-texto, #a33e36); }
+.db-panel .db-tabla .db-col-total { border-inline-start: 1px solid var(--line, #dce4e8); font-weight: 700; }
+.db-panel .db-estado .db-col-pct { border-inline-end: 1px solid var(--line, #dce4e8); }
+.db-falta { margin-inline-start: 4px; vertical-align: -1px; color: var(--amber, #d99822); }
+
+/* 4 · Tira de antigüedad: un todo en tramos, con su % cuando cabe. */
+.db-tira {
+  display: flex;
+  gap: 2px;
+  height: 40px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.db-tira > span {
+  display: grid;
+  place-items: center;
+  min-width: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #3b1410;
+}
+.db-tira > span.db-tira-oscuro { color: #fff; }
+
+/* 5 · Lista de medidores: nombre, medidor y % alineados en columnas. */
+.db-medidores {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  gap: 14px 18px;
+  align-items: center;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+.db-medidores li { display: contents; }
+.db-medidor-nombre { font-weight: 600; color: var(--navy, #102a43); }
+.db-medidor {
+  display: flex;
+  gap: 2px;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: var(--line-soft, #edf0f2);
+}
+.db-medidor-pct { font-size: 0.84rem; font-variant-numeric: tabular-nums; color: var(--head-text, #596871); }
+@container (width < 560px) {
+  .db-medidores { grid-template-columns: 1fr max-content; }
+  .db-medidor { grid-column: 1 / -1; order: 1; }
+}
+
+/* 6 · Ranking: participación con pista fina y núcleo del 80 % sombreado. */
+.db-participacion { display: inline-flex; align-items: center; gap: 10px; }
+.db-pista {
+  display: inline-block;
+  width: clamp(70px, 12cqi, 140px);
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--line-soft, #edf0f2);
+}
+.db-pista > span { display: block; height: 100%; border-radius: 3px; background: var(--teal, #087e8b); }
+.db-panel .db-tabla tr.db-nucleo :is(th, td) { background: #f1f9f8; }
+
+/* 7 · Matriz con mapa de calor (el tinte lo pone el JSX según el peso). */
+.db-panel .db-matriz td.db-celda,
+.db-panel .db-matriz td.db-col-total { padding-block: 14px; }
+.db-matriz td :is(strong, small) { display: block; }
+.db-matriz td small { margin-top: 2px; font-size: 0.74rem; color: var(--muted, #687782); }
+.db-matriz td strong { font-weight: 700; color: var(--navy, #102a43); }
+.db-matriz td.db-celda-oscura :is(strong, small) { color: #fff; }
+.db-panel .db-matriz tbody tr:hover td.db-celda { filter: brightness(0.97); }
+.db-escala { display: inline-flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--head-text, #596871); }
+.db-escala i {
+  width: 90px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #ffffff, #087e8b);
+  border: 1px solid var(--line, #dce4e8);
+}
+
+/* 8 · Gráfica de puntos: riel común, mediana como hairline, punto de 10px. */
+.db-col-puntos { width: 46%; min-width: 240px; }
+.db-riel {
+  position: relative;
+  display: block;
+  height: 16px;
+  margin-inline: 6px;
+  background: linear-gradient(var(--line-soft, #edf0f2), var(--line-soft, #edf0f2)) center / 100% 2px no-repeat;
+}
+.db-mediana {
+  position: absolute;
+  inset-block: -4px;
+  width: 1px;
+  background: #8fa3ad;
+}
+.db-punto {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #0b8f9c;
+  box-shadow: 0 0 0 2px #fff;
+  translate: -50% -50%;
+}
+.db-punto-alto { background: #b9513f; }
+.db-alto { color: var(--coral-texto, #a33e36); font-weight: 700; }
+
+/* 9 · Dispersión: estado del viaje con icono, y tooltip propio. */
+.db-estado-op { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+.db-estado-op.gana { color: #076b75; }
+.db-estado-op.pierde { color: var(--coral-texto, #a33e36); }
+.db-tooltip {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--line, #dce4e8);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(16, 42, 67, 0.08);
+  font-size: 0.8rem;
+  color: var(--text, #17212b);
+}
+.db-tooltip strong { color: var(--navy, #102a43); }
+
 /* Página de un grupo: selector de vista centrado arriba, con margen (P40). */
 .db-pagina {
   min-height: calc(100vh - 40px);
   padding: 52px 28px 64px;
   background: var(--bg, #f4f7fb);
 }
+.db-pagina > .db-panel { max-width: 1440px; margin-inline: auto; }
 .db-selector {
   display: flex;
   flex-wrap: wrap;
@@ -170,3 +525,26 @@
   font-size: 11px;
   text-align: center;
 }
+
+/* Gráficas de apoyo: dos por fila cuando el panel tiene ancho, una si no. */
+.db-graficas {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px 32px;
+}
+@container (width > 860px) {
+  .db-graficas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.db-graficas .db-figura .db-seccion-cabeza { margin-top: 26px; }
+
+/* Gráfica sin datos: el mismo aviso que las tablas, en el alto de la gráfica. */
+.db-grafica-vacia {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  border: 1px dashed var(--line, #dce4e8);
+  border-radius: 12px;
+  color: var(--muted, #687782);
+  font-size: 0.84rem;
+}
+.db-figura > .db-leyenda { margin-top: 10px; }
