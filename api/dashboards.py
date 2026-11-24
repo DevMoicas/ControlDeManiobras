@@ -31,7 +31,7 @@ from .facturacion import (ZONA_OPERACION, _dinero, cobranza_semanal, principal_d
                           puede_finanzas, tramo, vencimiento)
 from .finanzas import falta_pago
 from .models import (Abono, CapturaMensual, CargaCombustible, Chofer, CuentaPorPagar, Factura, Gasto,
-                     GastoFijo, GastoFijoPago, Maniobra, SueldoHistorial, Tracto, fecha_de_ingreso)
+                     GastoFijo, GastoFijoPago, Maniobra, Pago, SueldoHistorial, Tracto, fecha_de_ingreso)
 
 SERVICIOS = ('sencillo', 'full', 'carga_suelta')
 SIN_CLIENTE = 'Sin cliente asignado'   # dirección sin principal (P48)
@@ -161,6 +161,34 @@ def costos_de(maniobras):
                          .values_list('reporte__folio', 'total_urea')):
         urea[folios[folio]] += total
     return {m.pk: (gastos.get(m.pk) or Decimal('0')) + urea[m.pk] for m in maniobras}
+
+
+# Conceptos del gasto de un viaje para la composición de gastos (Resumen
+# general, usuario 2026-11-23). Son los mismos campos que suma Gasto.save() en
+# gastos_totales, así que la suma de los conceptos es el costo de la maniobra.
+CONCEPTOS_GASTO = {
+    'casetas': ('casetas_ida', 'casetas_regreso', 'gasto_tag'),
+    'combustible': ('gasto_diesel',),          # + la urea de sus reportes de viaje
+    'mantenimiento': ('reparaciones',),
+    'operadores': ('comision_operador',),
+    'adicionales': ('gastos_adicionales',),
+}
+
+
+def costos_por_concepto(maniobras):
+    """{maniobra_id: {concepto: Decimal}}; la suma de cada uno = costos_de()."""
+    campos = [c for cs in CONCEPTOS_GASTO.values() for c in cs]
+    gastos = {g['maniobra_id']: g for g in
+              Gasto.objects.filter(maniobra_id__in=[m.pk for m in maniobras]).values('maniobra_id', *campos)}
+    totales = costos_de(maniobras)
+    salida = {}
+    for m in maniobras:
+        g = gastos.get(m.pk, {})
+        c = {k: sum((g.get(x) or Decimal('0') for x in cs), Decimal('0')) for k, cs in CONCEPTOS_GASTO.items()}
+        # La urea no es un campo del gasto: es lo que costos_de suma aparte.
+        c['combustible'] += totales[m.pk] - sum(c.values(), Decimal('0'))
+        salida[m.pk] = c
+    return salida
 
 
 def _facturas(filtros):
@@ -321,8 +349,12 @@ def utilidad_mensual(f):
     maniobras = list(_maniobras_por_entrega(f))
     costos = costos_de(maniobras)
     costo_ventas = defaultdict(Decimal)
+    por_concepto = defaultdict(lambda: defaultdict(Decimal))
+    conceptos = costos_por_concepto(maniobras)
     for m in maniobras:
         costo_ventas[_mes(m.fecha_entrega_mercancia)] += costos[m.pk]
+        for k, v in conceptos[m.pk].items():
+            por_concepto[_mes(m.fecha_entrega_mercancia)][k] += v
     fijos = defaultdict(Decimal)
     for mes, monto in GastoFijoPago.objects.filter(
             mes__range=(f.desde.replace(day=1), f.hasta), monto__isnull=False).values_list('mes', 'monto'):
@@ -349,6 +381,7 @@ def utilidad_mensual(f):
         filas.append({
             'mes': k,
             'ventas': _dinero(ventas[k]), 'costo_ventas': _dinero(costo_ventas[k]),
+            'costo_por_concepto': {c: _dinero(por_concepto[k][c]) for c in CONCEPTOS_GASTO},
             'utilidad_bruta': _dinero(bruta),
             'gastos_fijos': _dinero(fijos[k]), 'comisiones': _dinero(comisiones),
             'nomina_administrativa': _dinero(nomina[k]),
@@ -510,12 +543,45 @@ def rentabilidad(f):
             'opciones': _opciones(list(_maniobras_por_entrega(f)))}
 
 
+def flujo_efectivo(f):
+    """Dinero que entra y sale, mes a mes (Resumen general, usuario 2026-11-23).
+
+    Entradas: los Pagos recibidos en el banco, por su fecha. No los abonos: un
+    abono es ese mismo pago repartido entre facturas y lo contaría dos veces.
+    Salidas: cuentas por pagar marcadas como pagadas y gastos fijos pagados.
+    ponytail: CuentaPorPagar no guarda CUÁNDO se pagó (solo `pagada`), así que
+    va al mes de la factura del proveedor; con un campo fecha_pago iría al mes
+    real del pago. Canceladas fuera.
+    """
+    claves = _meses_entre(f.desde, f.hasta)
+    entradas, proveedores, fijos = (defaultdict(Decimal) for _ in range(3))
+    for fecha, monto in Pago.objects.filter(estado='activa', fecha__range=(f.desde, f.hasta)) \
+            .values_list('fecha', 'monto'):
+        entradas[_mes(fecha)] += monto
+    for fecha, total in CuentaPorPagar.objects.filter(estado='activa', pagada=True,
+                                                      fecha__range=(f.desde, f.hasta)) \
+            .values_list('fecha', 'total'):
+        proveedores[_mes(fecha)] += total
+    for mes, monto in GastoFijoPago.objects.filter(
+            mes__range=(f.desde.replace(day=1), f.hasta), monto__isnull=False).values_list('mes', 'monto'):
+        fijos[_mes(mes)] += monto
+    meses, acumulado = [], Decimal('0')
+    for k in claves:
+        salidas = proveedores[k] + fijos[k]
+        acumulado += entradas[k] - salidas
+        meses.append({'mes': k, 'entradas': _dinero(entradas[k]), 'proveedores': _dinero(proveedores[k]),
+                      'gastos_fijos': _dinero(fijos[k]), 'salidas': _dinero(salidas),
+                      'neto': _dinero(entradas[k] - salidas), 'acumulado': _dinero(acumulado)})
+    return {'meses': meses}
+
+
 # ── API ──────────────────────────────────────────────────────────────────────
 DASHBOARDS = {
     'ventas': ventas_mensuales, 'gastos': gastos_mensuales, 'utilidad': utilidad_mensual,
     'cuentas-por-cobrar': cuentas_por_cobrar, 'cuentas-por-pagar': cuentas_por_pagar,
     'ventas-por-cliente': ventas_por_cliente, 'ventas-por-servicio': ventas_por_servicio,
     'costos-por-unidad': costos_por_unidad, 'rentabilidad': rentabilidad,
+    'flujo': flujo_efectivo,
 }
 
 

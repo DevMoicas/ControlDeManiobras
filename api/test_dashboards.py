@@ -17,7 +17,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from api.models import (CapturaMensual, Chofer, Tracto, CargaCombustible, Cliente, ClientePrincipal, CuentaPorPagar,
-                        Empleado, Factura, Gasto, GastoFijo, GastoFijoPago, Maniobra, PerfilUsuario, SueldoHistorial,
+                        Empleado, Factura, Gasto, GastoFijo, GastoFijoPago, Maniobra, Pago, PerfilUsuario, SueldoHistorial,
                         ReporteViaje, Vacio)
 
 URL = '/api/dashboards/'
@@ -169,6 +169,31 @@ class DashboardsTests(TestCase):
                                       fecha=date(2026, 8, 2), pagada=True)
         d = self.get('cuentas-por-pagar', '&empresa=fraba')['por_origen']['mantenimiento']
         self.assertEqual((d['por_pagar'], d['pagado'], d['vencido']), ('1000.00', '0.00', '1000.00'))
+
+    def test_costo_por_concepto_suma_el_costo_de_ventas(self):
+        # Los conceptos de cada mes suman su costo de ventas; la urea va a
+        # combustible y las casetas de ida a casetas.
+        for m in self.get('utilidad')['meses']:
+            conceptos = m['costo_por_concepto']
+            self.assertEqual(sum(Decimal(v) for v in conceptos.values()), Decimal(m['costo_ventas']), m['mes'])
+        ago = self.get('utilidad')['meses'][0]['costo_por_concepto']
+        self.assertGreater(Decimal(ago['casetas']), 0)
+        self.assertGreater(Decimal(ago['combustible']), 0)   # la urea de A
+
+    def test_flujo_efectivo(self):
+        # Entra lo cobrado; sale lo pagado a proveedores y los gastos fijos. Lo
+        # cancelado y lo no pagado no se mueve.
+        GastoFijoPago.objects.create(gasto_fijo=GastoFijo.objects.create(empresa='fraba', concepto='Luz'),
+                                     mes=date(2026, 8, 1), monto=Decimal('300'))
+        Pago.objects.create(fecha=date(2026, 8, 20), monto=5000, banco='X')
+        Pago.objects.create(fecha=date(2026, 9, 3), monto=999, banco='X', estado='cancelada')
+        CuentaPorPagar.objects.create(origen='mantenimiento', empresa='fraba', total=700,
+                                      fecha=date(2026, 9, 5), pagada=True)
+        CuentaPorPagar.objects.create(origen='mantenimiento', empresa='fraba', total=50, fecha=date(2026, 9, 6))
+        ago, sep = self.get('flujo')['meses']
+        self.assertEqual((ago['entradas'], ago['salidas'], ago['neto']), ('5000.00', '300.00', '4700.00'))
+        self.assertEqual((sep['entradas'], sep['proveedores'], sep['neto'], sep['acumulado']),
+                         ('0.00', '700.00', '-700.00', '4000.00'))
 
     def test_acceso_y_nombre(self):
         u = get_user_model().objects.create_user('coord', password='x')

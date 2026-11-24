@@ -334,13 +334,31 @@ class CargaXmlTests(Base):
 
     def test_sin_fila_crea_una_sin_maniobra_que_se_liga_despues(self):
         r = self.xml(self.c, cfdi(folio='9', uuid='u-9', total='10'))
-        self.assertEqual(r.data['sin_maniobra'], 1)
         suelta = Factura.objects.get(folio='9')
+        self.assertEqual((r.data['sin_maniobra'], r.data['no_registradas']),
+                         (1, [{'id': suelta.id, 'factura': 'S 9', 'sugeridas': 0}]))
         self.assertIsNone(suelta.maniobra_id)
         self.c.patch(f'/api/maniobras/{self.m.id}/', {'no_factura': 'S 1713 / 9'}, format='json')
         suelta.refresh_from_db()
         self.assertEqual(suelta.maniobra_id, self.m.id)
         self.assertEqual(Factura.objects.filter(maniobra=self.m).count(), 2)
+
+    def test_sugiere_y_liga_por_contenedor(self):
+        # Sin No. Factura y con el contenedor que nombra el XML: sugerida; la de
+        # otro contenedor no. Solo se liga a una sugerida, escribiendo su No. Factura.
+        buena = Maniobra.objects.create(folio='F-2', contenedor='CICU6802458', fecha_pis=JULIO)
+        Maniobra.objects.create(folio='F-3', contenedor='NYKU4769116', fecha_pis=JULIO)
+        self.xml(self.c, cfdi(folio='9', uuid='u-9', conceptos=(('FULL', 'FLETE CONTENEDOR CICU6802458'),)))
+        suelta = Factura.objects.get(folio='9')
+        s = self.c.get(f'{URL}{suelta.id}/sugerencias/').data
+        self.assertEqual([(m['id'], m['coincide']) for m in s], [(buena.id, ['contenedor'])])
+        r = self.c.post(f'{URL}{suelta.id}/ligar/', {'maniobra': self.m.id}, format='json')
+        self.assertEqual(r.status_code, 400)
+        r = self.c.post(f'{URL}{suelta.id}/ligar/', {'maniobra': buena.id}, format='json')
+        self.assertEqual(r.status_code, 200, r.data)
+        buena.refresh_from_db()
+        suelta.refresh_from_db()
+        self.assertEqual((buena.no_factura, suelta.maniobra_id), ('S 9', buena.id))
 
     def test_omite_y_explica(self):
         malos = SimpleUploadedFile('x.xml', b'<?xml version="1.0"?><!DOCTYPE a [<!ENTITY b "c">]><a>&b;</a>')

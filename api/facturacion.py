@@ -224,6 +224,66 @@ def sincronizar_facturas(maniobra, usuario):
         recalcular_ingresos([maniobra.pk], usuario)
 
 
+# ── Sugerencias para una factura pendiente de ligar (usuario, 2026-11-23) ────
+# Solo por datos que identifican UN viaje y que el XML trae en la descripción:
+# contenedor, referencia y pedimento. Ruta y fecha se repiten entre viajes y
+# sugerirían el equivocado. Con las facturas ya ligadas acierta en ~59 %; en
+# el resto la descripción no trae ninguno de los tres y no se sugiere nada.
+_CONTENEDOR = re.compile(r'[A-Z]{4}\d{7}')
+_PEDIMENTO = re.compile(r'\d{2}\s*\d{2}\s*\d{4}\s*\d{7}')
+_CAMPOS_SUGERENCIA = ('id', 'folio', 'cliente', 'contenedor', 'referencia', 'pedimento', 'origen',
+                      'destino', 'fecha_pis', 'fecha_entrega_mercancia', 'tipo_servicio', 'unidad')
+
+
+def _pedimentos(texto):
+    return {re.sub(r'\s', '', p) for p in _PEDIMENTO.findall(texto or '')}
+
+
+def sugerir_maniobras(factura, limite=5):
+    """Maniobras de Facturación sin No. Factura que el XML nombra, con por qué."""
+    texto = (factura.descripcion or '').upper()
+    if factura.maniobra_id or not texto:
+        return []
+    pedimentos = _pedimentos(texto)
+    sugeridas = []
+    # ponytail: recorre las maniobras desde INICIO_FACTURACION (cientos); si
+    # pasan de miles, acotar por fecha_pis cerca de la emisión.
+    for m in (Maniobra.objects.filter(fecha_pis__gte=INICIO_FACTURACION)
+              .values(*_CAMPOS_SUGERENCIA, 'no_factura')):
+        if facturas_de_no_factura(m['no_factura']):
+            continue  # ya espera otra factura: no se pisa
+        ref = (m['referencia'] or '').strip().upper()
+        coincide = [nombre for nombre, si in (
+            ('contenedor', any(c in texto for c in _CONTENEDOR.findall((m['contenedor'] or '').upper()))),
+            ('referencia', len(ref) >= 5 and re.search(rf'(?<![A-Z0-9]){re.escape(ref)}(?![A-Z0-9])', texto)),
+            ('pedimento', bool(_pedimentos(m['pedimento']) & pedimentos)),
+        ) if si]
+        if coincide:
+            m.pop('no_factura')
+            sugeridas.append({**m, 'coincide': coincide})
+    # Más datos en común primero; a igualdad, la de fecha PIS más cercana a la emisión.
+    emision = factura.fecha_emision or date.today()
+    sugeridas.sort(key=lambda m: (-len(m['coincide']), abs((m['fecha_pis'] - emision).days)))
+    return sugeridas[:limite]
+
+
+def ligar_a_maniobra(factura, maniobra_id, usuario):
+    """Escribe el No. Factura en la maniobra, como si se capturara en Control de
+    viajes, y deja que sincronizar_facturas haga la liga. Solo a una sugerida:
+    así no se pisa el No. Factura de otra ni se liga a ciegas."""
+    if not any(m['id'] == maniobra_id for m in sugerir_maniobras(factura, limite=None)):
+        raise serializers.ValidationError('Esa maniobra no es una de las sugeridas para esta factura.')
+    with transaction.atomic(using=get_db_alias()):
+        m = Maniobra.objects.select_for_update().get(pk=maniobra_id)
+        m.no_factura, m.updated_by = f'{factura.serie} {factura.folio}', usuario
+        m.save(update_fields=['no_factura', 'updated_by', 'updated_at'])
+        sincronizar_facturas(m, usuario)
+    factura.refresh_from_db()
+    if factura.maniobra_id != maniobra_id:
+        raise serializers.ValidationError('No se pudo ligar: revisa el No. Factura en Control de viajes.')
+    return factura
+
+
 # ── Lectura del archivo ──────────────────────────────────────────────────────
 def _cabecera(texto):
     """' Fecha Emisión' → 'fecha emision'. Por nombre y no por posición: el
@@ -429,7 +489,7 @@ def cargar_xml(archivos, usuario):
     liga sola cuando alguien capture ese No. Factura (usuario, 2026-10-15).
     Como el Excel, un archivo malo no para la carga: se apunta en `omitidas`.
     """
-    omitidas, completadas, sin_maniobra, maniobras = [], 0, 0, set()
+    omitidas, completadas, no_registradas, maniobras = [], 0, [], set()
     vistos = set(Factura.objects.exclude(uuid=None).values_list('uuid', flat=True))
     with transaction.atomic(using=get_db_alias()):
         for archivo in archivos:
@@ -488,9 +548,13 @@ def cargar_xml(archivos, usuario):
                 maniobras.add(f.maniobra_id)
             else:
                 f.save()
-                sin_maniobra += 1
+                # Aviso al subir (usuario, 2026-11-23): ese No. Factura no está
+                # en ninguna maniobra.
+                no_registradas.append({'id': f.pk, 'factura': f'{d["serie"]} {d["folio"]}',
+                                       'sugeridas': len(sugerir_maniobras(f))})
         recalcular_ingresos(maniobras, usuario)
-    return {'completadas': completadas, 'sin_maniobra': sin_maniobra, 'omitidas': omitidas}
+    return {'completadas': completadas, 'sin_maniobra': len(no_registradas),
+            'no_registradas': no_registradas, 'omitidas': omitidas}
 
 
 # ── Auditoría: Excel contra Facturación ──────────────────────────────────────
@@ -851,6 +915,19 @@ class FacturaViewSet(CancelableMixin, mixins.ListModelMixin, viewsets.GenericVie
         if not archivos:
             return Response({'detail': 'Falta el XML.'}, status=status.HTTP_400_BAD_REQUEST)
         return Response(cargar_xml(archivos, request.user.username), status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['get'])
+    def sugerencias(self, request, pk=None):
+        return Response(sugerir_maniobras(self.get_object()))
+
+    @action(detail=True, methods=['post'])
+    def ligar(self, request, pk=None):
+        try:
+            maniobra_id = int(request.data.get('maniobra'))
+        except (TypeError, ValueError):
+            return Response({'detail': 'Falta la maniobra.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(
+            ligar_a_maniobra(self.get_object(), maniobra_id, request.user.username)).data)
 
     @action(detail=False, methods=['get'], url_path='cuentas-por-cobrar')
     def cuentas_por_cobrar(self, request):
