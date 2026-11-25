@@ -73,6 +73,12 @@ const PAGINAS = {
     vacio: "Aún no hay gastos de mantenimiento.",
     campos: [
       fecha("Fecha del gasto"),
+      {
+        name: "proveedor", label: "Proveedor",
+        celda: (g) => g.proveedor || "—",
+        // Opcional (usuario, 2026-11-25).
+        campo: (g) => <label key="proveedor">Proveedor (opcional)<input name="proveedor" maxLength={255} defaultValue={g?.proveedor ?? ""} /></label>,
+      },
       texto("descripcion", "Descripción del gasto"),
       decimal("monto", "Monto", 2, moneda),
       {
