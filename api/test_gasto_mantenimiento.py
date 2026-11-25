@@ -105,10 +105,10 @@ class GastoMantenimientoTests(Base):
         self.assertEqual(self.cliente.post(GASTO, self.datos(monto='-1'), format='json').status_code, 400)
         self.assertEqual(self.cliente.post(GASTO, self.datos(fecha=None), format='json').status_code, 400)
 
-    def test_proveedor_opcional(self):
-        r = self.cliente.post(GASTO, self.datos(proveedor=None), format='json')
+    def test_proveedor_y_factura_opcionales(self):
+        r = self.cliente.post(GASTO, self.datos(proveedor=None, no_factura=None), format='json')
         self.assertEqual(r.status_code, 201, r.data)
-        self.assertEqual(r.data['proveedor'], '')
+        self.assertEqual((r.data['proveedor'], r.data['no_factura']), ('', ''))
         r = self.cliente.post(GASTO, self.datos(proveedor=' Refaccionaria X '), format='json')
         self.assertEqual(r.data['proveedor'], 'Refaccionaria X')
 
