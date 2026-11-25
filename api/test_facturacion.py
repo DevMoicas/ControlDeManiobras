@@ -737,19 +737,30 @@ class CuentasPorCobrarTests(Base):
         self.assertEqual(fuera.status_code, 403)
 
 
-class XmlPendienteDelSegundoSemestreTests(Base):
-    """Usuario, 2026-10-30: sin XML y PIS antes del 1 de julio no sale; con XML, sí."""
+class XmlPendienteDesdeEneroTests(Base):
+    """Sin XML sale desde el 1 de enero de 2026 (usuario, 2026-11-25; antes era
+    julio): solo se oculta la vacía de una maniobra anterior; con XML, sí sale."""
 
-    def test_oculta_solo_las_vacias_de_antes_de_julio(self):
-        junio = Maniobra.objects.create(folio='J', fecha_pis=date(2026, 6, 30))
-        julio = Maniobra.objects.create(folio='L', fecha_pis=date(2026, 7, 1))
-        Factura.objects.create(serie='S', folio='1', maniobra=junio)                 # oculta
-        Factura.objects.create(serie='S', folio='2', maniobra=junio, uuid='u-2',
-                               fecha_emision=date(2026, 6, 30))                      # con XML
-        Factura.objects.create(serie='S', folio='3', maniobra=julio)                 # pendiente
+    def test_oculta_solo_las_vacias_de_antes_de_2026(self):
+        vieja = Maniobra.objects.create(folio='V', fecha_pis=date(2025, 12, 31))
+        enero = Maniobra.objects.create(folio='E', fecha_pis=date(2026, 1, 1))
+        Factura.objects.create(serie='S', folio='1', maniobra=vieja)                 # oculta
+        Factura.objects.create(serie='S', folio='2', maniobra=vieja, uuid='u-2',
+                               fecha_emision=date(2025, 12, 31))                     # con XML
+        Factura.objects.create(serie='S', folio='3', maniobra=enero)                 # pendiente
         Factura.objects.create(serie='S', folio='4')                                 # sin ligar
         filas = self.usuario('admin', staff=True).get(URL).data['results']
         self.assertEqual(sorted(f['folio'] for f in filas), ['2', '3', '4'])
+
+    def test_quemadas_y_canceladas_sin_xml_no_salen(self):
+        for i, status in enumerate(('quemada', 'por_salir,quemada', 'cancelado')):
+            Factura.objects.create(serie='Q', folio=str(i), maniobra=Maniobra.objects.create(
+                folio=f'Q{i}', fecha_pis=date(2026, 3, 1), status=status))
+        Factura.objects.create(serie='Q', folio='xml', uuid='u-q', fecha_emision=date(2026, 3, 1),
+                               maniobra=Maniobra.objects.create(folio='QX', fecha_pis=date(2026, 3, 1),
+                                                                status='quemada'))
+        filas = self.usuario('admin', staff=True).get(URL).data['results']
+        self.assertEqual([f['folio'] for f in filas], ['xml'])
 
 
 class PaginaDeCienTests(Base):
