@@ -3,7 +3,7 @@ from datetime import date
 from functools import cached_property
 from decimal import Decimal, ROUND_HALF_UP
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, ClientePrincipal, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD, ReporteViaje, CargaCombustible, NominaEmpleado, VacacionDia
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, ClientePrincipal, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD, ReporteViaje, CargaCombustible, NominaEmpleado, VacacionDia, GastoMantenimiento
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
@@ -38,6 +38,33 @@ class RemolqueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Remolque
         fields = '__all__'
+
+    def validate_no_eco(self, value):
+        # Opcional: '' se guarda como NULL, o dos remolques sin numero chocarian
+        # con el UNIQUE de la columna.
+        value = (value or '').strip()
+        return value or None
+
+
+class GastoMantenimientoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GastoMantenimiento
+        fields = '__all__'
+        read_only_fields = ['creado_en']
+
+    # Solo unidades propias y remolques del catalogo: el selector del frontend ya
+    # lo limita, esto lo hace cumplir.
+    def validate_unidad(self, value):
+        value = value.strip()
+        if not Tracto.objects.filter(placas=value).exists():
+            raise serializers.ValidationError('La unidad no es una unidad propia.')
+        return value
+
+    def validate_remolque(self, value):
+        value = value.strip()
+        if not Remolque.objects.filter(placas=value).exists():
+            raise serializers.ValidationError('El remolque no está en el catálogo.')
+        return value
 
 class ChoferSerializer(serializers.ModelSerializer):
     class Meta:

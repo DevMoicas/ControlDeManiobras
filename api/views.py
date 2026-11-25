@@ -4,12 +4,12 @@ from decimal import Decimal
 from zoneinfo import ZoneInfo
 import django_filters
 from rest_framework import viewsets, mixins
-from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, ClientePrincipal, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_EN_EL_PAPEL, NominaEmpleado, SueldoHistorial, VacacionDia, Factura
+from .models import TorreFolio, Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, ClientePrincipal, Origen, Destino, FotoRegistro, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, DIAS_CONFIANZA, Folio, CostoExtra, Pendiente, LETRAS_CICLO, BATCH_SIZE, FORMATO_CODIGO, START_NUMERO, TorreControl, ReporteViaje, CARGAS_EN_EL_PAPEL, NominaEmpleado, SueldoHistorial, VacacionDia, Factura, GastoMantenimiento
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .Serializers import ReporteViajeSerializer, TorreFolioSerializer, TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, ClientePrincipalSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer, CostoExtraSerializer, PendienteSerializer, TorreControlSerializer
+from .Serializers import ReporteViajeSerializer, TorreFolioSerializer, TractoSerializer, RemolqueSerializer, ChoferSerializer, ManiobraSerializer, GastoSerializer, VacioSerializer, EmpleadoSerializer, PatioSerializer, ClienteSerializer, ClientePrincipalSerializer, OrigenSerializer, DestinoSerializer, MovimientoLocalSerializer, TransportistaSerializer, CargoSerializer, UnidadTerceroSerializer, OperadorTerceroSerializer, FolioSerializer, CostoExtraSerializer, PendienteSerializer, TorreControlSerializer, GastoMantenimientoSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from .throttling import SondeoThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -1123,6 +1123,17 @@ class RemolqueViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
         return super().destroy(request, *args, **kwargs)
+
+
+class GastoMantenimientoViewSet(viewsets.ModelViewSet):
+    """Viajes > Gastos > Gastos mantenimiento. Solo listar y registrar: la pantalla
+    no edita ni borra (usuario, 2026-11-25)."""
+    queryset               = GastoMantenimiento.objects.all()
+    serializer_class       = GastoMantenimientoSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+    throttle_classes       = [UserRateThrottle, AnonRateThrottle]
+    http_method_names      = ['get', 'post', 'head', 'options']
 
 class ChoferViewSet(viewsets.ModelViewSet):
     queryset = Chofer.objects.all().order_by('id')

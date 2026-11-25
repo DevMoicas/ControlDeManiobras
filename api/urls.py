@@ -12,6 +12,7 @@ from .views import (
     TorreControlViewSet,
     TorreFolioViewSet,
     RemolqueViewSet,
+    GastoMantenimientoViewSet,
     ChoferViewSet,
     EmpleadoViewSet,
     ManiobraViewSet,
@@ -48,6 +49,7 @@ from .views import (
 router = DefaultRouter()
 router.register(r'tractos',   TractoViewSet,   basename='tractos')
 router.register(r'remolques', RemolqueViewSet, basename='remolques')
+router.register(r'gastos-mantenimiento', GastoMantenimientoViewSet, basename='gastos-mantenimiento')
 router.register(r'choferes',  ChoferViewSet,   basename='choferes')
 router.register(r'maniobras', ManiobraViewSet, basename='maniobras')
 router.register(r'gastos', GastoViewSet, basename='gastos')

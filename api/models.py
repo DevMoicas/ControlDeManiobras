@@ -52,6 +52,11 @@ class Tracto(models.Model):
                 for p, t in cls.objects.values_list('placas', 'tipo')}
 
 class Remolque(models.Model):
+    # No. Eco del remolque (usuario, 2026-11-25): opcional y unico. Primero a
+    # proposito: Catalogos pinta las columnas en el orden del modelo. Nullable para
+    # que los remolques existentes sin numero no choquen con el UNIQUE (Postgres
+    # admite varios NULL); el serializer convierte '' en None. Columna real en la 0090.
+    no_eco = models.CharField(max_length=255, unique=True, null=True, blank=True)
     color = models.CharField(max_length=255)
     tipo = models.CharField(max_length=255)
     placas = models.CharField(max_length=255, unique=True)
@@ -2085,3 +2090,30 @@ class CargaCombustible(models.Model):
 
     def __str__(self):
         return f"{self.reporte.folio} · carga {self.orden}"
+
+
+class GastoMantenimiento(models.Model):
+    """Un mantenimiento hecho a una unidad propia y su remolque (Viajes > Gastos >
+    Gastos mantenimiento, usuario 2026-11-25).
+
+    Unidad y remolque se guardan por PLACAS en texto, como Maniobra.unidad y
+    Maniobra.remolque: `tractos` y `remolques` son managed=False y no existen en
+    la base de test, asi que una FK romperia la creacion de esta tabla ahi. El
+    serializer valida que las placas existan en el catalogo.
+    """
+    unidad            = models.CharField(max_length=100)
+    remolque          = models.CharField(max_length=255)
+    que_cambio        = models.TextField()
+    fecha             = models.DateField()
+    # Muchos decimales, mismo criterio que CargaCombustible (usuario, 2026-11-25).
+    kilometraje       = models.DecimalField(max_digits=20, decimal_places=10,
+                                            validators=[MinValueValidator(0)])
+    descripcion_pieza = models.TextField()
+    creado_en         = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed  = True
+        ordering = ['-fecha', '-id']
+
+    def __str__(self):
+        return f"{self.unidad} · {self.fecha}"
