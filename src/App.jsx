@@ -31,7 +31,7 @@ import NominaPage from './pages/NominaPage';
 import PendientesPage from './pages/PendientesPage';
 import TorreControlPage from './pages/TorreControlPage';
 import ReporteViajePage from './pages/ReporteViajePage';
-import GastosMantenimientoPage from './pages/GastosMantenimientoPage';
+import MantenimientoPage, { GastosMantenimientoPage } from './pages/MantenimientoPage';
 import GastosTagPage from './pages/GastosTagPage';
 import { useAlertasVencimiento } from './hooks/useAlertasVencimiento';
 import AlertaVencimiento from './components/AlertaVencimiento/AlertaVencimiento';
@@ -207,6 +207,7 @@ function AppRoutes() {
           <Route path="gastos-efectivo" element={<GastosPage title="GASTOS DE VIAJE" />} />
           <Route path="gastos-tag" element={<GastosTagPage />} />
           <Route path="gastos-mantenimiento" element={<GastosMantenimientoPage />} />
+          <Route path="mantenimiento" element={<MantenimientoPage />} />
           <Route path="vacios" element={<VaciosPage />} />
           <Route path="movimientos-locales" element={<MovimientosLocalesPage />} />
           <Route path="folios" element={<FoliosPage />} />

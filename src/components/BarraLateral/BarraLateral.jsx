@@ -4,13 +4,12 @@ import {
   Home, Truck, Route as RouteIcon, Container, CircleDollarSign, Wallet, Hash, FileText,
   ClipboardList, TowerControl, Bitcoin, Receipt, HandCoins, Landmark, ArrowLeftRight,
   History, CirclePlus, Users, Percent, LayoutDashboard, Wrench, Library, ListChecks,
-  UserCircle, ChevronDown, Menu, Coins, Tag,
+  UserCircle, ChevronDown, Menu, Coins, Tag, Banknote,
 } from 'lucide-react';
 import './BarraLateral.css';
 
-// Árbol de navegación (usuario, 2026-11-19): Viajes, Finanzas y Dashboards; el
-// resto de módulos se reparte en el grupo que le toca. Mantenimiento pasó a
-// Viajes > Gastos (usuario, 2026-11-25).
+// Árbol de navegación (usuario, 2026-11-19): Viajes, Finanzas, Dashboards y
+// Mantenimiento; el resto de módulos se reparte en el grupo que le toca.
 // `ver` decide si sale; sin `to` es un grupo que se despliega.
 function arbol({ verFolios, verFinanzas, isAdmin }) {
   return [
@@ -23,7 +22,7 @@ function arbol({ verFolios, verFinanzas, isAdmin }) {
           label: 'Gastos', icon: Coins, hijos: [
             { label: 'Gastos de viaje', icon: CircleDollarSign, to: '/home/gastos-efectivo' },
             { label: 'Gastos TAG', icon: Tag, to: '/home/gastos-tag' },
-            { label: 'Gastos mantenimiento', icon: Wrench, to: '/home/gastos-mantenimiento' },
+            { label: 'Gastos mantenimiento', icon: Banknote, to: '/home/gastos-mantenimiento' },
           ],
         },
         { label: 'Movimientos locales', icon: Wallet, to: '/home/movimientos-locales' },
@@ -50,6 +49,7 @@ function arbol({ verFolios, verFinanzas, isAdmin }) {
       ],
     },
     { label: 'Dashboards', icon: LayoutDashboard, to: '/home/finanzas/dashboards', ver: verFinanzas },
+    { label: 'Mantenimiento', icon: Wrench, to: '/home/mantenimiento' },
     { label: 'Catálogos', icon: Library, to: '/home/catalogos' },
     { label: 'Pendientes', icon: ListChecks, to: '/home/pendientes' },
   ];

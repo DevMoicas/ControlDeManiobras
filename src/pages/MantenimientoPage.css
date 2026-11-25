@@ -1,0 +1,31 @@
+/* Overlay del registro de Mantenimiento y Gastos mantenimiento. El formulario reutiliza
+   .fz-dialogo (FinanzasCaptura.css), pensado para <dialog>: aquí es un div, así
+   que el fondo blanco que el <dialog> trae de serie se pone a mano. z-index por
+   debajo de las listas de los selectores (9999). */
+.gm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.45);
+}
+.gm-dialogo { background: #fff; max-height: calc(100vh - 32px); overflow-y: auto; }
+.gm-dialogo textarea {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 400;
+  resize: vertical;
+}
+.gm-nota { margin: -4px 0 0; font-size: 12px; color: #475467; }
+/* Método de pago: tres opciones visibles, una sola elegible. */
+.gm-metodo { display: flex; gap: 8px; margin: 0; padding: 0; border: 0; }
+.gm-metodo legend { margin-bottom: 4px; padding: 0; font-size: 13px; font-weight: 600; color: #374151; }
+.gm-metodo label { display: flex; align-items: center; gap: 6px; padding: 7px 12px;
+  border: 1px solid #d1d5db; border-radius: 8px; font-weight: 500; cursor: pointer; }
+.gm-metodo label:has(input:checked) { border-color: var(--primary-blue, #2563eb); background: #eef4ff; }
+.gm-metodo input { accent-color: var(--primary-blue, #2563eb); }
+.gm-acciones { display: flex; gap: 6px; white-space: nowrap; }
