@@ -2129,6 +2129,8 @@ class GastoMantenimiento(models.Model):
     unidad      = models.CharField(max_length=100, blank=True, default='')
     remolque    = models.CharField(max_length=255, blank=True, default='')
     descripcion = models.TextField()
+    # Texto libre y opcional (usuario, 2026-11-25).
+    proveedor   = models.CharField(max_length=255, blank=True, default='')
     monto       = models.DecimalField(max_digits=12, decimal_places=2,
                                       validators=[MinValueValidator(0)])
     metodo_pago = models.CharField(max_length=10, choices=METODOS_PAGO)

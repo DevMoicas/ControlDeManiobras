@@ -87,6 +87,11 @@ class MantenimientoSerializer(_UnidadORemolqueSerializer):
 class GastoMantenimientoSerializer(_UnidadORemolqueSerializer):
     class Meta(_UnidadORemolqueSerializer.Meta):
         model = GastoMantenimiento
+        extra_kwargs = {**_UnidadORemolqueSerializer.Meta.extra_kwargs, 'proveedor': {'allow_null': True}}
+
+    # Opcional: el null que manda el apiClient se guarda como ''.
+    def validate_proveedor(self, value):
+        return (value or '').strip()
 
 class ChoferSerializer(serializers.ModelSerializer):
     class Meta:

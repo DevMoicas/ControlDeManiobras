@@ -105,6 +105,13 @@ class GastoMantenimientoTests(Base):
         self.assertEqual(self.cliente.post(GASTO, self.datos(monto='-1'), format='json').status_code, 400)
         self.assertEqual(self.cliente.post(GASTO, self.datos(fecha=None), format='json').status_code, 400)
 
+    def test_proveedor_opcional(self):
+        r = self.cliente.post(GASTO, self.datos(proveedor=None), format='json')
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(r.data['proveedor'], '')
+        r = self.cliente.post(GASTO, self.datos(proveedor=' Refaccionaria X '), format='json')
+        self.assertEqual(r.data['proveedor'], 'Refaccionaria X')
+
 
 class NoEcoRemolqueTests(Base):
     def test_no_eco_vacio_no_choca_y_repetido_si(self):

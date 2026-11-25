@@ -86,6 +86,7 @@ class Migration(migrations.Migration):
                 ('unidad', models.CharField(blank=True, default='', max_length=100)),
                 ('remolque', models.CharField(blank=True, default='', max_length=255)),
                 ('descripcion', models.TextField()),
+                ('proveedor', models.CharField(blank=True, default='', max_length=255)),
                 ('monto', models.DecimalField(decimal_places=2, max_digits=12, validators=[django.core.validators.MinValueValidator(0)])),
                 ('metodo_pago', models.CharField(choices=[('efectivo', 'Efectivo'), ('tdc', 'TDC'), ('tdd', 'TDD')], max_length=10)),
                 ('fecha', models.DateField()),
