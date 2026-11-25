@@ -51,17 +51,20 @@ class GastoMantenimientoSerializer(serializers.ModelSerializer):
         model = GastoMantenimiento
         fields = '__all__'
         read_only_fields = ['creado_en']
+        # El apiClient del frontend manda null en vez de '' para el que no se
+        # eligió: se acepta y se guarda como '' (la columna es NOT NULL).
+        extra_kwargs = {'unidad': {'allow_null': True}, 'remolque': {'allow_null': True}}
 
     # Solo unidades propias y remolques del catalogo: el selector del frontend ya
     # lo limita, esto lo hace cumplir.
     def validate_unidad(self, value):
-        value = value.strip()
+        value = (value or '').strip()
         if value and not Tracto.objects.filter(placas=value).exists():
             raise serializers.ValidationError('La unidad no es una unidad propia.')
         return value
 
     def validate_remolque(self, value):
-        value = value.strip()
+        value = (value or '').strip()
         if value and not Remolque.objects.filter(placas=value).exists():
             raise serializers.ValidationError('El remolque no está en el catálogo.')
         return value

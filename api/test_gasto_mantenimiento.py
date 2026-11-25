@@ -63,6 +63,16 @@ class GastoMantenimientoTests(TestCase):
         self.assertEqual(r.status_code, 400)
         self.assertIn('remolque', r.data)
 
+    def test_el_no_elegido_llega_como_null(self):
+        # Así lo manda el apiClient del frontend ('' → null).
+        r = self.cliente.post(URL, self.datos(remolque=None), format='json')
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(r.data['remolque'], '')
+        r = self.cliente.post(URL, self.datos(unidad=None, remolque='REM123'), format='json')
+        self.assertEqual(r.status_code, 201, r.data)
+        r = self.cliente.post(URL, self.datos(unidad=None, remolque=None), format='json')
+        self.assertEqual(r.status_code, 400)
+
     def test_solo_remolque_se_registra(self):
         r = self.cliente.post(URL, self.datos(unidad='', remolque='REM123'), format='json')
         self.assertEqual(r.status_code, 201, r.data)
