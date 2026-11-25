@@ -1043,20 +1043,19 @@ export function CostosPorUnidad() {
   );
 }
 
-// Gasto de diésel por tracto (usuario, 2026-11-25). Las seis tonalidades de la
-// dona del Resumen general, validadas con dataviz (ámbar con aviso de contraste:
-// lo cubren la clave con cifras y la tabla de abajo).
-// ponytail: color por posición en el ranking de importe, no por tracto: con una
-// flota de más de 6 no alcanzan. Si se quiere color fijo por tracto, asignarlo
-// por catálogo y agrupar el resto en "Otros".
-const COLORES_DONA = ["#0b8f9c", "#c98512", "#6a5fd0", "#c2577a", "#5c8a2a", "#2f6db5"];
+// Gasto de diésel por tracto (usuario, 2026-11-25): TODOS los tractos, sin
+// "Otros". Doce tonalidades: las seis de la dona del Resumen general y seis más,
+// validadas juntas con dataviz/validate_palette.js en este orden (pares
+// contiguos: así quedan los gajos). Ámbar con aviso de contraste: lo cubren la
+// clave con cifras y la tabla de abajo.
+// ponytail: color por posición en el ranking de importe, no por tracto (así se
+// conserva la validación de gajos contiguos). Pasados 12 tractos los colores se
+// repiten, separados por 12 gajos; si la flota crece, validar más tonalidades.
+const COLORES_DONA = ["#0b8f9c", "#c98512", "#6a5fd0", "#c2577a", "#5c8a2a", "#2f6db5",
+                      "#d9543a", "#1d93c4", "#a0782c", "#8e3b8a", "#3f9e6e", "#4a68c8"];
 function DonaDiesel({ tractos }) {
-  const orden = [...tractos].sort((a, b) => Number(b.importe) - Number(a.importe)).filter((t) => Number(t.importe) > 0);
-  const resto = orden.slice(COLORES_DONA.length).reduce((s, t) => s + Number(t.importe), 0);
-  const datos = [
-    ...orden.slice(0, COLORES_DONA.length).map((t, i) => ({ name: t.nombre, valor: Number(t.importe), color: COLORES_DONA[i] })),
-    ...(resto > 0 ? [{ name: `Otros (${orden.length - COLORES_DONA.length})`, valor: resto, color: COLOR.no_asignado }] : []),
-  ];
+  const datos = [...tractos].sort((a, b) => Number(b.importe) - Number(a.importe)).filter((t) => Number(t.importe) > 0)
+    .map((t, i) => ({ name: t.nombre, valor: Number(t.importe), color: COLORES_DONA[i % COLORES_DONA.length] }));
   const total = datos.reduce((s, x) => s + x.valor, 0);
   return (
     <Grafica titulo="Gasto de diésel por tracto" alto={260} vacia={!datos.length} claveIzquierda
