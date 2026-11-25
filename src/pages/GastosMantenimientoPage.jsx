@@ -52,9 +52,10 @@ export default function GastosMantenimientoPage() {
 
   const crear = async (e) => {
     e.preventDefault();
-    // Los dos selectores no son controles de formulario: se validan aquí.
-    if (!unidad || !remolque) {
-      alerta({ tipo: "error", msg: "Elige el vehículo y el remolque." });
+    // Los dos selectores no son controles de formulario: se validan aquí. Es uno
+    // u otro (usuario, 2026-11-25); elegir uno ya vacía el otro.
+    if (!unidad && !remolque) {
+      alerta({ tipo: "error", msg: "Elige un vehículo o un remolque." });
       return;
     }
     setGuardando(true);
@@ -74,7 +75,7 @@ export default function GastosMantenimientoPage() {
     <div className="nomina-container">
       <header>
         <h1 className="noeco-title">Gastos mantenimiento</h1>
-        <p className="cp-lead">Lo que se le cambió a cada unidad propia y a su remolque.</p>
+        <p className="cp-lead">Lo que se le cambió a cada unidad propia o remolque.</p>
       </header>
 
       <div className="toolbar">
@@ -102,8 +103,8 @@ export default function GastosMantenimientoPage() {
             ) : filas.map((g) => (
               <tr key={g.id}>
                 <td>{fechaLegible(g.fecha)}</td>
-                <td>{g.unidad}</td>
-                <td>{g.remolque}</td>
+                <td>{g.unidad || "—"}</td>
+                <td>{g.remolque || "—"}</td>
                 <td>{g.que_cambio}</td>
                 <td style={{ fontVariantNumeric: "tabular-nums" }}>{km(g.kilometraje)}</td>
                 <td>{g.descripcion_pieza}</td>
@@ -137,12 +138,14 @@ function Registro({ onCerrar, onGuardar, guardando, unidad, setUnidad, remolque,
         <form onSubmit={onGuardar}>
           <h2 id="gm-titulo">Registrar gasto de mantenimiento</h2>
           {/* Sin transportista, PlacasSelector lista solo las unidades propias. */}
+          {/* Uno u otro: elegir uno vacía el otro. */}
           <div className="fz-campo-tipo">Vehículo
-            <PlacasSelector currentValue={unidad} onSelect={(p) => setUnidad(p)} />
+            <PlacasSelector currentValue={unidad} onSelect={(p) => { setUnidad(p); if (p) setRemolque(""); }} />
           </div>
           <div className="fz-campo-tipo">Remolque
-            <RemolqueSelector currentValue={remolque} onSelect={(p) => setRemolque(p)} mostrarEco />
+            <RemolqueSelector currentValue={remolque} onSelect={(p) => { setRemolque(p); if (p) setUnidad(""); }} mostrarEco />
           </div>
+          <p className="gm-nota">Elige un vehículo o un remolque, no los dos.</p>
           <label>Qué cambió<textarea name="que_cambio" required rows={2} /></label>
           <label>Fecha del movimiento<input name="fecha" type="date" required /></label>
           <label>Kilometraje
