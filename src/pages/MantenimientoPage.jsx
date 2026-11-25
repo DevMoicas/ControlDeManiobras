@@ -79,6 +79,11 @@ const PAGINAS = {
         // Opcional (usuario, 2026-11-25).
         campo: (g) => <label key="proveedor">Proveedor (opcional)<input name="proveedor" maxLength={255} defaultValue={g?.proveedor ?? ""} /></label>,
       },
+      {
+        name: "no_factura", label: "No. Factura",
+        celda: (g) => g.no_factura || "—",
+        campo: (g) => <label key="no_factura">No. Factura (opcional)<input name="no_factura" maxLength={100} defaultValue={g?.no_factura ?? ""} /></label>,
+      },
       texto("descripcion", "Descripción del gasto"),
       decimal("monto", "Monto", 2, moneda),
       {
