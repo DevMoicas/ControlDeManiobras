@@ -1033,9 +1033,41 @@ export function CostosPorUnidad() {
       <p className="db-nota">De los reportes de viaje: cada folio con su tracto y su operador (en un Full de dos
         operadores, cada uno con lo suyo). Solo de Fraba.
         {d?.diesel?.sin_dato > 0 && ` ${d.diesel.sin_dato} viaje(s) sin litros en su reporte no cuentan.`}</p>
+      <DonaDiesel tractos={d?.diesel?.tractos || []} />
       <TablaDiesel titulo="Por tracto" columna="Tracto" filas={d?.diesel?.tractos || []} />
       <TablaDiesel titulo="Por operador" columna="Operador" filas={d?.diesel?.operadores || []} />
     </Panel>
+  );
+}
+
+// Gasto de diésel por tracto (usuario, 2026-11-25). Las seis tonalidades de la
+// dona del Resumen general, validadas con dataviz (ámbar con aviso de contraste:
+// lo cubren la clave con cifras y la tabla de abajo).
+// ponytail: color por posición en el ranking de importe, no por tracto: con una
+// flota de más de 6 no alcanzan. Si se quiere color fijo por tracto, asignarlo
+// por catálogo y agrupar el resto en "Otros".
+const COLORES_DONA = ["#0b8f9c", "#c98512", "#6a5fd0", "#c2577a", "#5c8a2a", "#2f6db5"];
+function DonaDiesel({ tractos }) {
+  const orden = [...tractos].sort((a, b) => Number(b.importe) - Number(a.importe)).filter((t) => Number(t.importe) > 0);
+  const resto = orden.slice(COLORES_DONA.length).reduce((s, t) => s + Number(t.importe), 0);
+  const datos = [
+    ...orden.slice(0, COLORES_DONA.length).map((t, i) => ({ name: t.nombre, valor: Number(t.importe), color: COLORES_DONA[i] })),
+    ...(resto > 0 ? [{ name: `Otros (${orden.length - COLORES_DONA.length})`, valor: resto, color: COLOR.no_asignado }] : []),
+  ];
+  const total = datos.reduce((s, x) => s + x.valor, 0);
+  return (
+    <Grafica titulo="Gasto de diésel por tracto" alto={260} vacia={!datos.length}
+      clave={datos.map((x) => [x.color, `${x.name} · ${dinero(x.valor)} (${porciento((x.valor / total) * 100)})`])}>
+      <PieChart>
+        <Pie data={datos} dataKey="valor" nameKey="name" innerRadius="58%" outerRadius="88%"
+          startAngle={90} endAngle={-270} stroke="#fff" strokeWidth={2} animationDuration={400}>
+          {datos.map((x) => <Cell key={x.name} fill={x.color} />)}
+        </Pie>
+        <text x="50%" y="47%" textAnchor="middle" fill={TINTA.texto} fontSize={12}>Diésel</text>
+        <text x="50%" y="57%" textAnchor="middle" fill={NAVY} fontSize={16} fontWeight={700}>{dineroCorto(total)}</text>
+        <Tooltip {...estiloTooltip} formatter={(v) => `${dinero(v)} (${porciento((v / total) * 100)})`} />
+      </PieChart>
+    </Grafica>
   );
 }
 

@@ -557,3 +557,5 @@
 /* Cabeceras de las tablas de diésel centradas (usuario, 2026-11-25); las cifras
    del cuerpo siguen a la derecha. */
 .db-panel .db-tabla-diesel thead th { text-align: center; }
+/* Aire entre la tabla por tracto y la de operador (usuario, 2026-11-25). */
+.db-panel .db-tabla-diesel + .db-tabla-diesel { margin-top: 40px; }
