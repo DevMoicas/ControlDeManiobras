@@ -181,6 +181,22 @@ class DashboardsTests(TestCase):
         # Un sencillo no se mezcla con el full.
         self.assertEqual(self.get('costos-por-unidad', '&servicio=sencillo')['diesel']['tractos'], [])
 
+    def test_carga_suelta_separa_tractos_de_otras_unidades(self):
+        # B es carga suelta con T-2. Como trailer cuenta como tracto; como rabón, no.
+        Tracto.objects.create(no_eco='2', unidad='K', anio=2020, placas='T-2', tipo='trailer')
+        r = ReporteViaje.objects.create(folio='F-B', unidad='T-2')
+        CargaCombustible.objects.create(reporte=r, orden=1, litros_diesel=Decimal('50'), precio_litro=Decimal('25'))
+        base = '&servicio=carga_suelta&clase='
+        d = self.get('costos-por-unidad', base + 'tracto')
+        self.assertEqual([x['unidad'] for x in d['unidades']], ['T-2'])
+        self.assertEqual([x['nombre'] for x in d['diesel']['tractos']], ['T-2'])
+        d = self.get('costos-por-unidad', base + 'otra')
+        self.assertEqual((d['unidades'], d['diesel']['tractos']), ([], []))
+        Tracto.objects.filter(placas='T-2').update(tipo='Rabón')
+        d = self.get('costos-por-unidad', base + 'otra')
+        self.assertEqual([x['unidad'] for x in d['unidades']], ['T-2'])
+        self.assertEqual(self.get('costos-por-unidad', base + 'tracto')['unidades'], [])
+
     def test_cuentas_por_cobrar_no_depende_del_dia(self):
         d = self.get('cuentas-por-cobrar')
         self.assertEqual(sum(Decimal(v) for v in d['antiguedad'].values()), Decimal('4000'))

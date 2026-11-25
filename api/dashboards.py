@@ -114,6 +114,8 @@ class Filtros:
         self.maniobra = params.get('maniobra') or ''
         self.alcance = params.get('alcance') or ''      # local / foraneo
         self.empresa = params.get('empresa') or ''
+        # Costos por unidad en carga suelta: 'tracto' u 'otra' (usuario, 2026-11-25).
+        self.clase = params.get('clase') or ''
 
     @property
     def de_maniobra(self):
@@ -509,7 +511,17 @@ def _operaciones(f):
     return maniobras, costos, ingresos
 
 
-def diesel_de(maniobras):
+def clase_de(placas, tipos):
+    """'tracto' si en el catalogo es tipo trailer, 'otra' si es otra unidad
+    (1 ton, rabon, thorton...), '' si no es de Fraba. Misma regla que
+    ReporteViaje.avance para saber si una carga suelta va sin porta."""
+    tipo = tipos.get((placas or '').strip().upper())
+    if tipo is None:
+        return ''
+    return 'tracto' if tipo == 'trailer' else 'otra'
+
+
+def diesel_de(maniobras, clase=''):
     """Litros e importe del diesel por tracto y por operador (usuario, 2026-11-25).
 
     Sale de los reportes de viaje, uno por FOLIO: en un Full de dos operadores
@@ -520,8 +532,10 @@ def diesel_de(maniobras):
     Un viaje cuenta solo si su reporte trae litros: sin reporte no es "cero
     litros", es "sin dato", y no entra en los promedios.
     El servicio no se mezcla aqui: la pantalla pide siempre uno (filtro
-    `servicio`), porque un full no se compara con un sencillo.
+    `servicio`), porque un full no se compara con un sencillo. Con `clase`, solo
+    los folios hechos con esa clase de unidad (tracto u otra).
     """
+    tipos = Tracto.tipos() if clase else {}
     folios = {}
     for m in maniobras:
         folios[(m.folio or '').strip()] = (m.unidad, m.asignacion_operador_status)
@@ -539,6 +553,8 @@ def diesel_de(maniobras):
         litros = sum((c.litros_diesel for c in cargas), Decimal('0'))
         importe = sum((c.litros_diesel * c.precio_litro for c in cargas if c.precio_litro), Decimal('0'))
         unidad, operador = folios[r.folio]
+        if clase and clase_de(r.unidad or unidad, tipos) != clase:
+            continue
         for grupo, nombre in ((tractos, r.unidad or unidad), (operadores, r.operador or operador)):
             g = grupo[(nombre or '').strip()]
             g['viajes'] += 1
@@ -565,6 +581,9 @@ def costos_por_unidad(f):
     servicio. La pantalla manda siempre un servicio (usuario, 2026-11-25): un
     sencillo solo se compara con sencillos, un full con fulls."""
     maniobras, costos, _ = _operaciones(f)
+    if f.clase:
+        tipos = Tracto.tipos()
+        maniobras = [m for m in maniobras if clase_de(m.unidad, tipos) == f.clase]
     por_unidad = defaultdict(lambda: {'viajes': 0, 'costo': Decimal('0')})
     for m in maniobras:
         u = por_unidad[(m.unidad or '').strip() or 'Sin unidad']
@@ -576,7 +595,7 @@ def costos_por_unidad(f):
                             for k, v in por_unidad.items()), key=lambda x: -Decimal(x['costo'])),
         'viajes': [{'maniobra': m.pk, 'folio': m.folio, 'unidad': m.unidad, 'destino': m.destino,
                     'costo': _dinero(costos[m.pk])} for m in maniobras],
-        'diesel': diesel_de(maniobras),
+        'diesel': diesel_de(maniobras, f.clase),
         'opciones': _opciones(list(_maniobras_por_entrega(f))),
     }
 
