@@ -2092,17 +2092,16 @@ class CargaCombustible(models.Model):
         return f"{self.reporte.folio} · carga {self.orden}"
 
 
-class GastoMantenimiento(models.Model):
-    """Un mantenimiento hecho a una unidad propia y su remolque (Viajes > Gastos >
-    Gastos mantenimiento, usuario 2026-11-25).
+
+class Mantenimiento(models.Model):
+    """Un mantenimiento hecho a una unidad propia O a un remolque (pagina
+    Mantenimiento, usuario 2026-11-25).
 
     Unidad y remolque se guardan por PLACAS en texto, como Maniobra.unidad y
     Maniobra.remolque: `tractos` y `remolques` son managed=False y no existen en
     la base de test, asi que una FK romperia la creacion de esta tabla ahi. El
-    serializer valida que las placas existan en el catalogo.
-
-    Un registro es de la unidad O del remolque, nunca de los dos (usuario,
-    2026-11-25): el otro queda en ''. Lo exige el serializer.
+    serializer valida que las placas existan en el catalogo y que venga solo
+    uno de los dos (el otro queda en '').
     """
     unidad            = models.CharField(max_length=100, blank=True, default='')
     remolque          = models.CharField(max_length=255, blank=True, default='')
@@ -2119,4 +2118,25 @@ class GastoMantenimiento(models.Model):
         ordering = ['-fecha', '-id']
 
     def __str__(self):
-        return f"{self.unidad} · {self.fecha}"
+        return f"{self.unidad or self.remolque} · {self.fecha}"
+
+
+class GastoMantenimiento(models.Model):
+    """Lo que costo un mantenimiento (Viajes > Gastos > Gastos mantenimiento,
+    usuario 2026-11-25). Unidad O remolque, igual que Mantenimiento."""
+    METODOS_PAGO = [('efectivo', 'Efectivo'), ('tdc', 'TDC'), ('tdd', 'TDD')]
+
+    unidad      = models.CharField(max_length=100, blank=True, default='')
+    remolque    = models.CharField(max_length=255, blank=True, default='')
+    descripcion = models.TextField()
+    monto       = models.DecimalField(max_digits=12, decimal_places=2,
+                                      validators=[MinValueValidator(0)])
+    metodo_pago = models.CharField(max_length=10, choices=METODOS_PAGO)
+    creado_en   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed  = True
+        ordering = ['-creado_en', '-id']
+
+    def __str__(self):
+        return f"{self.unidad or self.remolque} · {self.monto}"

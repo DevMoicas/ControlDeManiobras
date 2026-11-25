@@ -3,7 +3,7 @@ from datetime import date
 from functools import cached_property
 from decimal import Decimal, ROUND_HALF_UP
 from rest_framework import serializers
-from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, ClientePrincipal, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD, ReporteViaje, CargaCombustible, NominaEmpleado, VacacionDia, GastoMantenimiento
+from .models import Tracto, Remolque, Chofer, Maniobra, Gasto, Vacio, Empleado, Patio, Cliente, ClientePrincipal, Origen, Destino, MovimientoLocal, Transportista, Cargo, UnidadTercero, OperadorTercero, DispositivoConfianza, Folio, CostoExtra, ManiobraCostoExtra, Pendiente, TorreControl, TorreFolio, BOLITAS_POR_UNIDAD, ReporteViaje, CargaCombustible, NominaEmpleado, VacacionDia, GastoMantenimiento, Mantenimiento
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
@@ -46,17 +46,18 @@ class RemolqueSerializer(serializers.ModelSerializer):
         return value or None
 
 
-class GastoMantenimientoSerializer(serializers.ModelSerializer):
+class _UnidadORemolqueSerializer(serializers.ModelSerializer):
+    """Base de Mantenimiento y GastoMantenimiento: un vehiculo propio O un
+    remolque del catalogo, nunca los dos ni ninguno (usuario, 2026-11-25)."""
+
     class Meta:
-        model = GastoMantenimiento
         fields = '__all__'
         read_only_fields = ['creado_en']
         # El apiClient del frontend manda null en vez de '' para el que no se
-        # eligió: se acepta y se guarda como '' (la columna es NOT NULL).
+        # eligio: se acepta y se guarda como '' (la columna es NOT NULL).
         extra_kwargs = {'unidad': {'allow_null': True}, 'remolque': {'allow_null': True}}
 
-    # Solo unidades propias y remolques del catalogo: el selector del frontend ya
-    # lo limita, esto lo hace cumplir.
+    # El selector del frontend ya lo limita; esto lo hace cumplir.
     def validate_unidad(self, value):
         value = (value or '').strip()
         if value and not Tracto.objects.filter(placas=value).exists():
@@ -69,11 +70,23 @@ class GastoMantenimientoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('El remolque no está en el catálogo.')
         return value
 
-    # Uno u otro, nunca los dos ni ninguno (usuario, 2026-11-25).
     def validate(self, attrs):
-        if bool(attrs.get('unidad')) == bool(attrs.get('remolque')):
+        # En un PATCH que no toca estos campos manda lo que ya tenia el registro.
+        unidad = attrs.get('unidad', getattr(self.instance, 'unidad', ''))
+        remolque = attrs.get('remolque', getattr(self.instance, 'remolque', ''))
+        if bool(unidad) == bool(remolque):
             raise serializers.ValidationError('Elige un vehículo o un remolque, no los dos.')
         return attrs
+
+
+class MantenimientoSerializer(_UnidadORemolqueSerializer):
+    class Meta(_UnidadORemolqueSerializer.Meta):
+        model = Mantenimiento
+
+
+class GastoMantenimientoSerializer(_UnidadORemolqueSerializer):
+    class Meta(_UnidadORemolqueSerializer.Meta):
+        model = GastoMantenimiento
 
 class ChoferSerializer(serializers.ModelSerializer):
     class Meta:
