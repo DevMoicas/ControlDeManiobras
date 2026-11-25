@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Check } from "lucide-react";
 import { overlayMotion, contentMotion } from "../../animations/modalMotion";
@@ -141,6 +142,9 @@ const VISTAS = {
     url: "/maniobras/?status=activo&ordering=fecha_entrega_mercancia,id",
     columnas: COLUMNAS_ACTIVOS,
     vacio: "No hay servicios activos.",
+    // Clic en cualquier parte de la fila: contenedor, operador, placas y
+    // remolques del servicio (usuario, 2026-11-25).
+    detalle: true,
   },
 };
 
@@ -150,6 +154,7 @@ function Lista({ vista }) {
   // Los ids que están guardándose ahora mismo: la casilla se desactiva mientras
   // tanto, para que dos clics seguidos no manden dos PATCH cruzados.
   const [guardando, setGuardando] = useState([]);
+  const [detalle, setDetalle] = useState(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -203,7 +208,16 @@ function Lista({ vista }) {
             // PENDIENTES, y una vez el servicio pasa a activo ya no dice nada.
             // La bandera se queda en la base, asi que si vuelve a pendiente
             // sigue marcada.
-            <tr key={m.id} className={vista.marcable && m.pendiente_programar ? "seg-fila--marcada" : undefined}>
+            <tr
+              key={m.id}
+              className={[vista.marcable && m.pendiente_programar && "seg-fila--marcada", vista.detalle && "seg-fila--clic"].filter(Boolean).join(" ") || undefined}
+              {...(vista.detalle && {
+                tabIndex: 0,
+                "aria-label": `Ver detalle de ${textoDelPar(m.contenedor, m.contenedor_2) || "el servicio"}`,
+                onClick: () => setDetalle(m),
+                onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDetalle(m); } },
+              })}
+            >
               {vista.marcable && (
                 <td className="seg-td seg-td--check">
                   <button
@@ -228,7 +242,58 @@ function Lista({ vista }) {
           ))}
         </tbody>
       </table>
+      <AnimatePresence>
+        {detalle && <Detalle maniobra={detalle} onCerrar={() => setDetalle(null)} />}
+      </AnimatePresence>
     </div>
+  );
+}
+
+// Lo que pidió el usuario del servicio activo. Un Full de dos operadores lleva
+// un bloque por operador: cada uno con SU contenedor, tracto y remolques (el
+// reparto posicional de models.Maniobra, migración 0035).
+function Detalle({ maniobra: m, onCerrar }) {
+  // Captura en document + stopPropagation: Escape cierra solo esta ventana y no
+  // llega al listener del desglose, que cerraría la lista entera.
+  useEffect(() => {
+    const alPulsar = (e) => { if (e.key === "Escape") { e.stopPropagation(); onCerrar(); } };
+    document.addEventListener("keydown", alPulsar, true);
+    return () => document.removeEventListener("keydown", alPulsar, true);
+  }, [onCerrar]);
+
+  const lista = (...v) => v.map((x) => (x || "").trim()).filter(Boolean).join(" / ") || "—";
+  const bloques = [
+    { operador: operadorDe(m), contenedor: m.operador_2 ? m.contenedor : textoDelPar(m.contenedor, m.contenedor_2),
+      placas: m.unidad, remolques: lista(m.remolque, m.remolque_2) },
+    m.operador_2 && { operador: m.operador_2, contenedor: m.contenedor_2,
+      placas: m.unidad_2, remolques: lista(m.remolque_3, m.remolque_4) },
+  ].filter(Boolean);
+
+  // Portal: el desglose se anima con transform, y un position: fixed dentro de
+  // un ancestro transformado se pega a él en vez de a la ventana.
+  return createPortal(
+    <motion.div className="seg-modal-overlay seg-detalle-overlay" {...overlayMotion} onClick={(e) => { e.stopPropagation(); onCerrar(); }}>
+      <motion.div className="seg-modal seg-detalle" {...contentMotion} role="dialog" aria-modal="true"
+        aria-labelledby="seg-detalle-titulo" onClick={(e) => e.stopPropagation()}>
+        <div className="seg-modal-header">
+          <h2 id="seg-detalle-titulo" className="seg-modal-titulo">Detalle del servicio</h2>
+          <button type="button" className="seg-modal-cerrar" onClick={onCerrar} aria-label="Cerrar" autoFocus>
+            <X size={20} />
+          </button>
+        </div>
+        <div className="seg-modal-body">
+          {bloques.map((b, i) => (
+            <dl key={i} className="seg-detalle-lista">
+              <dt>Contenedor</dt><dd>{b.contenedor || "—"}</dd>
+              <dt>Operador</dt><dd>{b.operador || "—"}</dd>
+              <dt>Placas</dt><dd>{b.placas || "—"}</dd>
+              <dt>Remolques</dt><dd>{b.remolques}</dd>
+            </dl>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>,
+    document.body
   );
 }
 

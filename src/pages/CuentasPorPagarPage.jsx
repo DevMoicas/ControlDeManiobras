@@ -19,7 +19,8 @@ const PESTANAS = [
   ["gastos-fijos", "Gastos fijos"],
   ["flete", "Fletes"],
   ["local", "Locales"],
-  ["mantenimiento", "Mantenimiento"],
+  // Sin "Mantenimiento" (usuario, 2026-11-25): pasó a Viajes > Gastos. Sus
+  // facturas siguen en la base; solo se quitó la pestaña.
 ];
 const EMPRESAS = [["fraba", "Fraba"], ["soluciones", "Soluciones"]];
 const NOMBRE_EMPRESA = Object.fromEntries(EMPRESAS);

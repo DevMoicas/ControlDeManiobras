@@ -152,6 +152,8 @@ export default function NoEcoPage() {
       { name: "fecha_vencimiento_humo", label: "Vencimiento Humo", type: "date", required: false }
     ],
     remolques: [
+      // Opcional y único (usuario, 2026-11-25): los remolques ya dados de alta no lo tienen.
+      { name: "no_eco", label: "No. Eco", type: "text", required: false },
       { name: "color", label: "Color", type: "text" },
       { name: "tipo", label: "Tipo de remolque", type: "text" },
       { name: "placas", label: "Placas del remolque", type: "text" },

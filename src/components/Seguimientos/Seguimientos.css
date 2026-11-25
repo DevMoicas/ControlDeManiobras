@@ -300,3 +300,25 @@
     width: 100%;
   }
 }
+
+/* ── Servicios activos: la fila abre su detalle ──────────────────────────── */
+.seg-fila--clic { cursor: pointer; }
+.seg-fila--clic:hover .seg-td { background: #f5f8fc; }
+.seg-fila--clic:focus-visible { outline: 2px solid var(--teal, #2563eb); outline-offset: -2px; }
+
+/* Encima del desglose (que ya va en z-index 1000). */
+.seg-detalle-overlay { z-index: 1010; }
+.seg-detalle { width: min(420px, calc(100vw - 32px)); }
+.seg-detalle-lista {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 16px;
+  margin: 0;
+}
+.seg-detalle-lista + .seg-detalle-lista {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e6ecf5;
+}
+.seg-detalle-lista dt { font-size: 13px; font-weight: 600; color: #475467; }
+.seg-detalle-lista dd { margin: 0; color: #101828; overflow-wrap: anywhere; }

@@ -284,7 +284,7 @@ function Intro() {
   return (
     <header className="gp-intro">
       <p className="gp-eyebrow">Control de costos</p>
-      <h1 className="gastos-title">Gastos</h1>
+      <h1 className="gastos-title">Gastos de viaje</h1>
       <p className="gp-lead">
         Registra los gastos de cada servicio y compara lo facturado con lo gastado.
       </p>

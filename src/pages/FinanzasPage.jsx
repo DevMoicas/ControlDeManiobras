@@ -16,7 +16,7 @@ const MODULOS = [
   { to: "/home/finanzas/nomina",         icon: Users,      title: "Nómina",            desc: "Sueldos y pagos al personal." },
   // Facturación, Estados de cuenta y Compensación van juntas (usuario, 2026-10-22).
   { to: "/home/finanzas/cuentas-por-cobrar", icon: HandCoins, title: "Cuentas por cobrar", desc: "Facturación, estados de cuenta, compensación e historial de pagos." },
-  { to: "/home/finanzas/cuentas-por-pagar", icon: Wallet,  title: "Cuentas por pagar", desc: "Gastos fijos, fletes y locales de terceros, y mantenimiento." },
+  { to: "/home/finanzas/cuentas-por-pagar", icon: Wallet,  title: "Cuentas por pagar", desc: "Gastos fijos, y fletes y locales de terceros." },
   { to: "/home/finanzas/gastos-financieros", icon: Percent, title: "Gastos financieros", desc: "Intereses, impuestos y comisiones de cada mes." },
   // Dashboards (Fase 6): los nueve en una sola tarjeta. Las páginas por grupo
   // se quitaron por repetir lo mismo sin capturar nada (usuario, 2026-09-30).

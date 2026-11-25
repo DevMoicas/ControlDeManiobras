@@ -4,7 +4,8 @@ import { apiClient } from "../../api/apiClient";
 import useDropdownNav from "../../hooks/useDropdownNav";
 import "./RemolqueSelector.css";
 
-export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
+// mostrarEco: enseña el No. Eco en vez del color (Gastos mantenimiento).
+export default function RemolqueSelector({ currentValue, onSelect, disabled, mostrarEco }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState(null);
   const [remolques, setRemolques] = useState([]);
@@ -124,7 +125,9 @@ export default function RemolqueSelector({ currentValue, onSelect, disabled }) {
               <span className="rs-placas">{r.placas}</span>
               <span className="rs-tipo">
                 Tipo: {r.tipo}
-                {r.color && <span className="rs-color">Color: {r.color}</span>}
+                {mostrarEco
+                  ? <span className="rs-color">Eco: {r.no_eco || "—"}</span>
+                  : r.color && <span className="rs-color">Color: {r.color}</span>}
               </span>
               {r.placas === currentValue && <span className="rs-check">✓</span>}
             </li>

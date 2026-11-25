@@ -4,12 +4,13 @@ import {
   Home, Truck, Route as RouteIcon, Container, CircleDollarSign, Wallet, Hash, FileText,
   ClipboardList, TowerControl, Bitcoin, Receipt, HandCoins, Landmark, ArrowLeftRight,
   History, CirclePlus, Users, Percent, LayoutDashboard, Wrench, Library, ListChecks,
-  UserCircle, ChevronDown, Menu,
+  UserCircle, ChevronDown, Menu, Coins, Tag,
 } from 'lucide-react';
 import './BarraLateral.css';
 
-// Árbol de navegación (usuario, 2026-11-19): Viajes, Finanzas, Dashboards y
-// Mantenimiento; el resto de módulos se reparte en el grupo que le toca.
+// Árbol de navegación (usuario, 2026-11-19): Viajes, Finanzas y Dashboards; el
+// resto de módulos se reparte en el grupo que le toca. Mantenimiento pasó a
+// Viajes > Gastos (usuario, 2026-11-25).
 // `ver` decide si sale; sin `to` es un grupo que se despliega.
 function arbol({ verFolios, verFinanzas, isAdmin }) {
   return [
@@ -18,7 +19,13 @@ function arbol({ verFolios, verFinanzas, isAdmin }) {
       label: 'Viajes', icon: RouteIcon, hijos: [
         { label: 'Control de Maniobras', icon: Truck, to: '/home/maniobras' },
         { label: 'Vacíos', icon: Container, to: '/home/vacios' },
-        { label: 'Gastos efectivo', icon: CircleDollarSign, to: '/home/gastos-efectivo' },
+        {
+          label: 'Gastos', icon: Coins, hijos: [
+            { label: 'Gastos de viaje', icon: CircleDollarSign, to: '/home/gastos-efectivo' },
+            { label: 'Gastos TAG', icon: Tag, to: '/home/gastos-tag' },
+            { label: 'Gastos mantenimiento', icon: Wrench, to: '/home/gastos-mantenimiento' },
+          ],
+        },
         { label: 'Movimientos locales', icon: Wallet, to: '/home/movimientos-locales' },
         { label: 'Folios', icon: Hash, to: '/home/folios', ver: verFolios },
         { label: 'Documentos de viaje', icon: FileText, to: '/home/documentos-viaje' },
@@ -43,8 +50,6 @@ function arbol({ verFolios, verFinanzas, isAdmin }) {
       ],
     },
     { label: 'Dashboards', icon: LayoutDashboard, to: '/home/finanzas/dashboards', ver: verFinanzas },
-    // Aún no existe la página: se ve, pero no navega.
-    { label: 'Mantenimiento', icon: Wrench, proximamente: true },
     { label: 'Catálogos', icon: Library, to: '/home/catalogos' },
     { label: 'Pendientes', icon: ListChecks, to: '/home/pendientes' },
   ];

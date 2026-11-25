@@ -1,0 +1,22 @@
+/* Overlay del registro de Gastos mantenimiento. El formulario reutiliza
+   .fz-dialogo (FinanzasCaptura.css), pensado para <dialog>: aquí es un div, así
+   que el fondo blanco que el <dialog> trae de serie se pone a mano. z-index por
+   debajo de las listas de los selectores (9999). */
+.gm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.45);
+}
+.gm-dialogo { background: #fff; max-height: calc(100vh - 32px); overflow-y: auto; }
+.gm-dialogo textarea {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 400;
+  resize: vertical;
+}
