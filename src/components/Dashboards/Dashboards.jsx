@@ -1055,7 +1055,7 @@ function TablaDiesel({ titulo, columna, filas }) {
   const tope = Math.max(1, ...filas.map((f) => Number(f.litros_promedio))) * 1.05;
   const x = (v) => `${(Number(v) / tope) * 100}%`;
   return (
-    <div className="db-tabla db-puntos" role="region" aria-label={`Diésel ${titulo.toLowerCase()}`} tabIndex={0}>
+    <div className="db-tabla db-puntos db-tabla-diesel" role="region" aria-label={`Diésel ${titulo.toLowerCase()}`} tabIndex={0}>
       <table>
         <caption className="db-tabla-titulo">{titulo}</caption>
         <thead><tr><th scope="col">{columna}</th><th scope="col" className="num">Viajes</th>

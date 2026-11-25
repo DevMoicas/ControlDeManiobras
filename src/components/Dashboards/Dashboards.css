@@ -554,3 +554,6 @@
 .db-selector.db-selector-servicio { justify-content: flex-start; margin: 0 0 16px; }
 /* Título de cada tabla de diésel (Por tracto / Por operador). */
 .db-tabla-titulo { caption-side: top; text-align: left; padding: 0 0 8px; font-weight: 700; color: var(--navy, #102a43); }
+/* Cabeceras de las tablas de diésel centradas (usuario, 2026-11-25); las cifras
+   del cuerpo siguen a la derecha. */
+.db-panel .db-tabla-diesel thead th { text-align: center; }
