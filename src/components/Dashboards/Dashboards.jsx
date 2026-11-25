@@ -907,6 +907,7 @@ export function CostosPorUnidad() {
   // burbujas y diésel— queda dentro del mismo servicio. Sin opción "Todos".
   const { estado, actual, previo } = useConComparacion("costos-por-unidad", campos, false, { servicio: "sencillo" });
   const d = actual.datos;
+  const otras = estado.filtros.clase === "otra";
   // Solo la flota de FRABA en todo el dashboard —resumen, tabla, gráficas y el
   // filtro de viaje, ya quitado— (usuario, 2026-11-23): fuera las unidades de terceros y
   // "Sin unidad". Propias = placas del catálogo de Tractos, que el backend ya
@@ -952,9 +953,21 @@ export function CostosPorUnidad() {
       <div className="db-selector db-selector-servicio" role="tablist" aria-label="Servicio que se compara">
         {SERVICIOS.map(([v, t]) => (
           <button key={v} role="tab" aria-selected={estado.filtros.servicio === v}
-            className={estado.filtros.servicio === v ? "activo" : ""} onClick={() => estado.poner("servicio", v)}>{t}</button>
+            className={estado.filtros.servicio === v ? "activo" : ""}
+            onClick={() => { estado.poner("servicio", v); estado.poner("clase", v === "carga_suelta" ? "tracto" : ""); }}>{t}</button>
         ))}
       </div>
+      {/* Carga suelta: tractos y unidades que no son tracto (1 ton, rabón,
+          thorton…) no se comparan entre sí (usuario, 2026-11-25). El tipo sale
+          del catálogo: "trailer" es tracto. */}
+      {estado.filtros.servicio === "carga_suelta" && (
+        <div className="db-selector db-selector-servicio" role="tablist" aria-label="Clase de unidad">
+          {[["tracto", "Tractos"], ["otra", "Otras unidades"]].map(([v, t]) => (
+            <button key={v} role="tab" aria-selected={estado.filtros.clase === v}
+              className={estado.filtros.clase === v ? "activo" : ""} onClick={() => estado.poner("clase", v)}>{t}</button>
+          ))}
+        </div>
+      )}
       <Resumen>
         <Kpi titulo="Costo total" valor={sumar(unidades, "costo")}
           anterior={previo ? sumar(soloPropias(previo).unidades, "costo") : undefined} />
@@ -969,7 +982,7 @@ export function CostosPorUnidad() {
       </div>
       <div className="db-tabla db-puntos" role="region" aria-label="Costo por unidad" tabIndex={0}>
         <table>
-          <thead><tr><th scope="col">Unidad (tracto)</th><th scope="col" className="num">Viajes</th>
+          <thead><tr><th scope="col">{otras ? "Unidad" : "Unidad (tracto)"}</th><th scope="col" className="num">Viajes</th>
             <th scope="col" className="num">Costo</th>
             <th scope="col" className="db-col-puntos">Promedio por viaje <span className="db-tenue">(línea: mediana {dinero(mediana)})</span></th>
             <th scope="col" className="num">Promedio</th></tr></thead>
@@ -1030,14 +1043,14 @@ export function CostosPorUnidad() {
         </Grafica>
       )}
       <div className="db-seccion-cabeza">
-        <h3>Diésel de {NOMBRE_SERVICIO[estado.filtros.servicio]?.toLowerCase()}: tractos y operadores</h3>
+        <h3>Diésel de {NOMBRE_SERVICIO[estado.filtros.servicio]?.toLowerCase()}: {otras ? "unidades" : "tractos"} y operadores</h3>
         <Leyenda items={[[COLOR.serie1, "Al nivel de la mediana o abajo"], ["#b9513f", "Arriba de la mediana"]]} />
       </div>
       <p className="db-nota">De los reportes de viaje: cada folio con su tracto y su operador (en un Full de dos
         operadores, cada uno con lo suyo). Solo de Fraba.
         {d?.diesel?.sin_dato > 0 && ` ${d.diesel.sin_dato} viaje(s) sin litros en su reporte no cuentan.`}</p>
-      <DonaDiesel tractos={d?.diesel?.tractos || []} />
-      <TablaDiesel titulo="Por tracto" columna="Tracto" filas={d?.diesel?.tractos || []} />
+      <DonaDiesel tractos={d?.diesel?.tractos || []} unidad={otras ? "unidad" : "tracto"} />
+      <TablaDiesel titulo={otras ? "Por unidad" : "Por tracto"} columna={otras ? "Unidad" : "Tracto"} filas={d?.diesel?.tractos || []} />
       <TablaDiesel titulo="Por operador" columna="Operador" filas={d?.diesel?.operadores || []} />
     </Panel>
   );
@@ -1053,12 +1066,12 @@ export function CostosPorUnidad() {
 // repiten, separados por 12 gajos; si la flota crece, validar más tonalidades.
 const COLORES_DONA = ["#0b8f9c", "#c98512", "#6a5fd0", "#c2577a", "#5c8a2a", "#2f6db5",
                       "#d9543a", "#1d93c4", "#a0782c", "#8e3b8a", "#3f9e6e", "#4a68c8"];
-function DonaDiesel({ tractos }) {
+function DonaDiesel({ tractos, unidad }) {
   const datos = [...tractos].sort((a, b) => Number(b.importe) - Number(a.importe)).filter((t) => Number(t.importe) > 0)
     .map((t, i) => ({ name: t.nombre, valor: Number(t.importe), color: COLORES_DONA[i % COLORES_DONA.length] }));
   const total = datos.reduce((s, x) => s + x.valor, 0);
   return (
-    <Grafica titulo="Gasto de diésel por tracto" alto={260} vacia={!datos.length} claveIzquierda
+    <Grafica titulo={`Gasto de diésel por ${unidad}`} alto={260} vacia={!datos.length} claveIzquierda
       clave={datos.map((x) => [x.color, `${x.name} · ${dinero(x.valor)} (${porciento((x.valor / total) * 100)})`])}>
       <PieChart>
         <Pie data={datos} dataKey="valor" nameKey="name" innerRadius="58%" outerRadius="88%"
