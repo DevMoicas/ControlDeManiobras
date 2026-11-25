@@ -301,17 +301,20 @@ function BloqueTreemap({ x, y, width, height, name, value, color, texto = "#fff"
 // Una gráfica con su título y, si tiene más de una serie, su leyenda.
 // `vacia`: sin datos que pintar, el mismo aviso que las tablas (no ejes en blanco).
 // `clave`: lista bajo la gráfica con nombre y cifra de cada parte (treemaps).
-function Grafica({ titulo, leyenda, alto = 240, vacia = false, clave, children }) {
+// claveIzquierda: la clave en columna a la izquierda de la gráfica, no debajo.
+function Grafica({ titulo, leyenda, alto = 240, vacia = false, clave, claveIzquierda = false, children }) {
+  const grafica = vacia
+    ? <p className="db-grafica-vacia" style={{ minHeight: alto }}>Sin datos en el periodo.</p>
+    : <ResponsiveContainer width="100%" height={alto}>{children}</ResponsiveContainer>;
   return (
     <figure className="db-figura">
       <div className="db-seccion-cabeza">
         <figcaption>{titulo}</figcaption>
         {leyenda && !vacia && <Leyenda items={leyenda} />}
       </div>
-      {vacia
-        ? <p className="db-grafica-vacia" style={{ minHeight: alto }}>Sin datos en el periodo.</p>
-        : <ResponsiveContainer width="100%" height={alto}>{children}</ResponsiveContainer>}
-      {clave && !vacia && <Leyenda items={clave} />}
+      {claveIzquierda && clave && !vacia
+        ? <div className="db-figura-lado"><Leyenda items={clave} />{grafica}</div>
+        : <>{grafica}{clave && !vacia && <Leyenda items={clave} />}</>}
     </figure>
   );
 }
@@ -1056,7 +1059,7 @@ function DonaDiesel({ tractos }) {
   ];
   const total = datos.reduce((s, x) => s + x.valor, 0);
   return (
-    <Grafica titulo="Gasto de diésel por tracto" alto={260} vacia={!datos.length}
+    <Grafica titulo="Gasto de diésel por tracto" alto={260} vacia={!datos.length} claveIzquierda
       clave={datos.map((x) => [x.color, `${x.name} · ${dinero(x.valor)} (${porciento((x.valor / total) * 100)})`])}>
       <PieChart>
         <Pie data={datos} dataKey="valor" nameKey="name" innerRadius="58%" outerRadius="88%"
