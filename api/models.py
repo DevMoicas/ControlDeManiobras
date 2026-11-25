@@ -2132,11 +2132,12 @@ class GastoMantenimiento(models.Model):
     monto       = models.DecimalField(max_digits=12, decimal_places=2,
                                       validators=[MinValueValidator(0)])
     metodo_pago = models.CharField(max_length=10, choices=METODOS_PAGO)
+    fecha       = models.DateField()
     creado_en   = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed  = True
-        ordering = ['-creado_en', '-id']
+        ordering = ['-fecha', '-id']
 
     def __str__(self):
         return f"{self.unidad or self.remolque} · {self.monto}"

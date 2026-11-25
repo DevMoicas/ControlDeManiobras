@@ -88,7 +88,7 @@ class MantenimientoTests(Base):
 class GastoMantenimientoTests(Base):
     def datos(self, **cambios):
         return {'unidad': None, 'remolque': 'REM123', 'descripcion': 'Cambio de balatas',
-                'monto': '1500.50', 'metodo_pago': 'tdc', **cambios}
+                'monto': '1500.50', 'metodo_pago': 'tdc', 'fecha': '2026-11-25', **cambios}
 
     def test_registra_editar_y_borrar(self):
         r = self.cliente.post(GASTO, self.datos(), format='json')
@@ -103,6 +103,7 @@ class GastoMantenimientoTests(Base):
         self.assertEqual(self.cliente.post(GASTO, self.datos(metodo_pago='cheque'), format='json').status_code, 400)
         self.assertEqual(self.cliente.post(GASTO, self.datos(unidad='ABC1234'), format='json').status_code, 400)
         self.assertEqual(self.cliente.post(GASTO, self.datos(monto='-1'), format='json').status_code, 400)
+        self.assertEqual(self.cliente.post(GASTO, self.datos(fecha=None), format='json').status_code, 400)
 
 
 class NoEcoRemolqueTests(Base):

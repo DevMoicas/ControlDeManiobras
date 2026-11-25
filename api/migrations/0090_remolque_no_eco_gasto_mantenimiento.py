@@ -88,10 +88,11 @@ class Migration(migrations.Migration):
                 ('descripcion', models.TextField()),
                 ('monto', models.DecimalField(decimal_places=2, max_digits=12, validators=[django.core.validators.MinValueValidator(0)])),
                 ('metodo_pago', models.CharField(choices=[('efectivo', 'Efectivo'), ('tdc', 'TDC'), ('tdd', 'TDD')], max_length=10)),
+                ('fecha', models.DateField()),
                 ('creado_en', models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'ordering': ['-creado_en', '-id'],
+                'ordering': ['-fecha', '-id'],
                 'managed': True,
             },
         ),
