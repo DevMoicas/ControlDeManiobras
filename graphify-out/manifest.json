@@ -350,9 +350,9 @@
     "semantic_hash": "2b3a6eff328cf792ecd6593dec1d0a88"
   },
   "src/components/Confirmacion/Confirmacion.jsx": {
-    "mtime": 1790799989.8971803,
-    "ast_hash": "42302c325b6e046ba635b816a7f31f8c",
-    "semantic_hash": "42302c325b6e046ba635b816a7f31f8c"
+    "mtime": 1795478751.0819914,
+    "ast_hash": "428cd41aace6debd1ac5f5525c593401",
+    "semantic_hash": ""
   },
   "src/components/CostosExtraSelector/CostosExtraSelector.jsx": {
     "mtime": 1787785570.973059,
@@ -365,9 +365,9 @@
     "semantic_hash": "cb080f83cb0570197101dd2774168f9d"
   },
   "src/components/Dashboards/Dashboards.jsx": {
-    "mtime": 1793729440.759936,
-    "ast_hash": "790c7e3d02c4a13e0f373e0147d14c1d",
-    "semantic_hash": "790c7e3d02c4a13e0f373e0147d14c1d"
+    "mtime": 1795486630.0552766,
+    "ast_hash": "4b462911a4bd2127522a9bacde8e1055",
+    "semantic_hash": ""
   },
   "src/components/DocumentoCelda/DocumentoCelda.jsx": {
     "mtime": 1788374756.6456397,
@@ -485,9 +485,9 @@
     "semantic_hash": "68e78f728f3e5e0d7b6d101b794cf23a"
   },
   "src/hooks/useReportesViaje.js": {
-    "mtime": 1791836262.9439394,
-    "ast_hash": "5c45bd012a620c44bd57983024b4f05e",
-    "semantic_hash": "5c45bd012a620c44bd57983024b4f05e"
+    "mtime": 1795203252.4342155,
+    "ast_hash": "d6b33bf9656b4539492fa6bff05b2f68",
+    "semantic_hash": ""
   },
   "src/hooks/useTorreControl.js": {
     "mtime": 1787355507.5236845,
@@ -510,9 +510,9 @@
     "semantic_hash": "914aa01c81d3fb7bc919ac5a96db01eb"
   },
   "src/pages/FacturacionPage.jsx": {
-    "mtime": 1793729283.219074,
-    "ast_hash": "3e09713f7174895b800f6b863b2e19bd",
-    "semantic_hash": "3e09713f7174895b800f6b863b2e19bd"
+    "mtime": 1795478751.0870004,
+    "ast_hash": "327fd220bd9304ad8a83d7680d0836b2",
+    "semantic_hash": ""
   },
   "src/pages/FinanzasPage.jsx": {
     "mtime": 1792706575.6713693,
@@ -545,9 +545,9 @@
     "semantic_hash": "57ba4e0b6b7384671309fd4bae874efb"
   },
   "src/pages/ReporteViajePage.jsx": {
-    "mtime": 1792167389.7936966,
-    "ast_hash": "5c54be3b0fa3e3835c3824923a8a596b",
-    "semantic_hash": "5c54be3b0fa3e3835c3824923a8a596b"
+    "mtime": 1795203309.0561244,
+    "ast_hash": "fe4178018e3774e1fd5ab28b7e86863b",
+    "semantic_hash": ""
   },
   "src/pages/TableroFinanzasPage.jsx": {
     "mtime": 1790809812.6916966,
@@ -717,6 +717,11 @@
   "src/components/InicioEscena/InicioEscena.jsx": {
     "mtime": 1795133410.4020886,
     "ast_hash": "90c1de000ccce5d25d94704f2cd99561",
+    "semantic_hash": ""
+  },
+  "PRODUCT.md": {
+    "mtime": 1795464030.748354,
+    "ast_hash": "5af22c6750d4a21096bc88e9e2b37f96",
     "semantic_hash": ""
   }
 }
