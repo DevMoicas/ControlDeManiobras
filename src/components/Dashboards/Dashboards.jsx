@@ -90,8 +90,9 @@ function useDashboard(nombre, filtros, activo = true) {
 
 // Filtros + periodo de comparación (P42, P43). `campos` dice cuáles pinta.
 // `compararDeEntrada`: el Resumen general nace comparando con el año anterior.
-function useFiltros(compararDeEntrada = false) {
-  const [filtros, setFiltros] = useState(periodoInicial);
+// inicial: filtros fijos de entrada (p. ej. el servicio de Costos por unidad).
+function useFiltros(compararDeEntrada = false, inicial = null) {
+  const [filtros, setFiltros] = useState(() => ({ ...periodoInicial(), ...inicial }));
   const [comparar, setComparar] = useState(() => (compararDeEntrada ? restarUnAnio(periodoInicial()) : null)); // {desde, hasta} o null
   const poner = (campo, valor) => setFiltros((f) => ({ ...f, [campo]: valor }));
   return { filtros, poner, comparar, setComparar };
@@ -335,8 +336,8 @@ function Panel({ titulo, filtros, children, cargando, error }) {
 }
 
 // El dashboard y su periodo de comparación: la misma consulta, dos rangos.
-function useConComparacion(nombre, campos, compararDeEntrada = false) {
-  const estado = useFiltros(compararDeEntrada);
+function useConComparacion(nombre, campos, compararDeEntrada = false, inicial = null) {
+  const estado = useFiltros(compararDeEntrada, inicial);
   const actual = useDashboard(nombre, estado.filtros);
   const previo = useDashboard(nombre, { ...estado.filtros, ...(estado.comparar || {}) }, !!estado.comparar);
   return { estado, actual, previo: estado.comparar ? previo.datos : null, campos };
@@ -895,11 +896,16 @@ export function VentasPorServicio() {
 // Propuesta: lo que importa es qué tracto cuesta más por viaje que el resto.
 // Un punto por unidad sobre una escala común, con la mediana de la flota.
 export function CostosPorUnidad() {
-  const campos = ["unidad", "maniobra", "operador", "destino"];
-  const { estado, actual, previo } = useConComparacion("costos-por-unidad", campos);
+  // Sin filtro de viaje suelto (usuario, 2026-11-25): el panel compara unidades.
+  const campos = ["unidad", "operador", "destino"];
+  // Siempre UN servicio (usuario, 2026-11-25): un sencillo solo se compara con
+  // sencillos, un full con fulls y una carga suelta con cargas sueltas. Va como
+  // el filtro `servicio` del backend, así que todo el panel —costos, mediana,
+  // burbujas y diésel— queda dentro del mismo servicio. Sin opción "Todos".
+  const { estado, actual, previo } = useConComparacion("costos-por-unidad", campos, false, { servicio: "sencillo" });
   const d = actual.datos;
   // Solo la flota de FRABA en todo el dashboard —resumen, tabla, gráficas y el
-  // filtro de viaje— (usuario, 2026-11-23): fuera las unidades de terceros y
+  // filtro de viaje, ya quitado— (usuario, 2026-11-23): fuera las unidades de terceros y
   // "Sin unidad". Propias = placas del catálogo de Tractos, que el backend ya
   // manda en opciones.unidades. Las propias sin gastos siguen en la tabla, pero
   // no en la mediana ni en las gráficas: $0 no es "barato", es "sin dato".
@@ -909,7 +915,7 @@ export function CostosPorUnidad() {
     return { unidades: (datos?.unidades || []).filter((u) => es(u.unidad)),
              viajes: (datos?.viajes || []).filter((v) => es(v.unidad)) };
   };
-  const { unidades: propiasDelPeriodo, viajes: viajesPropios } = soloPropias(d);
+  const { unidades: propiasDelPeriodo } = soloPropias(d);
   const unidades = propiasDelPeriodo.map((u) => ({ ...u, etiqueta: u.unidad }));
   const conCosto = unidades.filter((u) => Number(u.costo) > 0);
   const sinCosto = unidades.length - conCosto.length;
@@ -939,7 +945,13 @@ export function CostosPorUnidad() {
   const x = (v) => `${(Number(v) / tope) * 100}%`;
   return (
     <Panel titulo="Costos por unidad" {...actual}
-      filtros={<BarraFiltros campos={campos} estado={estado} opciones={d?.opciones} viajes={viajesPropios} />}>
+      filtros={<BarraFiltros campos={campos} estado={estado} opciones={d?.opciones} />}>
+      <div className="db-selector db-selector-servicio" role="tablist" aria-label="Servicio que se compara">
+        {SERVICIOS.map(([v, t]) => (
+          <button key={v} role="tab" aria-selected={estado.filtros.servicio === v}
+            className={estado.filtros.servicio === v ? "activo" : ""} onClick={() => estado.poner("servicio", v)}>{t}</button>
+        ))}
+      </div>
       <Resumen>
         <Kpi titulo="Costo total" valor={sumar(unidades, "costo")}
           anterior={previo ? sumar(soloPropias(previo).unidades, "costo") : undefined} />
@@ -1014,7 +1026,70 @@ export function CostosPorUnidad() {
           </ScatterChart>
         </Grafica>
       )}
+      <div className="db-seccion-cabeza">
+        <h3>Diésel de {NOMBRE_SERVICIO[estado.filtros.servicio]?.toLowerCase()}: tractos y operadores</h3>
+        <Leyenda items={[[COLOR.serie1, "Al nivel de la mediana o abajo"], ["#b9513f", "Arriba de la mediana"]]} />
+      </div>
+      <p className="db-nota">De los reportes de viaje: cada folio con su tracto y su operador (en un Full de dos
+        operadores, cada uno con lo suyo). Solo de Fraba.
+        {d?.diesel?.sin_dato > 0 && ` ${d.diesel.sin_dato} viaje(s) sin litros en su reporte no cuentan.`}</p>
+      <TablaDiesel titulo="Por tracto" columna="Tracto" filas={d?.diesel?.tractos || []} />
+      <TablaDiesel titulo="Por operador" columna="Operador" filas={d?.diesel?.operadores || []} />
     </Panel>
+  );
+}
+
+const medianaDe = (xs) => {
+  const v = xs.map(Number).sort((a, b) => a - b);
+  if (!v.length) return null;
+  return v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2;
+};
+const litros = (v) => (v == null ? "—" : `${Number(v).toLocaleString("es-MX", { maximumFractionDigits: 0 })} L`);
+
+// Diésel por tracto o por operador: litros e importe, total y por viaje. El
+// punto va en litros por viaje, que es el consumo; el importe por viaje se marca
+// igual cuando pasa de su mediana (puede subir solo por el precio del litro).
+function TablaDiesel({ titulo, columna, filas }) {
+  const medL = medianaDe(filas.map((f) => f.litros_promedio));
+  const medI = medianaDe(filas.map((f) => f.importe_promedio));
+  const tope = Math.max(1, ...filas.map((f) => Number(f.litros_promedio))) * 1.05;
+  const x = (v) => `${(Number(v) / tope) * 100}%`;
+  return (
+    <div className="db-tabla db-puntos" role="region" aria-label={`Diésel ${titulo.toLowerCase()}`} tabIndex={0}>
+      <table>
+        <caption className="db-tabla-titulo">{titulo}</caption>
+        <thead><tr><th scope="col">{columna}</th><th scope="col" className="num">Viajes</th>
+          <th scope="col" className="num">Litros</th>
+          <th scope="col" className="db-col-puntos">Litros por viaje <span className="db-tenue">(línea: mediana {litros(medL)})</span></th>
+          <th scope="col" className="num">L / viaje</th>
+          <th scope="col" className="num">Importe</th>
+          <th scope="col" className="num">Importe / viaje</th></tr></thead>
+        <tbody>
+          {filas.length === 0
+            ? <tr><td colSpan={7} className="db-vacio">Sin reportes con diésel en el periodo.</td></tr>
+            : filas.map((f) => {
+              const altoL = medL != null && Number(f.litros_promedio) > medL;
+              const altoI = medI != null && Number(f.importe_promedio) > medI;
+              return (
+                <tr key={f.nombre}>
+                  <th scope="row">{f.nombre}</th>
+                  <td className="num">{f.viajes}</td>
+                  <td className="num">{litros(f.litros)}</td>
+                  <td className="db-col-puntos">
+                    <span className="db-riel" aria-hidden="true">
+                      {medL != null && <i className="db-mediana" style={{ left: x(medL) }} />}
+                      <b className={altoL ? "db-punto db-punto-alto" : "db-punto"} style={{ left: x(f.litros_promedio) }} />
+                    </span>
+                  </td>
+                  <td className={`num${altoL ? " db-alto" : ""}`}>{litros(f.litros_promedio)}</td>
+                  <td className="num">{dinero(f.importe)}</td>
+                  <td className={`num${altoI ? " db-alto" : ""}`}>{dinero(f.importe_promedio)}</td>
+                </tr>
+              );
+            })}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
