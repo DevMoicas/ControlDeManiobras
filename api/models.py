@@ -1637,6 +1637,15 @@ class TorreFolio(models.Model):
 # docs/planes/PLAN_REPORTE_COORDINADORES.md (rama main) y la plantilla
 # api/documentos/templates/REPORTE COORDINADORES.xlsx.
 
+def _mismo_instante(a, b):
+    """Compara un datetime de `maniobras` (timestamp SIN zona, guardado en UTC)
+    con uno del reporte (con zona): sin esto, naive contra aware revienta."""
+    from datetime import timezone as _tz
+    a = a.replace(tzinfo=_tz.utc) if a.tzinfo is None else a
+    b = b.replace(tzinfo=_tz.utc) if b.tzinfo is None else b
+    return a == b
+
+
 class ReporteViaje(models.Model):
     """Un reporte de viaje. Uno por folio.
 
@@ -1896,39 +1905,69 @@ class ReporteViaje(models.Model):
             return None
         return Gasto.objects.filter(maniobra=maniobra).first()
 
-    def volcar_salida_a_la_maniobra(self, usuario=''):
-        """Copia FECHA Y HORA REAL DE SALIDA al RUTA INICIO de la maniobra.
+    # Lo que el reporte manda a la maniobra: (campo del reporte, de la maniobra).
+    RUTA_DEL_REPORTE = (('salida_real', 'ruta_inicio'), ('llegada_manzanillo', 'ruta_fin'))
+
+    def ruta_de_los_reportes(self, maniobra):
+        """(ruta_inicio, ruta_fin) que le tocan a la maniobra segun sus reportes:
+        la salida mas temprana y la llegada mas tardia (un Full repartido tiene
+        dos). Este reporte cuenta con lo que tiene en memoria."""
+        folios = {(f or '').strip() for f in (maniobra.folio, maniobra.folio_2)} - {''}
+        reportes = [r for r in ReporteViaje.objects.filter(folio__in=folios) if r.pk != self.pk] + [self]
+        salida = []
+        for (campo, _), elegir in zip(self.RUTA_DEL_REPORTE, (min, max)):
+            valores = [getattr(r, campo) for r in reportes if getattr(r, campo) is not None]
+            salida.append(elegir(valores) if valores else None)
+        return salida
+
+    def volcar_ruta_a_la_maniobra(self, usuario='', previos=None):
+        """Copia FECHA Y HORA REAL DE SALIDA a RUTA INICIO y FECHA Y HORA DE
+        LLEGADA A MANZANILLO a RUTA FIN de la maniobra. Devuelve si escribio.
 
         El capturista anota en Maniobras el dia de salida sin saber la hora, asi
         que RUTA INICIO queda a las 00:00 —que es "todavia no se sabe"—. Dias
-        despues el coordinador escribe en su reporte la hora a la que se salio de
-        verdad. Sin este volcado las dos fechas se quedan distintas para siempre y
-        nadie se entera, que es justo lo que se viene a evitar.
+        despues el coordinador escribe en su reporte lo que paso de verdad. Sin
+        este volcado las fechas se quedan distintas para siempre.
 
-        Pisa SIEMPRE y entero, dia incluido (usuario, 2026-09-03): el reporte es
-        lo que paso de verdad y manda sobre lo que hubiera en Maniobras. Con una
-        consecuencia que conviene tener presente: `ruta_inicio` alimenta la Torre
-        de Control, asi que si la salida real cae en otro dia, la maniobra se
-        mueve de dia tambien alli.
+        Pisa SIEMPRE y entero, dia incluido (usuario, 2026-09-03 y 2026-11-25):
+        el reporte es lo que paso de verdad y manda sobre lo que hubiera en
+        Maniobras. `ruta_inicio` alimenta la Torre de Control, asi que si la
+        salida real cae en otro dia, la maniobra se mueve de dia tambien alli.
 
-        Un Full repartido tiene DOS reportes y una sola columna `ruta_inicio`: el
-        ultimo que se guarde manda. No hay forma de separarlos sin una columna
-        por operador, y no se pidio.
+        Borrar el dato en el reporte lo borra en la maniobra, pero SOLO si la
+        maniobra seguia con el valor que puso el reporte (`previos`: los valores
+        del reporte antes de esta escritura). Asi no se pierde una fecha que el
+        capturista puso a mano antes de que hubiera reporte.
+
+        Un Full repartido tiene DOS reportes y una sola columna de cada: RUTA
+        INICIO es la salida MAS TEMPRANA y RUTA FIN la llegada MAS TARDIA (cuando
+        arranca el primer tracto y cuando llega el ultimo). Antes mandaba el
+        ultimo que se guardara, y la maniobra cambiaba segun el orden de captura.
         """
-        if self.salida_real is None:
-            return False
         maniobra = self.maniobra_del_folio()
         if maniobra is None:
             return False
-        if maniobra.ruta_inicio == self.salida_real:
+        cambios = []
+        for (del_reporte, de_maniobra), nuevo in zip(self.RUTA_DEL_REPORTE, self.ruta_de_los_reportes(maniobra)):
+            actual = getattr(maniobra, de_maniobra)
+            if nuevo is None:
+                anterior = (previos or {}).get(del_reporte)
+                # Solo se borra lo que el propio reporte habia puesto. La columna
+                # de la maniobra es naive (UTC): se compara como instante.
+                if anterior is None or actual is None or not _mismo_instante(actual, anterior):
+                    continue
+            elif actual is not None and _mismo_instante(actual, nuevo):
+                continue
+            setattr(maniobra, de_maniobra, nuevo)
+            cambios.append(de_maniobra)
+        if not cambios:
             return False
-        maniobra.ruta_inicio = self.salida_real
         if usuario:
             maniobra.updated_by = usuario
         # update_fields con updated_at dentro: es auto_now, asi que se refresca y
         # el sondeo de Maniobras (CambiosMixin) repinta la fila sola en las demas
         # pantallas abiertas. Sin el campo en la lista, no se escribiria.
-        maniobra.save(update_fields=['ruta_inicio', 'updated_by', 'updated_at'])
+        maniobra.save(update_fields=[*cambios, 'updated_by', 'updated_at'])
         return True
 
     def diesel_descuadrado(self):

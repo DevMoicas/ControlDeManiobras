@@ -941,7 +941,7 @@ def _reportes_del_viaje(maniobra):
         'cita':        _cita_del_folio(maniobra),
         # La FECHA del reporte es el dia en que arranco la ruta. Solo el dia: la
         # hora de `ruta_inicio` nace en 00:00 y la escribe despues el coordinador
-        # desde su reporte (ver volcar_salida_a_la_maniobra).
+        # desde su reporte (ver volcar_ruta_a_la_maniobra).
         'fecha':       _fecha_de_ruta_inicio(maniobra),
     }
     partes = (
@@ -978,8 +978,13 @@ def _crear_reportes_del_folio(maniobra):
         return 0
     creados = 0
     for folio, datos in _reportes_del_viaje(maniobra):
-        _, creado = ReporteViaje.objects.get_or_create(folio=folio, defaults=datos)
+        reporte, creado = ReporteViaje.objects.get_or_create(folio=folio, defaults=datos)
         creados += bool(creado)
+        # El reporte ya existia (abierto a mano, o el folio llega despues): sus
+        # salida y llegada no se habian podido copiar porque la maniobra aun no
+        # tenia el folio. Una de las causas de maniobras sin RUTA INICIO.
+        if not creado:
+            reporte.volcar_ruta_a_la_maniobra()
     return creados
 
 

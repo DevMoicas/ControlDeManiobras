@@ -1120,13 +1120,16 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
             reporte.refrescar_rendimiento()
             reporte.volcar_diesel_al_gasto(self._usuario())
             reporte.volcar_reparacion_al_gasto(self._usuario())
-            reporte.volcar_salida_a_la_maniobra(self._usuario())
+            reporte.volcar_ruta_a_la_maniobra(self._usuario())
         return reporte
 
     def update(self, instance, validated_data):
         # pop con None y no con []: "no mandó cargas" (PATCH de otro campo) no es
         # lo mismo que "mandó una lista vacía".
         cargas = validated_data.pop('cargas', None)
+        # Lo que tenia el reporte antes: si borran la salida o la llegada, la
+        # maniobra solo se borra si seguia con ese valor.
+        previos = {c: getattr(instance, c) for c, _ in ReporteViaje.RUTA_DEL_REPORTE}
         with transaction.atomic(using=get_db_alias()):
             for campo, valor in validated_data.items():
                 setattr(instance, campo, valor)
@@ -1138,10 +1141,10 @@ class ReporteViajeSerializer(serializers.ModelSerializer):
             instance.refrescar_rendimiento()
             instance.volcar_diesel_al_gasto(self._usuario())
             instance.volcar_reparacion_al_gasto(self._usuario())
-            # La hora real de salida vuelve a la maniobra. En CADA escritura, como
-            # el diesel: el reporte se llena por etapas y la salida real puede
-            # llegar en cualquiera de ellas.
-            instance.volcar_salida_a_la_maniobra(self._usuario())
+            # Salida real y llegada a Manzanillo vuelven a la maniobra. En CADA
+            # escritura, como el diesel: el reporte se llena por etapas y
+            # cualquiera de las dos puede llegar en cualquiera de ellas.
+            instance.volcar_ruta_a_la_maniobra(self._usuario(), previos)
         return instance
 
     def _usuario(self):

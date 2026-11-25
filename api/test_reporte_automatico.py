@@ -578,6 +578,61 @@ class FechaDelViajeTests(BaseReporteAutomatico):
         m.refresh_from_db()
         self.assertEqual(m.ruta_inicio, datetime(2026, 1, 13, 15, 0, tzinfo=tz.utc))
 
+    # ── Ruta fin y correcciones (usuario, 2026-11-25) ───────────────────
+    def reporte_patch(self, **campos):
+        return self.cliente.patch(f'{self.REPORTES}{self.reporte().id}/', campos, format='json')
+
+    def test_la_llegada_a_manzanillo_va_a_ruta_fin_y_sus_cambios_tambien(self):
+        m = self.maniobra()
+        self.poner_folio(m.id)
+        self.reporte_patch(llegada_manzanillo='2026-01-15T20:00:00Z')
+        m.refresh_from_db()
+        self.assertEqual(m.ruta_fin, datetime(2026, 1, 15, 20, 0, tzinfo=tz.utc))
+        self.reporte_patch(llegada_manzanillo='2026-01-16T02:30:00Z')
+        m.refresh_from_db()
+        self.assertEqual(m.ruta_fin, datetime(2026, 1, 16, 2, 30, tzinfo=tz.utc))
+
+    def test_borrar_en_el_reporte_borra_lo_que_el_reporte_habia_puesto(self):
+        m = self.maniobra()
+        self.poner_folio(m.id)
+        self.reporte_patch(salida_real='2026-01-12T19:37:00Z', llegada_manzanillo='2026-01-15T20:00:00Z')
+        self.reporte_patch(salida_real=None, llegada_manzanillo=None)
+        m.refresh_from_db()
+        self.assertEqual((m.ruta_inicio, m.ruta_fin), (None, None))
+
+    def test_borrar_en_el_reporte_no_borra_lo_puesto_a_mano(self):
+        # El capturista puso la ruta en Maniobras; el reporte nunca la toco.
+        m = self.maniobra(ruta_inicio=datetime(2026, 1, 12, 6, 0, tzinfo=tz.utc))
+        self.poner_folio(m.id)
+        self.reporte_patch(salida_real=None)
+        m.refresh_from_db()
+        self.assertEqual(m.ruta_inicio, datetime(2026, 1, 12, 6, 0, tzinfo=tz.utc))
+
+    def test_un_reporte_que_ya_existia_alimenta_la_maniobra_al_ponerle_el_folio(self):
+        # El reporte se abrio antes (a mano) con su salida y su llegada: al
+        # asignarle el folio a la maniobra se copian ya, sin volver a guardarlo.
+        ReporteViaje.objects.create(folio='F-2279',
+                                    salida_real=datetime(2026, 1, 12, 19, 37, tzinfo=tz.utc),
+                                    llegada_manzanillo=datetime(2026, 1, 15, 20, 0, tzinfo=tz.utc))
+        m = self.maniobra()
+        self.poner_folio(m.id)
+        m.refresh_from_db()
+        self.assertEqual(m.ruta_inicio, datetime(2026, 1, 12, 19, 37, tzinfo=tz.utc))
+        self.assertEqual(m.ruta_fin, datetime(2026, 1, 15, 20, 0, tzinfo=tz.utc))
+
+    def test_full_repartido_inicio_el_mas_temprano_fin_el_mas_tardio(self):
+        m = self.maniobra()
+        self.poner_folio(m.id, folio_2='F-2279-2', operador_2='OTRO')
+        uno, dos = self.reporte(), self.reporte('F-2279-2')
+        self.cliente.patch(f'{self.REPORTES}{dos.id}/', {'salida_real': '2026-01-12T20:15:00Z',
+                           'llegada_manzanillo': '2026-01-15T22:00:00Z'}, format='json')
+        # Se guarda despues, pero sale antes y llega antes: no manda el orden.
+        self.cliente.patch(f'{self.REPORTES}{uno.id}/', {'salida_real': '2026-01-12T20:00:00Z',
+                           'llegada_manzanillo': '2026-01-15T20:00:00Z'}, format='json')
+        m.refresh_from_db()
+        self.assertEqual(m.ruta_inicio, datetime(2026, 1, 12, 20, 0, tzinfo=tz.utc))
+        self.assertEqual(m.ruta_fin, datetime(2026, 1, 15, 22, 0, tzinfo=tz.utc))
+
     def test_sin_salida_real_no_toca_la_maniobra(self):
         m = self.maniobra(ruta_inicio=datetime(2026, 1, 12, 6, 0, tzinfo=tz.utc))
         self.poner_folio(m.id)
