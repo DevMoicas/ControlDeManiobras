@@ -158,6 +158,29 @@ class DashboardsTests(TestCase):
         d = self.get('costos-por-unidad', '&operador=juan')
         self.assertEqual([x['unidad'] for x in d['unidades']], ['T-1'])
 
+    def test_diesel_por_tracto_y_operador_solo_del_servicio_pedido(self):
+        # D: full de dos operadores; cada folio con su tracto, su operador y sus
+        # litros. Solo T-1/JUAN y T-3/PEDRO son de Fraba (catalogos).
+        Tracto.objects.create(no_eco='1', unidad='K', anio=2020, placas='T-1', tipo='T')
+        Tracto.objects.create(no_eco='3', unidad='K', anio=2020, placas='T-3', tipo='T')
+        Chofer.objects.create(nombre='JUAN')
+        Chofer.objects.create(nombre='PEDRO')
+        Maniobra.objects.create(
+            folio='F-D', folio_2='F-D2', tipo_servicio='full', unidad='T-1', unidad_2='T-3',
+            asignacion_operador_status='JUAN', operador_2='PEDRO', fecha_entrega_mercancia=date(2026, 8, 12))
+        for folio, unidad, operador, litros in (('F-D', 'T-1', 'JUAN', '300'), ('F-D2', 'T-3', 'PEDRO', '100')):
+            r = ReporteViaje.objects.create(folio=folio, unidad=unidad, operador=operador)
+            CargaCombustible.objects.create(reporte=r, orden=1, litros_diesel=Decimal(litros),
+                                            precio_litro=Decimal('25'))
+        d = self.get('costos-por-unidad', '&servicio=full')['diesel']
+        # T-1: F-A (sin litros: sin dato) + F-D 300 L. T-3: F-D2 100 L.
+        self.assertEqual({x['nombre']: (x['viajes'], x['litros'], x['importe']) for x in d['tractos']},
+                         {'T-1': (1, '300.00', '7500.00'), 'T-3': (1, '100.00', '2500.00')})
+        self.assertEqual([x['nombre'] for x in d['operadores']], ['JUAN', 'PEDRO'])
+        self.assertEqual(d['sin_dato'], 1)   # el reporte de F-A solo trae urea
+        # Un sencillo no se mezcla con el full.
+        self.assertEqual(self.get('costos-por-unidad', '&servicio=sencillo')['diesel']['tractos'], [])
+
     def test_cuentas_por_cobrar_no_depende_del_dia(self):
         d = self.get('cuentas-por-cobrar')
         self.assertEqual(sum(Decimal(v) for v in d['antiguedad'].values()), Decimal('4000'))

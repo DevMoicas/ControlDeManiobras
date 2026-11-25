@@ -31,7 +31,8 @@ from .facturacion import (ZONA_OPERACION, _dinero, cobranza_semanal, principal_d
                           puede_finanzas, tramo, vencimiento)
 from .finanzas import falta_pago
 from .models import (Abono, CapturaMensual, CargaCombustible, Chofer, CuentaPorPagar, Factura, Gasto,
-                     GastoFijo, GastoFijoPago, Maniobra, Pago, SueldoHistorial, Tracto, fecha_de_ingreso)
+                     GastoFijo, GastoFijoPago, Maniobra, Pago, ReporteViaje, SueldoHistorial, Tracto,
+                     fecha_de_ingreso)
 
 SERVICIOS = ('sencillo', 'full', 'carga_suelta')
 SIN_CLIENTE = 'Sin cliente asignado'   # dirección sin principal (P48)
@@ -508,8 +509,61 @@ def _operaciones(f):
     return maniobras, costos, ingresos
 
 
+def diesel_de(maniobras):
+    """Litros e importe del diesel por tracto y por operador (usuario, 2026-11-25).
+
+    Sale de los reportes de viaje, uno por FOLIO: en un Full de dos operadores
+    cada uno tiene su folio, su tracto y sus cargas, asi que cada quien carga con
+    lo suyo. Tracto y operador son los del reporte (quien hizo el viaje), con los
+    de la maniobra de respaldo. Solo de Fraba, como los filtros (de_fraba).
+
+    Un viaje cuenta solo si su reporte trae litros: sin reporte no es "cero
+    litros", es "sin dato", y no entra en los promedios.
+    El servicio no se mezcla aqui: la pantalla pide siempre uno (filtro
+    `servicio`), porque un full no se compara con un sencillo.
+    """
+    folios = {}
+    for m in maniobras:
+        folios[(m.folio or '').strip()] = (m.unidad, m.asignacion_operador_status)
+        folios[(m.folio_2 or '').strip()] = (m.unidad_2, m.operador_2)
+    folios.pop('', None)
+    cero = lambda: {'viajes': 0, 'litros': Decimal('0'), 'importe': Decimal('0')}
+    tractos, operadores = defaultdict(cero), defaultdict(cero)
+    reportes = list(ReporteViaje.objects.filter(folio__in=folios).prefetch_related('cargas'))
+    sin_dato = len(folios) - len(reportes)   # folios sin reporte
+    for r in reportes:
+        cargas = [c for c in r.cargas.all() if c.litros_diesel]
+        if not cargas:
+            sin_dato += 1
+            continue
+        litros = sum((c.litros_diesel for c in cargas), Decimal('0'))
+        importe = sum((c.litros_diesel * c.precio_litro for c in cargas if c.precio_litro), Decimal('0'))
+        unidad, operador = folios[r.folio]
+        for grupo, nombre in ((tractos, r.unidad or unidad), (operadores, r.operador or operador)):
+            g = grupo[(nombre or '').strip()]
+            g['viajes'] += 1
+            g['litros'] += litros
+            g['importe'] += importe
+
+    def filas(grupo, catalogo):
+        propios = set(de_fraba([k for k in grupo if k], catalogo))
+        return sorted(({'nombre': k, 'viajes': v['viajes'],
+                        'litros': str(v['litros'].quantize(Decimal('0.01'))),
+                        'litros_promedio': str((v['litros'] / v['viajes']).quantize(Decimal('0.01'))),
+                        'importe': _dinero(v['importe']),
+                        'importe_promedio': _dinero(v['importe'] / v['viajes'])}
+                       for k, v in grupo.items() if k in propios),
+                      key=lambda x: -Decimal(x['litros']))
+
+    return {'tractos': filas(tractos, Tracto.objects.values_list('placas', flat=True)),
+            'operadores': filas(operadores, Chofer.objects.values_list('nombre', flat=True)),
+            'sin_dato': sin_dato}
+
+
 def costos_por_unidad(f):
-    """Costo por tracto (P38), filtrable por unidad, viaje, operador y destino."""
+    """Costo por tracto (P38), filtrable por unidad, viaje, operador, destino y
+    servicio. La pantalla manda siempre un servicio (usuario, 2026-11-25): un
+    sencillo solo se compara con sencillos, un full con fulls."""
     maniobras, costos, _ = _operaciones(f)
     por_unidad = defaultdict(lambda: {'viajes': 0, 'costo': Decimal('0')})
     for m in maniobras:
@@ -522,6 +576,7 @@ def costos_por_unidad(f):
                             for k, v in por_unidad.items()), key=lambda x: -Decimal(x['costo'])),
         'viajes': [{'maniobra': m.pk, 'folio': m.folio, 'unidad': m.unidad, 'destino': m.destino,
                     'costo': _dinero(costos[m.pk])} for m in maniobras],
+        'diesel': diesel_de(maniobras),
         'opciones': _opciones(list(_maniobras_por_entrega(f))),
     }
 
