@@ -1,6 +1,6 @@
 # Pendiente
 
-Anotado el 2026-08-25 y **actualizado el 2026-10-22** al cerrar la sesión.
+Anotado el 2026-08-25 y **actualizado el 2026-11-25** al cerrar la sesión.
 
 ⚠️ Este documento describe **estado**, así que caduca — es justo el tipo de documento
 del que avisa `README.md`. Verificar contra el código antes de fiarse, y borrar cada
@@ -430,11 +430,10 @@ Quitar unas vacaciones de una semana son cinco clics. Está marcado con un comen
 `ponytail:` y el arreglo es un borrado por rango en el ViewSet, igual que el alta
 (ADR-0021). Sin decidir si merece la pena.
 
-### Un Full repartido pisa su propio RUTA INICIO
+### ~~Un Full repartido pisa su propio RUTA INICIO~~ — CERRADO el 2026-11-25
 
-Dos reportes, una sola columna `ruta_inicio`: el último que guarde su salida real manda
-(ADR-0022). Separarlos pide una columna por operador y no se pidió. Hoy no ha mordido
-porque en producción todavía casi no hay reportes.
+Ya no se pisa: RUTA INICIO es la salida más temprana de sus reportes y RUTA FIN la
+llegada más tardía (ADR-0026).
 
 ### El tope de la nómina de 31 años en adelante
 
@@ -1278,8 +1277,107 @@ Solo frontend, sin migración ni cambios de backend. Commits `b91f214` y `b77476
 
 - Queda el Diseño 1 en toda la app: pasar sus valores a los tokens de cada hoja y
   decidir si `temaOpcion2.css` se borra.
-- Página de Mantenimiento (hoy solo el hueco en la barra).
+- ~~Página de Mantenimiento (hoy solo el hueco en la barra).~~ Hecha el 2026-11-25 (§23).
 - Estilos muertos de los botones de regreso (`.home-back*`, `.home-lateral`,
   `.home-head`) en `App.css` y los temas: se pueden borrar.
 - Sin revisión visual en navegador por mi parte (la app exige sesión): lo validó
   el usuario en local.
+
+---
+
+## 23. Sesión del 2026-11-25 — Mantenimiento, Gastos, diésel por unidad, rutas y facturas pendientes. DESPLEGADO
+
+**Migración 0090** aplicada en producción por el usuario antes de empujar. Después,
+**backend `a845ce52`** y **frontend `de65713`**, los dos en verde.
+
+### Navegación
+
+- Viajes > **Gastos** (submenú): Gastos de viaje (antes "Gastos efectivo"; la ruta sigue
+  siendo `/home/gastos-efectivo`), **Gastos TAG** (página preparada, "Próximamente") y
+  Gastos mantenimiento.
+- **Mantenimiento** en el menú principal, donde estaba el hueco.
+- Se quitó la pestaña Mantenimiento de Finanzas > Cuentas por pagar. Solo la pestaña:
+  los datos siguen en la base.
+
+### Catálogos: No. Eco del remolque
+
+- `remolques.no_eco`: opcional y **único** (varios NULL no chocan). Columna por `RunSQL`,
+  porque `remolques` es managed=False. Los selectores de remolque de Mantenimiento
+  enseñan el No. Eco en vez del color (`RemolqueSelector mostrarEco`).
+
+### Mantenimiento y Gastos mantenimiento
+
+- Dos tablas nuevas (`api_mantenimiento`, `api_gastomantenimiento`) y una sola pantalla
+  configurable (`src/pages/MantenimientoPage.jsx`).
+  - **Mantenimiento**: qué cambió, fecha, kilometraje (10 decimales) y descripción de
+    la pieza.
+  - **Gastos mantenimiento**: fecha, proveedor y No. Factura (los dos opcionales),
+    descripción, monto y método de pago (Efectivo / TDC / TDD).
+- Cada registro es de un **vehículo propio O de un remolque**, nunca los dos ni ninguno.
+  Lo exige el serializer, también en PATCH.
+- Editar: todos. **Borrar: solo admin.** El rol estándar no tiene `DELETE` en la base
+  (GRANT + RLS sin política de borrado) y la vista también lo rechaza con 403.
+- El formulario es un overlay y no `<dialog>.showModal()`: el modal nativo deja inertes
+  las listas de los selectores, que se pintan en un portal.
+- Pruebas: `api/test_gasto_mantenimiento.py`.
+
+### Seguimientos: detalle de un servicio activo
+
+- Clic (o Enter) en cualquier fila de "Servicios activos" abre una ventana con
+  contenedor, operador, placas y remolques. En un Full repartido sale un bloque por
+  operador.
+
+### Dashboards > Costos por unidad
+
+- **Un servicio a la vez**: sencillo con sencillo, full con full, carga suelta con
+  carga suelta. No hay "Todos". El usuario lo fijó como regla para **todo dashboard
+  que compare unidades**.
+- En carga suelta, filtro **tractos / otras unidades**, sacado del tipo del catálogo
+  (`tipo = 'trailer'` es tracto).
+- Diésel por **tracto** y por **operador**: litros e importe, total y por viaje, en
+  dos tablas. La dona del gasto por tracto muestra todos los tractos (sin "Otros") y
+  pone la clave a la izquierda.
+- Se quitó el filtro de un viaje en concreto.
+
+### RUTA INICIO y RUTA FIN desde el reporte de viaje (ADR-0026)
+
+- La salida real va a `ruta_inicio` y la llegada a Manzanillo a `ruta_fin`. Se copia
+  al guardar el reporte y también cuando el folio llega a la maniobra después de abrir
+  el reporte; esa era una de las causas de las maniobras sin RUTA INICIO.
+- `sincronizar_rutas.py` (`migrar_prod.sh rutas-ver` / `rutas-sincronizar`) repasa los
+  datos de antes. En la copia local arregló 90 maniobras.
+  - Lo que no puede arreglar: las maniobras sin reporte (histórico o de terceros) y las
+    que tienen un reporte sin salida real todavía.
+
+### Facturación: lo que falta por subir
+
+- Las filas **sin XML salen desde el 1 de enero de 2026**. Antes salían desde julio
+  (decisión del 2026-10-30, revertida por el usuario): había ~141 de enero a junio
+  ocultas, y eran "las que no están en Facturación".
+- Las filas sin XML de maniobras **quemadas o canceladas no salen**, aunque tengan folio
+  o No. Factura. Se ocultan, no se borran: con XML vuelven a salir.
+- `precargar_facturas.py` (`migrar_prod.sh facturas-ver` / `facturas-precargar`) lista
+  las maniobras de 2026 sin factura subida y crea la fila que falta con
+  `sincronizar_facturas`. Solo crea filas para maniobras con folio, no quemadas y no
+  canceladas.
+  - En la copia local: 185 pendientes y 2 filas nuevas.
+
+### Queda abierto
+
+- **Confirmar en producción** que corrieron `facturas-precargar` y `rutas-sincronizar`,
+  y revisar sus `.txt` en `PRACTICAS/`.
+- Al asignar folio a una maniobra **quemada** todavía nace su fila vacía en Facturación.
+  No sale en el listado, pero queda en la base. Sin decidir si deja de crearse.
+- **Folios con espacios** del histórico (`'C-2256 - 2'`, `'O-2257 - 2'`,
+  `'N-2258- 2'`…), unos 30. El usuario confirmó que el de la #4912 es `C-2256-2`; sin
+  decidir si se normalizan todos. Los `CTA TERCEROS …` no se tocan.
+- El reporte `C-2256` (FERNANDO MEZA SANCHEZ, JH5356A) no tiene maniobra: su salida
+  real no llega a ningún lado.
+- **Full repartido en Costos por unidad**: sin decidir si cuenta como Full, como
+  Sencillo o se excluye.
+- **Gastos TAG**: solo la página vacía. Se trabaja en la próxima sesión.
+- Mantenimiento y Gastos mantenimiento leen solo la primera página de la API (60
+  registros): falta paginar cuando haya más (`ponytail:` en el código).
+- Avisos del hook de diseño **anteriores a esta sesión** (Inter, un borde lateral):
+  sin tocar.
+

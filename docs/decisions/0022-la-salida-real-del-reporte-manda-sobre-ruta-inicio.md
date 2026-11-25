@@ -2,7 +2,8 @@
 
 ## Estado
 
-Aceptada
+Aceptada. **Modificada por el ADR-0026** (2026-11-25): también RUTA FIN, y un Full
+repartido ya no se pisa.
 
 ## Fecha
 
