@@ -47,6 +47,12 @@ const decimal = (name, label, decimales, formato) => ({
   ),
 });
 
+const fecha = (label) => ({
+  name: "fecha", label: "Fecha",
+  celda: (g) => fechaLegible(g.fecha),
+  campo: (g) => <label key="fecha">{label}<input name="fecha" type="date" required defaultValue={g?.fecha ?? ""} /></label>,
+});
+
 const PAGINAS = {
   mantenimiento: {
     titulo: "Mantenimiento",
@@ -55,11 +61,7 @@ const PAGINAS = {
     vacio: "Aún no hay mantenimientos registrados.",
     campos: [
       texto("que_cambio", "Qué cambió"),
-      {
-        name: "fecha", label: "Fecha",
-        celda: (g) => fechaLegible(g.fecha),
-        campo: (g) => <label key="fecha">Fecha del movimiento<input name="fecha" type="date" required defaultValue={g?.fecha ?? ""} /></label>,
-      },
+      fecha("Fecha del movimiento"),
       decimal("kilometraje", "Kilometraje", 10, km),
       texto("descripcion_pieza", "Descripción de la pieza", "Original, genérica…"),
     ],
@@ -70,6 +72,7 @@ const PAGINAS = {
     endpoint: "/gastos-mantenimiento/",
     vacio: "Aún no hay gastos de mantenimiento.",
     campos: [
+      fecha("Fecha del gasto"),
       texto("descripcion", "Descripción del gasto"),
       decimal("monto", "Monto", 2, moneda),
       {
