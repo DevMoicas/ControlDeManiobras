@@ -2100,9 +2100,12 @@ class GastoMantenimiento(models.Model):
     Maniobra.remolque: `tractos` y `remolques` son managed=False y no existen en
     la base de test, asi que una FK romperia la creacion de esta tabla ahi. El
     serializer valida que las placas existan en el catalogo.
+
+    Un registro es de la unidad O del remolque, nunca de los dos (usuario,
+    2026-11-25): el otro queda en ''. Lo exige el serializer.
     """
-    unidad            = models.CharField(max_length=100)
-    remolque          = models.CharField(max_length=255)
+    unidad            = models.CharField(max_length=100, blank=True, default='')
+    remolque          = models.CharField(max_length=255, blank=True, default='')
     que_cambio        = models.TextField()
     fecha             = models.DateField()
     # Muchos decimales, mismo criterio que CargaCombustible (usuario, 2026-11-25).

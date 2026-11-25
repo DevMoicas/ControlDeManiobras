@@ -56,15 +56,21 @@ class GastoMantenimientoSerializer(serializers.ModelSerializer):
     # lo limita, esto lo hace cumplir.
     def validate_unidad(self, value):
         value = value.strip()
-        if not Tracto.objects.filter(placas=value).exists():
+        if value and not Tracto.objects.filter(placas=value).exists():
             raise serializers.ValidationError('La unidad no es una unidad propia.')
         return value
 
     def validate_remolque(self, value):
         value = value.strip()
-        if not Remolque.objects.filter(placas=value).exists():
+        if value and not Remolque.objects.filter(placas=value).exists():
             raise serializers.ValidationError('El remolque no está en el catálogo.')
         return value
+
+    # Uno u otro, nunca los dos ni ninguno (usuario, 2026-11-25).
+    def validate(self, attrs):
+        if bool(attrs.get('unidad')) == bool(attrs.get('remolque')):
+            raise serializers.ValidationError('Elige un vehículo o un remolque, no los dos.')
+        return attrs
 
 class ChoferSerializer(serializers.ModelSerializer):
     class Meta:

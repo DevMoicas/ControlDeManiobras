@@ -61,8 +61,8 @@ class Migration(migrations.Migration):
             name='GastoMantenimiento',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('unidad', models.CharField(max_length=100)),
-                ('remolque', models.CharField(max_length=255)),
+                ('unidad', models.CharField(blank=True, default='', max_length=100)),
+                ('remolque', models.CharField(blank=True, default='', max_length=255)),
                 ('que_cambio', models.TextField()),
                 ('fecha', models.DateField()),
                 ('kilometraje', models.DecimalField(decimal_places=10, max_digits=20, validators=[django.core.validators.MinValueValidator(0)])),

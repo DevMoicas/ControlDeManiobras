@@ -44,7 +44,7 @@ class GastoMantenimientoTests(TestCase):
         Remolque.objects.create(no_eco='R-01', color='Rojo', tipo='Caja', placas='REM123')
 
     def datos(self, **cambios):
-        return {'unidad': 'ABC1234', 'remolque': 'REM123', 'que_cambio': 'Balatas',
+        return {'unidad': 'ABC1234', 'remolque': '', 'que_cambio': 'Balatas',
                 'fecha': '2026-11-25', 'kilometraje': '123456.1234567891',
                 'descripcion_pieza': 'Original', **cambios}
 
@@ -59,9 +59,18 @@ class GastoMantenimientoTests(TestCase):
         self.assertIn('unidad', r.data)
 
     def test_rechaza_remolque_fuera_del_catalogo(self):
-        r = self.cliente.post(URL, self.datos(remolque='NOEXISTE'), format='json')
+        r = self.cliente.post(URL, self.datos(unidad='', remolque='NOEXISTE'), format='json')
         self.assertEqual(r.status_code, 400)
         self.assertIn('remolque', r.data)
+
+    def test_solo_remolque_se_registra(self):
+        r = self.cliente.post(URL, self.datos(unidad='', remolque='REM123'), format='json')
+        self.assertEqual(r.status_code, 201, r.data)
+
+    def test_uno_u_otro_nunca_ambos_ni_ninguno(self):
+        for unidad, remolque in (('ABC1234', 'REM123'), ('', '')):
+            r = self.cliente.post(URL, self.datos(unidad=unidad, remolque=remolque), format='json')
+            self.assertEqual(r.status_code, 400, (unidad, remolque))
 
     def test_no_se_edita_ni_se_borra(self):
         id_ = self.cliente.post(URL, self.datos(), format='json').data['id']
